@@ -21,12 +21,23 @@ enum class RsRole{STUDENT,TRAINER}
 enum class BgScope{LOGIN,STUDENT_TRAINING,TRAINER_TRAINING,PROMO}
 enum class BgStyle{CINEMATIC_RING,GOLD_SMOKE,ARENA_LIGHTS,RED_CORNER,MINIMAL_DARK}
 enum class BgPos{LEFT,CENTER,RIGHT,TOP,BOTTOM}
+enum class RsTheme{ELITE_GOLD,CRIMSON_FIGHT_NIGHT,PLATINUM_PRO,EMERALD_PERFORMANCE}
 
 data class RsPalette(val bg:Color,val panel:Color,val panel2:Color,val gold:Color,val bright:Color,val text:Color,val muted:Color)
 val elitePalette=RsPalette(Color(0xFF050505),Color(0xFF15120D),Color(0xFF211A10),Color(0xFFC08A24),Color(0xFFF0CF79),Color(0xFFF6F0E4),Color(0xFFB8AD98))
+val crimsonPalette=RsPalette(Color(0xFF080405),Color(0xFF190C10),Color(0xFF2A1117),Color(0xFF8F2238),Color(0xFFFFB39B),Color(0xFFFFF3EF),Color(0xFFC9A2A0))
+val platinumPalette=RsPalette(Color(0xFF04070A),Color(0xFF10161D),Color(0xFF17232E),Color(0xFF6E8295),Color(0xFFE4EDF5),Color(0xFFF5F8FB),Color(0xFFA8B6C2))
+val emeraldPalette=RsPalette(Color(0xFF020806),Color(0xFF0A1711),Color(0xFF11231A),Color(0xFF267A59),Color(0xFFB8E5C8),Color(0xFFF1FAF4),Color(0xFFA5B9AC))
+
+fun paletteFor(theme:RsTheme)=when(theme){
+    RsTheme.ELITE_GOLD->elitePalette
+    RsTheme.CRIMSON_FIGHT_NIGHT->crimsonPalette
+    RsTheme.PLATINUM_PRO->platinumPalette
+    RsTheme.EMERALD_PERFORMANCE->emeraldPalette
+}
 
 class RsStore(context:Context){
-    private val p=context.getSharedPreferences("rs_v11",Context.MODE_PRIVATE)
+    private val p=context.getSharedPreferences("rs_v12",Context.MODE_PRIVATE)
     fun s(k:String,d:String="")=p.getString(k,d)?:d
     fun ps(k:String,v:String)=p.edit().putString(k,v).apply()
     fun b(k:String,d:Boolean=false)=p.getBoolean(k,d)
