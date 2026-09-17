@@ -27,7 +27,8 @@ fun RsKickboxV11App() {
     var role by remember { mutableStateOf<RsRole?>(null) }
     var route by remember { mutableStateOf("home") }
     var lang by remember { mutableStateOf(rsLangs.firstOrNull { it.code == store.s("lang", "en") } ?: rsLangs.first()) }
-    val c = elitePalette
+    var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
+    val c = paletteFor(theme)
 
     MaterialTheme(
         colorScheme = darkColorScheme(
@@ -67,8 +68,24 @@ fun RsKickboxV11App() {
                     when (route) {
                         "home", "trainer" -> RsDashboard(c, role!!, lang) { route = it }
                         "backgrounds" -> RsBackgroundStudio(c, store)
+                        "themes" -> RsThemeStudio(c, theme) { selected -> theme = selected; store.ps("theme", selected.name) }
                         "voice" -> RsVoiceCoach(c, lang, store)
                         "session" -> RsSession(c)
+                        "access" -> RsAccessControl(c, store)
+                        "payments" -> RsPaymentCenter(c, store)
+                        "members" -> RsMemberManager(c)
+                        "classes" -> if (role == RsRole.TRAINER) RsClassManager(c) else RsStudentClasses(c)
+                        "attendance" -> RsAttendance(c)
+                        "invoices" -> RsInvoices(c)
+                        "book" -> if (role == RsRole.TRAINER) RsBookManager(c) else RsTrainerBook(c)
+                        "settings" -> if (role == RsRole.TRAINER) RsAdminSettings(c, store) else RsStudentSettings(c, store)
+                        "academy" -> RsAcademy(c)
+                        "progress" -> RsProgress(c)
+                        "challenges" -> RsChallenges(c)
+                        "fightcamp" -> RsFightCamp(c)
+                        "finance" -> RsFinance(c)
+                        "community" -> RsCommunity(c)
+                        "media" -> RsTrainingMedia(c)
                         else -> RsGeneric(c, route, lang)
                     }
                 }
@@ -132,7 +149,7 @@ private fun RsShell(
 @Composable
 private fun RsDashboard(c: RsPalette, role: RsRole, lang: RsLang, onRoute: (String) -> Unit) {
     val tiles = if (role == RsRole.TRAINER) listOf(
-        "backgrounds" to "Background Studio", "voice" to "AI Voice Coach", "session" to "Trainer Session",
+        "themes" to "Visual Theme Studio", "backgrounds" to "Background Studio", "voice" to "AI Voice Coach", "session" to "Trainer Session",
         "access" to "Access & Subscriptions", "payments" to "Payment Center", "members" to "Student Manager",
         "classes" to "Class Manager", "attendance" to "Attendance", "invoices" to "Invoices", "book" to "Book Manager", "settings" to "Settings"
     ) else listOf(
