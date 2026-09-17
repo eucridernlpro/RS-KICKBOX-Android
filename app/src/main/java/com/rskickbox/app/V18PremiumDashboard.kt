@@ -29,7 +29,7 @@ fun RsPremiumDashboardV18(c:RsPalette, role:RsRole, lang:RsLang, onRoute:(String
     val sections = if(role==RsRole.TRAINER) trainerSectionsV18() else studentSectionsV18()
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ){
         RsPanel(c){
             Text(if(role==RsRole.TRAINER)"TRAINER CONTROL CENTER" else "RS LIVE DASHBOARD",color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
@@ -46,44 +46,44 @@ fun RsPremiumDashboardV18(c:RsPalette, role:RsRole, lang:RsLang, onRoute:(String
                 }
             }
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(28.dp))
     }
 }
 
 @Composable
 private fun RsPremiumTileV18(c:RsPalette,item:RsDashItemV18,onRoute:(String)->Unit){
     val accent = accentV18(item.kind,c)
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(24.dp)
     Box(
-        Modifier.fillMaxWidth().height(154.dp).clip(shape)
-            .background(Brush.linearGradient(listOf(c.panel2,accent.copy(alpha=.27f),c.panel)))
+        Modifier.fillMaxWidth().height(188.dp).clip(shape)
+            .background(Brush.linearGradient(listOf(c.panel2,accent.copy(alpha=.30f),c.panel)))
             .clickable{onRoute(item.route)}
     ){
         Canvas(Modifier.fillMaxSize()){
-            drawCircle(accent.copy(alpha=.17f),size.minDimension*.72f,Offset(size.width*.86f,size.height*.13f))
-            drawCircle(c.bright.copy(alpha=.05f),size.minDimension*.46f,Offset(size.width*.70f,size.height*.82f),style=Stroke(width=5f))
+            drawCircle(accent.copy(alpha=.19f),size.minDimension*.82f,Offset(size.width*.88f,size.height*.12f))
+            drawCircle(c.bright.copy(alpha=.055f),size.minDimension*.52f,Offset(size.width*.70f,size.height*.80f),style=Stroke(width=5f))
             drawFeatureArtworkV18(item.kind,accent)
-            drawLine(c.bright.copy(alpha=.18f),Offset(0f,size.height*.78f),Offset(size.width,size.height*.70f),2f)
+            drawLine(c.bright.copy(alpha=.18f),Offset(0f,size.height*.79f),Offset(size.width,size.height*.69f),2f)
         }
-        Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Black.copy(alpha=.18f),Color.Black.copy(alpha=.64f)))))
+        Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha=.04f),Color.Black.copy(alpha=.18f),Color.Black.copy(alpha=.72f)))))
         Surface(
-            modifier=Modifier.align(Alignment.TopStart).padding(12.dp),
-            shape=RoundedCornerShape(11.dp),
-            color=Color.Black.copy(alpha=.35f),
-            border=androidx.compose.foundation.BorderStroke(1.dp,c.bright.copy(alpha=.35f))
+            modifier=Modifier.align(Alignment.TopStart).padding(13.dp),
+            shape=RoundedCornerShape(12.dp),
+            color=Color.Black.copy(alpha=.38f),
+            border=androidx.compose.foundation.BorderStroke(1.dp,c.bright.copy(alpha=.40f))
         ){
-            Text(featureGlyphV18(item.kind),color=c.bright,fontSize=17.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(horizontal=9.dp,vertical=5.dp))
+            Text(featureGlyphV18(item.kind),color=c.bright,fontSize=18.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(horizontal=10.dp,vertical=6.dp))
         }
-        Column(Modifier.align(Alignment.BottomStart).padding(13.dp),verticalArrangement=Arrangement.spacedBy(3.dp)){
-            Text(item.title,color=c.bright,fontWeight=FontWeight.Bold,fontSize=16.sp,maxLines=2,overflow=TextOverflow.Ellipsis,lineHeight=19.sp)
-            Text(item.hint,color=Color.White.copy(alpha=.68f),fontSize=9.5.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
+        Column(Modifier.align(Alignment.BottomStart).padding(14.dp),verticalArrangement=Arrangement.spacedBy(4.dp)){
+            Text(item.title,color=c.bright,fontWeight=FontWeight.Bold,fontSize=17.sp,maxLines=2,overflow=TextOverflow.Ellipsis,lineHeight=20.sp)
+            Text(item.hint,color=Color.White.copy(alpha=.72f),fontSize=10.sp,maxLines=2,overflow=TextOverflow.Ellipsis,lineHeight=13.sp)
         }
         Surface(
-            modifier=Modifier.align(Alignment.TopEnd).padding(11.dp),
+            modifier=Modifier.align(Alignment.TopEnd).padding(12.dp),
             shape=RoundedCornerShape(20.dp),
-            color=accent.copy(alpha=.20f)
+            color=accent.copy(alpha=.22f)
         ){
-            Text("›",color=c.bright,fontSize=18.sp,fontWeight=FontWeight.Black,modifier=Modifier.padding(horizontal=8.dp,vertical=2.dp))
+            Text("›",color=c.bright,fontSize=19.sp,fontWeight=FontWeight.Black,modifier=Modifier.padding(horizontal=9.dp,vertical=3.dp))
         }
     }
 }
@@ -132,6 +132,14 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFeatureArtworkV
             drawLine(accent.copy(alpha=.55f),Offset(w*.52f,h*.32f),Offset(w*.84f,h*.32f),8f)
             drawCircle(accent.copy(alpha=.5f),w*.035f,Offset(w*.80f,h*.47f))
         }
+        "music" -> {
+            drawCircle(accent.copy(alpha=.34f),w*.09f,Offset(w*.62f,h*.52f),style=Stroke(7f))
+            drawCircle(accent.copy(alpha=.34f),w*.09f,Offset(w*.80f,h*.46f),style=Stroke(7f))
+            drawLine(accent.copy(alpha=.60f),Offset(w*.70f,h*.22f),Offset(w*.70f,h*.49f),7f)
+            drawLine(accent.copy(alpha=.60f),Offset(w*.88f,h*.17f),Offset(w*.88f,h*.43f),7f)
+            drawLine(accent.copy(alpha=.60f),Offset(w*.70f,h*.22f),Offset(w*.88f,h*.17f),7f)
+            repeat(4){i->drawLine(accent.copy(alpha=.24f),Offset(w*(.45f+i*.08f),h*.68f),Offset(w*(.45f+i*.08f),h*(.61f-(i%2)*.07f)),5f)}
+        }
         "settings","admin" -> {
             drawCircle(accent.copy(alpha=.25f),w*.15f,Offset(w*.70f,h*.36f),style=Stroke(8f))
             drawCircle(accent.copy(alpha=.42f),w*.055f,Offset(w*.70f,h*.36f),style=Stroke(8f))
@@ -156,6 +164,7 @@ private fun accentV18(kind:String,c:RsPalette):Color = when(kind){
     "progress","analytics" -> Color(0xFF5ED08B)
     "community","chat" -> Color(0xFFAD7BFF)
     "payment" -> Color(0xFF55C7A8)
+    "music" -> Color(0xFF1DB954)
     "academy","book" -> c.bright
     "training","technique" -> Color(0xFFE8A942)
     "settings","admin" -> Color(0xFFB7BDC9)
@@ -163,7 +172,7 @@ private fun accentV18(kind:String,c:RsPalette):Color = when(kind){
 }
 
 private fun featureGlyphV18(kind:String)=when(kind){
-    "ai"->"AI";"timer"->"◴";"academy"->"A";"book"->"B";"fight"->"FX";"training"->"TR";"technique"->"TK";"progress"->"↗";"analytics"->"▥";"community"->"●●";"chat"->"✦";"payment"->"€";"settings"->"⚙";"admin"->"RS";else->"♛"
+    "ai"->"AI";"timer"->"◴";"academy"->"A";"book"->"B";"fight"->"FX";"training"->"TR";"technique"->"TK";"progress"->"↗";"analytics"->"▥";"community"->"●●";"chat"->"✦";"payment"->"€";"music"->"♫";"settings"->"⚙";"admin"->"RS";else->"♛"
 }
 
 private fun studentSectionsV18()=listOf(
@@ -191,11 +200,12 @@ private fun studentSectionsV18()=listOf(
         RsDashItemV18("compare","Technique Compare","Compare movement details","technique"),
         RsDashItemV18("history","Training History","Sessions · attendance","progress")
     )),
-    RsDashSectionV18("Library & Account",listOf(
+    RsDashSectionV18("Library, Music & Account",listOf(
         RsDashItemV18("vault","Knowledge Vault","Premium learning library","book"),
         RsDashItemV18("homework","Homework","Coach assignments","academy"),
         RsDashItemV18("favorites","Saved & Favorites","Your saved content","book"),
         RsDashItemV18("media","Training Media","Videos · uploads","training"),
+        RsDashItemV18("music","My Music & Spotify","Playlists · training soundtrack","music"),
         RsDashItemV18("finance","Membership & Payments","Plan · payments · history","payment"),
         RsDashItemV18("book","Trainer Book","Van Stilte Naar Strijd","book"),
         RsDashItemV18("profile","My Profile","Goals · identity","settings"),
@@ -211,14 +221,14 @@ private fun trainerSectionsV18()=listOf(
         RsDashItemV18("landing_admin","Promotion Manager","Public app promotions","book"),
         RsDashItemV18("book","Book Manager","Trainer book experience","book")
     )),
-    RsDashSectionV18("Coaching & Content",listOf(
+    RsDashSectionV18("Coaching, Content & Music",listOf(
         RsDashItemV18("voice","AI Voice Coach","Coach assistant","ai"),
         RsDashItemV18("session","Trainer Session","Round control","timer"),
         RsDashItemV18("lesson_editor","Lesson Editor","Academy content","academy"),
         RsDashItemV18("content","Content Manager","Lessons · cards · media","academy"),
         RsDashItemV18("homework_admin","Homework Manager","Assign · review","academy"),
         RsDashItemV18("session_builder","Session Builder","Reusable training plans","training"),
-        RsDashItemV18("music_admin","Music Manager","Training playlists","training"),
+        RsDashItemV18("music_admin","Music & Spotify Manager","Import · assign · save playlists","music"),
         RsDashItemV18("notes","Coach Notes","Private observations","chat")
     )),
     RsDashSectionV18("Members & Access",listOf(
