@@ -126,6 +126,8 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
     var email by remember { mutableStateOf("alex@rskickbox.nl") }
     var pass by remember { mutableStateOf("preview123") }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().navigationBarsPadding().padding(16.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
+        val mainLogo=store.s("brand_asset_main_logo","")
+        if(mainLogo.isNotBlank())RsUriPreviewV21(mainLogo,Modifier.fillMaxWidth().height(120.dp),"CENTER")
         Text("♛ ${store.s("brand_header_name","RS KICKBOX")}",color=c.bright,fontSize=31.sp,fontWeight=FontWeight.Black)
         LanguageV21(lang,onLang)
         Text(store.s("brand_login_title","Premium cinematic kickboxing"),color=c.text,style=MaterialTheme.typography.headlineMedium)
@@ -138,8 +140,8 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
             OutlinedButton(onClick={onLogin(RsRole.TRAINER)},modifier=Modifier.fillMaxWidth()){Text("Trainer / Admin preview")}
         }
         RsPanel(c) {
-            Text("v0.21 BRANDING & VISUAL STUDIO",color=c.bright,fontWeight=FontWeight.Bold)
-            Text("Cinematic intro · per-page visuals · dashboard-card backgrounds · branding controls · internal RS audio.",color=c.muted)
+            Text("v0.22 PREMIUM VISUAL LIBRARY",color=c.bright,fontWeight=FontWeight.Bold)
+            Text("All-page visuals · rotating music wallpapers · live branding · cinematic intro · internal RS audio.",color=c.muted)
         }
     }
 }
