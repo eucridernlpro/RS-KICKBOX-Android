@@ -112,7 +112,7 @@ fun RsLocalMusicCenterV20(c:RsPalette, store:RsStore, role:RsRole){
 
         if(tracks.isNotEmpty()){
             Box(Modifier.fillMaxWidth().height(330.dp).clip(RoundedCornerShape(24.dp))){
-                RsMusicWallpaperV20(c,scene)
+                RsMusicWallpaperV20(c,store,scene)
                 Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Black.copy(.12f),Color.Black.copy(.42f),Color.Black.copy(.82f)))))
                 Column(Modifier.fillMaxSize().padding(18.dp),verticalArrangement=Arrangement.SpaceBetween){
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
@@ -219,10 +219,13 @@ fun RsLocalMusicCenterV20(c:RsPalette, store:RsStore, role:RsRole){
 }
 
 @Composable
-private fun RsMusicWallpaperV20(c:RsPalette,scene:Int){
+private fun RsMusicWallpaperV20(c:RsPalette,store:RsStore,scene:Int){
+    val custom=store.s("visual_v21_music_wall_${scene+1}","")
     val infinite=rememberInfiniteTransition(label="musicwall")
     val move by infinite.animateFloat(0f,1f,infiniteRepeatable(tween(7000,easing=LinearEasing),RepeatMode.Reverse),label="move")
-    Canvas(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF080706),Color(0xFF1A1208),Color.Black)))){
+    Box(Modifier.fillMaxSize()){
+        if(custom.isNotBlank())RsUriPreviewV21(custom,Modifier.fillMaxSize(),store.s("visual_v21_pos_music_wall_${scene+1}","CENTER"))
+        Canvas(Modifier.fillMaxSize().then(if(custom.isBlank())Modifier.background(Brush.linearGradient(listOf(Color(0xFF080706),Color(0xFF1A1208),Color.Black))) else Modifier)){
         val w=size.width;val h=size.height
         drawCircle(c.bright.copy(alpha=.10f),w*(.34f+.06f*move),Offset(w*(.18f+.10f*move),h*.16f))
         drawCircle(Color(0xFFE25B3F).copy(alpha=.09f),w*.27f,Offset(w*(.82f-.08f*move),h*.20f))
@@ -250,5 +253,6 @@ private fun RsMusicWallpaperV20(c:RsPalette,scene:Int){
                 repeat(5){i->drawCircle(c.bright.copy(alpha=.08f+i*.015f),w*(.05f+i*.025f),Offset(w*(.45f+i*.09f),h*(.25f+i*.06f)),style=Stroke(5f))}
             }
         }
+        if(custom.isNotBlank())Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha=.08f),Color.Black.copy(alpha=.26f),Color.Black.copy(alpha=.52f)))))
     }
 }
