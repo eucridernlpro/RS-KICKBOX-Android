@@ -1,5 +1,11 @@
 package com.rskickbox.app
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.MediaController
+import android.widget.VideoView
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -8,7 +14,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,33 +22,93 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.delay
-import kotlin.math.cos
-import kotlin.math.sin
 
 @Composable
 fun RsCinematicIntroV21(c:RsPalette,store:RsStore,onFinished:()->Unit){
-    var stage by remember{ mutableIntStateOf(0) }
     val enabled=store.b("intro_enabled",true)
     if(!enabled){LaunchedEffect(Unit){onFinished()};return}
-    LaunchedEffect(Unit){
-        delay(2200);stage=1
-        delay(1200);stage=2
-        delay(1600);onFinished()
+
+    val videoUri=store.s("intro_video_uri","")
+    val stages=remember(
+        videoUri,
+        store.b("intro_video_enabled",true),
+        store.b("intro_fighter_enabled",true),
+        store.b("intro_gloves_enabled",true),
+        store.b("intro_logo_enabled",true)
+    ){
+        buildList{
+            if(videoUri.isNotBlank() && store.b("intro_video_enabled",true))add("video")
+            if(store.b("intro_fighter_enabled",true))add("fighter")
+            if(store.b("intro_gloves_enabled",true))add("gloves")
+            if(store.b("intro_logo_enabled",true))add("logo")
+        }
     }
+    if(stages.isEmpty()){LaunchedEffect(Unit){onFinished()};return}
+
+    var stageIndex by remember{mutableIntStateOf(0)}
+    val current=stages.getOrNull(stageIndex)?:stages.last()
+    fun advance(){
+        if(stageIndex<stages.lastIndex)stageIndex++ else onFinished()
+    }
+
+    LaunchedEffect(current){
+        when(current){
+            "fighter"->{delay(1800);advance()}
+            "gloves"->{delay(1100);advance()}
+            "logo"->{delay(1500);advance()}
+        }
+    }
+
     Box(Modifier.fillMaxSize().background(Color.Black)){
-        AnimatedContent(stage,transitionSpec={fadeIn(tween(450)) togetherWith fadeOut(tween(450))},label="introStage"){s->
-            when(s){
-                0->RsIntroFighterSceneV21(c,store)
-                1->RsIntroGlovesSceneV21(c,store)
+        AnimatedContent(
+            targetState=current,
+            transitionSpec={fadeIn(tween(420)) togetherWith fadeOut(tween(420))},
+            label="introStage"
+        ){stage->
+            when(stage){
+                "video"->RsIntroVideoStageV23(
+                    uri=videoUri,
+                    sound=store.b("intro_video_sound",true),
+                    onFinished={advance()}
+                )
+                "fighter"->RsIntroFighterSceneV21(c,store)
+                "gloves"->RsIntroGlovesSceneV21(c,store)
                 else->RsIntroLogoSceneV21(c,store)
             }
         }
-        TextButton(onClick=onFinished,modifier=Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)){Text("Skip",color=Color.White.copy(alpha=.72f))}
+        if(store.b("intro_skip_enabled",true)){
+            TextButton(
+                onClick=onFinished,
+                modifier=Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
+            ){Text("Skip",color=Color.White.copy(alpha=.78f))}
+        }
     }
+}
+
+@Composable
+private fun RsIntroVideoStageV23(uri:String,sound:Boolean,onFinished:()->Unit){
+    AndroidView(
+        factory={ctx->
+            VideoView(ctx).apply{
+                setVideoURI(Uri.parse(uri))
+                setOnPreparedListener{mp->
+                    mp.isLooping=false
+                    val v=if(sound)1f else 0f
+                    mp.setVolume(v,v)
+                    start()
+                }
+                setOnCompletionListener{onFinished()}
+                setOnErrorListener{_,_,_->onFinished();true}
+            }
+        },
+        modifier=Modifier.fillMaxSize()
+    )
 }
 
 @Composable
@@ -63,11 +128,11 @@ private fun RsIntroFighterSceneV21(c:RsPalette,store:RsStore){
             if(custom.isNotBlank())drawRect(Color.Black.copy(alpha=overlay.coerceIn(0f,.70f)))
             val head=Offset(w*.47f,h*.29f)
             drawCircle(Color.Black.copy(alpha=if(custom.isBlank()).97f else .36f),w*.055f,head)
-            drawLine(Color.Black,Offset(w*.47f,h*.35f),Offset(w*.45f,h*.59f),w*.052f)
-            drawLine(Color.Black,Offset(w*.45f,h*.43f),Offset(w*(.62f+.16f*punch),h*(.33f-.03f*punch)),w*.038f)
-            drawLine(Color.Black,Offset(w*.45f,h*.43f),Offset(w*.31f,h*.50f),w*.034f)
-            drawLine(Color.Black,Offset(w*.45f,h*.58f),Offset(w*.29f,h*.82f),w*.045f)
-            drawLine(Color.Black,Offset(w*.45f,h*.58f),Offset(w*(.66f+.12f*punch),h*(.72f-.12f*punch)),w*.046f)
+            drawLine(Color.Black.copy(alpha=if(custom.isBlank())1f else .34f),Offset(w*.47f,h*.35f),Offset(w*.45f,h*.59f),w*.052f)
+            drawLine(Color.Black.copy(alpha=if(custom.isBlank())1f else .34f),Offset(w*.45f,h*.43f),Offset(w*(.62f+.16f*punch),h*(.33f-.03f*punch)),w*.038f)
+            drawLine(Color.Black.copy(alpha=if(custom.isBlank())1f else .34f),Offset(w*.45f,h*.43f),Offset(w*.31f,h*.50f),w*.034f)
+            drawLine(Color.Black.copy(alpha=if(custom.isBlank())1f else .34f),Offset(w*.45f,h*.58f),Offset(w*.29f,h*.82f),w*.045f)
+            drawLine(Color.Black.copy(alpha=if(custom.isBlank())1f else .34f),Offset(w*.45f,h*.58f),Offset(w*(.66f+.12f*punch),h*(.72f-.12f*punch)),w*.046f)
             drawCircle(c.bright.copy(alpha=.12f+.10f*punch),w*.20f,Offset(w*.55f,h*.45f),style=Stroke(w*.012f))
         }
         Column(Modifier.align(Alignment.BottomStart).padding(28.dp).navigationBarsPadding()){
@@ -105,31 +170,143 @@ private fun RsIntroLogoSceneV21(c:RsPalette,store:RsStore){
     val inf=rememberInfiniteTransition(label="logo")
     val glow by inf.animateFloat(.35f,1f,infiniteRepeatable(tween(750),RepeatMode.Reverse),label="glow")
     val customLogo=store.s("brand_asset_main_logo","")
+    val crown=store.s("brand_asset_royal_crown","")
     Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(c.gold.copy(alpha=.18f),Color.Black),radius=900f)),contentAlignment=Alignment.Center){
-        if(customLogo.isNotBlank()){
-            Column(horizontalAlignment=Alignment.CenterHorizontally){
-                RsUriPreviewV21(customLogo,Modifier.size(180.dp),"CENTER")
-                Text(store.s("brand_header_name","RS KICKBOX"),color=c.bright,fontWeight=FontWeight.Black,fontSize=26.sp)
-            }
-        }else{
-            Column(horizontalAlignment=Alignment.CenterHorizontally){
-                Text("♛",color=c.bright.copy(alpha=glow),fontSize=78.sp,fontWeight=FontWeight.Black)
-                Text("RS",color=c.bright,fontSize=92.sp,fontWeight=FontWeight.Black)
-                Text("KICKBOX",color=Color.White.copy(alpha=.80f),fontSize=20.sp,fontWeight=FontWeight.Bold,letterSpacing=4.sp)
-            }
+        Column(horizontalAlignment=Alignment.CenterHorizontally){
+            if(crown.isNotBlank())RsUriPreviewV21(crown,Modifier.size(96.dp),"CENTER")
+            else Text("♛",color=c.bright.copy(alpha=glow),fontSize=78.sp,fontWeight=FontWeight.Black)
+            if(customLogo.isNotBlank())RsUriPreviewV21(customLogo,Modifier.size(180.dp),"CENTER")
+            else Text("RS",color=c.bright,fontSize=92.sp,fontWeight=FontWeight.Black)
+            Text(store.s("brand_header_name","RS KICKBOX"),color=Color.White.copy(alpha=.82f),fontSize=20.sp,fontWeight=FontWeight.Bold,letterSpacing=3.sp)
         }
     }
 }
 
 @Composable
+private fun RsIntroVideoPreviewV23(uri:String,sound:Boolean){
+    AndroidView(
+        factory={ctx->
+            VideoView(ctx).apply{
+                val controls=MediaController(ctx)
+                controls.setAnchorView(this)
+                setMediaController(controls)
+                setVideoURI(Uri.parse(uri))
+                setOnPreparedListener{mp->
+                    val v=if(sound)1f else 0f
+                    mp.setVolume(v,v)
+                    seekTo(1)
+                }
+            }
+        },
+        update={view->
+            if(!view.isPlaying && view.currentPosition==0)runCatching{view.seekTo(1)}
+        },
+        modifier=Modifier.fillMaxWidth().height(230.dp)
+    )
+}
+
+@Composable
 fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
+    val context=LocalContext.current
     var enabled by remember{mutableStateOf(store.b("intro_enabled",true))}
     var everyLaunch by remember{mutableStateOf(store.b("intro_every_launch",true))}
-    RsScroll(c,"Intro & Splash Settings","Control the cinematic sequence shown before the login page."){
+    var videoEnabled by remember{mutableStateOf(store.b("intro_video_enabled",true))}
+    var videoSound by remember{mutableStateOf(store.b("intro_video_sound",true))}
+    var fighterEnabled by remember{mutableStateOf(store.b("intro_fighter_enabled",true))}
+    var glovesEnabled by remember{mutableStateOf(store.b("intro_gloves_enabled",true))}
+    var logoEnabled by remember{mutableStateOf(store.b("intro_logo_enabled",true))}
+    var skipEnabled by remember{mutableStateOf(store.b("intro_skip_enabled",true))}
+    var savedVideo by remember{mutableStateOf(store.s("intro_video_uri",""))}
+    var pendingVideo by remember{mutableStateOf("")}
+    var message by remember{mutableStateOf("")}
+
+    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null){
+            runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+            pendingVideo=uri.toString()
+            message="Preview this local video below. It is not saved until you press Save / Accept."
+        }
+    }
+
+    RsScroll(c,"Intro Director","Upload and preview the opening video locally before accepting it. All intro elements can be switched on or off from this same screen."){
         RsPanel(c){
-            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Switch(enabled,{enabled=it;store.pb("intro_enabled",it)});Spacer(Modifier.width(10.dp));Column{Text("Cinematic intro",color=c.bright,fontWeight=FontWeight.Bold);Text("Fighter → gloves → RS crown logo",color=c.muted)}}
-            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Checkbox(everyLaunch,{everyLaunch=it;store.pb("intro_every_launch",it)});Text("Show on every fresh app launch",color=c.text)}
-            Text("Default duration: about 5 seconds. A Skip control is always available so the intro never blocks access.",color=c.muted)
+            Text("INTRO MASTER CONTROLS",color=c.bright,fontWeight=FontWeight.Black)
+            IntroToggleV23("Enable cinematic intro","Master on/off switch",enabled){enabled=it;store.pb("intro_enabled",it)}
+            IntroToggleV23("Use uploaded intro video","Play the accepted local video first",videoEnabled){videoEnabled=it;store.pb("intro_video_enabled",it)}
+            IntroToggleV23("Video sound","Play the uploaded video's own audio",videoSound){videoSound=it;store.pb("intro_video_sound",it)}
+            IntroToggleV23("Fighter action scene","Animated or uploaded fighter scene",fighterEnabled){fighterEnabled=it;store.pb("intro_fighter_enabled",it)}
+            IntroToggleV23("Hanging gloves scene","Animated or uploaded gloves reveal",glovesEnabled){glovesEnabled=it;store.pb("intro_gloves_enabled",it)}
+            IntroToggleV23("RS crown + logo reveal","Final royal brand reveal",logoEnabled){logoEnabled=it;store.pb("intro_logo_enabled",it)}
+            IntroToggleV23("Show Skip button","Lets members bypass the sequence",skipEnabled){skipEnabled=it;store.pb("intro_skip_enabled",it)}
+            IntroToggleV23("Show every fresh app launch","Otherwise show once until intro state is reset",everyLaunch){everyLaunch=it;store.pb("intro_every_launch",it)}
+        }
+
+        RsPanel(c){
+            Text("LOCAL INTRO VIDEO",color=c.bright,fontWeight=FontWeight.Black)
+            Text("Choose a video from the phone, tablet or compatible document library. The selected file is preview-only until explicitly accepted.",color=c.muted)
+            Button(
+                onClick={picker.launch(arrayOf("video/*"))},
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(savedVideo.isBlank() && pendingVideo.isBlank())"＋ Upload intro video" else "✎ Edit / Replace video")}
+
+            val previewUri=if(pendingVideo.isNotBlank())pendingVideo else savedVideo
+            if(previewUri.isNotBlank()){
+                Text(if(pendingVideo.isNotBlank())"PENDING LOCAL PREVIEW — NOT SAVED" else "SAVED INTRO VIDEO",color=c.bright,fontWeight=FontWeight.Bold,fontSize=11.sp)
+                RsIntroVideoPreviewV23(previewUri,videoSound)
+            }
+
+            if(pendingVideo.isNotBlank()){
+                Button(
+                    onClick={
+                        savedVideo=pendingVideo
+                        store.ps("intro_video_uri",pendingVideo)
+                        pendingVideo=""
+                        message="Intro video accepted and saved."
+                    },
+                    modifier=Modifier.fillMaxWidth()
+                ){Text("✓ Save / Accept video")}
+                OutlinedButton(
+                    onClick={pendingVideo="";message="Pending video discarded. Saved intro remains unchanged."},
+                    modifier=Modifier.fillMaxWidth()
+                ){Text("Cancel edit")}
+            }
+
+            if(savedVideo.isNotBlank()){
+                OutlinedButton(
+                    onClick={
+                        store.ps("intro_video_uri","")
+                        savedVideo=""
+                        pendingVideo=""
+                        message="Saved intro video deleted."
+                    },
+                    modifier=Modifier.fillMaxWidth()
+                ){Text("Delete saved video")}
+            }
+            if(message.isNotBlank())Text(message,color=c.muted)
+        }
+
+        RsPanel(c){
+            Text("CURRENT INTRO ORDER",color=c.bright,fontWeight=FontWeight.Black)
+            val active=buildList{
+                if(videoEnabled && savedVideo.isNotBlank())add("Uploaded video")
+                if(fighterEnabled)add("Fighter action")
+                if(glovesEnabled)add("Hanging gloves")
+                if(logoEnabled)add("RS crown + logo")
+            }
+            Text(if(active.isEmpty())"No intro stages selected — login opens immediately." else active.joinToString("  →  "),color=c.text)
+            Text("Video duration follows the uploaded file. The optional fighter, gloves and logo stages add a short premium reveal after it.",color=c.muted,fontSize=10.sp)
+        }
+    }
+}
+
+@Composable
+private fun IntroToggleV23(title:String,subtitle:String,checked:Boolean,onChecked:(Boolean)->Unit){
+    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+        Switch(checked=checked,onCheckedChange=onChecked)
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)){
+            Text(title,fontWeight=FontWeight.Bold)
+            Text(subtitle,style=MaterialTheme.typography.bodySmall)
         }
     }
 }
