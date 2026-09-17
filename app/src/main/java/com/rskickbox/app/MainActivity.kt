@@ -115,16 +115,41 @@ private fun LoginScreen(lang: Lang, onLanguage: (Lang) -> Unit, onLogin: (Role) 
 @Composable
 private fun AppShell(role: Role, current: String, lang: Lang, onOpen: (String) -> Unit, onBack: () -> Unit, onLanguage: (Lang) -> Unit, onLogout: () -> Unit) {
     Background {
-        Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text("♛ RS KICKBOX", color = RsGoldLight, fontWeight = FontWeight.Black, fontSize = 23.sp)
-                    Text(if (role == Role.TRAINER) "TRAINER / ADMIN" else "STUDENT", color = RsMuted, fontSize = 10.sp, letterSpacing = 2.sp)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    LanguageSwitch(lang, onLanguage)
-                    if (current != "Dashboard" && current != "Trainer Dashboard") TextButton(onClick = onBack) { Text("‹") }
-                    TextButton(onClick = onLogout) { Text(if (lang == Lang.NL) "Uit" else "Logout") }
+        Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                border = BorderStroke(1.dp, RsGoldLight.copy(alpha = .34f)),
+                colors = CardDefaults.cardColors(containerColor = RsPanel.copy(alpha = .98f))
+            ) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f)) {
+                            Text("♛ RS KICKBOX", color = RsGoldLight, fontWeight = FontWeight.Black, fontSize = 22.sp)
+                            Text(if (role == Role.TRAINER) "TRAINER / ADMIN" else "STUDENT", color = RsMuted, fontSize = 9.sp, letterSpacing = 1.7.sp)
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        LanguageSwitch(lang, onLanguage)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            if (current != "Dashboard" && current != "Trainer Dashboard") {
+                                OutlinedButton(
+                                    onClick = onBack,
+                                    modifier = Modifier.heightIn(min = 40.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                    border = BorderStroke(1.dp, RsGold.copy(alpha = .45f))
+                                ) { Text("‹", color = RsGoldLight, fontSize = 20.sp) }
+                            }
+                            OutlinedButton(
+                                onClick = onLogout,
+                                modifier = Modifier.heightIn(min = 40.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                border = BorderStroke(1.dp, RsGoldLight.copy(alpha = .55f))
+                            ) {
+                                Text(if (lang == Lang.NL) "Uitloggen" else "Log out", color = RsGoldLight, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        }
+                    }
                 }
             }
             Box(Modifier.weight(1f)) {
