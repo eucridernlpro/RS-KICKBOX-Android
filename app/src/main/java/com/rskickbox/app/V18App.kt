@@ -92,6 +92,7 @@ fun RsKickboxV18App() {
                                 "finance" -> RsFinance(c)
                                 "community" -> RsCommunity(c)
                                 "media" -> RsTrainingMediaV16(c, store)
+                                "music", "music_admin" -> RsSpotifyMusicCenterV19(c, store, active)
                                 "techniques" -> RsTechniqueLibrary(c)
                                 "home_training" -> RsHomeTraining(c)
                                 "workout" -> RsWorkoutGenerator(c)
@@ -116,7 +117,6 @@ fun RsKickboxV18App() {
                                 "groups" -> RsGroupsHub(c)
                                 "search" -> RsSearchHub(c)
                                 "homework_admin" -> RsHomeworkManagerV14(c)
-                                "music_admin" -> RsMusicManagerV14(c)
                                 "lesson_editor" -> RsLessonEditorV14(c)
                                 "plans_admin" -> RsMembershipPlansV14(c)
                                 "progress_admin" -> RsProgressManagerV14(c)
@@ -166,7 +166,7 @@ fun RsKickboxV18App() {
                             ) {
                                 Column(Modifier.weight(1f)) {
                                     Text("RS PRODUCTION TOOLS", color = c.bright, fontWeight = FontWeight.Black)
-                                    Text("v0.18 premium dashboard preview", color = c.muted)
+                                    Text("v0.19 premium music + dashboard preview", color = c.muted)
                                 }
                                 OutlinedButton(
                                     onClick = {
@@ -212,8 +212,8 @@ private fun RsLoginV18(c: RsPalette, lang: RsLang, onLang: (RsLang) -> Unit, onL
             OutlinedButton(onClick = { onLogin(RsRole.TRAINER) }, modifier = Modifier.fillMaxWidth()) { Text("Trainer / Admin preview") }
         }
         RsPanel(c) {
-            Text("v0.18 PREMIUM DASHBOARD", color = c.bright, fontWeight = FontWeight.Bold)
-            Text("Equal-size dashboard cards, feature-specific visual backgrounds and grouped navigation for a more finished app experience.", color = c.muted)
+            Text("v0.19 PREMIUM BUILD", color = c.bright, fontWeight = FontWeight.Bold)
+            Text("Larger premium dashboard cards plus shared Spotify music integration for students and trainers.", color = c.muted)
         }
     }
 }
