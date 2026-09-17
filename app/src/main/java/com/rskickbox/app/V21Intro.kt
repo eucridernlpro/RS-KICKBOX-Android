@@ -49,18 +49,20 @@ fun RsCinematicIntroV21(c:RsPalette,store:RsStore,onFinished:()->Unit){
 @Composable
 private fun RsIntroFighterSceneV21(c:RsPalette,store:RsStore){
     val custom=store.s("visual_v21_intro_fighter","")
+    val overlay=store.s("visual_v21_opacity_intro_fighter","0.34").toFloatOrNull()?:0.34f
     val inf=rememberInfiniteTransition(label="fighter")
     val punch by inf.animateFloat(0f,1f,infiniteRepeatable(tween(620,easing=FastOutSlowInEasing),RepeatMode.Reverse),label="punch")
     val smoke by inf.animateFloat(0f,1f,infiniteRepeatable(tween(2600,easing=LinearEasing),RepeatMode.Reverse),label="smoke")
     Box(Modifier.fillMaxSize()){
         if(custom.isNotBlank())RsUriPreviewV21(custom,Modifier.fillMaxSize(),store.s("visual_v21_pos_intro_fighter","CENTER"))
-        Canvas(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color(0xFF29180A),Color(0xFF090909),Color.Black),center=Offset.Unspecified,radius=1100f))){
+        Canvas(Modifier.fillMaxSize().then(if(custom.isBlank())Modifier.background(Brush.radialGradient(listOf(Color(0xFF29180A),Color(0xFF090909),Color.Black),center=Offset.Unspecified,radius=1100f)) else Modifier)){
             val w=size.width;val h=size.height
             repeat(7){i->drawCircle(Color.White.copy(alpha=.018f+.015f*smoke),w*(.10f+i*.025f),Offset(w*((i*.19f+smoke*.08f)%1f),h*(.16f+i*.11f)))}
             drawLine(c.bright.copy(alpha=.22f),Offset(0f,h*.12f),Offset(w*.68f,h*.60f),w*.035f)
             drawLine(Color(0xFFE25B3F).copy(alpha=.14f),Offset(w,h*.16f),Offset(w*.38f,h*.61f),w*.03f)
+            if(custom.isNotBlank())drawRect(Color.Black.copy(alpha=overlay.coerceIn(0f,.70f)))
             val head=Offset(w*.47f,h*.29f)
-            drawCircle(Color.Black.copy(alpha=.97f),w*.055f,head)
+            drawCircle(Color.Black.copy(alpha=if(custom.isBlank()).97f else .36f),w*.055f,head)
             drawLine(Color.Black,Offset(w*.47f,h*.35f),Offset(w*.45f,h*.59f),w*.052f)
             drawLine(Color.Black,Offset(w*.45f,h*.43f),Offset(w*(.62f+.16f*punch),h*(.33f-.03f*punch)),w*.038f)
             drawLine(Color.Black,Offset(w*.45f,h*.43f),Offset(w*.31f,h*.50f),w*.034f)
@@ -78,18 +80,20 @@ private fun RsIntroFighterSceneV21(c:RsPalette,store:RsStore){
 @Composable
 private fun RsIntroGlovesSceneV21(c:RsPalette,store:RsStore){
     val custom=store.s("visual_v21_intro_gloves","")
+    val overlay=store.s("visual_v21_opacity_intro_gloves","0.30").toFloatOrNull()?:0.30f
     val inf=rememberInfiniteTransition(label="gloves")
     val sway by inf.animateFloat(-1f,1f,infiniteRepeatable(tween(1200,easing=FastOutSlowInEasing),RepeatMode.Reverse),label="sway")
     Box(Modifier.fillMaxSize()){
         if(custom.isNotBlank())RsUriPreviewV21(custom,Modifier.fillMaxSize(),store.s("visual_v21_pos_intro_gloves","CENTER"))
-        Canvas(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF070707),Color.Black)))){
+        Canvas(Modifier.fillMaxSize().then(if(custom.isBlank())Modifier.background(Brush.verticalGradient(listOf(Color(0xFF070707),Color.Black))) else Modifier)){
             val w=size.width;val h=size.height
-            drawLine(c.bright.copy(alpha=.16f),Offset(w*.20f,0f),Offset(w*.55f,h),w*.018f)
+            if(custom.isNotBlank())drawRect(Color.Black.copy(alpha=overlay.coerceIn(0f,.70f)))
+            drawLine(c.bright.copy(alpha=if(custom.isBlank()).16f else .10f),Offset(w*.20f,0f),Offset(w*.55f,h),w*.018f)
             val rope1=w*(.43f+sway*.006f);val rope2=w*(.57f-sway*.006f)
-            drawLine(Color(0xFF7B6038),Offset(rope1,0f),Offset(rope1,h*.39f),w*.010f)
-            drawLine(Color(0xFF7B6038),Offset(rope2,0f),Offset(rope2,h*.42f),w*.010f)
-            drawRoundRect(Color(0xFF17110C),Offset(rope1-w*.075f,h*.38f),androidx.compose.ui.geometry.Size(w*.14f,h*.20f),androidx.compose.ui.geometry.CornerRadius(w*.06f,w*.06f))
-            drawRoundRect(Color(0xFF17110C),Offset(rope2-w*.065f,h*.41f),androidx.compose.ui.geometry.Size(w*.14f,h*.20f),androidx.compose.ui.geometry.CornerRadius(w*.06f,w*.06f))
+            drawLine(Color(0xFF7B6038).copy(alpha=if(custom.isBlank())1f else .38f),Offset(rope1,0f),Offset(rope1,h*.39f),w*.010f)
+            drawLine(Color(0xFF7B6038).copy(alpha=if(custom.isBlank())1f else .38f),Offset(rope2,0f),Offset(rope2,h*.42f),w*.010f)
+            drawRoundRect(Color(0xFF17110C).copy(alpha=if(custom.isBlank())1f else .32f),Offset(rope1-w*.075f,h*.38f),androidx.compose.ui.geometry.Size(w*.14f,h*.20f),androidx.compose.ui.geometry.CornerRadius(w*.06f,w*.06f))
+            drawRoundRect(Color(0xFF17110C).copy(alpha=if(custom.isBlank())1f else .32f),Offset(rope2-w*.065f,h*.41f),androidx.compose.ui.geometry.Size(w*.14f,h*.20f),androidx.compose.ui.geometry.CornerRadius(w*.06f,w*.06f))
             drawCircle(c.bright.copy(alpha=.20f),w*.12f,Offset(w*.50f,h*.48f),style=Stroke(w*.009f))
         }
         Text("THE WORK STARTS HERE",modifier=Modifier.align(Alignment.BottomCenter).padding(bottom=54.dp),color=Color.White.copy(alpha=.66f),fontWeight=FontWeight.Bold,fontSize=12.sp)
