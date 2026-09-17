@@ -1,6 +1,10 @@
 package com.rskickbox.app
 
+import android.content.Intent
+import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,18 +26,17 @@ fun RsVoiceCoach(c: RsPalette, lang: RsLang, s: RsStore) {
     var answer by remember { mutableStateOf("") }
     var autoSpeak by remember { mutableStateOf(s.b("voice_auto", true)) }
 
+    val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+        if (!spoken.isNullOrBlank()) question = spoken
+    }
+
     DisposableEffect(Unit) {
         val engine = TextToSpeech(context) { status -> ready = status == TextToSpeech.SUCCESS }
         tts = engine
-        onDispose {
-            engine.stop()
-            engine.shutdown()
-        }
+        onDispose { engine.stop(); engine.shutdown() }
     }
-
-    LaunchedEffect(lang.code, ready) {
-        if (ready) tts?.language = lang.locale
-    }
+    LaunchedEffect(lang.code, ready) { if (ready) tts?.language = lang.locale }
 
     fun coachReply(): String = when (lang.code) {
         "nl" -> "Werk vanuit balans, houd je dekking hoog en voer de techniek eerst langzaam en correct uit voordat je versnelt."
@@ -47,52 +50,36 @@ fun RsVoiceCoach(c: RsPalette, lang: RsLang, s: RsStore) {
         else -> "Work from balance, keep your guard high, and perform the technique slowly and correctly before increasing speed."
     }
 
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text("AI Voice Coach", color = c.bright, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
-        Text("Ask about a move or training. The coach speaks the answer in the selected app language when that device voice is installed.", color = c.muted)
-
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("AI Voice Coach", color=c.bright, style=MaterialTheme.typography.headlineSmall, fontWeight=FontWeight.Black)
+        Text("Type or speak a question about technique or training. The coach answers aloud in the selected app language when the required device voice is installed.", color=c.muted)
         RsPanel(c) {
-            Text("VOICE LANGUAGE: ${lang.name}", color = c.bright, fontWeight = FontWeight.Bold)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Speak answers automatically", color = c.text)
-                Switch(autoSpeak, { value -> autoSpeak = value; s.pb("voice_auto", value) })
+            Text("VOICE LANGUAGE: ${lang.name}", color=c.bright, fontWeight=FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween, verticalAlignment=Alignment.CenterVertically) {
+                Text("Speak answers automatically", color=c.text, modifier=Modifier.weight(1f))
+                Switch(autoSpeak, { value -> autoSpeak=value; s.pb("voice_auto",value) })
             }
-            Text(if (ready) "Voice engine ready" else "Loading device voice engine…", color = c.muted, fontSize = 11.sp)
+            Text(if(ready)"Voice engine ready" else "Loading device voice engine…", color=c.muted, fontSize=11.sp)
         }
-
         RsPanel(c) {
-            OutlinedTextField(question, { question = it }, label = { Text("Ask the coach") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
-            Button(
-                onClick = {
-                    answer = coachReply()
-                    if (autoSpeak && ready) {
-                        tts?.language = lang.locale
-                        tts?.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "rs-coach")
-                    }
-                },
-                enabled = question.isNotBlank(),
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Ask AI Coach") }
+            OutlinedTextField(question,{question=it},label={Text("Ask the coach")},modifier=Modifier.fillMaxWidth(),minLines=2)
+            OutlinedButton(onClick={
+                val intent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE,lang.locale.toLanguageTag())
+                    putExtra(RecognizerIntent.EXTRA_PROMPT,"RS KICKBOX · ${lang.name}")
+                }
+                speechLauncher.launch(intent)
+            },modifier=Modifier.fillMaxWidth()){Text("🎙 Ask by voice")}
+            Button(onClick={
+                answer=coachReply()
+                if(autoSpeak&&ready){tts?.language=lang.locale;tts?.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"rs-coach")}
+            },enabled=question.isNotBlank(),modifier=Modifier.fillMaxWidth()){Text("Ask AI Coach")}
         }
-
-        if (answer.isNotBlank()) {
-            RsPanel(c) {
-                Text("COACH", color = c.bright, fontWeight = FontWeight.Bold)
-                Text(answer, color = c.text)
-                Button(
-                    onClick = {
-                        if (ready) {
-                            tts?.language = lang.locale
-                            tts?.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "rs-repeat")
-                        }
-                    },
-                    enabled = ready,
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("🔊 Speak answer") }
-            }
+        if(answer.isNotBlank()) RsPanel(c) {
+            Text("COACH",color=c.bright,fontWeight=FontWeight.Bold)
+            Text(answer,color=c.text)
+            Button(onClick={if(ready){tts?.language=lang.locale;tts?.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"rs-repeat")}},enabled=ready,modifier=Modifier.fillMaxWidth()){Text("🔊 Speak answer")}
         }
         Spacer(Modifier.height(20.dp))
     }
