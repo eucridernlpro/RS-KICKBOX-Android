@@ -105,7 +105,7 @@ fun RsBrandSiteSettingsV21(c:RsPalette,store:RsStore){
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null&&active.isNotBlank()){runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)};store.ps("brand_asset_$active",uri.toString());refresh++;message="$active updated."}}
     RsScroll(c,"Branding & Site Settings","Trainer-controlled RS identity, logos and app presentation."){
         RsPanel(c){Text("APP IDENTITY",color=c.bright,fontWeight=FontWeight.Black);OutlinedTextField(header,{header=it},label={Text("Header / app name")},modifier=Modifier.fillMaxWidth());OutlinedTextField(title,{title=it},label={Text("Login title")},modifier=Modifier.fillMaxWidth());OutlinedTextField(subtitle,{subtitle=it},label={Text("Login subtitle")},modifier=Modifier.fillMaxWidth());OutlinedTextField(footer,{footer=it},label={Text("Footer text")},modifier=Modifier.fillMaxWidth());Button(onClick={store.ps("brand_header_name",header.trim());store.ps("brand_login_title",title.trim());store.ps("brand_login_subtitle",subtitle.trim());store.ps("brand_footer_text",footer.trim());message="Brand text saved."},modifier=Modifier.fillMaxWidth()){Text("Save brand text")};if(message.isNotBlank())Text(message,color=c.muted)}
-        listOf("main_logo" to "Main RS logo","compact_logo" to "Compact header logo","favicon" to "Favicon / release icon preview").forEach{(keyName,label)->
+        listOf("main_logo" to "Main RS logo","compact_logo" to "Compact header logo","royal_crown" to "Royal crown artwork","favicon" to "Favicon / release icon preview").forEach{(keyName,label)->
             val uri=store.s("brand_asset_$keyName","")
             RsPanel(c){Text(label,color=c.bright,fontWeight=FontWeight.Bold);if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.fillMaxWidth().height(110.dp),"CENTER") else Box(Modifier.fillMaxWidth().height(70.dp).background(c.panel2),contentAlignment=Alignment.Center){Text("♛ RS",color=c.bright,fontSize=24.sp,fontWeight=FontWeight.Black)};Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){Button(onClick={active=keyName;picker.launch(arrayOf("image/*"))},modifier=Modifier.weight(1f)){Text(if(uri.isBlank())"Upload" else "Replace")};OutlinedButton(onClick={store.ps("brand_asset_$keyName","");refresh++},enabled=uri.isNotBlank(),modifier=Modifier.weight(1f)){Text("Reset")}}}
         }
@@ -128,7 +128,15 @@ fun RsPerPageBackgroundV21(store:RsStore,route:String,content:@Composable ()->Un
 @Composable
 fun RsBrandedHeaderV21(c:RsPalette,store:RsStore,content:@Composable ColumnScope.()->Unit){
     val uri=store.s(visualKeyV21("header"),"")
-    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.panel)){if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.matchParentSize(),store.s(posKeyV21("header"),"CENTER"));Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=store.s(opacityKeyV21("header"),"0.55").toFloatOrNull()?:.55f)));Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp),content=content)}
+    val compactLogo=store.s("brand_asset_compact_logo","")
+    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.panel)){
+        if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.matchParentSize(),store.s(posKeyV21("header"),"CENTER"))
+        Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=store.s(opacityKeyV21("header"),"0.55").toFloatOrNull()?:.55f)))
+        Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+            if(compactLogo.isNotBlank())RsUriPreviewV21(compactLogo,Modifier.height(42.dp).width(82.dp),"CENTER")
+            content()
+        }
+    }
 }
 
 @Composable
