@@ -224,35 +224,47 @@ private fun RsMusicWallpaperV20(c:RsPalette,store:RsStore,scene:Int){
     val infinite=rememberInfiniteTransition(label="musicwall")
     val move by infinite.animateFloat(0f,1f,infiniteRepeatable(tween(7000,easing=LinearEasing),RepeatMode.Reverse),label="move")
     Box(Modifier.fillMaxSize()){
-        if(custom.isNotBlank())RsUriPreviewV21(custom,Modifier.fillMaxSize(),store.s("visual_v21_pos_music_wall_${scene+1}","CENTER"))
-        Canvas(Modifier.fillMaxSize().then(if(custom.isBlank())Modifier.background(Brush.linearGradient(listOf(Color(0xFF080706),Color(0xFF1A1208),Color.Black))) else Modifier)){
-        val w=size.width;val h=size.height
-        drawCircle(c.bright.copy(alpha=.10f),w*(.34f+.06f*move),Offset(w*(.18f+.10f*move),h*.16f))
-        drawCircle(Color(0xFFE25B3F).copy(alpha=.09f),w*.27f,Offset(w*(.82f-.08f*move),h*.20f))
-        repeat(3){i->drawLine(c.bright.copy(alpha=.15f),Offset(0f,h*(.52f+i*.06f)),Offset(w,h*(.49f+i*.06f)),3f)}
-        when(scene){
-            0->{
-                drawCircle(Color.Black.copy(.86f),w*.045f,Offset(w*.68f,h*.26f))
-                drawLine(Color.Black.copy(.90f),Offset(w*.68f,h*.31f),Offset(w*.61f,h*.56f),18f)
-                drawLine(Color.Black.copy(.90f),Offset(w*.65f,h*.37f),Offset(w*.84f,h*.28f),14f)
-                drawLine(Color.Black.copy(.90f),Offset(w*.61f,h*.55f),Offset(w*.47f,h*.76f),17f)
-                drawLine(Color.Black.copy(.90f),Offset(w*.61f,h*.55f),Offset(w*.75f,h*.72f),17f)
-            }
-            1->{
-                drawRoundRect(Color.Black.copy(.72f),Offset(w*.58f,h*.18f),androidx.compose.ui.geometry.Size(w*.13f,h*.43f),androidx.compose.ui.geometry.CornerRadius(28f,28f))
-                drawLine(c.bright.copy(.30f),Offset(w*.645f,0f),Offset(w*.645f,h*.18f),6f)
-            }
-            2->{
-                drawCircle(Color.Black.copy(.80f),w*.04f,Offset(w*.60f,h*.28f))
-                drawCircle(Color.Black.copy(.80f),w*.04f,Offset(w*.76f,h*.30f))
-                drawLine(Color.Black.copy(.82f),Offset(w*.60f,h*.34f),Offset(w*.57f,h*.60f),16f)
-                drawLine(Color.Black.copy(.82f),Offset(w*.76f,h*.36f),Offset(w*.80f,h*.61f),16f)
-                drawLine(c.bright.copy(.25f),Offset(w*.62f,h*.42f),Offset(w*.74f,h*.40f),8f)
-            }
-            else->{
-                repeat(5){i->drawCircle(c.bright.copy(alpha=.08f+i*.015f),w*(.05f+i*.025f),Offset(w*(.45f+i*.09f),h*(.25f+i*.06f)),style=Stroke(5f))}
+        if(custom.isNotBlank()){
+            RsUriPreviewV21(custom,Modifier.fillMaxSize(),store.s("visual_v21_pos_music_wall_${scene+1}","CENTER"))
+        }
+        Canvas(
+            Modifier.fillMaxSize().then(
+                if(custom.isBlank()) Modifier.background(Brush.linearGradient(listOf(Color(0xFF080706),Color(0xFF1A1208),Color.Black)))
+                else Modifier
+            )
+        ){
+            val w=size.width;val h=size.height
+            drawCircle(c.bright.copy(alpha=.10f),w*(.34f+.06f*move),Offset(w*(.18f+.10f*move),h*.16f))
+            drawCircle(Color(0xFFE25B3F).copy(alpha=.09f),w*.27f,Offset(w*(.82f-.08f*move),h*.20f))
+            repeat(3){i->drawLine(c.bright.copy(alpha=.15f),Offset(0f,h*(.52f+i*.06f)),Offset(w,h*(.49f+i*.06f)),3f)}
+            if(custom.isBlank()){
+                when(scene){
+                    0->{
+                        drawCircle(Color.Black.copy(.86f),w*.045f,Offset(w*.68f,h*.26f))
+                        drawLine(Color.Black.copy(.90f),Offset(w*.68f,h*.31f),Offset(w*.61f,h*.56f),18f)
+                        drawLine(Color.Black.copy(.90f),Offset(w*.65f,h*.37f),Offset(w*.84f,h*.28f),14f)
+                        drawLine(Color.Black.copy(.90f),Offset(w*.61f,h*.55f),Offset(w*.47f,h*.76f),17f)
+                        drawLine(Color.Black.copy(.90f),Offset(w*.61f,h*.55f),Offset(w*.75f,h*.72f),17f)
+                    }
+                    1->{
+                        drawRoundRect(Color.Black.copy(.72f),Offset(w*.58f,h*.18f),androidx.compose.ui.geometry.Size(w*.13f,h*.43f),androidx.compose.ui.geometry.CornerRadius(28f,28f))
+                        drawLine(c.bright.copy(.30f),Offset(w*.645f,0f),Offset(w*.645f,h*.18f),6f)
+                    }
+                    2->{
+                        drawCircle(Color.Black.copy(.80f),w*.04f,Offset(w*.60f,h*.28f))
+                        drawCircle(Color.Black.copy(.80f),w*.04f,Offset(w*.76f,h*.30f))
+                        drawLine(Color.Black.copy(.82f),Offset(w*.60f,h*.34f),Offset(w*.57f,h*.60f),16f)
+                        drawLine(Color.Black.copy(.82f),Offset(w*.76f,h*.36f),Offset(w*.80f,h*.61f),16f)
+                        drawLine(c.bright.copy(.25f),Offset(w*.62f,h*.42f),Offset(w*.74f,h*.40f),8f)
+                    }
+                    else->{
+                        repeat(5){i->drawCircle(c.bright.copy(alpha=.08f+i*.015f),w*(.05f+i*.025f),Offset(w*(.45f+i*.09f),h*(.25f+i*.06f)),style=Stroke(5f))}
+                    }
+                }
             }
         }
-        if(custom.isNotBlank())Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha=.08f),Color.Black.copy(alpha=.26f),Color.Black.copy(alpha=.52f)))))
+        if(custom.isNotBlank()){
+            Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha=.08f),Color.Black.copy(alpha=.26f),Color.Black.copy(alpha=.52f)))))
+        }
     }
 }
