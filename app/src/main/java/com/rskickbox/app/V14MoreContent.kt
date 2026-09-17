@@ -10,12 +10,14 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 private fun RsInfoModule(c:RsPalette,title:String,sub:String,items:List<Pair<String,String>>,action:String="Open"){
+    var feedback by remember { mutableStateOf("") }
     RsScroll(c,title,sub){
+        if(feedback.isNotBlank()) RsPanel(c){ Text(feedback,color=c.bright,fontWeight=FontWeight.Bold) }
         items.forEach{(name,body)->
             RsPanel(c){
                 Text(name,color=c.bright,fontWeight=FontWeight.Bold)
                 Text(body,color=c.muted)
-                OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth()){Text(action)}
+                OutlinedButton(onClick={feedback="$action · $name"},modifier=Modifier.fillMaxWidth()){Text(action)}
             }
         }
     }
@@ -53,19 +55,22 @@ fun RsHistoryHub(c:RsPalette)=RsInfoModule(c,"Training History","Recent sessions
 
 @Composable
 fun RsPrivateLessonsHub(c:RsPalette){
-    var booked by remember{mutableStateOf(false)}
+    var selected by remember{mutableStateOf("")}
     RsScroll(c,"Private Lessons","Book focused one-to-one coaching sessions."){
+        if(selected.isNotBlank()) RsPanel(c){Text("Request sent for $selected",color=c.bright,fontWeight=FontWeight.Bold)}
         RsPanel(c){Text("Coach Ricardo",color=c.bright,fontWeight=FontWeight.Bold);Text("Technique correction · padwork · fight preparation · confidence building",color=c.muted)}
-        listOf("Tue 22 Sep · 17:00","Thu 24 Sep · 16:00","Sat 26 Sep · 12:30").forEach{slot->RsPanel(c){Text(slot,color=c.text,fontWeight=FontWeight.Bold);Button(onClick={booked=!booked},modifier=Modifier.fillMaxWidth()){Text(if(booked)"Request sent" else "Request lesson")}}}
+        listOf("Tue 22 Sep · 17:00","Thu 24 Sep · 16:00","Sat 26 Sep · 12:30").forEach{slot->RsPanel(c){Text(slot,color=c.text,fontWeight=FontWeight.Bold);Button(onClick={selected=slot},modifier=Modifier.fillMaxWidth()){Text(if(selected==slot)"✓ Requested" else "Request lesson")}}}
     }
 }
 
 @Composable
 fun RsProfileHub(c:RsPalette){
+    var goalsEdit by remember{mutableStateOf(false)}
+    var detailsEdit by remember{mutableStateOf(false)}
     RsScroll(c,"My Profile","Member identity, goals and club information."){
         RsPanel(c){Text("ALEX MEMBER",color=c.bright,fontWeight=FontWeight.Black);Text("RS PRO · Level 3 · 12,480 XP",color=c.text);Text("Primary goal · stronger fundamentals and cleaner defense",color=c.muted)}
-        RsPanel(c){Text("TRAINING GOALS",color=c.bright,fontWeight=FontWeight.Bold);Text("2–3 club sessions weekly\n1 home technique session\nImprove jab recovery and footwork",color=c.text);OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth()){Text("Edit goals")}}
-        RsPanel(c){Text("EMERGENCY & CONTACT",color=c.bright,fontWeight=FontWeight.Bold);Text("Emergency contact and medical notes are private and visible only where needed for club safety.",color=c.muted);OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth()){Text("Manage details")}}
+        RsPanel(c){Text("TRAINING GOALS",color=c.bright,fontWeight=FontWeight.Bold);Text("2–3 club sessions weekly\n1 home technique session\nImprove jab recovery and footwork",color=c.text);OutlinedButton(onClick={goalsEdit=!goalsEdit},modifier=Modifier.fillMaxWidth()){Text(if(goalsEdit)"✓ Goal editor opened" else "Edit goals")}}
+        RsPanel(c){Text("EMERGENCY & CONTACT",color=c.bright,fontWeight=FontWeight.Bold);Text("Emergency contact and medical notes are private and visible only where needed for club safety.",color=c.muted);OutlinedButton(onClick={detailsEdit=!detailsEdit},modifier=Modifier.fillMaxWidth()){Text(if(detailsEdit)"✓ Details editor opened" else "Manage details")}}
     }
 }
 
@@ -80,8 +85,10 @@ fun RsGroupsHub(c:RsPalette)=RsInfoModule(c,"Groups","Club spaces for focused co
 @Composable
 fun RsSearchHub(c:RsPalette){
     var q by remember{mutableStateOf("")}
+    var searched by remember{mutableStateOf(false)}
     RsScroll(c,"Search","Search the RS app across techniques, lessons, media and events."){
-        RsPanel(c){OutlinedTextField(q,{q=it},label={Text("Search RS KICKBOX")},modifier=Modifier.fillMaxWidth());Button(onClick={},enabled=q.isNotBlank(),modifier=Modifier.fillMaxWidth()){Text("Search")}}
+        RsPanel(c){OutlinedTextField(q,{q=it;searched=false},label={Text("Search RS KICKBOX")},modifier=Modifier.fillMaxWidth());Button(onClick={searched=true},enabled=q.isNotBlank(),modifier=Modifier.fillMaxWidth()){Text("Search")}}
+        if(searched) RsPanel(c){Text("RESULTS FOR ‘$q’",color=c.bright,fontWeight=FontWeight.Bold);Text("Technique Library · Academy · Training Media · Knowledge Vault",color=c.text);Text("Preview search is local; production search will use the shared content index.",color=c.muted)}
         RsPanel(c){Text("POPULAR",color=c.bright,fontWeight=FontWeight.Bold);Text("Jab · Roundhouse · Defense · Footwork · Home training · Fight camp",color=c.muted)}
     }
 }
@@ -137,8 +144,10 @@ fun RsEventManagerV14(c:RsPalette)=RsInfoModule(c,"Event Manager","Create semina
 
 @Composable
 fun RsQrAttendanceV14(c:RsPalette){
+    var status by remember{mutableStateOf("")}
     RsScroll(c,"QR Attendance","Fast check-in workflow for club sessions."){
-        RsPanel(c){Text("TODAY · FUNDAMENTALS 18:00",color=c.bright,fontWeight=FontWeight.Bold);Text("14 booked · 11 checked in",color=c.muted);Button(onClick={},modifier=Modifier.fillMaxWidth()){Text("Open QR scanner")};OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth()){Text("Manual check-in")}}
+        if(status.isNotBlank()) RsPanel(c){Text(status,color=c.bright,fontWeight=FontWeight.Bold)}
+        RsPanel(c){Text("TODAY · FUNDAMENTALS 18:00",color=c.bright,fontWeight=FontWeight.Bold);Text("14 booked · 11 checked in",color=c.muted);Button(onClick={status="QR scanner preview opened"},modifier=Modifier.fillMaxWidth()){Text("Open QR scanner")};OutlinedButton(onClick={status="Manual check-in form opened"},modifier=Modifier.fillMaxWidth()){Text("Manual check-in")}}
         RsPanel(c){Text("LAST CHECK-INS",color=c.bright,fontWeight=FontWeight.Bold);Text("18:01 · Alex Member\n17:59 · Sofia R.\n17:58 · Noah K.",color=c.text)}
     }
 }
@@ -146,8 +155,9 @@ fun RsQrAttendanceV14(c:RsPalette){
 @Composable
 fun RsSessionBuilderV14(c:RsPalette){
     var rounds by remember{mutableFloatStateOf(5f)}
+    var saved by remember{mutableStateOf(false)}
     RsScroll(c,"Session Builder","Build reusable round structures for class or home training."){
-        RsPanel(c){Text("ROUNDS ${rounds.toInt()}",color=c.bright,fontWeight=FontWeight.Bold);Slider(rounds,{rounds=it},valueRange=3f..12f,steps=8);Text("Work 2:00 · Rest 0:45 · Cue: Jab · Cross · Low Kick",color=c.muted);Button(onClick={},modifier=Modifier.fillMaxWidth()){Text("Save session template")}}
+        RsPanel(c){Text("ROUNDS ${rounds.toInt()}",color=c.bright,fontWeight=FontWeight.Bold);Slider(rounds,{rounds=it;saved=false},valueRange=3f..12f,steps=8);Text("Work 2:00 · Rest 0:45 · Cue: Jab · Cross · Low Kick",color=c.muted);Button(onClick={saved=true},modifier=Modifier.fillMaxWidth()){Text(if(saved)"✓ Session template saved" else "Save session template")}}
     }
 }
 
