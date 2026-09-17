@@ -42,66 +42,75 @@ fun RsKickboxV11App() {
             val activeRole = role!!
             val scope = if (activeRole == RsRole.TRAINER) BgScope.TRAINER_TRAINING else BgScope.STUDENT_TRAINING
             RsLiveBackground(c, store, scope) {
-                RsShell(c,activeRole,lang,route,{selected->lang=selected;store.ps("lang",selected.code)},{route=it},{role=null}) {
-                    when (route) {
-                        "home", "trainer" -> RsDashboard(c, activeRole, lang) { route = it }
-                        "backgrounds" -> RsBackgroundStudio(c, store)
-                        "themes" -> RsThemeStudio(c, theme) { selected -> theme=selected;store.ps("theme",selected.name) }
-                        "voice" -> RsVoiceCoach(c, lang, store)
-                        "session" -> RsSession(c)
-                        "access" -> RsAccessControl(c, store)
-                        "payments" -> RsPaymentCenter(c, store)
-                        "members" -> RsMemberManager(c)
-                        "classes" -> if (activeRole==RsRole.TRAINER) RsClassManager(c) else RsStudentClasses(c)
-                        "attendance" -> RsAttendance(c)
-                        "invoices" -> RsInvoices(c)
-                        "book" -> if (activeRole==RsRole.TRAINER) RsBookManager(c) else RsTrainerBook(c)
-                        "settings" -> if (activeRole==RsRole.TRAINER) RsAdminSettings(c,store) else RsStudentSettings(c,store)
-                        "academy" -> RsAcademy(c)
-                        "progress" -> RsProgress(c)
-                        "challenges" -> RsChallenges(c)
-                        "fightcamp" -> RsFightCamp(c)
-                        "finance" -> RsFinance(c)
-                        "community" -> RsCommunity(c)
-                        "media" -> RsTrainingMedia(c)
-                        "techniques" -> RsTechniqueLibrary(c)
-                        "home_training" -> RsHomeTraining(c)
-                        "workout" -> RsWorkoutGenerator(c)
-                        "badges" -> RsBadges(c)
-                        "vault" -> RsKnowledgeVault(c)
-                        "compare" -> RsTechniqueCompare(c)
-                        "coachchat" -> RsPrivateCoachChat(c)
-                        "events" -> RsEvents(c)
-                        "notifications" -> RsNotificationsCenter(c)
-                        "analytics" -> RsAnalytics(c)
-                        "documents" -> RsDocuments(c)
-                        "support" -> RsSupport(c)
-                        "referrals" -> RsReferrals(c)
-                        "schedule" -> RsTrainerSchedule(c)
-                        "content" -> RsContentManager(c)
-                        "notes" -> RsCoachNotes(c)
-                        "homework" -> RsHomeworkHub(c)
-                        "favorites" -> RsFavoritesHub(c)
-                        "history" -> RsHistoryHub(c)
-                        "private_lessons" -> RsPrivateLessonsHub(c)
-                        "profile" -> RsProfileHub(c)
-                        "groups" -> RsGroupsHub(c)
-                        "search" -> RsSearchHub(c)
-                        "homework_admin" -> RsHomeworkManagerV14(c)
-                        "music_admin" -> RsMusicManagerV14(c)
-                        "lesson_editor" -> RsLessonEditorV14(c)
-                        "plans_admin" -> RsMembershipPlansV14(c)
-                        "progress_admin" -> RsProgressManagerV14(c)
-                        "assessments" -> RsAssessmentsV14(c)
-                        "events_admin" -> RsEventManagerV14(c)
-                        "qr_attendance" -> RsQrAttendanceV14(c)
-                        "session_builder" -> RsSessionBuilderV14(c)
-                        "challenge_admin" -> RsChallengeManagerV14(c)
-                        "fightcamp_admin" -> RsFightCampManagerV14(c)
-                        "landing_admin" -> RsLandingManagerV14(c)
-                        else -> RsGeneric(c, route, lang)
+                RsShell(
+                    c = c,
+                    role = activeRole,
+                    lang = lang,
+                    route = route,
+                    onLang = { selected -> lang = selected; store.ps("lang", selected.code) },
+                    onRoute = { selectedRoute -> route = selectedRoute },
+                    onLogout = { role = null },
+                    content = {
+                        when (route) {
+                            "home", "trainer" -> RsDashboard(c, activeRole, lang) { route = it }
+                            "backgrounds" -> RsBackgroundStudio(c, store)
+                            "themes" -> RsThemeStudio(c, theme) { selected -> theme=selected;store.ps("theme",selected.name) }
+                            "voice" -> RsVoiceCoach(c, lang, store)
+                            "session" -> RsSession(c)
+                            "access" -> RsAccessControl(c, store)
+                            "payments" -> RsPaymentCenter(c, store)
+                            "members" -> RsMemberManager(c)
+                            "classes" -> if (activeRole==RsRole.TRAINER) RsClassManager(c) else RsStudentClasses(c)
+                            "attendance" -> RsAttendance(c)
+                            "invoices" -> RsInvoices(c)
+                            "book" -> if (activeRole==RsRole.TRAINER) RsBookManager(c) else RsTrainerBook(c)
+                            "settings" -> if (activeRole==RsRole.TRAINER) RsAdminSettings(c,store) else RsStudentSettings(c,store)
+                            "academy" -> RsAcademy(c)
+                            "progress" -> RsProgress(c)
+                            "challenges" -> RsChallenges(c)
+                            "fightcamp" -> RsFightCamp(c)
+                            "finance" -> RsFinance(c)
+                            "community" -> RsCommunity(c)
+                            "media" -> RsTrainingMedia(c)
+                            "techniques" -> RsTechniqueLibrary(c)
+                            "home_training" -> RsHomeTraining(c)
+                            "workout" -> RsWorkoutGenerator(c)
+                            "badges" -> RsBadges(c)
+                            "vault" -> RsKnowledgeVault(c)
+                            "compare" -> RsTechniqueCompare(c)
+                            "coachchat" -> RsPrivateCoachChat(c)
+                            "events" -> RsEvents(c)
+                            "notifications" -> RsNotificationsCenter(c)
+                            "analytics" -> RsAnalytics(c)
+                            "documents" -> RsDocuments(c)
+                            "support" -> RsSupport(c)
+                            "referrals" -> RsReferrals(c)
+                            "schedule" -> RsTrainerSchedule(c)
+                            "content" -> RsContentManager(c)
+                            "notes" -> RsCoachNotes(c)
+                            "homework" -> RsHomeworkHub(c)
+                            "favorites" -> RsFavoritesHub(c)
+                            "history" -> RsHistoryHub(c)
+                            "private_lessons" -> RsPrivateLessonsHub(c)
+                            "profile" -> RsProfileHub(c)
+                            "groups" -> RsGroupsHub(c)
+                            "search" -> RsSearchHub(c)
+                            "homework_admin" -> RsHomeworkManagerV14(c)
+                            "music_admin" -> RsMusicManagerV14(c)
+                            "lesson_editor" -> RsLessonEditorV14(c)
+                            "plans_admin" -> RsMembershipPlansV14(c)
+                            "progress_admin" -> RsProgressManagerV14(c)
+                            "assessments" -> RsAssessmentsV14(c)
+                            "events_admin" -> RsEventManagerV14(c)
+                            "qr_attendance" -> RsQrAttendanceV14(c)
+                            "session_builder" -> RsSessionBuilderV14(c)
+                            "challenge_admin" -> RsChallengeManagerV14(c)
+                            "fightcamp_admin" -> RsFightCampManagerV14(c)
+                            "landing_admin" -> RsLandingManagerV14(c)
+                            else -> RsGeneric(c, route, lang)
+                        }
                     }
-                }
+                )
             }
         }
     }
@@ -126,7 +135,16 @@ private fun RsLogin(c:RsPalette,lang:RsLang,onLang:(RsLang)->Unit,onLogin:(RsRol
 }
 
 @Composable
-private fun RsShell(c:RsPalette,role:RsRole,lang:RsLang,route:String,onLang:(RsLang)->Unit,onRoute:(String)->Unit,onLogout:()->Unit,content:@Composable()->Unit){
+private fun RsShell(
+    c:RsPalette,
+    role:RsRole,
+    lang:RsLang,
+    route:String,
+    onLang:(RsLang)->Unit,
+    onRoute:(String)->Unit,
+    onLogout:()->Unit,
+    content:@Composable ()->Unit
+){
     val home=if(role==RsRole.TRAINER)"trainer" else "home"
     Column(Modifier.fillMaxSize().padding(9.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
         RsPanel(c){
