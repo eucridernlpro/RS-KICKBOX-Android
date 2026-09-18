@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -158,6 +159,12 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
 
     DisposableEffect(Unit){
         val engine=TextToSpeech(context){status->ready=status==TextToSpeech.SUCCESS}
+        engine.setOnUtteranceProgressListener(object:UtteranceProgressListener(){
+            override fun onStart(utteranceId:String?){scope.launch{speaking=true}}
+            override fun onDone(utteranceId:String?){scope.launch{speaking=false}}
+            @Deprecated("Deprecated in Java")
+            override fun onError(utteranceId:String?){scope.launch{speaking=false}}
+        })
         tts=engine
         onDispose{engine.stop();engine.shutdown()}
     }
