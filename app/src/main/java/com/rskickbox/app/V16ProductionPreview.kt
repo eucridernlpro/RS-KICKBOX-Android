@@ -206,6 +206,13 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
 
     RsScroll(c, "Release & Legal Center", "Trainer-side control for Play Store legal links, support contact and production-readiness checks.") {
         RsPanel(c) {
+            Text("CURRENT ACCEPTANCE BUILD", color = c.bright, fontWeight = FontWeight.Bold)
+            Text("RS KICKBOX v0.35.0 · versionCode 35", color = c.text)
+            Text("Package: com.rskickbox.app · targetSdk 36", color = c.muted)
+            Text("Local-ready: premium navigation drawer · 9-language enrollment UI · QR creation/scanning/gallery import · compact 100-student manager · visual/splash media tools.", color = c.text)
+            Text("Not production-connected yet: multi-device authentication, Supabase database, cloud media, push delivery, real AI vision, payment webhooks, signed Play Store AAB.", color = c.muted)
+        }
+        RsPanel(c) {
             Text("PUBLIC LEGAL LINKS", color = c.bright, fontWeight = FontWeight.Bold)
             OutlinedTextField(privacyUrl, { privacyUrl = it }, label = { Text("Privacy policy URL") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(termsUrl, { termsUrl = it }, label = { Text("Terms URL") }, modifier = Modifier.fillMaxWidth())
@@ -225,6 +232,10 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
         RsPanel(c) {
             Text("PLAY STORE RELEASE CHECK", color = c.bright, fontWeight = FontWeight.Bold)
             val checks = listOf(
+                "v0.35 Android acceptance source" to true,
+                "Private QR enrollment workflow" to true,
+                "Nine-language enrollment UI" to true,
+                "Premium role navigation drawer" to true,
                 "Privacy policy URL" to privacyUrl.startsWith("https://"),
                 "Account deletion URL" to deleteUrl.startsWith("https://"),
                 "Support email" to supportEmail.contains("@"),
