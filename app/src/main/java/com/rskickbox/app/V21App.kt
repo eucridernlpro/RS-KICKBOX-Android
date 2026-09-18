@@ -62,12 +62,13 @@ fun RsKickboxV21App() {
                                     "branding" -> RsBrandSiteSettingsV21(c, store)
                                     "intro_settings" -> RsIntroSettingsV21(c, store)
                                     "voice" -> RsTechniqueCoachV27(c, lang, store, active)
-                                    "session" -> SessionV21(c,lang)
+                                    "session" -> if(active==RsRole.TRAINER) RsSessionBuilderV52(c,store,lang) else RsSessionPlayerV52(c,store,lang)
                                     "access" -> RsAccessControlV49(c,store,lang)
                                     "payments" -> RsTrainerPaymentCenterV39(c,store,lang)
                                     "members" -> RsMemberManager(c,store,lang)
                                     "classes" -> if(active==RsRole.TRAINER) RsClassManagerV38(c,store,lang) else RsStudentClassesV38(c,store,lang)
                                     "attendance" -> RsAttendanceV38(c,store,lang)
+                                    "checkin" -> RsStudentCheckInV52(c,store,lang)
                                     "invoices" -> RsTrainerInvoicesV39(c,store,lang)
                                     "book" -> if(active==RsRole.TRAINER) RsBookManagerV45(c,store,lang) else RsBookLibraryV45(c,store,lang)
                                     "settings" -> if(active==RsRole.TRAINER) RsAdminSettingsV16(c,store) else RsStudentPrivacyV40(c,store,lang){
@@ -112,8 +113,8 @@ fun RsKickboxV21App() {
                                     "progress_admin" -> RsStudentProgressV46(c,store,lang)
                                     "assessments" -> RsAssessmentsV46(c,store,lang)
                                     "events_admin" -> RsEventManagerV42(c,store,lang)
-                                    "qr_attendance" -> RsQrAttendanceV14(c)
-                                    "session_builder" -> RsSessionBuilderV14(c)
+                                    "qr_attendance" -> RsQrAttendanceTrainerV52(c,store,lang)
+                                    "session_builder" -> RsSessionBuilderV52(c,store,lang)
                                     "challenge_admin" -> RsChallengeManagerV47(c,store,lang)
                                     "fightcamp_admin" -> RsFightCampManagerV47(c,store,lang)
                                     "landing_admin" -> RsPromotionManagerV45(c,store,lang)
@@ -302,6 +303,8 @@ private fun ShellV21(
         "plans_admin" to "Membership Plans",
         "voice" to "AI Technique Coach",
         "session" to "Trainer Session",
+        "session_builder" to "Session Builder",
+        "qr_attendance" to "QR Attendance",
         "content" to "Content Manager",
         "lesson_editor" to "Lesson Editor",
         "classes" to "Class Manager",
@@ -333,6 +336,7 @@ private fun ShellV21(
         "academy" to "RS Academy",
         "techniques" to "Technique Library",
         "classes" to "Classes & Events",
+        "checkin" to "Class Check-In",
         "homework" to "Homework",
         "progress" to "Progress",
         "challenges" to "Challenges",
