@@ -78,7 +78,7 @@ private fun coachSummaryV27(lang:RsLang):String=when(lang.code){
     else->"Focus on balance, a high guard, controlled hip rotation, and a quick return to your base stance. Train slowly and cleanly before adding speed."
 }
 
-private fun techniquePointsV27(lang:RsLang):List<Pair<String,String>>=when(lang.code){
+private fun techniquePointsV27(lang:RsLang):List<Pair<String,String>> = when(lang.code){
     "nl"->listOf("Basis & balans" to "Voeten stabiel, knieën zacht en gewicht gecentreerd.","Dekking" to "Handen keren direct terug naar het gezicht.","Rotatie" to "Draai heup en schouder samen zonder over te draaien.","Herstel" to "Kom na de techniek direct terug in een sterke positie.")
     "pt"->listOf("Base & equilíbrio" to "Pés estáveis, joelhos soltos e peso centrado.","Guarda" to "As mãos voltam imediatamente ao rosto.","Rotação" to "Anca e ombro rodam juntos sem exagerar.","Recuperação" to "Volta logo a uma posição forte depois da técnica.")
     "es"->listOf("Base & equilibrio" to "Pies estables, rodillas sueltas y peso centrado.","Guardia" to "Las manos vuelven inmediatamente al rostro.","Rotación" to "Cadera y hombro giran juntos sin exceso.","Recuperación" to "Vuelve rápido a una posición fuerte.")
