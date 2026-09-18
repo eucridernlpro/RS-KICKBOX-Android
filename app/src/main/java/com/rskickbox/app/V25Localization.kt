@@ -198,7 +198,25 @@ private val routeTitlesV25=mapOf(
     "analytics" to listOf("Analytics","Analytics","Análises","Analíticas","Analytique","Analysen","Analisi","Analityka","Analiz"),
     "notifications" to listOf("Notifications","Meldingen","Notificações","Notificaciones","Notifications","Benachrichtigungen","Notifiche","Powiadomienia","Bildirimler"),
     "support" to listOf("Support & Final QC","Support & Eind-QC","Suporte & QC Final","Soporte & QC Final","Support & QC Final","Support & Final-QC","Supporto & QC Finale","Wsparcie & QC","Destek & Son QC"),
-    "release" to listOf("Release & Legal Center","Release & Juridisch","Lançamento & Legal","Lanzamiento & Legal","Publication & Juridique","Release & Recht","Release & Legale","Publikacja & Prawo","Yayın & Hukuk")
+    "release" to listOf("Release & Legal Center","Release & Juridisch","Lançamento & Legal","Lanzamiento & Legal","Publication & Juridique","Release & Recht","Release & Legale","Publikacja & Prawo","Yayın & Hukuk"),
+    "landing_admin" to listOf("Promotion Manager","Promotiebeheer","Gestor de Promoção","Gestor de Promoción","Gestion Promotion","Promo-Manager","Gestione Promozioni","Menedżer Promocji","Promosyon Yönetimi"),
+    "lesson_editor" to listOf("Lesson Editor","Leseditor","Editor de Aulas","Editor de Clases","Éditeur de Cours","Lektionseditor","Editor Lezioni","Edytor Lekcji","Ders Editörü"),
+    "content" to listOf("Content Manager","Contentbeheer","Gestor de Conteúdo","Gestor de Contenido","Gestion Contenu","Content-Manager","Gestione Contenuti","Menedżer Treści","İçerik Yönetimi"),
+    "homework_admin" to listOf("Homework Manager","Huiswerkbeheer","Gestor de Tarefas","Gestor de Tareas","Gestion Devoirs","Hausaufgaben-Manager","Gestione Compiti","Menedżer Zadań","Ödev Yönetimi"),
+    "session_builder" to listOf("Session Builder","Sessiebouwer","Criador de Sessões","Creador de Sesiones","Créateur de Sessions","Session-Builder","Crea Sessioni","Kreator Sesji","Seans Oluşturucu"),
+    "music_admin" to listOf("RS Music Manager","RS Muziekbeheer","Gestor de Música RS","Gestor de Música RS","Gestion Musique RS","RS Musik-Manager","Gestione Musica RS","Menedżer Muzyki RS","RS Müzik Yönetimi"),
+    "notes" to listOf("Coach Notes","Coachnotities","Notas do Coach","Notas del Coach","Notes Coach","Coach-Notizen","Note Coach","Notatki Trenera","Koç Notları"),
+    "plans_admin" to listOf("Membership Plans","Lidmaatschapsplannen","Planos de Adesão","Planes de Membresía","Formules d'Adhésion","Mitgliedschaftspläne","Piani Abbonamento","Plany Członkostwa","Üyelik Planları"),
+    "progress_admin" to listOf("Progress Manager","Voortgangsbeheer","Gestor de Progresso","Gestor de Progreso","Gestion Progression","Fortschrittsmanager","Gestione Progressi","Menedżer Postępów","İlerleme Yönetimi"),
+    "assessments" to listOf("Coach Assessments","Coachbeoordelingen","Avaliações do Coach","Evaluaciones del Coach","Évaluations Coach","Coach-Bewertungen","Valutazioni Coach","Oceny Trenera","Koç Değerlendirmeleri"),
+    "challenge_admin" to listOf("Challenge Manager","Uitdagingenbeheer","Gestor de Desafios","Gestor de Desafíos","Gestion Défis","Challenge-Manager","Gestione Sfide","Menedżer Wyzwań","Meydan Okuma Yönetimi"),
+    "fightcamp_admin" to listOf("Fight Camp Manager","Fight Camp Beheer","Gestor Fight Camp","Gestor Fight Camp","Gestion Fight Camp","Fight-Camp-Manager","Gestione Fight Camp","Menedżer Fight Camp","Fight Camp Yönetimi"),
+    "attendance" to listOf("Attendance","Aanwezigheid","Presenças","Asistencia","Présences","Anwesenheit","Presenze","Obecność","Yoklama"),
+    "qr_attendance" to listOf("QR Attendance","QR Aanwezigheid","Presenças QR","Asistencia QR","Présence QR","QR-Anwesenheit","Presenze QR","Obecność QR","QR Yoklama"),
+    "events_admin" to listOf("Event Manager","Eventbeheer","Gestor de Eventos","Gestor de Eventos","Gestion Événements","Event-Manager","Gestione Eventi","Menedżer Wydarzeń","Etkinlik Yönetimi"),
+    "schedule" to listOf("Trainer Schedule","Trainerplanning","Agenda do Treinador","Agenda del Entrenador","Planning Entraîneur","Trainerplan","Agenda Allenatore","Plan Trenera","Antrenör Programı"),
+    "documents" to listOf("Documents & Waivers","Documenten & Verklaringen","Documentos & Termos","Documentos & Renuncias","Documents & Décharges","Dokumente & Verzicht","Documenti & Liberatorie","Dokumenty & Zgody","Belgeler & Feragatler"),
+    "referrals" to listOf("Referrals","Doorverwijzingen","Referências","Referidos","Parrainages","Empfehlungen","Referral","Polecenia","Referanslar")
 )
 
 private val routeHintsV25=mapOf(
