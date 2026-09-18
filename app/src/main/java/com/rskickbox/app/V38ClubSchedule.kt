@@ -92,7 +92,7 @@ private fun rsBookedIdsV38(store:RsStore):Set<String> =
 private fun rsSaveBookedIdsV38(store:RsStore,ids:Set<String>)=
     store.ps("student_bookings_v38_"+rsBookingOwnerV38(store),ids.joinToString(","))
 
-private fun rsAttendanceKeyV38(classId:String,student:String)=
+fun rsAttendanceKeyV38(classId:String,student:String)=
     "attendance_v38_"+classId+"_"+student.lowercase().replace(Regex("[^a-z0-9]"),"_")
 
 private fun rsClassUiV38(lang:RsLang,key:String):String{
