@@ -38,7 +38,7 @@ private val visualSlotsV21=listOf(
     VisualSlotV21("music_wall_2","Music wallpaper 2","Music Player","BIG","Rotating live-audio wallpaper"),
     VisualSlotV21("music_wall_3","Music wallpaper 3","Music Player","BIG","Rotating live-audio wallpaper"),
     VisualSlotV21("music_wall_4","Music wallpaper 4","Music Player","BIG","Rotating live-audio wallpaper"),
-    VisualSlotV21("voice","AI Voice Coach","Student / Training","BIG","AI coach background"),
+    VisualSlotV21("voice","AI Technique Coach","Student / Training","BIG","AI coach background"),
     VisualSlotV21("session","Session Player","Student / Training","BIG","Session timer background"),
     VisualSlotV21("academy","RS Academy","Student / Training","BIG","Academy background"),
     VisualSlotV21("techniques","Technique Library","Student / Training","BIG","Technique library background"),
@@ -99,7 +99,7 @@ private val visualSlotsV21=listOf(
 )
 
 private val dashboardTileSlotsV26=listOf(
-    "voice" to "AI Voice Coach","session" to "Session Player","academy" to "RS Academy","techniques" to "Technique Library",
+    "voice" to "AI Technique Coach","session" to "Session Player","academy" to "RS Academy","techniques" to "Technique Library",
     "home_training" to "Home Training","workout" to "Workout Generator","classes" to "Classes & Events","events" to "RS Events",
     "coachchat" to "Private Coach Chat","community" to "Community","groups" to "Groups","private_lessons" to "Private Lessons",
     "progress" to "Progress","challenges" to "Challenges","badges" to "Badges","fightcamp" to "Fight Camp",
