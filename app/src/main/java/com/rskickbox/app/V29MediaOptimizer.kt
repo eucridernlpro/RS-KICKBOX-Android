@@ -6,7 +6,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.annotation.OptIn
 import androidx.media3.common.Effect
-import androidx.media3.common.Effects
+import androidx.media3.transformer.Effects
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
