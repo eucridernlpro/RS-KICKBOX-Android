@@ -98,66 +98,190 @@ private val visualSlotsV21=listOf(
     VisualSlotV21("release","Release & Legal Center","Trainer / Business","BIG","Release background")
 )
 
+private val dashboardTileSlotsV26=listOf(
+    "voice" to "AI Voice Coach","session" to "Session Player","academy" to "RS Academy","techniques" to "Technique Library",
+    "home_training" to "Home Training","workout" to "Workout Generator","classes" to "Classes & Events","events" to "RS Events",
+    "coachchat" to "Private Coach Chat","community" to "Community","groups" to "Groups","private_lessons" to "Private Lessons",
+    "progress" to "Progress","challenges" to "Challenges","badges" to "Badges","fightcamp" to "Fight Camp",
+    "compare" to "Technique Compare","history" to "Training History","vault" to "Knowledge Vault","homework" to "Homework",
+    "favorites" to "Saved & Favorites","media" to "Training Media","music" to "RS Music","finance" to "Membership & Payments",
+    "book" to "Trainer Book","profile" to "My Profile","search" to "Search","settings" to "Settings & Privacy",
+    "themes" to "Visual Theme Studio","backgrounds" to "Visual Asset Studio","branding" to "Branding & Site Settings","intro_settings" to "Intro & Splash",
+    "landing_admin" to "Promotion Manager","lesson_editor" to "Lesson Editor","content" to "Content Manager","homework_admin" to "Homework Manager",
+    "session_builder" to "Session Builder","music_admin" to "RS Music Manager","notes" to "Coach Notes","members" to "Student Manager",
+    "access" to "Access & Subscriptions","plans_admin" to "Membership Plans","progress_admin" to "Progress Manager","assessments" to "Coach Assessments",
+    "challenge_admin" to "Challenge Manager","fightcamp_admin" to "Fight Camp Manager","attendance" to "Attendance","qr_attendance" to "QR Attendance",
+    "events_admin" to "Event Manager","schedule" to "Trainer Schedule","notifications" to "Notifications","documents" to "Documents & Waivers",
+    "referrals" to "Referrals","payments" to "Payment Center","invoices" to "Invoices","analytics" to "Analytics",
+    "support" to "Support & Final QC","release" to "Release & Legal Center"
+).map{(route,title)->VisualSlotV21("tile_$route",title,"Dashboard tiles","SMALL","Dashboard card visual")}
+
+private val allVisualSlotsV26=visualSlotsV21+dashboardTileSlotsV26
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
     val context=LocalContext.current
-    var active by remember{mutableStateOf<VisualSlotV21?>(null)}
+    var selectedGroup by remember{mutableStateOf(allVisualSlotsV26.first().group)}
+    var selectedSlotKey by remember{mutableStateOf(allVisualSlotsV26.first().key)}
+    var groupMenuOpen by remember{mutableStateOf(false)}
+    var slotMenuOpen by remember{mutableStateOf(false)}
     var message by remember{mutableStateOf("")}
     var refresh by remember{mutableIntStateOf(0)}
-    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
-        val slot=active
-        if(uri!=null&&slot!=null){
-            runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
-            store.ps(visualKeyV21(slot.key),uri.toString());message="${slot.title} saved.";refresh++
-        }
-    }
-    RsScroll(c,"Visual Asset Studio","Control small, medium and full-page visuals across RS KICKBOX."){
-        RsPanel(c){Text("GLOBAL VISUAL LIBRARY",color=c.bright,fontWeight=FontWeight.Black);Text("Every page, card and banner can use its own uploaded visual, position and readability overlay.",color=c.muted);if(message.isNotBlank())Text(message,color=c.bright,fontSize=11.sp)}
-        visualSlotsV21.groupBy{it.group}.forEach{(group,slots)->
-            Text(group.uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=13.sp)
-            slots.forEach{slot->key(refresh,slot.key){VisualSlotCardV21(c,store,slot,{active=slot;picker.launch(arrayOf("image/*"))}){refresh++}}}
-        }
-        Text("DASHBOARD CARD BACKGROUNDS",color=c.bright,fontWeight=FontWeight.Black,fontSize=13.sp)
-        val tiles=listOf(
-            "voice" to "AI Voice Coach","session" to "Session Player","academy" to "RS Academy","techniques" to "Technique Library",
-            "home_training" to "Home Training","workout" to "Workout Generator","classes" to "Classes & Events","events" to "RS Events",
-            "coachchat" to "Private Coach Chat","community" to "Community","groups" to "Groups","private_lessons" to "Private Lessons",
-            "progress" to "Progress","challenges" to "Challenges","badges" to "Badges","fightcamp" to "Fight Camp",
-            "compare" to "Technique Compare","history" to "Training History","vault" to "Knowledge Vault","homework" to "Homework",
-            "favorites" to "Saved & Favorites","media" to "Training Media","music" to "RS Music","finance" to "Membership & Payments",
-            "book" to "Trainer Book","profile" to "My Profile","search" to "Search","settings" to "Settings & Privacy",
-            "themes" to "Visual Theme Studio","backgrounds" to "Visual Asset Studio","branding" to "Branding & Site Settings","intro_settings" to "Intro & Splash",
-            "landing_admin" to "Promotion Manager","lesson_editor" to "Lesson Editor","content" to "Content Manager","homework_admin" to "Homework Manager",
-            "session_builder" to "Session Builder","music_admin" to "RS Music Manager","notes" to "Coach Notes","members" to "Student Manager",
-            "access" to "Access & Subscriptions","plans_admin" to "Membership Plans","progress_admin" to "Progress Manager","assessments" to "Coach Assessments",
-            "challenge_admin" to "Challenge Manager","fightcamp_admin" to "Fight Camp Manager","attendance" to "Attendance","qr_attendance" to "QR Attendance",
-            "events_admin" to "Event Manager","schedule" to "Trainer Schedule","notifications" to "Notifications","documents" to "Documents & Waivers",
-            "referrals" to "Referrals","payments" to "Payment Center","invoices" to "Invoices","analytics" to "Analytics",
-            "support" to "Support & Final QC","release" to "Release & Legal Center"
-        )
-        tiles.forEach{(route,title)->
-            val slot=VisualSlotV21("tile_$route",title,"Dashboard tiles","SMALL","Dashboard card visual")
-            key(refresh,slot.key){VisualSlotCardV21(c,store,slot,{active=slot;picker.launch(arrayOf("image/*"))}){refresh++}}
-        }
-    }
-}
 
-@Composable
-private fun VisualSlotCardV21(c:RsPalette,store:RsStore,slot:VisualSlotV21,onUpload:()->Unit,onChanged:()->Unit){
-    var pos by remember{mutableStateOf(store.s(posKeyV21(slot.key),"CENTER"))}
-    var opacity by remember{mutableFloatStateOf(store.s(opacityKeyV21(slot.key),"0.55").toFloatOrNull()?:.55f)}
-    val uri=store.s(visualKeyV21(slot.key),"")
-    RsPanel(c){
-        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(slot.title,color=c.bright,fontWeight=FontWeight.Bold);Text("${slot.size} · ${slot.hint}",color=c.muted,fontSize=10.sp)};Surface(shape=RoundedCornerShape(12.dp),color=c.gold.copy(alpha=.18f),border=BorderStroke(1.dp,c.bright.copy(alpha=.35f))){Text(slot.size,color=c.bright,fontSize=9.sp,modifier=Modifier.padding(horizontal=9.dp,vertical=5.dp))}}
-        Box(Modifier.fillMaxWidth().height(if(slot.size=="BIG")140.dp else if(slot.size=="MEDIUM")95.dp else 80.dp).clip(RoundedCornerShape(16.dp)).background(c.panel2)){
-            if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.fillMaxSize(),pos) else Box(Modifier.fillMaxSize().background(c.gold.copy(alpha=.10f)),contentAlignment=Alignment.Center){Text("Default RS visual",color=c.muted)}
-            Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=opacity.coerceIn(0f,.85f))))
-            Text(if(uri.isBlank())"DEFAULT" else "CUSTOM SAVED",color=c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp,modifier=Modifier.align(Alignment.BottomStart).padding(10.dp))
+    val groups=remember{allVisualSlotsV26.map{it.group}.distinct()}
+    val visibleSlots=remember(selectedGroup){allVisualSlotsV26.filter{it.group==selectedGroup}}
+    val selected=visibleSlots.firstOrNull{it.key==selectedSlotKey}?:visibleSlots.first()
+
+    LaunchedEffect(selectedGroup){
+        if(visibleSlots.none{it.key==selectedSlotKey})selectedSlotKey=visibleSlots.first().key
+    }
+
+    var pos by remember(selected.key,refresh){mutableStateOf(store.s(posKeyV21(selected.key),"CENTER"))}
+    var opacity by remember(selected.key,refresh){mutableFloatStateOf(store.s(opacityKeyV21(selected.key),"0.55").toFloatOrNull()?:.55f)}
+    val uri=store.s(visualKeyV21(selected.key),"")
+
+    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){picked->
+        if(picked!=null){
+            runCatching{context.contentResolver.takePersistableUriPermission(picked,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+            store.ps(visualKeyV21(selected.key),picked.toString())
+            message="${selected.title} saved."
+            refresh++
         }
-        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){Button(onClick=onUpload,modifier=Modifier.weight(1f)){Text(if(uri.isBlank())"Upload" else "Replace")};OutlinedButton(onClick={store.ps(visualKeyV21(slot.key),"");onChanged()},enabled=uri.isNotBlank(),modifier=Modifier.weight(1f)){Text("Reset")}}
-        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("LEFT","CENTER","RIGHT","TOP","BOTTOM").forEach{p->FilterChip(selected=pos==p,onClick={pos=p;store.ps(posKeyV21(slot.key),p)},label={Text(p.take(1),fontSize=9.sp)})}}
-        Text("Dark overlay ${(opacity*100).toInt()}%",color=c.muted,fontSize=10.sp)
-        Slider(value=opacity,onValueChange={v->opacity=v;store.ps(opacityKeyV21(slot.key),v.toString())},valueRange=0f..0.85f)
+    }
+
+    Column(
+        Modifier.fillMaxSize().padding(horizontal=6.dp,vertical=4.dp),
+        verticalArrangement=Arrangement.spacedBy(8.dp)
+    ){
+        Text("VISUAL PLACEMENT EDITOR",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp)
+        Text("Choose one place. Only that visual is loaded and edited.",color=c.muted,fontSize=11.sp,maxLines=2)
+
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+            ExposedDropdownMenuBox(
+                expanded=groupMenuOpen,
+                onExpandedChange={groupMenuOpen=!groupMenuOpen},
+                modifier=Modifier.weight(1f)
+            ){
+                OutlinedTextField(
+                    value=selectedGroup,
+                    onValueChange={},
+                    readOnly=true,
+                    label={Text("Category",fontSize=10.sp)},
+                    trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(groupMenuOpen)},
+                    modifier=Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                    textStyle=LocalTextStyle.current.copy(fontSize=11.sp),
+                    singleLine=true
+                )
+                ExposedDropdownMenu(expanded=groupMenuOpen,onDismissRequest={groupMenuOpen=false}){
+                    groups.forEach{g->
+                        DropdownMenuItem(text={Text(g,fontSize=12.sp)},onClick={
+                            selectedGroup=g
+                            selectedSlotKey=allVisualSlotsV26.first{it.group==g}.key
+                            groupMenuOpen=false
+                        })
+                    }
+                }
+            }
+
+            ExposedDropdownMenuBox(
+                expanded=slotMenuOpen,
+                onExpandedChange={slotMenuOpen=!slotMenuOpen},
+                modifier=Modifier.weight(1.25f)
+            ){
+                OutlinedTextField(
+                    value=selected.title,
+                    onValueChange={},
+                    readOnly=true,
+                    label={Text("Place",fontSize=10.sp)},
+                    trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(slotMenuOpen)},
+                    modifier=Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                    textStyle=LocalTextStyle.current.copy(fontSize=10.sp),
+                    singleLine=true
+                )
+                ExposedDropdownMenu(expanded=slotMenuOpen,onDismissRequest={slotMenuOpen=false}){
+                    visibleSlots.forEach{slot->
+                        DropdownMenuItem(text={Text(slot.title,fontSize=12.sp)},onClick={selectedSlotKey=slot.key;slotMenuOpen=false})
+                    }
+                }
+            }
+        }
+
+        Surface(
+            modifier=Modifier.fillMaxWidth().weight(1f),
+            shape=RoundedCornerShape(22.dp),
+            color=c.panel,
+            border=BorderStroke(1.dp,c.gold.copy(alpha=.55f))
+        ){
+            Column(Modifier.fillMaxSize().padding(12.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
+                    Column(Modifier.weight(1f)){
+                        Text(selected.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp,maxLines=2)
+                        Text(selected.hint,color=c.muted,fontSize=10.sp,maxLines=2)
+                    }
+                    Surface(shape=RoundedCornerShape(12.dp),color=c.gold.copy(alpha=.18f),border=BorderStroke(1.dp,c.bright.copy(alpha=.35f))){
+                        Text(selected.size,color=c.bright,fontSize=9.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(horizontal=9.dp,vertical=5.dp))
+                    }
+                }
+
+                Text(
+                    when(selected.size){
+                        "SMALL"->"Best for dashboard cards. Use a clear subject with safe space for title text."
+                        "MEDIUM"->"Best for header/footer banners. Use a wide image with the main subject away from text controls."
+                        else->"Best for full-page backgrounds. Use portrait or adaptable artwork with important details away from screen edges."
+                    },
+                    color=c.text.copy(alpha=.84f),fontSize=9.sp,maxLines=3
+                )
+
+                Box(
+                    Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(18.dp)).background(c.panel2)
+                ){
+                    if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.fillMaxSize(),pos)
+                    else Box(Modifier.fillMaxSize().background(c.gold.copy(alpha=.10f)),contentAlignment=Alignment.Center){
+                        Column(horizontalAlignment=Alignment.CenterHorizontally){
+                            Text("♛ RS",color=c.bright,fontSize=28.sp,fontWeight=FontWeight.Black)
+                            Text("VISUAL PREVIEW",color=c.muted,fontSize=10.sp)
+                        }
+                    }
+                    Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=opacity.coerceIn(0f,.85f))))
+                    Text(if(uri.isBlank())"DEFAULT RS VISUAL" else "CUSTOM VISUAL SAVED",color=c.bright,fontWeight=FontWeight.Bold,fontSize=9.sp,modifier=Modifier.align(Alignment.BottomStart).padding(10.dp))
+                }
+
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                    Button(onClick={picker.launch(arrayOf("image/*"))},modifier=Modifier.weight(1f)){
+                        Text(if(uri.isBlank())"Upload" else "Replace",fontSize=11.sp)
+                    }
+                    OutlinedButton(
+                        onClick={store.ps(visualKeyV21(selected.key),"");message="${selected.title} reset.";refresh++},
+                        enabled=uri.isNotBlank(),
+                        modifier=Modifier.weight(1f)
+                    ){Text("Reset",fontSize=11.sp)}
+                }
+
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
+                    listOf("LEFT","CENTER","RIGHT","TOP","BOTTOM").forEach{p->
+                        FilterChip(
+                            selected=pos==p,
+                            onClick={pos=p;store.ps(posKeyV21(selected.key),p)},
+                            label={Text(p.take(1),fontSize=9.sp)},
+                            modifier=Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                    Text("Overlay ${(opacity*100).toInt()}%",color=c.muted,fontSize=9.sp,modifier=Modifier.width(75.dp))
+                    Slider(
+                        value=opacity,
+                        onValueChange={v->opacity=v;store.ps(opacityKeyV21(selected.key),v.toString())},
+                        valueRange=0f..0.85f,
+                        modifier=Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        if(message.isNotBlank())Text(message,color=c.bright,fontSize=10.sp,maxLines=1)
     }
 }
 
