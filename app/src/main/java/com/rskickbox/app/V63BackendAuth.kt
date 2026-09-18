@@ -135,7 +135,13 @@ suspend fun rsCreateStudentInviteV63(
     val raw=response.bodyAsText()
     if(!response.status.isSuccess()){
         val message=runCatching{JSONObject(raw).optString("error")}.getOrNull().orEmpty()
-        error(message.ifBlank{"Could not create student invitation ("+response.status.value+")."})
+        val safeMessage=when{
+            message.contains("capacity",ignoreCase=true)->"Could not verify student capacity. Backend connection needs attention."
+            message.contains("access",ignoreCase=true)->"Trainer/admin authorization was not accepted."
+            message.isNotBlank()->message
+            else->"Could not create student invitation ("+response.status.value+")."
+        }
+        error(safeMessage)
     }
     val json=JSONObject(raw)
     RsCloudInviteV63(
