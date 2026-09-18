@@ -51,7 +51,7 @@ private fun rsSaveDocumentsV51(store:RsStore,items:List<RsClubDocumentV51>){
     store.ps("documents_v51",a.toString())
 }
 
-private fun rsLoadTicketsV51(store:RsStore):List<RsSupportTicketV51>{
+fun rsLoadTicketsV51(store:RsStore):List<RsSupportTicketV51>{
     val raw=store.s("support_tickets_v51","")
     if(raw.isBlank())return emptyList()
     return runCatching{
