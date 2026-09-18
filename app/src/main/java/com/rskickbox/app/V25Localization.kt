@@ -213,3 +213,33 @@ private val routeHintsV25=mapOf(
 private fun langIndexV25(lang:RsLang)=when(lang.code){"nl"->1;"pt"->2;"es"->3;"fr"->4;"de"->5;"it"->6;"pl"->7;"tr"->8;else->0}
 fun rsRouteTitle(lang:RsLang,route:String,fallback:String):String=routeTitlesV25[route]?.getOrNull(langIndexV25(lang))?:fallback
 fun rsRouteHint(lang:RsLang,route:String,fallback:String):String=routeHintsV25[route]?.getOrNull(langIndexV25(lang))?:fallback
+
+
+fun rsRestInstruction(lang:RsLang)=when(lang.code){
+    "nl"->"Adem · herstel je houding · blijf rustig"
+    "pt"->"Respira · recupera a guarda · mantém o controlo"
+    "es"->"Respira · recupera la guardia · mantén el control"
+    "fr"->"Respire · replace ta garde · reste calme"
+    "de"->"Atmen · Stellung resetten · ruhig bleiben"
+    "it"->"Respira · ripristina la guardia · resta composto"
+    "pl"->"Oddychaj · ustaw gardę · zachowaj spokój"
+    "tr"->"Nefes al · gardını yenile · sakin kal"
+    else->"Breathe · reset stance · stay composed"
+}
+fun rsWorkInstruction(lang:RsLang)=when(lang.code){
+    "nl"->"Jab · Cross · Low Kick"
+    "pt"->"Jab · Direto · Low Kick"
+    "es"->"Jab · Directo · Low Kick"
+    "fr"->"Jab · Direct · Low Kick"
+    "de"->"Jab · Cross · Low Kick"
+    "it"->"Jab · Diretto · Low Kick"
+    "pl"->"Jab · Cross · Low Kick"
+    "tr"->"Jab · Cross · Low Kick"
+    else->"Jab · Cross · Low Kick"
+}
+
+fun adaptiveLabelSp(text:String,base:Float=10f):Float=when{
+    text.length>=24->(base-2f).coerceAtLeast(7f)
+    text.length>=16->(base-1f).coerceAtLeast(8f)
+    else->base
+}
