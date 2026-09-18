@@ -170,3 +170,55 @@ private fun rsOptimizeBackgroundVideoV29(
     runCatching{transformer.start(edited,output.absolutePath)}
         .onFailure{output.delete();onError("Video optimization could not start: ${it.message}")}
 }
+
+
+@OptIn(UnstableApi::class)
+fun rsOptimizeSplashVideoV32(
+    context:Context,
+    source:Uri,
+    target:String,
+    onStatus:(String)->Unit,
+    onComplete:(String)->Unit,
+    onError:(String)->Unit
+){
+    val (targetW,targetH)=if(target=="tablet") 1280 to 800 else 720 to 1280
+    val outDir=File(context.filesDir,"rs_splash").apply{mkdirs()}
+    outDir.listFiles()?.filter{it.name.startsWith(target+"_") }?.forEach{it.delete()}
+    val output=File(outDir,target+"_"+UUID.randomUUID()+".mp4")
+    if(output.exists())output.delete()
+
+    onStatus("Converting splash to H.264 + AAC for reliable playback…")
+
+    val presentation:Effect=Presentation.createForWidthAndHeight(
+        targetW,
+        targetH,
+        Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP
+    )
+    val edited=EditedMediaItem.Builder(MediaItem.fromUri(source))
+        .setEffects(Effects(emptyList(),listOf(presentation)))
+        .build()
+
+    val transformer=Transformer.Builder(context)
+        .setVideoMimeType(MimeTypes.VIDEO_H264)
+        .setAudioMimeType(MimeTypes.AUDIO_AAC)
+        .addListener(object:Transformer.Listener{
+            override fun onCompleted(composition:Composition,exportResult:ExportResult){
+                onComplete(Uri.fromFile(output).toString())
+            }
+            override fun onError(
+                composition:Composition,
+                exportResult:ExportResult,
+                exportException:ExportException
+            ){
+                output.delete()
+                onError("Splash conversion failed: ${exportException.message?:"unknown error"}")
+            }
+        })
+        .build()
+
+    runCatching{transformer.start(edited,output.absolutePath)}
+        .onFailure{
+            output.delete()
+            onError("Splash conversion could not start: ${it.message}")
+        }
+}
