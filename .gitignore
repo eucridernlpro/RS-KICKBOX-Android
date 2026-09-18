@@ -1,0 +1,22 @@
+# Local / IDE
+.gradle/
+.idea/
+local.properties
+*.iml
+.DS_Store
+
+# Android build output
+**/build/
+
+# Supabase local secrets and function env files
+supabase/.env
+supabase/.env.*
+supabase/functions/.env
+supabase/functions/.env.*
+.env
+.env.*
+
+# Never commit keystores or signing secrets
+*.jks
+*.keystore
+keystore.properties
