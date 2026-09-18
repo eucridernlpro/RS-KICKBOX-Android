@@ -147,18 +147,70 @@ private fun rsDevUiV46(lang:RsLang,key:String):String{
         "history" to "ASSESSMENT HISTORY","none" to "No records yet."
     )
     val nl=en+mapOf(
-        "homework" to "Huiswerk","homework_sub" to "Opdrachten van je trainer en voltooiingsstatus.",
-        "manager" to "Huiswerkbeheer","manager_sub" to "Wijs gericht werk toe aan individuele leerlingen.",
-        "notes" to "Coachnotities","notes_sub" to "Privénotities van de trainer gekoppeld aan ontwikkeling.",
-        "assess" to "Beoordelingen","assess_sub" to "Leg vaardigheidsscores en coachfeedback vast.",
-        "progress" to "Voortgang","progress_sub" to "Laatste vaardigheidsprofiel en ontwikkelingshistorie.",
-        "student" to "Leerling","title" to "Titel","details" to "Details","due" to "Deadline","assign" to "Huiswerk toewijzen",
-        "completed" to "Voltooid","open" to "Open","mark_done" to "Markeer voltooid","reopen" to "Heropenen",
-        "delete" to "Verwijderen","confirm" to "Bevestigen","new_note" to "Nieuwe privé coachnotitie","save_note" to "Notitie opslaan",
-        "summary" to "Samenvatting beoordeling","save_assessment" to "Beoordeling opslaan","latest" to "LAATSTE BEOORDELING",
-        "history" to "BEOORDELINGSHISTORIE","none" to "Nog geen gegevens."
+        "homework" to "Huiswerk","homework_sub" to "Opdrachten van je trainer en voltooiingsstatus.","manager" to "Huiswerkbeheer","manager_sub" to "Wijs gericht werk toe aan individuele leerlingen.",
+        "notes" to "Coachnotities","notes_sub" to "Privénotities van de trainer gekoppeld aan ontwikkeling.","assess" to "Beoordelingen","assess_sub" to "Leg vaardigheidsscores en coachfeedback vast.",
+        "progress" to "Voortgang","progress_sub" to "Laatste vaardigheidsprofiel en ontwikkelingshistorie.","student" to "Leerling","title" to "Titel","details" to "Details","due" to "Deadline","assign" to "Huiswerk toewijzen",
+        "completed" to "Voltooid","open" to "Open","mark_done" to "Markeer voltooid","reopen" to "Heropenen","delete" to "Verwijderen","confirm" to "Bevestigen",
+        "new_note" to "Nieuwe privé coachnotitie","save_note" to "Notitie opslaan","summary" to "Samenvatting beoordeling","save_assessment" to "Beoordeling opslaan",
+        "latest" to "LAATSTE BEOORDELING","history" to "BEOORDELINGSHISTORIE","none" to "Nog geen gegevens."
     )
-    val pack=when(lang.code){"nl"->nl;else->en}
+    val pt=en+mapOf(
+        "homework" to "Trabalho de Casa","homework_sub" to "Tarefas do teu treinador e estado de conclusão.","manager" to "Gestor de Tarefas","manager_sub" to "Atribui trabalho focado a alunos individuais.",
+        "notes" to "Notas do Coach","notes_sub" to "Notas privadas do treinador ligadas ao desenvolvimento do aluno.","assess" to "Avaliações","assess_sub" to "Regista pontuações técnicas e feedback do treinador.",
+        "progress" to "Progresso","progress_sub" to "Último perfil técnico avaliado e histórico de desenvolvimento.","student" to "Aluno","title" to "Título","details" to "Detalhes","due" to "Prazo","assign" to "Atribuir tarefa",
+        "completed" to "Concluído","open" to "Aberto","mark_done" to "Marcar concluído","reopen" to "Reabrir","delete" to "Eliminar","confirm" to "Confirmar",
+        "new_note" to "Nova nota privada do coach","save_note" to "Guardar nota","summary" to "Resumo da avaliação","save_assessment" to "Guardar avaliação",
+        "latest" to "ÚLTIMA AVALIAÇÃO","history" to "HISTÓRICO DE AVALIAÇÕES","none" to "Ainda não existem registos."
+    )
+    val es=en+mapOf(
+        "homework" to "Tareas","homework_sub" to "Tareas de tu entrenador y estado de finalización.","manager" to "Gestor de Tareas","manager_sub" to "Asigna trabajo específico a cada alumno.",
+        "notes" to "Notas del Coach","notes_sub" to "Notas privadas del entrenador vinculadas al desarrollo.","assess" to "Evaluaciones","assess_sub" to "Registra puntuaciones y feedback técnico.",
+        "progress" to "Progreso","progress_sub" to "Último perfil evaluado e historial de desarrollo.","student" to "Alumno","title" to "Título","details" to "Detalles","due" to "Fecha límite","assign" to "Asignar tarea",
+        "completed" to "Completado","open" to "Abierto","mark_done" to "Marcar completado","reopen" to "Reabrir","delete" to "Eliminar","confirm" to "Confirmar",
+        "new_note" to "Nueva nota privada del coach","save_note" to "Guardar nota","summary" to "Resumen de evaluación","save_assessment" to "Guardar evaluación",
+        "latest" to "ÚLTIMA EVALUACIÓN","history" to "HISTORIAL DE EVALUACIONES","none" to "Aún no hay registros."
+    )
+    val fr=en+mapOf(
+        "homework" to "Devoirs","homework_sub" to "Tes tâches entraîneur et leur état.","manager" to "Gestion des Devoirs","manager_sub" to "Attribue un travail ciblé à chaque élève.",
+        "notes" to "Notes Coach","notes_sub" to "Notes privées de l’entraîneur liées au développement.","assess" to "Évaluations","assess_sub" to "Enregistre les scores techniques et le feedback.",
+        "progress" to "Progression","progress_sub" to "Dernier profil évalué et historique de progression.","student" to "Élève","title" to "Titre","details" to "Détails","due" to "Échéance","assign" to "Attribuer le devoir",
+        "completed" to "Terminé","open" to "Ouvert","mark_done" to "Marquer terminé","reopen" to "Rouvrir","delete" to "Supprimer","confirm" to "Confirmer",
+        "new_note" to "Nouvelle note privée coach","save_note" to "Enregistrer la note","summary" to "Résumé de l’évaluation","save_assessment" to "Enregistrer l’évaluation",
+        "latest" to "DERNIÈRE ÉVALUATION","history" to "HISTORIQUE DES ÉVALUATIONS","none" to "Aucun enregistrement."
+    )
+    val de=en+mapOf(
+        "homework" to "Hausaufgaben","homework_sub" to "Traineraufgaben und Abschlussstatus.","manager" to "Hausaufgaben-Manager","manager_sub" to "Weise einzelnen Schülern gezielte Aufgaben zu.",
+        "notes" to "Coach-Notizen","notes_sub" to "Private Trainernotizen zur Entwicklung.","assess" to "Bewertungen","assess_sub" to "Technikwerte und Coaching-Feedback erfassen.",
+        "progress" to "Fortschritt","progress_sub" to "Letztes Bewertungsprofil und Entwicklungsverlauf.","student" to "Schüler","title" to "Titel","details" to "Details","due" to "Fällig","assign" to "Aufgabe zuweisen",
+        "completed" to "Erledigt","open" to "Offen","mark_done" to "Als erledigt markieren","reopen" to "Wieder öffnen","delete" to "Löschen","confirm" to "Bestätigen",
+        "new_note" to "Neue private Coach-Notiz","save_note" to "Notiz speichern","summary" to "Bewertungszusammenfassung","save_assessment" to "Bewertung speichern",
+        "latest" to "LETZTE BEWERTUNG","history" to "BEWERTUNGSVERLAUF","none" to "Noch keine Einträge."
+    )
+    val it=en+mapOf(
+        "homework" to "Compiti","homework_sub" to "Compiti assegnati dal trainer e stato di completamento.","manager" to "Gestione Compiti","manager_sub" to "Assegna lavoro mirato a singoli allievi.",
+        "notes" to "Note Coach","notes_sub" to "Note private del trainer legate allo sviluppo.","assess" to "Valutazioni","assess_sub" to "Registra punteggi tecnici e feedback.",
+        "progress" to "Progresso","progress_sub" to "Ultimo profilo valutato e storico dello sviluppo.","student" to "Allievo","title" to "Titolo","details" to "Dettagli","due" to "Scadenza","assign" to "Assegna compito",
+        "completed" to "Completato","open" to "Aperto","mark_done" to "Segna completato","reopen" to "Riapri","delete" to "Elimina","confirm" to "Conferma",
+        "new_note" to "Nuova nota privata coach","save_note" to "Salva nota","summary" to "Riepilogo valutazione","save_assessment" to "Salva valutazione",
+        "latest" to "ULTIMA VALUTAZIONE","history" to "STORICO VALUTAZIONI","none" to "Nessun dato ancora."
+    )
+    val pl=en+mapOf(
+        "homework" to "Zadania","homework_sub" to "Zadania od trenera i status wykonania.","manager" to "Menedżer Zadań","manager_sub" to "Przydzielaj konkretne zadania poszczególnym uczniom.",
+        "notes" to "Notatki Trenera","notes_sub" to "Prywatne notatki trenera dotyczące rozwoju.","assess" to "Oceny","assess_sub" to "Zapisuj wyniki umiejętności i uwagi trenera.",
+        "progress" to "Postęp","progress_sub" to "Najnowszy profil oceny i historia rozwoju.","student" to "Uczeń","title" to "Tytuł","details" to "Szczegóły","due" to "Termin","assign" to "Przydziel zadanie",
+        "completed" to "Ukończone","open" to "Otwarte","mark_done" to "Oznacz jako ukończone","reopen" to "Otwórz ponownie","delete" to "Usuń","confirm" to "Potwierdź",
+        "new_note" to "Nowa prywatna notatka trenera","save_note" to "Zapisz notatkę","summary" to "Podsumowanie oceny","save_assessment" to "Zapisz ocenę",
+        "latest" to "NAJNOWSZA OCENA","history" to "HISTORIA OCEN","none" to "Brak danych."
+    )
+    val tr=en+mapOf(
+        "homework" to "Ödevler","homework_sub" to "Antrenör görevlerin ve tamamlanma durumu.","manager" to "Ödev Yönetimi","manager_sub" to "Öğrencilere odaklı çalışmalar ata.",
+        "notes" to "Koç Notları","notes_sub" to "Öğrenci gelişimine bağlı özel antrenör notları.","assess" to "Değerlendirmeler","assess_sub" to "Teknik puanları ve koç geri bildirimini kaydet.",
+        "progress" to "İlerleme","progress_sub" to "Son değerlendirme profili ve gelişim geçmişi.","student" to "Öğrenci","title" to "Başlık","details" to "Detaylar","due" to "Son tarih","assign" to "Ödev ata",
+        "completed" to "Tamamlandı","open" to "Açık","mark_done" to "Tamamlandı işaretle","reopen" to "Yeniden aç","delete" to "Sil","confirm" to "Onayla",
+        "new_note" to "Yeni özel koç notu","save_note" to "Notu kaydet","summary" to "Değerlendirme özeti","save_assessment" to "Değerlendirmeyi kaydet",
+        "latest" to "SON DEĞERLENDİRME","history" to "DEĞERLENDİRME GEÇMİŞİ","none" to "Henüz kayıt yok."
+    )
+    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
 }
 
