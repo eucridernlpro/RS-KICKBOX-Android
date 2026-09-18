@@ -258,7 +258,7 @@ fun RsAssessmentsV46(c:RsPalette,store:RsStore,lang:RsLang){
     var summary by remember{mutableStateOf("")}
     val items=remember(revision){rsLoadAssessmentsV46(store).sortedByDescending{it.createdAt}}
 
-    fun slider(label:String,value:Float,onChange:(Float)->Unit){
+    @Composable fun slider(label:String,value:Float,onChange:(Float)->Unit){
         Text(label+" · "+value.toInt(),color=c.text)
         Slider(value,onValueChange=onChange,valueRange=0f..100f)
     }
