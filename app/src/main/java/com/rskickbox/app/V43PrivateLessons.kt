@@ -166,7 +166,7 @@ fun RsStudentPrivateLessonsV43(c:RsPalette,store:RsStore,lang:RsLang){
                 }
                 Text(statusText,color=c.text,fontWeight=FontWeight.Bold)
                 if(booking==null || booking.status=="DECLINED"){
-                    if(!requestsAllowed)Text("New private-lesson requests are temporarily disabled by the trainer.",color=c.muted,fontSize=10.sp)
+                    if(!requestsAllowed)Text(rsOpsUiV56(lang,"private_disabled"),color=c.muted,fontSize=10.sp)
                     OutlinedTextField(
                         value=noteBySlot[slot.id].orEmpty(),
                         onValueChange={v->noteBySlot=noteBySlot+(slot.id to v)},
