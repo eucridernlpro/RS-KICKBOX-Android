@@ -141,6 +141,15 @@ private fun rsGuideItemsV54():List<RsGuideItemV54> = listOf(
         "CONTENT"
     ),
     RsGuideItemV54(
+        "CONTENT","Training Media","media",
+        "Publish real training videos and images while preserving original video audio.",
+        "Upload a media file, add title/category/description, choose ALL/BASIC/PRO/ELITE access and publish or unpublish it.",
+        "Students see only published media unlocked for their membership and can open videos with full player controls and audio.",
+        "Example: publish an Advanced Padwork video to PRO/ELITE while a Jab Fundamentals clip remains available to ALL.",
+        listOf("Open Training Media Manager","Choose image/video","Add title and category","Choose membership access","Publish","Student opens Training Media"),
+        "CONTENT"
+    ),
+    RsGuideItemV54(
         "CONTENT","Promotion Manager","landing_admin",
         "Publish clickable promotional thumbnails and manage the featured book.",
         "Upload multiple thumbnails, give each an external URL, control active state, upload book cover/preview/full PDF and define access.",
