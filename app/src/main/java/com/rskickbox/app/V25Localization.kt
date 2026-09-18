@@ -185,6 +185,7 @@ private val routeTitlesV25=mapOf(
     "media" to listOf("Training Media","Trainingsmedia","Media de Treino","Media de Entreno","Médias d'Entraînement","Trainingsmedien","Media Allenamento","Media Treningowe","Antrenman Medyası"),
     "music" to listOf("My RS Music","Mijn RS Muziek","Minha Música RS","Mi Música RS","Ma Musique RS","Meine RS Musik","La Mia Musica RS","Moja Muzyka RS","RS Müziğim"),
     "finance" to listOf("Membership & Payments","Lidmaatschap & Betalingen","Adesão & Pagamentos","Membresía & Pagos","Adhésion & Paiements","Mitgliedschaft & Zahlungen","Abbonamento & Pagamenti","Członkostwo & Płatności","Üyelik & Ödemeler"),
+    "promotions" to listOf("Promotions","Promoties","Promoções","Promociones","Promotions","Aktionen","Promozioni","Promocje","Promosyonlar"),
     "book" to listOf("Trainer Book","Trainerboek","Livro do Treinador","Libro del Entrenador","Livre de l'Entraîneur","Trainerbuch","Libro Allenatore","Książka Trenera","Antrenör Kitabı"),
     "profile" to listOf("My Profile","Mijn Profiel","Meu Perfil","Mi Perfil","Mon Profil","Mein Profil","Il Mio Profilo","Mój Profil","Profilim"),
     "search" to listOf("Search","Zoeken","Pesquisar","Buscar","Rechercher","Suche","Cerca","Szukaj","Ara"),
