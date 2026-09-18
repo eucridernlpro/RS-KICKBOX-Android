@@ -82,6 +82,22 @@ private fun rsThreadKeyV44(email:String)=email.trim().lowercase().replace(Regex(
 private fun rsTrainerReadKeyV44(email:String)="coach_read_trainer_v44_"+rsThreadKeyV44(email)
 private fun rsStudentReadKeyV44(email:String)="coach_read_student_v44_"+rsThreadKeyV44(email)
 
+fun rsTrainerUnreadCoachCountV55(store:RsStore):Int{
+    val messages=rsLoadCoachMessagesV44(store)
+    return messages.filter{it.sender=="student"}.count{message->
+        val lastRead=store.s(rsTrainerReadKeyV44(message.studentEmail),"0").toLongOrNull()?:0L
+        message.createdAt>lastRead
+    }
+}
+
+fun rsStudentUnreadCoachCountV55(store:RsStore):Int{
+    val email=store.s("session_student_email","alex@rskickbox.nl")
+    val lastRead=store.s(rsStudentReadKeyV44(email),"0").toLongOrNull()?:0L
+    return rsLoadCoachMessagesV44(store).count{
+        it.studentEmail.equals(email,true) && it.sender=="trainer" && it.createdAt>lastRead
+    }
+}
+
 private fun rsCoachTimeV44(value:Long):String =
     if(value<=0L)"" else SimpleDateFormat("dd MMM · HH:mm",Locale.getDefault()).format(Date(value))
 
