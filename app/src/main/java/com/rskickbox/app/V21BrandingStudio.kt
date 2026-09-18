@@ -2,7 +2,11 @@ package com.rskickbox.app
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.graphics.ImageDecoder
+import android.graphics.drawable.AnimatedImageDrawable
 import android.widget.ImageView
+import android.widget.VideoView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
@@ -130,6 +134,7 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
     var groupMenuOpen by remember{mutableStateOf(false)}
     var slotMenuOpen by remember{mutableStateOf(false)}
     var message by remember{mutableStateOf("")}
+    var optimizing by remember{mutableStateOf(false)}
     var refresh by remember{mutableIntStateOf(0)}
 
     val groups=remember{allVisualSlotsV26.map{it.group}.distinct()}
@@ -146,9 +151,22 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
 
     fun saveVisual(picked:Uri,persist:Boolean){
         if(persist)runCatching{context.contentResolver.takePersistableUriPermission(picked,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
-        store.ps(visualKeyV21(selected.key),picked.toString())
-        message="${selected.title} saved."
-        refresh++
+        optimizing=true
+        message="Preparing ${selected.title}…"
+        rsImportVisualMediaV29(
+            context=context,
+            source=picked,
+            slotSize=selected.size,
+            onStatus={message=it},
+            onComplete={info->
+                store.ps(visualKeyV21(selected.key),info.uri)
+                store.ps("visual_v21_kind_${selected.key}",info.kind)
+                message=info.note
+                optimizing=false
+                refresh++
+            },
+            onError={err->message=err;optimizing=false}
+        )
     }
     val galleryPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){picked->
         if(picked!=null)saveVisual(picked,false)
@@ -256,10 +274,11 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
 
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
                     Button(
-                        onClick={galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
+                        onClick={galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))},
+                        enabled=!optimizing,
                         modifier=Modifier.weight(1f)
                     ){Text("Gallery",fontSize=10.sp)}
-                    OutlinedButton(onClick={filePicker.launch(arrayOf("image/*"))},modifier=Modifier.weight(1f)){Text("Files",fontSize=10.sp)}
+                    OutlinedButton(onClick={filePicker.launch(arrayOf("image/*","video/*"))},enabled=!optimizing,modifier=Modifier.weight(1f)){Text("Files",fontSize=10.sp)}
                     OutlinedButton(
                         onClick={store.ps(visualKeyV21(selected.key),"");message="${selected.title} reset.";refresh++},
                         enabled=uri.isNotBlank(),
@@ -278,6 +297,10 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                     }
                 }
 
+                if(optimizing){
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                    Text("Automatic formatting / optimization in progress…",color=c.bright,fontSize=9.sp)
+                }
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                     Text("Overlay ${(opacity*100).toInt()}%",color=c.muted,fontSize=9.sp,modifier=Modifier.width(75.dp))
                     Slider(
@@ -322,7 +345,57 @@ fun RsBrandSiteSettingsV21(c:RsPalette,store:RsStore){
 
 @Composable
 fun RsUriPreviewV21(uri:String,modifier:Modifier=Modifier,position:String="CENTER"){
-    AndroidView(factory={ctx->ImageView(ctx).apply{adjustViewBounds=true;scaleType=ImageView.ScaleType.CENTER_CROP}},modifier=modifier,update={view->runCatching{view.setImageURI(Uri.parse(uri))}})
+    val context=LocalContext.current
+    val parsed=remember(uri){Uri.parse(uri)}
+    val kind=remember(uri){rsVisualKindV29(context,parsed)}
+    when(kind){
+        "VIDEO"->AndroidView(
+            factory={ctx->
+                VideoView(ctx).apply{
+                    setOnPreparedListener{mp->
+                        mp.isLooping=true
+                        mp.setVolume(0f,0f)
+                        post{
+                            val vw=mp.videoWidth.toFloat().coerceAtLeast(1f)
+                            val vh=mp.videoHeight.toFloat().coerceAtLeast(1f)
+                            val viewW=width.toFloat().coerceAtLeast(1f)
+                            val viewH=height.toFloat().coerceAtLeast(1f)
+                            val videoRatio=vw/vh
+                            val viewRatio=viewW/viewH
+                            if(videoRatio>viewRatio){scaleX=videoRatio/viewRatio;scaleY=1f}
+                            else{scaleX=1f;scaleY=viewRatio/videoRatio}
+                        }
+                        start()
+                    }
+                }
+            },
+            modifier=modifier,
+            update={view->
+                if(view.tag!=uri){
+                    view.tag=uri
+                    view.setVideoURI(parsed)
+                }
+                if(!view.isPlaying)runCatching{view.start()}
+            }
+        )
+        else->AndroidView(
+            factory={ctx->ImageView(ctx).apply{adjustViewBounds=true;scaleType=ImageView.ScaleType.CENTER_CROP}},
+            modifier=modifier,
+            update={view->
+                runCatching{
+                    if(kind=="GIF" && Build.VERSION.SDK_INT>=28){
+                        val src=ImageDecoder.createSource(context.contentResolver,parsed)
+                        val drawable=ImageDecoder.decodeDrawable(src)
+                        view.setImageDrawable(drawable)
+                        (drawable as? AnimatedImageDrawable)?.apply{
+                            repeatCount=AnimatedImageDrawable.REPEAT_INFINITE
+                            start()
+                        }
+                    }else view.setImageURI(parsed)
+                }
+            }
+        )
+    }
 }
 
 @Composable
