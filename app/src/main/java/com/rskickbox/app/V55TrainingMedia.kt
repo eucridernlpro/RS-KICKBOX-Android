@@ -18,6 +18,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -185,6 +188,7 @@ fun RsTrainingMediaV55(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
     var importing by remember{mutableStateOf(false)}
     var status by remember{mutableStateOf("")}
     var pendingDelete by remember{mutableStateOf<String?>(null)}
+    val scope=rememberCoroutineScope()
 
     val all=remember(revision){rsLoadTrainingMediaV55(store)}
     val studentRank=rsContentRankV48(rsContentStudentTierV48(store))
@@ -196,16 +200,23 @@ fun RsTrainingMediaV55(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
         if(uri!=null){
             importing=true
             status=rsMediaUiV55(lang,"importing")
-            runCatching{
-                val (saved,kind)=rsCopyTrainingMediaV55(context,uri)
-                if(pickedUri.isNotBlank())rsDeleteTrainingMediaV55(context,pickedUri)
-                pickedUri=saved
-                pickedKind=kind
-                status=rsMediaUiV55(lang,"ready")
-            }.onFailure{
-                status=it.message?:"Could not import media."
+            scope.launch{
+                val result=withContext(Dispatchers.IO){
+                    runCatching{rsCopyTrainingMediaV55(context,uri)}
+                }
+                result.onSuccess{(saved,kind)->
+                    val previous=pickedUri
+                    pickedUri=saved
+                    pickedKind=kind
+                    if(previous.isNotBlank()&&previous!=saved){
+                        withContext(Dispatchers.IO){rsDeleteTrainingMediaV55(context,previous)}
+                    }
+                    status=rsMediaUiV55(lang,"ready")
+                }.onFailure{
+                    status=it.message?:"Could not import media."
+                }
+                importing=false
             }
-            importing=false
         }
     }
 
