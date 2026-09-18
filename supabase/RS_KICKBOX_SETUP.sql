@@ -83,9 +83,68 @@ create index if not exists rs_student_invites_expires_at_idx on public.rs_studen
 alter table public.rs_student_invites enable row level security;
 revoke all on table public.rs_student_invites from anon, authenticated;
 
--- Deliberately no client insert/update/delete grants here.
--- Invitation token creation/redeeming will be handled by an authenticated
--- Edge Function/server path so raw invitation tokens are never stored in this table.
+-- Deliberately no direct client insert/update/delete grants here.
+-- Staff invitation creation goes through a SECURITY DEFINER RPC so the raw
+-- invitation token is never stored, while authenticated staff can create
+-- the protected invite row without relying on a service-role PostgREST insert.
+
+create or replace function public.rs_create_student_invite(
+    p_email text,
+    p_display_name text,
+    p_plan text,
+    p_token_hash text,
+    p_expires_at timestamptz
+)
+returns table (
+    id uuid,
+    email text,
+    display_name text,
+    plan text,
+    expires_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+    v_id uuid;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode = '42501';
+    end if;
+
+    if p_plan not in ('BASIC','PRO','ELITE') then
+        raise exception 'invalid plan' using errcode = '22023';
+    end if;
+
+    insert into public.rs_student_invites (
+        email,
+        display_name,
+        plan,
+        token_hash,
+        created_by,
+        expires_at
+    )
+    values (
+        lower(trim(p_email)),
+        trim(p_display_name),
+        p_plan,
+        p_token_hash,
+        (select auth.uid()),
+        p_expires_at
+    )
+    returning rs_student_invites.id into v_id;
+
+    return query
+    select i.id,i.email,i.display_name,i.plan,i.expires_at
+    from public.rs_student_invites i
+    where i.id=v_id;
+end;
+$;
+
+revoke execute on function public.rs_create_student_invite(text,text,text,text,timestamptz) from public;
+revoke execute on function public.rs_create_student_invite(text,text,text,text,timestamptz) from anon;
+grant execute on function public.rs_create_student_invite(text,text,text,text,timestamptz) to authenticated;
 
 create table if not exists public.rs_technique_submissions (
     id uuid primary key default gen_random_uuid(),
