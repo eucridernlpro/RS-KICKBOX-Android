@@ -75,22 +75,40 @@ private fun rsDeleteTechniqueVideoV36(context:android.content.Context,uriString:
 
 private data class TechniqueSubmissionV27(
     val id:String,val uri:String,val name:String,val technique:String,
-    val created:String,val favorite:Boolean,val summary:String
+    val created:String,val favorite:Boolean,val summary:String,val ownerEmail:String
 )
 
 private fun encodeTechniqueSubsV27(items:List<TechniqueSubmissionV27>)=items.joinToString("§"){
-    listOf(it.id,it.uri,it.name,it.technique,it.created,it.favorite.toString(),it.summary.replace("¤"," ")).joinToString("¤")
+    listOf(it.id,it.uri,it.name,it.technique,it.created,it.favorite.toString(),it.summary.replace("¤"," "),it.ownerEmail).joinToString("¤")
 }
 
 private fun decodeTechniqueSubsV27(raw:String)=raw.split("§").mapNotNull{row->
-    val p=row.split("¤",limit=7)
-    if(p.size<7)null else TechniqueSubmissionV27(p[0],p[1],p[2],p[3],p[4],p[5].toBooleanStrictOrNull()?:false,p[6])
+    val p=row.split("¤",limit=8)
+    if(p.size<7)null else TechniqueSubmissionV27(
+        p[0],p[1],p[2],p[3],p[4],p[5].toBooleanStrictOrNull()?:false,p[6],p.getOrElse(7){""}
+    )
 }
 
 private fun rsDeleteTechniqueVideoIfUnusedV36(context:android.content.Context,store:RsStore,uriString:String){
     if(uriString.isBlank())return
     val referenced=decodeTechniqueSubsV27(store.s("technique_submissions_v27","")).any{it.uri==uriString}
     if(!referenced)rsDeleteTechniqueVideoV36(context,uriString)
+}
+
+fun rsTechniqueHistoryRawForStudentV40(store:RsStore,email:String):String =
+    encodeTechniqueSubsV27(
+        decodeTechniqueSubsV27(store.s("technique_submissions_v27",""))
+            .filter{it.ownerEmail.isBlank() || it.ownerEmail.equals(email,true)}
+    )
+
+fun rsRemoveTechniqueHistoryForStudentV40(context:android.content.Context,store:RsStore,email:String){
+    val all=decodeTechniqueSubsV27(store.s("technique_submissions_v27",""))
+    val remove=all.filter{it.ownerEmail.equals(email,true)}
+    val keep=all.filterNot{it.ownerEmail.equals(email,true)}
+    store.ps("technique_submissions_v27",encodeTechniqueSubsV27(keep))
+    remove.map{it.uri}.distinct().forEach{uri->
+        if(keep.none{it.uri==uri})rsDeleteTechniqueVideoV36(context,uri)
+    }
 }
 
 private fun videoDurationV27(context:android.content.Context,uri:Uri):Long=runCatching{
@@ -305,7 +323,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                 val items=decodeTechniqueSubsV27(store.s("technique_submissions_v27","")).toMutableList()
                 val id=System.currentTimeMillis().toString()
                 val created=SimpleDateFormat("dd MMM yyyy · HH:mm",Locale.getDefault()).format(Date())
-                items.add(0,TechniqueSubmissionV27(id,videoUri,videoName,selectedTechnique,created,false,summary))
+                items.add(0,TechniqueSubmissionV27(id,videoUri,videoName,selectedTechnique,created,false,summary,store.s("session_student_email","alex@rskickbox.nl")))
                 store.ps("technique_submissions_v27",encodeTechniqueSubsV27(items.take(40)))
                 feedback="Analysis saved to technique history."
             },modifier=Modifier.fillMaxWidth()){Text("Save to history")}
@@ -427,6 +445,7 @@ private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore,lang:RsLang){
                         Text(item.technique,color=c.bright,fontWeight=FontWeight.Black)
                         Text(item.created,color=c.muted,fontSize=10.sp)
                         Text(item.name,color=c.text,fontSize=11.sp,maxLines=1)
+                        if(item.ownerEmail.isNotBlank())Text(item.ownerEmail,color=c.muted,fontSize=9.sp,maxLines=1)
                     }
                     Text(if(item.favorite)"★" else "☆",color=c.bright,fontSize=26.sp)
                 }
