@@ -1,5 +1,6 @@
 package com.rskickbox.app
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -7,6 +8,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,21 +71,150 @@ fun RsPaymentCenter(c:RsPalette,s:RsStore){
 }
 
 @Composable
-fun RsMemberManager(c:RsPalette){
+fun RsMemberManager(c:RsPalette,s:RsStore?=null){
+    val context=LocalContext.current
+    val localStore=remember{RsStore(context)}
+    val store=s?:localStore
+    var revision by remember{mutableIntStateOf(0)}
+    var showCreate by remember{mutableStateOf(false)}
+    var name by remember{mutableStateOf("")}
+    var email by remember{mutableStateOf("")}
+    var plan by remember{mutableStateOf("PRO")}
     var status by remember{mutableStateOf("")}
-    RsScroll(c,"Student Manager","Preview member administration with status, subscription, attendance and quick actions."){
-        listOf("Alex de Vries|PRO|86%|Active","Sofia Martins|ELITE|94%|Active","Noah Jansen|BASIC|68%|Review","Mila Costa|PRO|91%|Active").forEach{row->
-            val x=row.split('|')
+    val students=remember(revision){rsLoadStudentsV33(store)}
+    val activeCount=students.count{it.active}
+
+    fun save(items:List<RsStudentAccountV33>){
+        rsSaveStudentsV33(store,items)
+        revision++
+    }
+
+    RsScroll(c,"Student Manager","Create private RS KICKBOX student accounts, generate invitation QR codes and manage access."){
+        RsPanel(c){
+            Text("STUDENT CAPACITY",color=c.bright,fontWeight=FontWeight.Black)
+            Text("$activeCount / $RS_STUDENT_LIMIT_V33 active student accounts",color=c.text,fontSize=20.sp,fontWeight=FontWeight.Bold)
+            LinearProgressIndicator(progress={activeCount.toFloat()/RS_STUDENT_LIMIT_V33},modifier=Modifier.fillMaxWidth())
+            Button(
+                onClick={showCreate=!showCreate},
+                enabled=activeCount<RS_STUDENT_LIMIT_V33,
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(showCreate)"Close new account" else "+ Create new student account")}
+        }
+
+        if(showCreate)RsPanel(c){
+            Text("NEW STUDENT ACCOUNT",color=c.bright,fontWeight=FontWeight.Black)
+            OutlinedTextField(name,{name=it},label={Text("Student name")},modifier=Modifier.fillMaxWidth(),singleLine=true)
+            OutlinedTextField(email,{email=it},label={Text("Email")},modifier=Modifier.fillMaxWidth(),singleLine=true)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                listOf("BASIC","PRO","ELITE").forEach{p->
+                    FilterChip(selected=plan==p,onClick={plan=p},label={Text(p)},modifier=Modifier.weight(1f))
+                }
+            }
+            Text("A secure invitation code is generated automatically. The QR contains the email + activation code, never a permanent password.",color=c.muted,fontSize=10.sp)
+            Button(
+                onClick={
+                    val cleanEmail=email.trim()
+                    when{
+                        name.trim().isBlank()->status="Enter the student's name."
+                        !cleanEmail.contains("@")->status="Enter a valid email address."
+                        students.any{it.email.equals(cleanEmail,true)}->status="An account with this email already exists."
+                        activeCount>=RS_STUDENT_LIMIT_V33->status="The 100 active-student limit has been reached."
+                        else->{
+                            val account=RsStudentAccountV33(
+                                id=java.util.UUID.randomUUID().toString(),
+                                name=name.trim(),
+                                email=cleanEmail,
+                                plan=plan,
+                                activationCode=rsNewActivationCodeV33(),
+                                active=true,
+                                createdAt=System.currentTimeMillis()
+                            )
+                            save(listOf(account)+students)
+                            name=""
+                            email=""
+                            plan="PRO"
+                            showCreate=false
+                            status="Student account created. QR invitation is ready to share."
+                        }
+                    }
+                },
+                modifier=Modifier.fillMaxWidth()
+            ){Text("Create account + QR")}
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        if(students.isEmpty())RsPanel(c){
+            Text("NO CREATED STUDENT ACCOUNTS YET",color=c.bright,fontWeight=FontWeight.Bold)
+            Text("Create the first student above. The account will immediately get an invitation QR.",color=c.muted)
+        }
+
+        students.forEach{student->
+            val qr=remember(student.id,student.activationCode){rsQrBitmapV33(rsInvitePayloadV33(student),720)}
             RsPanel(c){
-                Text(x[0],color=c.bright,fontWeight=FontWeight.Bold)
-                Text("${x[1]} · Attendance ${x[2]} · ${x[3]}",color=c.muted)
-                Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                    Button(onClick={status="Opened local profile preview for ${x[0]}."}){Text("Profile")}
-                    OutlinedButton(onClick={status="Message composer preview opened for ${x[0]}."}){Text("Message")}
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
+                    Column(Modifier.weight(1f)){
+                        Text(student.name,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                        Text(student.email,color=c.text,fontSize=11.sp)
+                        Text("${student.plan} · ${if(student.active)"ACTIVE" else "INACTIVE"}",color=c.muted,fontSize=10.sp)
+                    }
+                    Switch(
+                        checked=student.active,
+                        onCheckedChange={on->
+                            if(on && activeCount>=RS_STUDENT_LIMIT_V33){
+                                status="Cannot activate more than $RS_STUDENT_LIMIT_V33 students."
+                            }else{
+                                save(students.map{if(it.id==student.id)it.copy(active=on) else it})
+                                status=if(on)"${student.name} activated." else "${student.name} deactivated."
+                            }
+                        }
+                    )
+                }
+
+                Surface(shape=MaterialTheme.shapes.large,color=androidx.compose.ui.graphics.Color.White,modifier=Modifier.fillMaxWidth()){
+                    Image(
+                        bitmap=qr.asImageBitmap(),
+                        contentDescription="RS KICKBOX student invitation QR",
+                        modifier=Modifier.fillMaxWidth().aspectRatio(1f).padding(14.dp)
+                    )
+                }
+                Text("Activation code: ${student.activationCode}",color=c.bright,fontWeight=FontWeight.Bold)
+                Text("Play Store:",color=c.muted,fontSize=10.sp)
+                Text(RS_PLAY_STORE_URL_V33,color=c.text,fontSize=9.sp)
+
+                Button(
+                    onClick={rsShareStudentInviteV33(context,student)},
+                    modifier=Modifier.fillMaxWidth()
+                ){Text("Share QR + app link")}
+                OutlinedButton(
+                    onClick={rsSharePlayStoreLinkV33(context)},
+                    modifier=Modifier.fillMaxWidth()
+                ){Text("Share Play Store link only")}
+
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                    OutlinedButton(
+                        onClick={
+                            val newCode=rsNewActivationCodeV33()
+                            save(students.map{if(it.id==student.id)it.copy(activationCode=newCode) else it})
+                            status="A new invitation code was generated for ${student.name}. The old QR is no longer valid in this preview."
+                        },
+                        modifier=Modifier.weight(1f)
+                    ){Text("New QR",fontSize=10.sp)}
+                    OutlinedButton(
+                        onClick={
+                            save(students.filterNot{it.id==student.id})
+                            status="${student.name} deleted."
+                        },
+                        modifier=Modifier.weight(1f)
+                    ){Text("Delete",fontSize=10.sp)}
                 }
             }
         }
-        if(status.isNotBlank())RsPanel(c){Text(status,color=c.text)}
+
+        RsPanel(c){
+            Text("PRODUCTION SECURITY NOTE",color=c.bright,fontWeight=FontWeight.Bold)
+            Text("This acceptance build stores accounts locally. When the Supabase backend is connected, QR invitations will become one-time server tokens with expiry/revocation while keeping this same trainer/student workflow.",color=c.muted,fontSize=10.sp)
+        }
+        if(status.isNotBlank())Text(status,color=c.bright,fontSize=10.sp)
     }
 }
 
