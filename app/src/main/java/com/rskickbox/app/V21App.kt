@@ -94,6 +94,7 @@ fun RsKickboxV21App() {
                                     "promotions" -> RsPromotionPageV45(c,store,lang){route="book"}
                                     "notifications" -> RsNotificationsV41(c,store,lang,active)
                                     "analytics" -> RsAnalyticsV53(c,store,lang)
+                                    "guide" -> RsTrainerGuideV54(c,store,lang){route=it}
                                     "documents" -> RsDocumentsV51(c,store,lang,active)
                                     "support" -> RsSupportV51(c,store,lang,active)
                                     "referrals" -> RsReferralsV51(c,store,lang)
@@ -298,6 +299,7 @@ private fun ShellV21(
     val scope=rememberCoroutineScope()
     val drawerItems=if(role==RsRole.TRAINER) listOf(
         "trainer" to "Trainer Dashboard",
+        "guide" to "App Guide",
         "members" to "Student Manager",
         "access" to "Access & Subscriptions",
         "plans_admin" to "Membership Plans",
