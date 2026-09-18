@@ -75,7 +75,7 @@ fun RsKickboxV21App() {
                                         route="home"
                                     }
                                     "academy" -> RsAcademy(c)
-                                    "progress" -> RsProgress(c)
+                                    "progress" -> RsStudentProgressV46(c,store,lang)
                                     "challenges" -> RsChallenges(c)
                                     "fightcamp" -> RsFightCamp(c)
                                     "finance" -> RsStudentFinanceV39(c,store,lang)
@@ -98,19 +98,19 @@ fun RsKickboxV21App() {
                                     "referrals" -> RsReferrals(c)
                                     "schedule" -> RsTrainerScheduleV43(c,store,lang)
                                     "content" -> RsContentManager(c)
-                                    "notes" -> RsCoachNotes(c)
-                                    "homework" -> RsHomeworkHub(c)
+                                    "notes" -> RsCoachNotesV46(c,store,lang)
+                                    "homework" -> RsStudentHomeworkV46(c,store,lang)
                                     "favorites" -> RsFavoritesHub(c)
                                     "history" -> RsHistoryHub(c)
                                     "private_lessons" -> RsStudentPrivateLessonsV43(c,store,lang)
                                     "profile" -> RsProfileHub(c)
                                     "groups" -> RsGroupsHub(c)
                                     "search" -> RsSearchHub(c)
-                                    "homework_admin" -> RsHomeworkManagerV14(c)
+                                    "homework_admin" -> RsHomeworkManagerV46(c,store,lang)
                                     "lesson_editor" -> RsLessonEditorV14(c)
                                     "plans_admin" -> RsMembershipPlansV14(c)
-                                    "progress_admin" -> RsProgressManagerV14(c)
-                                    "assessments" -> RsAssessmentsV14(c)
+                                    "progress_admin" -> RsStudentProgressV46(c,store,lang)
+                                    "assessments" -> RsAssessmentsV46(c,store,lang)
                                     "events_admin" -> RsEventManagerV42(c,store,lang)
                                     "qr_attendance" -> RsQrAttendanceV14(c)
                                     "session_builder" -> RsSessionBuilderV14(c)
@@ -305,6 +305,9 @@ private fun ShellV21(
         "backgrounds" to "Visual Asset Studio",
         "branding" to "Branding & Site Settings",
         "payments" to "Payment Center",
+        "homework_admin" to "Homework Manager",
+        "notes" to "Coach Notes",
+        "assessments" to "Assessments",
         "analytics" to "Analytics",
         "notifications" to "Notifications",
         "landing_admin" to "Promotion Manager",
@@ -320,6 +323,7 @@ private fun ShellV21(
         "academy" to "RS Academy",
         "techniques" to "Technique Library",
         "classes" to "Classes & Events",
+        "homework" to "Homework",
         "progress" to "Progress",
         "community" to "Community",
         "media" to "Training Media",
