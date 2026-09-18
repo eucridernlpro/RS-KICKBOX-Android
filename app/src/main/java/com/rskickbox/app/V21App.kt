@@ -71,7 +71,7 @@ fun RsKickboxV21App() {
                                     "checkin" -> RsStudentCheckInV52(c,store,lang)
                                     "invoices" -> RsTrainerInvoicesV39(c,store,lang)
                                     "book" -> if(active==RsRole.TRAINER) RsBookManagerV45(c,store,lang) else RsBookLibraryV45(c,store,lang)
-                                    "settings" -> if(active==RsRole.TRAINER) RsAdminSettingsV16(c,store) else RsStudentPrivacyV40(c,store,lang){
+                                    "settings" -> if(active==RsRole.TRAINER) RsAdminSettingsV56(c,store,lang) else RsStudentPrivacyV40(c,store,lang){
                                         role=null
                                         route="home"
                                     }
@@ -452,6 +452,22 @@ private fun ShellV21(
                         val logout=rsT(lang,"logout")
                         Text(logout,fontSize=adaptiveLabelSp(logout,9f).sp,maxLines=1)
                     }
+                }
+            }
+            if(role==RsRole.STUDENT && rsOpsEnabledV56(store,RsOpsKeysV56.MAINTENANCE,false)){
+                Surface(
+                    color=c.gold.copy(alpha=.18f),
+                    shape=RoundedCornerShape(14.dp),
+                    border=androidx.compose.foundation.BorderStroke(1.dp,c.bright.copy(alpha=.40f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Text(
+                        store.s(RsOpsKeysV56.MAINTENANCE_MESSAGE,"RS KICKBOX maintenance notice: some services may be temporarily limited."),
+                        color=c.bright,
+                        fontWeight=FontWeight.Bold,
+                        fontSize=10.sp,
+                        modifier=Modifier.padding(horizontal=12.dp,vertical=9.dp)
+                    )
                 }
             }
             Box(Modifier.fillMaxWidth().weight(1f)){content()}
