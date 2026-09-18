@@ -71,7 +71,7 @@ fun RsPaymentCenter(c:RsPalette,s:RsStore){
 }
 
 @Composable
-fun RsMemberManager(c:RsPalette,s:RsStore?=null){
+fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
     val context=LocalContext.current
     val localStore=remember{RsStore(context)}
     val store=s?:localStore
@@ -90,22 +90,22 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null){
         revision++
     }
 
-    RsScroll(c,"Student Manager","Create private RS KICKBOX student accounts, generate invitation QR codes and manage access."){
+    RsScroll(c,rsEnrollmentT(lang,"student_manager"),rsEnrollmentT(lang,"student_manager_sub")){
         RsPanel(c){
-            Text("STUDENT CAPACITY",color=c.bright,fontWeight=FontWeight.Black)
-            Text("$activeCount / $RS_STUDENT_LIMIT_V33 active student accounts",color=c.text,fontSize=20.sp,fontWeight=FontWeight.Bold)
+            Text(rsEnrollmentT(lang,"student_capacity"),color=c.bright,fontWeight=FontWeight.Black)
+            Text("$activeCount / $RS_STUDENT_LIMIT_V33 ${rsEnrollmentT(lang,"active_accounts")}",color=c.text,fontSize=20.sp,fontWeight=FontWeight.Bold)
             LinearProgressIndicator(progress={activeCount.toFloat()/RS_STUDENT_LIMIT_V33},modifier=Modifier.fillMaxWidth())
             Button(
                 onClick={showCreate=!showCreate},
                 enabled=activeCount<RS_STUDENT_LIMIT_V33,
                 modifier=Modifier.fillMaxWidth()
-            ){Text(if(showCreate)"Close new account" else "+ Create new student account")}
+            ){Text(if(showCreate)rsEnrollmentT(lang,"close_new") else rsEnrollmentT(lang,"create_student"))}
         }
 
         if(showCreate)RsPanel(c){
-            Text("NEW STUDENT ACCOUNT",color=c.bright,fontWeight=FontWeight.Black)
-            OutlinedTextField(name,{name=it},label={Text("Student name")},modifier=Modifier.fillMaxWidth(),singleLine=true)
-            OutlinedTextField(email,{email=it},label={Text("Email")},modifier=Modifier.fillMaxWidth(),singleLine=true)
+            Text(rsEnrollmentT(lang,"new_student"),color=c.bright,fontWeight=FontWeight.Black)
+            OutlinedTextField(name,{name=it},label={Text(rsEnrollmentT(lang,"student_name"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
+            OutlinedTextField(email,{email=it},label={Text(rsEnrollmentT(lang,"email"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
                 listOf("BASIC","PRO","ELITE").forEach{p->
                     FilterChip(selected=plan==p,onClick={plan=p},label={Text(p)},modifier=Modifier.weight(1f))
@@ -140,7 +140,7 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null){
                     }
                 },
                 modifier=Modifier.fillMaxWidth()
-            ){Text("Create account + QR")}
+            ){Text(rsEnrollmentT(lang,"create_qr"))}
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
 
@@ -156,7 +156,7 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null){
                     Column(Modifier.weight(1f)){
                         Text(student.name,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
                         Text(student.email,color=c.text,fontSize=11.sp)
-                        Text("${student.plan} · ${if(student.active)"ACTIVE" else "INACTIVE"}",color=c.muted,fontSize=10.sp)
+                        Text("${student.plan} · ${if(student.active)rsEnrollmentT(lang,"active") else rsEnrollmentT(lang,"inactive")}",color=c.muted,fontSize=10.sp)
                     }
                     Switch(
                         checked=student.active,
@@ -175,7 +175,7 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null){
                 OutlinedButton(
                     onClick={expandedQrStudentId=if(qrExpanded)null else student.id},
                     modifier=Modifier.fillMaxWidth()
-                ){Text(if(qrExpanded)"Hide invitation QR" else "Show invitation QR")}
+                ){Text(if(qrExpanded)rsEnrollmentT(lang,"hide_qr") else rsEnrollmentT(lang,"show_qr"))}
                 if(qrExpanded){
                     Surface(
                         shape=MaterialTheme.shapes.large,
@@ -195,11 +195,11 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null){
                 Button(
                     onClick={rsShareStudentInviteV33(context,student)},
                     modifier=Modifier.fillMaxWidth()
-                ){Text("Share QR + app link")}
+                ){Text(rsEnrollmentT(lang,"share_invite"))}
                 OutlinedButton(
                     onClick={rsSharePlayStoreLinkV33(context)},
                     modifier=Modifier.fillMaxWidth()
-                ){Text("Share Play Store link only")}
+                ){Text(rsEnrollmentT(lang,"share_store"))}
 
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
                     OutlinedButton(
@@ -209,20 +209,20 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null){
                             status="A new invitation code was generated for ${student.name}. The old QR is no longer valid in this preview."
                         },
                         modifier=Modifier.weight(1f)
-                    ){Text("New QR",fontSize=10.sp)}
+                    ){Text(rsEnrollmentT(lang,"new_qr"),fontSize=10.sp)}
                     OutlinedButton(
                         onClick={
                             save(students.filterNot{it.id==student.id})
                             status="${student.name} deleted."
                         },
                         modifier=Modifier.weight(1f)
-                    ){Text("Delete",fontSize=10.sp)}
+                    ){Text(rsEnrollmentT(lang,"delete"),fontSize=10.sp)}
                 }
             }
         }
 
         RsPanel(c){
-            Text("PRODUCTION SECURITY NOTE",color=c.bright,fontWeight=FontWeight.Bold)
+            Text(rsEnrollmentT(lang,"security_note"),color=c.bright,fontWeight=FontWeight.Bold)
             Text("This acceptance build stores accounts locally. When the Supabase backend is connected, QR invitations will become one-time server tokens with expiry/revocation while keeping this same trainer/student workflow.",color=c.muted,fontSize=10.sp)
         }
         if(status.isNotBlank())Text(status,color=c.bright,fontSize=10.sp)
