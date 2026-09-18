@@ -32,7 +32,7 @@ data class RsAssessmentV46(
 
 private fun rsArrayV46(store:RsStore,key:String)=runCatching{JSONArray(store.s(key,""))}.getOrElse{JSONArray()}
 
-private fun rsLoadHomeworkV46(store:RsStore):List<RsHomeworkV46>{
+fun rsLoadHomeworkV46(store:RsStore):List<RsHomeworkV46>{
     val a=rsArrayV46(store,"homework_v46")
     return buildList{
         for(i in 0 until a.length()){
