@@ -209,7 +209,7 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
             Text("CURRENT ACCEPTANCE BUILD", color = c.bright, fontWeight = FontWeight.Bold)
             Text("RS KICKBOX v0.36.0 · versionCode 36", color = c.text)
             Text("Package: com.rskickbox.app · targetSdk 36", color = c.muted)
-            Text("Local-ready: premium navigation drawer · 9-language enrollment UI · QR creation/scanning/gallery import · compact 100-student manager · visual/splash media tools.", color = c.text)
+            Text("Local-ready: premium navigation drawer · 9-language enrollment UI · QR creation/scanning/gallery import · compact 100-student manager · private technique-video history storage · visual/splash media tools.", color = c.text)
             Text("Not production-connected yet: multi-device authentication, Supabase database, cloud media, push delivery, real AI vision, payment webhooks, signed Play Store AAB.", color = c.muted)
         }
         RsPanel(c) {
