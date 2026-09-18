@@ -140,7 +140,61 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
         "none" to "Ainda não há media de treino.","importing" to "A importar media…","ready" to "Media pronta.",
         "preserved" to "A media original fica guardada de forma privada com o áudio do vídeo preservado."
     )
-    val pack=when(lang.code){"nl"->nl;"pt"->pt;else->en}
+    val es=en+mapOf(
+        "student_title" to "Media de Entrenamiento","student_sub" to "Vídeos del entrenador, ejercicios y recursos visuales desbloqueados para tu membresía.",
+        "trainer_title" to "Gestor de Media de Entrenamiento","trainer_sub" to "Sube vídeos/imágenes reales y controla el acceso de los alumnos.",
+        "new" to "NUEVA MEDIA DE ENTRENAMIENTO","title" to "Título","category" to "Categoría","description" to "Descripción",
+        "tier" to "Acceso","file" to "Elegir imagen / vídeo","save" to "Publicar media","published" to "PUBLICADO",
+        "draft" to "BORRADOR","delete" to "Eliminar","confirm" to "Confirmar","open" to "Abrir media","close" to "Cerrar media",
+        "none" to "Aún no hay media de entrenamiento.","importing" to "Importando media…","ready" to "Media lista.",
+        "preserved" to "La media original se guarda de forma privada con el audio del vídeo preservado."
+    )
+    val fr=en+mapOf(
+        "student_title" to "Médias d’Entraînement","student_sub" to "Vidéos du coach, exercices et ressources visuelles débloqués pour ton abonnement.",
+        "trainer_title" to "Gestion des Médias d’Entraînement","trainer_sub" to "Téléverse de vraies vidéos/images et contrôle l’accès des élèves.",
+        "new" to "NOUVEAU MÉDIA D’ENTRAÎNEMENT","title" to "Titre","category" to "Catégorie","description" to "Description",
+        "tier" to "Accès","file" to "Choisir image / vidéo","save" to "Publier le média","published" to "PUBLIÉ",
+        "draft" to "BROUILLON","delete" to "Supprimer","confirm" to "Confirmer","open" to "Ouvrir le média","close" to "Fermer le média",
+        "none" to "Aucun média d’entraînement disponible.","importing" to "Import du média…","ready" to "Média prêt.",
+        "preserved" to "Le média original est stocké en privé avec l’audio vidéo conservé."
+    )
+    val de=en+mapOf(
+        "student_title" to "Trainingsmedien","student_sub" to "Coach-Videos, Drills und visuelle Trainingsressourcen passend zu deiner Mitgliedschaft.",
+        "trainer_title" to "Trainingsmedien verwalten","trainer_sub" to "Lade echte Trainingsvideos/-bilder hoch und steuere den Schülerzugang.",
+        "new" to "NEUES TRAININGSMEDIUM","title" to "Titel","category" to "Kategorie","description" to "Beschreibung",
+        "tier" to "Zugang","file" to "Bild / Video wählen","save" to "Medium veröffentlichen","published" to "VERÖFFENTLICHT",
+        "draft" to "ENTWURF","delete" to "Löschen","confirm" to "Bestätigen","open" to "Medium öffnen","close" to "Medium schließen",
+        "none" to "Noch keine Trainingsmedien verfügbar.","importing" to "Medium wird importiert…","ready" to "Medium bereit.",
+        "preserved" to "Das Originalmedium wird privat gespeichert; Video-Audio bleibt erhalten."
+    )
+    val it=en+mapOf(
+        "student_title" to "Media di Allenamento","student_sub" to "Video del trainer, esercizi e risorse visive disponibili per il tuo abbonamento.",
+        "trainer_title" to "Gestione Media di Allenamento","trainer_sub" to "Carica video/immagini reali e controlla l’accesso degli allievi.",
+        "new" to "NUOVO MEDIA DI ALLENAMENTO","title" to "Titolo","category" to "Categoria","description" to "Descrizione",
+        "tier" to "Accesso","file" to "Scegli immagine / video","save" to "Pubblica media","published" to "PUBBLICATO",
+        "draft" to "BOZZA","delete" to "Elimina","confirm" to "Conferma","open" to "Apri media","close" to "Chiudi media",
+        "none" to "Nessun media di allenamento disponibile.","importing" to "Importazione media…","ready" to "Media pronto.",
+        "preserved" to "Il media originale viene salvato privatamente mantenendo l’audio del video."
+    )
+    val pl=en+mapOf(
+        "student_title" to "Media Treningowe","student_sub" to "Filmy trenera, ćwiczenia i zasoby wizualne dostępne dla twojego planu.",
+        "trainer_title" to "Menedżer Mediów Treningowych","trainer_sub" to "Dodawaj prawdziwe filmy/obrazy i kontroluj dostęp uczniów.",
+        "new" to "NOWE MEDIA TRENINGOWE","title" to "Tytuł","category" to "Kategoria","description" to "Opis",
+        "tier" to "Dostęp","file" to "Wybierz obraz / wideo","save" to "Opublikuj media","published" to "OPUBLIKOWANE",
+        "draft" to "SZKIC","delete" to "Usuń","confirm" to "Potwierdź","open" to "Otwórz media","close" to "Zamknij media",
+        "none" to "Brak dostępnych mediów treningowych.","importing" to "Importowanie mediów…","ready" to "Media gotowe.",
+        "preserved" to "Oryginalny plik jest przechowywany prywatnie z zachowaniem dźwięku wideo."
+    )
+    val tr=en+mapOf(
+        "student_title" to "Antrenman Medyası","student_sub" to "Üyeliğin için açılmış antrenör videoları, çalışmalar ve görsel kaynaklar.",
+        "trainer_title" to "Antrenman Medyası Yöneticisi","trainer_sub" to "Gerçek video/görseller yükle ve öğrenci erişimini yönet.",
+        "new" to "YENİ ANTRENMAN MEDYASI","title" to "Başlık","category" to "Kategori","description" to "Açıklama",
+        "tier" to "Erişim","file" to "Görsel / video seç","save" to "Medyayı yayınla","published" to "YAYINDA",
+        "draft" to "TASLAK","delete" to "Sil","confirm" to "Onayla","open" to "Medyayı aç","close" to "Medyayı kapat",
+        "none" to "Henüz antrenman medyası yok.","importing" to "Medya içe aktarılıyor…","ready" to "Medya hazır.",
+        "preserved" to "Orijinal medya özel olarak saklanır ve video sesi korunur."
+    )
+    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
 }
 
