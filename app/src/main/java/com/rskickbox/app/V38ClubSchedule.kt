@@ -84,11 +84,13 @@ fun rsLoadClassesV38(store:RsStore):List<RsClubClassV38>{
 fun rsSaveClassesV38(store:RsStore,items:List<RsClubClassV38>)=
     store.ps("club_classes_v38",rsEncodeClassesV38(items))
 
+private fun rsBookingOwnerV38(store:RsStore)=store.s("session_student_email","alex@rskickbox.nl").lowercase()
+
 private fun rsBookedIdsV38(store:RsStore):Set<String> =
-    store.s("student_bookings_v38","").split(',').filter{it.isNotBlank()}.toSet()
+    store.s("student_bookings_v38_"+rsBookingOwnerV38(store),"").split(',').filter{it.isNotBlank()}.toSet()
 
 private fun rsSaveBookedIdsV38(store:RsStore,ids:Set<String>)=
-    store.ps("student_bookings_v38",ids.joinToString(","))
+    store.ps("student_bookings_v38_"+rsBookingOwnerV38(store),ids.joinToString(","))
 
 private fun rsAttendanceKeyV38(classId:String,student:String)=
     "attendance_v38_"+classId+"_"+student.lowercase().replace(Regex("[^a-z0-9]"),"_")
