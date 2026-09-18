@@ -8,11 +8,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun RsAcademy(c:RsPalette){
     RsScroll(c,"RS Academy","Structured technique learning with premium lesson previews and progress tracking."){
-        listOf("Jab Fundamentals|92%|Guard, extension, recovery and timing","Roundhouse Kick|74%|Hip rotation, shin line and balance","Defense & Counters|61%|Shell, parry, slip and return","Clinching Basics|48%|Posture, frames and safe knee entries","Combo Builder|35%|Flow, rhythm and exit angles","Footwork Flow|28%|Range, pivots and stance recovery").forEach{row->val x=row.split('|');RsPanel(c){Text(x[0],color=c.bright,fontWeight=FontWeight.Bold);Text(x[2],color=c.muted);LinearProgressIndicator(progress={x[1].removeSuffix("%").toFloat()/100f},modifier=Modifier.fillMaxWidth());Text("Progress ${x[1]}",color=c.text);Button(onClick={},modifier=Modifier.fillMaxWidth()){Text("Open lesson")}}}
+        listOf("Jab Fundamentals|92%|Guard, extension, recovery and timing","Roundhouse Kick|74%|Hip rotation, shin line and balance","Defense & Counters|61%|Shell, parry, slip and return","Clinching Basics|48%|Posture, frames and safe knee entries","Combo Builder|35%|Flow, rhythm and exit angles","Footwork Flow|28%|Range, pivots and stance recovery").forEach{row->
+            val x=row.split('|')
+            var open by remember(row){mutableStateOf(false)}
+            RsPanel(c){
+                Text(x[0],color=c.bright,fontWeight=FontWeight.Bold)
+                Text(x[2],color=c.muted)
+                LinearProgressIndicator(progress={x[1].removeSuffix("%").toFloat()/100f},modifier=Modifier.fillMaxWidth())
+                Text("Progress ${x[1]}",color=c.text)
+                Button(onClick={open=!open},modifier=Modifier.fillMaxWidth()){Text(if(open)"Close lesson" else "Open lesson")}
+                if(open)Text("Lesson preview · stance check · controlled repetitions · coach cues · recovery drill",color=c.text)
+            }
+        }
     }
 }
 
@@ -42,7 +56,16 @@ fun RsChallenges(c:RsPalette){
 fun RsFightCamp(c:RsPalette){
     RsScroll(c,"Fight Camp","Eight-week structured camp focused on technical sharpness, conditioning, controlled sparring and recovery."){
         RsPanel(c){Text("WEEK 3 OF 8",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp);LinearProgressIndicator(progress={3f/8f},modifier=Modifier.fillMaxWidth());Text("Current focus · technical quality under fatigue",color=c.muted)}
-        listOf("Technical sharpness|4 sessions planned","Conditioning|3 sessions planned","Controlled sparring|2 sessions planned","Recovery & mindset|Daily check-in").forEach{row->val x=row.split('|');RsPanel(c){Text(x[0],color=c.bright,fontWeight=FontWeight.Bold);Text(x[1],color=c.muted);OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth()){Text("Open plan")}}}
+        listOf("Technical sharpness|4 sessions planned","Conditioning|3 sessions planned","Controlled sparring|2 sessions planned","Recovery & mindset|Daily check-in").forEach{row->
+            val x=row.split('|')
+            var open by remember(row){mutableStateOf(false)}
+            RsPanel(c){
+                Text(x[0],color=c.bright,fontWeight=FontWeight.Bold)
+                Text(x[1],color=c.muted)
+                OutlinedButton(onClick={open=!open},modifier=Modifier.fillMaxWidth()){Text(if(open)"Close plan" else "Open plan")}
+                if(open)Text("Preview plan · technical rounds · recovery target · coach check-in",color=c.text)
+            }
+        }
     }
 }
 
@@ -50,15 +73,34 @@ fun RsFightCamp(c:RsPalette){
 fun RsFinance(c:RsPalette){
     RsScroll(c,"Membership & Payments","Member view of subscription, payment status and enabled payment methods."){
         RsPanel(c){Text("RS PRO",color=c.bright,fontSize=26.sp,fontWeight=FontWeight.Black);Text("€49 / month · Active",color=c.text);Text("Next renewal · 01 Oct 2026",color=c.muted)}
-        listOf("Bank transfer","Manual payment request","Cash at club").forEach{RsPanel(c){Text(it,color=c.text,fontWeight=FontWeight.Bold);OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth()){Text("Use this method")}}}
+        var selectedMethod by remember{mutableStateOf("")}
+        listOf("Bank transfer","Manual payment request","Cash at club").forEach{method->
+            RsPanel(c){
+                Text(method,color=c.text,fontWeight=FontWeight.Bold)
+                OutlinedButton(onClick={selectedMethod=method},modifier=Modifier.fillMaxWidth()){Text(if(selectedMethod==method)"✓ Selected" else "Use this method")}
+                if(selectedMethod==method)Text("Local preview selection. Production payment processing is not connected yet.",color=c.muted,fontSize=10.sp)
+            }
+        }
         RsPanel(c){Text("PAYMENT HISTORY",color=c.bright,fontWeight=FontWeight.Bold);Text("Sep 2026 · €49 · Paid\nAug 2026 · €49 · Paid\nJul 2026 · €49 · Paid",color=c.muted)}
     }
 }
 
 @Composable
 fun RsTrainerBook(c:RsPalette){
+    val context=LocalContext.current
+    var status by remember{mutableStateOf("")}
     RsScroll(c,"Trainer Book","The digital companion to Van Stilte Naar Strijd."){
-        RsPanel(c){Text("VAN STILTE NAAR STRIJD",color=c.bright,fontSize=24.sp,fontWeight=FontWeight.Black);Text("Kickboksen, karakter en de weg van basis naar beheersing",color=c.text);Text("Coach philosophy · fundamentals · technique · conditioning · recovery · fight preparation · discipline",color=c.muted);Button(onClick={},modifier=Modifier.fillMaxWidth()){Text("Continue reading")}}
+        RsPanel(c){
+            Text("VAN STILTE NAAR STRIJD",color=c.bright,fontSize=24.sp,fontWeight=FontWeight.Black)
+            Text("Kickboksen, karakter en de weg van basis naar beheersing",color=c.text)
+            Text("Coach philosophy · fundamentals · technique · conditioning · recovery · fight preparation · discipline",color=c.muted)
+            Button(onClick={status=if(status.isBlank())"Companion reading mode opened." else ""},modifier=Modifier.fillMaxWidth()){Text(if(status.isBlank())"Continue reading" else "Close reading")}
+            OutlinedButton(onClick={
+                runCatching{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.amazon.nl/s?k=Van+Stilte+Naar+Strijd")))}
+                    .onFailure{status="Could not open Amazon on this device."}
+            },modifier=Modifier.fillMaxWidth()){Text("Find on Amazon.nl")}
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
         RsPanel(c){Text("APP EXTRAS",color=c.bright,fontWeight=FontWeight.Bold);Text("Technique companion cards · training prompts · member-only exercises · progress connections",color=c.muted)}
     }
 }
