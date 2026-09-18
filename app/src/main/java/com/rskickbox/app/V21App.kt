@@ -169,7 +169,7 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
         val demo=email.equals("alex@rskickbox.nl",true) && pass=="preview123"
         val match=rsFindStudentV33(store,email,pass)
         when{
-            demo || (accounts.isEmpty() && email.isNotBlank() && pass.isNotBlank())->onLogin(RsRole.STUDENT)
+            demo->onLogin(RsRole.STUDENT)
             match!=null->{
                 status="Welcome ${match.name}."
                 onLogin(RsRole.STUDENT)
