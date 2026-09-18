@@ -196,7 +196,7 @@ fun RsCommunityV50(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
         if(role==RsRole.TRAINER)rsSocialUiV50(lang,"manager_sub") else rsSocialUiV50(lang,"community_sub")
     ){
         if(role==RsRole.STUDENT)RsPanel(c){
-            if(!postingAllowed)Text("Community posting is temporarily disabled by the trainer.",color=c.muted,fontSize=10.sp)
+            if(!postingAllowed)Text(rsOpsUiV56(lang,"community_disabled"),color=c.muted,fontSize=10.sp)
             OutlinedTextField(draft,{draft=it.take(1000)},label={Text(rsSocialUiV50(lang,"write"))},modifier=Modifier.fillMaxWidth(),minLines=3)
             Button(
                 onClick={
