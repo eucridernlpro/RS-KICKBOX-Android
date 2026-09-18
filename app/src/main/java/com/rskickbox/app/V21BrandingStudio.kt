@@ -308,6 +308,23 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                         modifier=Modifier.weight(1f)
                     )
                 }
+                if(selected.key=="login"){
+                    var loginFormOpacity by remember(refresh){mutableFloatStateOf(store.s("login_form_opacity","0.82").toFloatOrNull()?:.82f)}
+                    Text("LOGIN FORM TRANSPARENCY",color=c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+                    Text("Controls how much of the login background remains visible through the login boxes.",color=c.muted,fontSize=9.sp)
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                        Text("${(loginFormOpacity*100).toInt()}%",color=c.text,fontSize=10.sp,modifier=Modifier.width(45.dp))
+                        Slider(
+                            value=loginFormOpacity,
+                            onValueChange={v->
+                                loginFormOpacity=v
+                                store.ps("login_form_opacity",v.toString())
+                            },
+                            valueRange=.20f..1f,
+                            modifier=Modifier.weight(1f)
+                        )
+                    }
+                }
             }
         }
 
