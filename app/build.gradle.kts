@@ -46,5 +46,6 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.11.1")
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
     implementation("com.google.zxing:core:3.5.4")
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
