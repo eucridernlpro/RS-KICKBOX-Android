@@ -95,13 +95,13 @@ fun RsKickboxV21App() {
                                     "documents" -> RsDocuments(c)
                                     "support" -> RsSupport(c)
                                     "referrals" -> RsReferrals(c)
-                                    "schedule" -> RsTrainerSchedule(c)
+                                    "schedule" -> RsTrainerScheduleV43(c,store,lang)
                                     "content" -> RsContentManager(c)
                                     "notes" -> RsCoachNotes(c)
                                     "homework" -> RsHomeworkHub(c)
                                     "favorites" -> RsFavoritesHub(c)
                                     "history" -> RsHistoryHub(c)
-                                    "private_lessons" -> RsPrivateLessonsHub(c)
+                                    "private_lessons" -> RsStudentPrivateLessonsV43(c,store,lang)
                                     "profile" -> RsProfileHub(c)
                                     "groups" -> RsGroupsHub(c)
                                     "search" -> RsSearchHub(c)
@@ -306,6 +306,7 @@ private fun ShellV21(
         "payments" to "Payment Center",
         "analytics" to "Analytics",
         "notifications" to "Notifications",
+        "schedule" to "Trainer Schedule",
         "release" to "Release & Legal Center",
         "settings" to "App Settings"
     ) else listOf(
@@ -321,6 +322,7 @@ private fun ShellV21(
         "music" to "My RS Music",
         "finance" to "Membership & Payments",
         "notifications" to "Notifications",
+        "private_lessons" to "Private Lessons",
         "profile" to "My Profile",
         "settings" to "Settings & Privacy"
     )
