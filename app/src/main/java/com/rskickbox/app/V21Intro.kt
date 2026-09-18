@@ -199,6 +199,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
     var pendingTablet by remember{mutableStateOf(PendingSplashV30())}
     var activeTarget by remember{mutableStateOf("phone")}
     var savingTarget by remember{mutableStateOf("")}
+    var previewUri by remember{mutableStateOf("")}
     var message by remember{mutableStateOf("")}
 
     fun validate(uri:Uri,target:String,persist:Boolean){
@@ -275,6 +276,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                     onError={err->savingTarget="";message=err}
                 )
             },
+            onPreview={candidate->previewUri=candidate},
             onCancel={pendingPhone=PendingSplashV30();message="Pending phone splash discarded."},
             onDelete={
                 store.ps("intro_phone_video_uri","")
@@ -311,6 +313,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                     onError={err->savingTarget="";message=err}
                 )
             },
+            onPreview={candidate->previewUri=candidate},
             onCancel={pendingTablet=PendingSplashV30();message="Pending tablet splash discarded."},
             onDelete={
                 store.ps("intro_tablet_video_uri","")
@@ -327,6 +330,36 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
             if(message.isNotBlank())Text(message,color=c.bright,fontSize=10.sp)
         }
     }
+
+    if(previewUri.isNotBlank()){
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest={previewUri=""}
+        ){
+            Surface(
+                color=Color.Black,
+                modifier=Modifier.fillMaxWidth().fillMaxHeight(.94f)
+            ){
+                Box(Modifier.fillMaxSize().background(Color.Black)){
+                    RsIntroVideoStageV30(
+                        uri=previewUri,
+                        sound=videoSound,
+                        onFinished={previewUri=""}
+                    )
+                    TextButton(
+                        onClick={previewUri=""},
+                        modifier=Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
+                    ){Text("Close preview",color=Color.White)}
+                    Text(
+                        "FULL-SCREEN SPLASH TEST",
+                        color=Color.White.copy(alpha=.76f),
+                        fontSize=9.sp,
+                        fontWeight=FontWeight.Bold,
+                        modifier=Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(12.dp)
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -341,6 +374,7 @@ private fun SplashEditorV30(
     onGallery:()->Unit,
     onFiles:()->Unit,
     onSave:()->Unit,
+    onPreview:(String)->Unit,
     onCancel:()->Unit,
     onDelete:()->Unit
 ){
@@ -357,6 +391,11 @@ private fun SplashEditorV30(
             val d=if(pending.uri.isNotBlank())pending.duration else 0L
             if(d>0L)Text("Duration: "+String.format("%.2f",d/1000f)+" sec / 15.00 sec max",color=c.muted,fontSize=10.sp)
             RsIntroVideoPreviewV30(preview,sound,190)
+            Button(
+                onClick={onPreview(preview)},
+                enabled=!saving,
+                modifier=Modifier.fillMaxWidth()
+            ){Text("▶ Test full-screen splash")}
         }
         if(saving){
             LinearProgressIndicator(Modifier.fillMaxWidth())
