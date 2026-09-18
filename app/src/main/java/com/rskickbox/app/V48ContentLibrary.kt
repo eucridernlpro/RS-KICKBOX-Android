@@ -51,10 +51,10 @@ private fun rsSaveContentV48(store:RsStore,items:List<RsContentItemV48>){
     store.ps("content_v48",a.toString())
 }
 
-private fun rsContentRankV48(tier:String)=when(tier.uppercase()){
+fun rsContentRankV48(tier:String)=when(tier.uppercase()){
     "ALL"->0;"BASIC"->1;"PRO"->2;"ELITE"->3;else->99
 }
-private fun rsContentStudentTierV48(store:RsStore):String{
+fun rsContentStudentTierV48(store:RsStore):String{
     val email=store.s("session_student_email","alex@rskickbox.nl")
     return rsLoadStudentsV33(store).firstOrNull{it.email.equals(email,true)}?.plan?.uppercase()?:"PRO"
 }
