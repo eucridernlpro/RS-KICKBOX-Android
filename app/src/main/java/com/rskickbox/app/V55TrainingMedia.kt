@@ -242,6 +242,7 @@ fun RsTrainingMediaV55(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
     var importing by remember{mutableStateOf(false)}
     var status by remember{mutableStateOf("")}
     var pendingDelete by remember{mutableStateOf<String?>(null)}
+    var visibleCount by remember{mutableIntStateOf(20)}
     val scope=rememberCoroutineScope()
 
     val all=remember(revision){rsLoadTrainingMediaV55(store)}
@@ -249,6 +250,7 @@ fun RsTrainingMediaV55(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
     val visible=if(role==RsRole.TRAINER)all else all.filter{
         it.published && rsContentRankV48(it.accessTier)<=studentRank
     }
+    val shown=visible.take(visibleCount)
 
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
         if(uri!=null){
@@ -327,9 +329,24 @@ fun RsTrainingMediaV55(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
 
         if(visible.isEmpty())RsPanel(c){Text(rsMediaUiV55(lang,"none"),color=c.muted)}
 
-        visible.forEach{item->
+        shown.forEach{item->
             RsPanel(c){
-                RsUriPreviewV21(item.uri,Modifier.fillMaxWidth().height(170.dp),"CENTER")
+                if(item.kind=="VIDEO"){
+                    Surface(
+                        color=c.gold.copy(alpha=.10f),
+                        shape=MaterialTheme.shapes.large,
+                        modifier=Modifier.fillMaxWidth().height(150.dp)
+                    ){
+                        Box(Modifier.fillMaxSize(),contentAlignment=androidx.compose.ui.Alignment.Center){
+                            Column(horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
+                                Text("▶",color=c.bright,fontSize=34.sp,fontWeight=FontWeight.Black)
+                                Text("VIDEO",color=c.muted,fontSize=9.sp)
+                            }
+                        }
+                    }
+                }else{
+                    RsUriPreviewV21(item.uri,Modifier.fillMaxWidth().height(170.dp),"CENTER")
+                }
                 Text(item.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
                 Text(item.category+" · "+item.accessTier+" · "+item.kind,color=c.muted,fontSize=10.sp)
                 if(item.description.isNotBlank())Text(item.description,color=c.text,maxLines=4)
@@ -352,6 +369,12 @@ fun RsTrainingMediaV55(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                     ){Text(if(pendingDelete==item.id)rsMediaUiV55(lang,"confirm") else rsMediaUiV55(lang,"delete"))}
                 }
             }
+        if(visibleCount<visible.size){
+            OutlinedButton(
+                onClick={visibleCount=(visibleCount+20).coerceAtMost(visible.size)},
+                modifier=Modifier.fillMaxWidth()
+            ){Text("Show more · "+visibleCount.coerceAtMost(visible.size)+" / "+visible.size)}
+        }
         }
     }
 }
