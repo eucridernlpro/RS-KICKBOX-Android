@@ -99,6 +99,17 @@ private fun sectionTitleV25(lang:RsLang,title:String)=when(title){
     "Members & Access"->rsT(lang,"members_access")
     "Club Operations"->rsT(lang,"club_operations")
     "Business & Release"->rsT(lang,"business_release")
+    "Trainer Help"->when(lang.code){
+        "nl"->"Trainer Hulp"
+        "pt"->"Ajuda do Treinador"
+        "es"->"Ayuda del Entrenador"
+        "fr"->"Aide Entraîneur"
+        "de"->"Trainer-Hilfe"
+        "it"->"Aiuto Allenatore"
+        "pl"->"Pomoc Trenera"
+        "tr"->"Antrenör Yardımı"
+        else->"Trainer Help"
+    }
     else->title
 }
 
@@ -141,6 +152,9 @@ private fun studentV21()=listOf(
 )
 
 private fun trainerV21()=listOf(
+    SectionV21("Trainer Help",listOf(
+        DashV21("guide","App Guide","Examples · workflows · how every section works","brand")
+    )),
     SectionV21("Brand & Experience",listOf(DashV21("themes","Visual Theme Studio","Complete app identity","brand"),DashV21("backgrounds","Visual Asset Studio","Pages · cards · banners","brand"),DashV21("branding","Branding & Site Settings","Logo · name · favicon","brand"),DashV21("intro_settings","Intro & Splash","Cinematic opening sequence","fight"),DashV21("landing_admin","Promotion Manager","Public app promotions","brand"),DashV21("book","Book Manager","Trainer book experience","brand"))),
     SectionV21("Coaching, Content & Music",listOf(DashV21("voice","AI Technique Coach","Video review · voice coach","ai"),DashV21("session","Trainer Session","Round control","training"),DashV21("lesson_editor","Lesson Editor","Academy content","training"),DashV21("content","Content Manager","Lessons · cards · media","brand"),DashV21("homework_admin","Homework Manager","Assign · review","training"),DashV21("session_builder","Session Builder","Reusable training plans","training"),DashV21("music_admin","RS Music Manager","Device music · internal player","music"),DashV21("notes","Coach Notes","Private observations","brand"))),
     SectionV21("Members & Access",listOf(DashV21("members","Student Manager","Profiles · status","brand"),DashV21("access","Access & Subscriptions","Features · overrides","settings"),DashV21("plans_admin","Membership Plans","Basic · Pro · Elite","payment"),DashV21("progress_admin","Progress Manager","Student development","progress"),DashV21("assessments","Coach Assessments","Reviews · priorities","progress"),DashV21("challenge_admin","Challenge Manager","Safe club goals","progress"),DashV21("fightcamp_admin","Fight Camp Manager","Camp planning","fight"))),
