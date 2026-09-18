@@ -102,7 +102,7 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
         if(classes.isEmpty())RsPanel(c){Text("No active classes available.",color=c.muted)}
         classes.forEach{clazz->
             val isBooked=bookedIds.contains(clazz.id)
-            val effectiveBooked=(clazz.booked + if(isBooked)1 else 0).coerceAtMost(clazz.capacity)
+            val effectiveBooked=clazz.booked.coerceAtMost(clazz.capacity)
             val full=effectiveBooked>=clazz.capacity
             RsPanel(c){
                 Text(clazz.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
@@ -121,7 +121,18 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
                 Button(
                     onClick={
                         val next=bookedIds.toMutableSet()
-                        if(isBooked)next.remove(clazz.id) else next.add(clazz.id)
+                        val allClasses=rsLoadClassesV38(store)
+                        if(isBooked){
+                            next.remove(clazz.id)
+                            rsSaveClassesV38(store,allClasses.map{
+                                if(it.id==clazz.id)it.copy(booked=(it.booked-1).coerceAtLeast(0)) else it
+                            })
+                        }else{
+                            next.add(clazz.id)
+                            rsSaveClassesV38(store,allClasses.map{
+                                if(it.id==clazz.id)it.copy(booked=(it.booked+1).coerceAtMost(it.capacity)) else it
+                            })
+                        }
                         rsSaveBookedIdsV38(store,next)
                         revision++
                     },
@@ -211,7 +222,8 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
 fun RsAttendanceV38(c:RsPalette,store:RsStore,lang:RsLang){
     val classes=rsLoadClassesV38(store).filter{it.active}
     var selectedClassId by remember(classes){mutableStateOf(classes.firstOrNull()?.id.orEmpty())}
-    val students=listOf("Alex de Vries","Sofia Martins","Noah Jansen","Mila Costa")
+    val createdStudents=rsLoadStudentsV33(store).filter{it.active}.map{it.name.ifBlank{it.email}}
+    val students=(listOf("Alex de Vries")+createdStudents).distinct()
     RsScroll(c,rsRouteTitle(lang,"attendance","Attendance"),"Check students in against the same local class schedule."){
         classes.forEach{clazz->
             FilterChip(
