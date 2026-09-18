@@ -7,6 +7,7 @@ import android.widget.MediaController
 import android.widget.VideoView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -239,26 +240,31 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
     var pendingVideo by remember{mutableStateOf("")}
     var message by remember{mutableStateOf("")}
 
-    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
-        if(uri!=null){
-            runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
-            val candidate=uri.toString()
-            val duration=introVideoDurationMsV24(context,candidate)
-            when{
-                duration==null || duration<=0L->{
-                    pendingVideo=""
-                    message="Could not read this video's duration. Please choose another file."
-                }
-                duration>RS_INTRO_VIDEO_MAX_MS->{
-                    pendingVideo=""
-                    message="Video rejected: "+String.format("%.1f",duration/1000f)+" sec. Maximum allowed intro video is 15.0 sec."
-                }
-                else->{
-                    pendingVideo=candidate
-                    message="Local preview ready: "+String.format("%.2f",duration/1000f)+" sec. It is not saved until you press Save / Accept."
-                }
+    fun acceptIntroVideo(uri:Uri,persist:Boolean){
+        if(persist)runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+        val candidate=uri.toString()
+        val duration=introVideoDurationMsV24(context,candidate)
+        when{
+            duration==null || duration<=0L->{
+                pendingVideo=""
+                message="Could not read this video's duration. Please choose another file."
+            }
+            duration>RS_INTRO_VIDEO_MAX_MS->{
+                pendingVideo=""
+                message="Video rejected: "+String.format("%.1f",duration/1000f)+" sec. Maximum allowed intro video is 15.0 sec."
+            }
+            else->{
+                pendingVideo=candidate
+                message="Local preview ready: "+String.format("%.2f",duration/1000f)+" sec. It is not saved until you press Save / Accept."
             }
         }
+    }
+
+    val galleryPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
+        if(uri!=null)acceptIntroVideo(uri,false)
+    }
+    val filePicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null)acceptIntroVideo(uri,true)
     }
 
     RsScroll(c,"Intro Director","Upload and preview the opening video locally before accepting it. All intro elements can be switched on or off from this same screen."){
@@ -279,10 +285,16 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
             Text("LOCAL INTRO VIDEO",color=c.bright,fontWeight=FontWeight.Black)
             Text("Choose a video from the phone, tablet or compatible document library. Maximum length is 15 seconds. The selected file is preview-only until explicitly accepted.",color=c.muted)
             Text("15 SEC MAX · local validation before save",color=c.bright,fontWeight=FontWeight.Bold,fontSize=11.sp)
-            Button(
-                onClick={picker.launch(arrayOf("video/*"))},
-                modifier=Modifier.fillMaxWidth()
-            ){Text(if(savedVideo.isBlank() && pendingVideo.isBlank())"＋ Upload intro video" else "✎ Edit / Replace video")}
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                Button(
+                    onClick={galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))},
+                    modifier=Modifier.weight(1f)
+                ){Text(if(savedVideo.isBlank() && pendingVideo.isBlank())"Gallery" else "Replace")}
+                OutlinedButton(
+                    onClick={filePicker.launch(arrayOf("video/*"))},
+                    modifier=Modifier.weight(1f)
+                ){Text("Files")}
+            }
 
             val previewUri=if(pendingVideo.isNotBlank())pendingVideo else savedVideo
             val previewDuration=remember(previewUri){if(previewUri.isBlank())null else introVideoDurationMsV24(context,previewUri)}
