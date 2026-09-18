@@ -492,7 +492,8 @@ fun RsTrainerGuideV54(
             horizontalArrangement=Arrangement.spacedBy(6.dp),
             contentPadding=PaddingValues(vertical=2.dp)
         ){
-            items(categories){cat->
+            items(categories.size){index->
+                val cat=categories[index]
                 FilterChip(
                     selected=category==cat,
                     onClick={category=cat},
