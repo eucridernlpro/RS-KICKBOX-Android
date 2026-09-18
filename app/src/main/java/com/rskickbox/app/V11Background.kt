@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -126,16 +127,14 @@ fun RsBackgroundStudio(c: RsPalette, s: RsStore) {
     var revision by remember { mutableIntStateOf(0) }
     var customUri by remember(scope, revision) { mutableStateOf(s.s("custom_uri_${scope.name}", "")) }
 
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            s.ps("custom_uri_${scope.name}", uri.toString())
-            customUri = uri.toString()
-            revision++
-        }
+    fun saveBackground(uri:Uri,persist:Boolean){
+        if(persist)runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+        s.ps("custom_uri_${scope.name}",uri.toString())
+        customUri=uri.toString()
+        revision++
     }
+    val galleryPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->if(uri!=null)saveBackground(uri,false)}
+    val filePicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null)saveBackground(uri,true)}
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Background Studio", color = c.bright, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
@@ -149,7 +148,13 @@ fun RsBackgroundStudio(c: RsPalette, s: RsStore) {
         RsPanel(c) {
             Text("CUSTOM BACKGROUND", color = c.bright, fontWeight = FontWeight.Bold)
             Text("Choose an image from phone, tablet, Chromebook/PC file provider, Google Drive or another connected document library.", color = c.muted, fontSize = 11.sp)
-            Button(onClick = { picker.launch(arrayOf("image/*")) }, modifier = Modifier.fillMaxWidth()) { Text("＋ Upload from device / library") }
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                Button(
+                    onClick={galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
+                    modifier=Modifier.weight(1f)
+                ){Text("Gallery")}
+                OutlinedButton(onClick={filePicker.launch(arrayOf("image/*"))},modifier=Modifier.weight(1f)){Text("Files")}
+            }
             if (customUri.isNotBlank()) {
                 Text("Custom background active for ${scope.name.replace('_',' ')}", color = c.text, fontSize = 11.sp)
                 OutlinedButton(onClick = { s.ps("custom_uri_${scope.name}", ""); customUri = ""; revision++ }, modifier = Modifier.fillMaxWidth()) { Text("Remove custom background") }
