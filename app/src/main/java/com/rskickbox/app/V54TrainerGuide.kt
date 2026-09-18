@@ -231,6 +231,15 @@ private fun rsGuideItemsV54():List<RsGuideItemV54> = listOf(
         "BRANDING"
     ),
     RsGuideItemV54(
+        "SETTINGS","App Settings & Operations","settings",
+        "Control live student-facing operations without changing app code.",
+        "Enable maintenance notices and switch community posting, class booking, private-lesson requests, referral sharing and in-app reminders on or off.",
+        "Students immediately see the maintenance notice and affected actions become disabled while safe read/cancel/support actions remain available.",
+        "Example: disable new class bookings during a schedule reset while still allowing students to cancel existing bookings.",
+        listOf("Open App Settings","Set maintenance message if needed","Toggle operational controls","Changes save immediately","Review student-side result"),
+        "RELEASE"
+    ),
+    RsGuideItemV54(
         "SETTINGS","Release, Privacy & Backend Readiness","release",
         "See what is local-ready versus what still requires production services.",
         "Review legal/support readiness, backend status, signing status and production limitations.",
