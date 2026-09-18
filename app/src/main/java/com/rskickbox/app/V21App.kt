@@ -86,7 +86,7 @@ fun RsKickboxV21App() {
                                     "home_training" -> RsHomeTraining(c)
                                     "workout" -> RsWorkoutGenerator(c)
                                     "badges" -> RsBadgesV47(c,store,lang)
-                                    "vault" -> RsKnowledgeVault(c)
+                                    "vault" -> RsKnowledgeVaultV48(c,store,lang)
                                     "compare" -> RsTechniqueCompare(c)
                                     "coachchat" -> RsCoachChatV44(c,store,lang,active)
                                     "events" -> RsStudentEventsV42(c,store,lang)
@@ -97,17 +97,17 @@ fun RsKickboxV21App() {
                                     "support" -> RsSupport(c)
                                     "referrals" -> RsReferrals(c)
                                     "schedule" -> RsTrainerScheduleV43(c,store,lang)
-                                    "content" -> RsContentManager(c)
+                                    "content" -> RsContentManagerV48(c,store,lang)
                                     "notes" -> RsCoachNotesV46(c,store,lang)
                                     "homework" -> RsStudentHomeworkV46(c,store,lang)
-                                    "favorites" -> RsFavoritesHub(c)
-                                    "history" -> RsHistoryHub(c)
+                                    "favorites" -> RsFavoritesV48(c,store,lang)
+                                    "history" -> RsHistoryV48(c,store,lang)
                                     "private_lessons" -> RsStudentPrivateLessonsV43(c,store,lang)
                                     "profile" -> RsProfileHub(c)
                                     "groups" -> RsGroupsHub(c)
-                                    "search" -> RsSearchHub(c)
+                                    "search" -> RsSearchV48(c,store,lang)
                                     "homework_admin" -> RsHomeworkManagerV46(c,store,lang)
-                                    "lesson_editor" -> RsLessonEditorV14(c)
+                                    "lesson_editor" -> RsContentManagerV48(c,store,lang)
                                     "plans_admin" -> RsMembershipPlansV14(c)
                                     "progress_admin" -> RsStudentProgressV46(c,store,lang)
                                     "assessments" -> RsAssessmentsV46(c,store,lang)
@@ -300,6 +300,8 @@ private fun ShellV21(
         "members" to "Student Manager",
         "voice" to "AI Technique Coach",
         "session" to "Trainer Session",
+        "content" to "Content Manager",
+        "lesson_editor" to "Lesson Editor",
         "classes" to "Class Manager",
         "attendance" to "Attendance",
         "backgrounds" to "Visual Asset Studio",
@@ -332,6 +334,10 @@ private fun ShellV21(
         "badges" to "Badges",
         "community" to "Community",
         "media" to "Training Media",
+        "vault" to "Knowledge Vault",
+        "favorites" to "Saved & Favorites",
+        "history" to "Training History",
+        "search" to "Search",
         "music" to "My RS Music",
         "finance" to "Membership & Payments",
         "promotions" to "Promotions",
