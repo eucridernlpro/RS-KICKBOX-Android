@@ -245,6 +245,13 @@ fun RsTrainingMediaV55(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
     var pendingDelete by remember{mutableStateOf<String?>(null)}
     var visibleCount by remember{mutableIntStateOf(20)}
     val scope=rememberCoroutineScope()
+    val pendingUriState=rememberUpdatedState(pickedUri)
+    DisposableEffect(Unit){
+        onDispose{
+            val pending=pendingUriState.value
+            if(pending.isNotBlank())rsDeleteTrainingMediaV55(context,pending)
+        }
+    }
 
     val all=remember(revision){rsLoadTrainingMediaV55(store)}
     val studentRank=rsContentRankV48(rsContentStudentTierV48(store))
