@@ -70,7 +70,10 @@ fun RsKickboxV21App() {
                                     "attendance" -> RsAttendanceV38(c,store,lang)
                                     "invoices" -> RsTrainerInvoicesV39(c,store,lang)
                                     "book" -> if(active==RsRole.TRAINER) RsBookManager(c) else RsTrainerBook(c)
-                                    "settings" -> if(active==RsRole.TRAINER) RsAdminSettingsV16(c,store) else RsStudentSettingsV16(c,store)
+                                    "settings" -> if(active==RsRole.TRAINER) RsAdminSettingsV16(c,store) else RsStudentPrivacyV40(c,store,lang){
+                                        role=null
+                                        route="home"
+                                    }
                                     "academy" -> RsAcademy(c)
                                     "progress" -> RsProgress(c)
                                     "challenges" -> RsChallenges(c)
