@@ -201,7 +201,8 @@ private val routeTitlesV25=mapOf(
     "invoices" to listOf("Invoices","Facturen","Faturas","Facturas","Factures","Rechnungen","Fatture","Faktury","Faturalar"),
     "analytics" to listOf("Analytics","Analytics","Análises","Analíticas","Analytique","Analysen","Analisi","Analityka","Analiz"),
     "notifications" to listOf("Notifications","Meldingen","Notificações","Notificaciones","Notifications","Benachrichtigungen","Notifiche","Powiadomienia","Bildirimler"),
-    "support" to listOf("Support & Final QC","Support & Eind-QC","Suporte & QC Final","Soporte & QC Final","Support & QC Final","Support & Final-QC","Supporto & QC Finale","Wsparcie & QC","Destek & Son QC"),
+    "checkin" to listOf("Class Check-In","Les Check-In","Check-In da Aula","Check-In de Clase","Check-In du Cours","Kurs-Check-In","Check-In Lezione","Check-In na Zajęcia","Ders Check-In"),
+    "support" to listOf("Support","Support","Suporte","Soporte","Support","Support","Supporto","Wsparcie","Destek"),
     "release" to listOf("Release & Legal Center","Release & Juridisch","Lançamento & Legal","Lanzamiento & Legal","Publication & Juridique","Release & Recht","Release & Legale","Publikacja & Prawo","Yayın & Hukuk"),
     "landing_admin" to listOf("Promotion Manager","Promotiebeheer","Gestor de Promoção","Gestor de Promoción","Gestion Promotion","Promo-Manager","Gestione Promozioni","Menedżer Promocji","Promosyon Yönetimi"),
     "lesson_editor" to listOf("Lesson Editor","Leseditor","Editor de Aulas","Editor de Clases","Éditeur de Cours","Lektionseditor","Editor Lezioni","Edytor Lekcji","Ders Editörü"),
@@ -219,7 +220,7 @@ private val routeTitlesV25=mapOf(
     "qr_attendance" to listOf("QR Attendance","QR Aanwezigheid","Presenças QR","Asistencia QR","Présence QR","QR-Anwesenheit","Presenze QR","Obecność QR","QR Yoklama"),
     "events_admin" to listOf("Event Manager","Eventbeheer","Gestor de Eventos","Gestor de Eventos","Gestion Événements","Event-Manager","Gestione Eventi","Menedżer Wydarzeń","Etkinlik Yönetimi"),
     "schedule" to listOf("Trainer Schedule","Trainerplanning","Agenda do Treinador","Agenda del Entrenador","Planning Entraîneur","Trainerplan","Agenda Allenatore","Plan Trenera","Antrenör Programı"),
-    "documents" to listOf("Documents & Waivers","Documenten & Verklaringen","Documentos & Termos","Documentos & Renuncias","Documents & Décharges","Dokumente & Verzicht","Documenti & Liberatorie","Dokumenty & Zgody","Belgeler & Feragatler"),
+    "documents" to listOf("Club Documents","Clubdocumenten","Documentos do Clube","Documentos del Club","Documents du Club","Club-Dokumente","Documenti del Club","Dokumenty Klubu","Kulüp Belgeleri"),
     "referrals" to listOf("Referrals","Doorverwijzingen","Referências","Referidos","Parrainages","Empfehlungen","Referral","Polecenia","Referanslar")
 )
 
@@ -229,7 +230,14 @@ private val routeHintsV25=mapOf(
     "academy" to listOf("Structured premium lessons","Premium lessen","Lições premium estruturadas","Lecciones premium","Cours premium structurés","Strukturierte Premium-Lektionen","Lezioni premium strutturate","Lekcje premium","Yapılandırılmış premium dersler"),
     "music" to listOf("Local playlists · live player","Lokale playlists · live player","Playlists locais · leitor","Listas locales · reproductor","Playlists locales · lecteur","Lokale Playlists · Player","Playlist locali · player","Lokalne playlisty · odtwarzacz","Yerel listeler · oynatıcı"),
     "finance" to listOf("Plan · payments · history","Plan · betalingen · historie","Plano · pagamentos · histórico","Plan · pagos · historial","Forfait · paiements · historique","Plan · Zahlungen · Verlauf","Piano · pagamenti · storico","Plan · płatności · historia","Plan · ödemeler · geçmiş"),
-    "settings" to listOf("Preferences · account","Voorkeuren · account","Preferências · conta","Preferencias · cuenta","Préférences · compte","Einstellungen · Konto","Preferenze · account","Preferencje · konto","Tercihler · hesap")
+    "settings" to listOf("Preferences · account","Voorkeuren · account","Preferências · conta","Preferencias · cuenta","Préférences · compte","Einstellungen · Konto","Preferenze · account","Preferencje · konto","Tercihler · hesap"),
+    "notifications" to listOf("Club updates · unread messages","Clubupdates · ongelezen berichten","Atualizações do clube · não lidas","Novedades del club · no leídas","Actualités du club · non lus","Club-Updates · ungelesen","Aggiornamenti club · non letti","Aktualności klubu · nieprzeczytane","Kulüp güncellemeleri · okunmamış"),
+    "promotions" to listOf("Offers · book · external links","Aanbiedingen · boek · externe links","Ofertas · livro · links externos","Ofertas · libro · enlaces externos","Offres · livre · liens externes","Angebote · Buch · externe Links","Offerte · libro · link esterni","Oferty · książka · linki zewnętrzne","Teklifler · kitap · harici bağlantılar"),
+    "checkin" to listOf("Scan trainer attendance QR","Scan trainer-aanwezigheids-QR","Lê o QR de presença do treinador","Escanea el QR de asistencia","Scanne le QR de présence","Trainer-Anwesenheits-QR scannen","Scansiona QR presenza trainer","Skanuj QR obecności trenera","Antrenör yoklama QR'ını tara"),
+    "documents" to listOf("Rules · guides · information","Regels · gidsen · informatie","Regras · guias · informação","Reglas · guías · información","Règles · guides · informations","Regeln · Leitfäden · Infos","Regole · guide · informazioni","Zasady · poradniki · informacje","Kurallar · rehberler · bilgiler"),
+    "support" to listOf("Private member requests","Privéverzoeken van leden","Pedidos privados de membros","Solicitudes privadas de miembros","Demandes privées des membres","Private Mitgliederanfragen","Richieste private membri","Prywatne zgłoszenia członków","Özel üye talepleri"),
+    "referrals" to listOf("Invite · share · grow","Uitnodigen · delen · groeien","Convidar · partilhar · crescer","Invitar · compartir · crecer","Inviter · partager · grandir","Einladen · teilen · wachsen","Invita · condividi · cresci","Zaproś · udostępnij · rozwijaj","Davet et · paylaş · büyü"),
+    "guide" to listOf("Examples · workflows · how everything works","Voorbeelden · workflows · hoe alles werkt","Exemplos · fluxos · como tudo funciona","Ejemplos · flujos · cómo funciona todo","Exemples · flux · fonctionnement","Beispiele · Abläufe · so funktioniert alles","Esempi · flussi · come funziona tutto","Przykłady · procesy · jak to działa","Örnekler · iş akışları · nasıl çalışır")
 )
 
 private fun langIndexV25(lang:RsLang)=when(lang.code){"nl"->1;"pt"->2;"es"->3;"fr"->4;"de"->5;"it"->6;"pl"->7;"tr"->8;else->0}
