@@ -92,7 +92,6 @@ fun RsCinematicIntroV21(c:RsPalette,store:RsStore,onFinished:()->Unit){
     }
 }
 
-@Composable
 private const val RS_INTRO_VIDEO_MAX_MS = 15_000L
 
 private fun introVideoDurationMsV24(context:android.content.Context,uri:String):Long?{
