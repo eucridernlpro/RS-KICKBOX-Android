@@ -31,10 +31,33 @@ fun RsKickboxV21App() {
     val appScope = rememberCoroutineScope()
     var role by remember { mutableStateOf<RsRole?>(null) }
     var route by remember { mutableStateOf("home") }
+    var authRestoreAttempted by remember { mutableStateOf(false) }
+    var authRestoring by remember { mutableStateOf(false) }
     var lang by remember { mutableStateOf(rsLangs.firstOrNull { it.code == store.s("lang", "en") } ?: rsLangs.first()) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
     var introDone by remember { mutableStateOf(!store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
     val c = paletteFor(theme)
+
+    LaunchedEffect(introDone,authRestoreAttempted){
+        if(introDone && !authRestoreAttempted){
+            authRestoreAttempted=true
+            if(RsSupabaseV60.configured){
+                authRestoring=true
+                rsCloudCurrentSessionV67()
+                    .onSuccess{session->
+                        if(session!=null){
+                            store.ps("session_student_email",session.email)
+                            store.ps("session_student_name",session.displayName)
+                            store.ps("session_plan",session.plan)
+                            store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
+                            role=session.role
+                            route=if(session.role==RsRole.TRAINER)"trainer" else "home"
+                        }
+                    }
+                authRestoring=false
+            }
+        }
+    }
 
     MaterialTheme(colorScheme = darkColorScheme(primary=c.bright,secondary=c.gold,background=c.bg,surface=c.panel,onBackground=c.text,onSurface=c.text)) {
         Box(Modifier.fillMaxSize()) {
@@ -42,6 +65,12 @@ fun RsKickboxV21App() {
                 !introDone -> RsCinematicIntroV21(c, store) {
                     store.pb("intro_seen", true)
                     introDone = true
+                }
+                authRestoring -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(10.dp)){
+                        CircularProgressIndicator()
+                        Text("Restoring secure RS KICKBOX session…",color=c.text)
+                    }
                 }
                 role == null -> RsLiveBackground(c, store, BgScope.LOGIN) {
                     RsPerPageBackgroundV21(store, "login") {
