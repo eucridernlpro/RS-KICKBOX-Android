@@ -262,6 +262,7 @@ fun RsReferralsV51(c:RsPalette,store:RsStore,lang:RsLang){
         rsSaveReferralsV51(store,all+mine)
     }
     val referral=mine!!
+    val sharingAllowed=rsOpsEnabledV56(store,RsOpsKeysV56.REFERRALS,true)
     RsScroll(c,rsServiceUiV51(lang,"referrals"),rsServiceUiV51(lang,"referrals_sub")){
         RsPanel(c){
             Text(rsServiceUiV51(lang,"your_code"),color=c.muted)
@@ -275,8 +276,10 @@ fun RsReferralsV51(c:RsPalette,store:RsStore,lang:RsLang){
                     }
                     context.startActivity(android.content.Intent.createChooser(intent,"Share RS KICKBOX referral"))
                 },
+                enabled=sharingAllowed,
                 modifier=Modifier.fillMaxWidth()
             ){Text(rsServiceUiV51(lang,"share"))}
+            if(!sharingAllowed)Text("Referral sharing is temporarily disabled by the trainer.",color=c.muted,fontSize=10.sp)
         }
     }
 }
