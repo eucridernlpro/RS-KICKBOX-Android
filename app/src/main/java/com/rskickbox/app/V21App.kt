@@ -64,7 +64,7 @@ fun RsKickboxV21App() {
                                     "session" -> SessionV21(c,lang)
                                     "access" -> RsAccessControl(c, store)
                                     "payments" -> RsPaymentCenter(c, store)
-                                    "members" -> RsMemberManager(c,store)
+                                    "members" -> RsMemberManager(c,store,lang)
                                     "classes" -> if(active==RsRole.TRAINER) RsClassManager(c) else RsStudentClasses(c)
                                     "attendance" -> RsAttendance(c)
                                     "invoices" -> RsInvoices(c)
@@ -207,8 +207,8 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
         ){
             Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
                 Text(rsT(lang,"member_access"),color=Color.White,fontWeight=FontWeight.Bold)
-                Text("Student invitation QR",color=c.bright,fontWeight=FontWeight.Bold,fontSize=12.sp)
-                Text("Scan the QR from your trainer or upload the QR image from your gallery. Your email and activation code will be filled automatically.",color=Color.White.copy(alpha=.74f),fontSize=10.sp)
+                Text(rsEnrollmentT(lang,"invite_title"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=12.sp)
+                Text(rsEnrollmentT(lang,"invite_desc"),color=Color.White.copy(alpha=.74f),fontSize=10.sp)
 
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
                     Button(
@@ -223,11 +223,11 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                                 .addOnFailureListener{status="QR scanner could not open: ${it.message?:"unknown error"}"}
                         },
                         modifier=Modifier.weight(1f)
-                    ){Text("Scan QR",fontSize=11.sp)}
+                    ){Text(rsEnrollmentT(lang,"scan_qr"),fontSize=11.sp)}
                     OutlinedButton(
                         onClick={galleryQrPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
                         modifier=Modifier.weight(1f)
-                    ){Text("Upload QR",fontSize=11.sp)}
+                    ){Text(rsEnrollmentT(lang,"upload_qr"),fontSize=11.sp)}
                 }
 
                 OutlinedTextField(
@@ -263,7 +263,7 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
             modifier=Modifier.fillMaxWidth()
         ){
             Column(Modifier.padding(14.dp)){
-                Text("v0.33 PRIVATE ENROLLMENT BUILD",color=c.bright,fontWeight=FontWeight.Bold)
+                Text(rsEnrollmentT(lang,"build_label"),color=c.bright,fontWeight=FontWeight.Bold)
                 Text("Trainer-created accounts · QR invitations · camera/gallery login · adjustable transparent login form.",color=Color.White.copy(alpha=.72f))
             }
         }
