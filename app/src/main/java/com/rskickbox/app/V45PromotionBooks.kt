@@ -191,10 +191,132 @@ private fun rsPromoUiV45(lang:RsLang,key:String):String{
         "cover" to "Choose book thumbnail / cover","preview_pdf" to "Upload preview PDF","full_pdf" to "Upload full book PDF",
         "access" to "Full book access","gift" to "Free access emails (comma separated)","save_book" to "Save book settings",
         "open_reader" to "Open Reader","search" to "Search book","next_match" to "Next match","no_match" to "No matching page found.",
-        "page" to "Page","zoom" to "Zoom","back" to "Back to library"
+        "page" to "Page","zoom" to "Zoom","back" to "Back to library",
+        "thumb_ready" to "Thumbnail ready.","cover_ready" to "Book cover ready.","preview_ready" to "Preview PDF imported.",
+        "preview_error" to "Could not import preview PDF.","full_ready" to "Full book PDF imported.",
+        "full_error" to "Could not import full book PDF.","book_saved" to "Book settings saved."
     )
-    val nl=en+mapOf("promo_page" to "Promoties","promo_sub" to "Aanbiedingen, producten en uitgelichte RS KICKBOX-content.","featured" to "UITGELICHTE PROMOTIES","book" to "UITGELICHT BOEK","buy" to "Kopen op Amazon","preview" to "Preview lezen","read" to "Volledig boek lezen","locked" to "Volledige boektoegang zit niet in je huidige toegangsniveau.","manager" to "Promotiebeheer","manager_sub" to "Upload klikbare thumbnails, externe links en beheer het boek in de app.","new_thumb" to "NIEUWE PROMOTIETHUMBNAIL","title" to "Titel","link" to "Externe link","image" to "Thumbnail kiezen","save" to "Thumbnail opslaan","active" to "ACTIEF","inactive" to "INACTIEF","delete" to "Verwijderen","confirm" to "Bevestigen","book_manager" to "BOEKPROMOTIE & READER","book_title" to "Boektitel","amazon" to "Amazon-link","cover" to "Boekthumbnail / cover kiezen","preview_pdf" to "Preview-PDF uploaden","full_pdf" to "Volledig boek-PDF uploaden","access" to "Toegang volledig boek","gift" to "Gratis toegang e-mails (komma gescheiden)","save_book" to "Boekinstellingen opslaan","open_reader" to "Reader openen","search" to "Zoek in boek","next_match" to "Volgende match","no_match" to "Geen overeenkomende pagina gevonden.","page" to "Pagina","zoom" to "Zoom","back" to "Terug naar bibliotheek")
-    val pack=when(lang.code){"nl"->nl;else->en}
+    val nl=en+mapOf(
+        "promo_page" to "Promoties","promo_sub" to "Aanbiedingen, producten en uitgelichte RS KICKBOX-content.",
+        "featured" to "UITGELICHTE PROMOTIES","book" to "UITGELICHT BOEK","buy" to "Kopen op Amazon",
+        "preview" to "Preview lezen","read" to "Volledig boek lezen","locked" to "Volledige boektoegang zit niet in je huidige toegangsniveau.",
+        "manager" to "Promotiebeheer","manager_sub" to "Upload klikbare thumbnails, externe links en beheer het boek in de app.",
+        "new_thumb" to "NIEUWE PROMOTIETHUMBNAIL","title" to "Titel","link" to "Externe link","image" to "Thumbnail kiezen",
+        "save" to "Thumbnail opslaan","active" to "ACTIEF","inactive" to "INACTIEF","delete" to "Verwijderen","confirm" to "Bevestigen",
+        "book_manager" to "BOEKPROMOTIE & READER","book_title" to "Boektitel","amazon" to "Amazon-link",
+        "cover" to "Boekthumbnail / cover kiezen","preview_pdf" to "Preview-PDF uploaden","full_pdf" to "Volledig boek-PDF uploaden",
+        "access" to "Toegang volledig boek","gift" to "Gratis toegang e-mails (komma gescheiden)","save_book" to "Boekinstellingen opslaan",
+        "open_reader" to "Reader openen","search" to "Zoek in boek","next_match" to "Volgende match","no_match" to "Geen overeenkomende pagina gevonden.",
+        "page" to "Pagina","back" to "Terug naar bibliotheek","thumb_ready" to "Thumbnail klaar.","cover_ready" to "Boekcover klaar.",
+        "preview_ready" to "Preview-PDF geïmporteerd.","preview_error" to "Preview-PDF kon niet worden geïmporteerd.",
+        "full_ready" to "Volledig boek-PDF geïmporteerd.","full_error" to "Volledig boek-PDF kon niet worden geïmporteerd.","book_saved" to "Boekinstellingen opgeslagen."
+    )
+    val pt=en+mapOf(
+        "promo_page" to "Promoções","promo_sub" to "Ofertas, produtos e conteúdo RS KICKBOX em destaque.",
+        "featured" to "PROMOÇÕES EM DESTAQUE","book" to "LIVRO EM DESTAQUE","buy" to "Comprar na Amazon",
+        "preview" to "Ler Prévia","read" to "Ler Livro Completo","locked" to "O livro completo não está incluído no teu nível de acesso atual.",
+        "manager" to "Gestor de Promoções","manager_sub" to "Carrega miniaturas clicáveis, links externos e gere o livro dentro da app.",
+        "new_thumb" to "NOVA MINIATURA PROMOCIONAL","title" to "Título","link" to "Link externo","image" to "Escolher miniatura",
+        "save" to "Guardar miniatura","active" to "ATIVO","inactive" to "INATIVO","delete" to "Eliminar","confirm" to "Confirmar",
+        "book_manager" to "PROMOÇÃO DO LIVRO & LEITOR","book_title" to "Título do livro","amazon" to "Link Amazon",
+        "cover" to "Escolher miniatura / capa","preview_pdf" to "Carregar PDF de prévia","full_pdf" to "Carregar PDF completo",
+        "access" to "Acesso ao livro completo","gift" to "Emails com acesso grátis (separados por vírgula)","save_book" to "Guardar definições do livro",
+        "open_reader" to "Abrir Leitor","search" to "Pesquisar no livro","next_match" to "Próximo resultado","no_match" to "Nenhuma página encontrada.",
+        "page" to "Página","back" to "Voltar à biblioteca","thumb_ready" to "Miniatura pronta.","cover_ready" to "Capa pronta.",
+        "preview_ready" to "PDF de prévia importado.","preview_error" to "Não foi possível importar o PDF de prévia.",
+        "full_ready" to "PDF completo importado.","full_error" to "Não foi possível importar o PDF completo.","book_saved" to "Definições do livro guardadas."
+    )
+    val es=en+mapOf(
+        "promo_page" to "Promociones","promo_sub" to "Ofertas, productos y contenido destacado de RS KICKBOX.",
+        "featured" to "PROMOCIONES DESTACADAS","book" to "LIBRO DESTACADO","buy" to "Comprar en Amazon",
+        "preview" to "Leer Vista Previa","read" to "Leer Libro Completo","locked" to "El libro completo no está incluido en tu nivel de acceso actual.",
+        "manager" to "Gestor de Promociones","manager_sub" to "Sube miniaturas clicables, enlaces externos y controla el libro dentro de la app.",
+        "new_thumb" to "NUEVA MINIATURA PROMOCIONAL","title" to "Título","link" to "Enlace externo","image" to "Elegir miniatura",
+        "save" to "Guardar miniatura","active" to "ACTIVO","inactive" to "INACTIVO","delete" to "Eliminar","confirm" to "Confirmar",
+        "book_manager" to "PROMOCIÓN DEL LIBRO & LECTOR","book_title" to "Título del libro","amazon" to "Enlace de Amazon",
+        "cover" to "Elegir miniatura / portada","preview_pdf" to "Subir PDF de vista previa","full_pdf" to "Subir PDF completo",
+        "access" to "Acceso al libro completo","gift" to "Emails con acceso gratis (separados por comas)","save_book" to "Guardar ajustes del libro",
+        "open_reader" to "Abrir Lector","search" to "Buscar en el libro","next_match" to "Siguiente resultado","no_match" to "No se encontró ninguna página.",
+        "page" to "Página","back" to "Volver a la biblioteca","thumb_ready" to "Miniatura lista.","cover_ready" to "Portada lista.",
+        "preview_ready" to "PDF de vista previa importado.","preview_error" to "No se pudo importar el PDF de vista previa.",
+        "full_ready" to "PDF completo importado.","full_error" to "No se pudo importar el PDF completo.","book_saved" to "Ajustes del libro guardados."
+    )
+    val fr=en+mapOf(
+        "promo_page" to "Promotions","promo_sub" to "Offres, produits et contenu RS KICKBOX mis en avant.",
+        "featured" to "PROMOTIONS À LA UNE","book" to "LIVRE À LA UNE","buy" to "Acheter sur Amazon",
+        "preview" to "Lire l’Aperçu","read" to "Lire le Livre Complet","locked" to "Le livre complet n’est pas inclus dans ton niveau d’accès actuel.",
+        "manager" to "Gestion Promotion","manager_sub" to "Ajoute des miniatures cliquables, des liens externes et gère le livre dans l’app.",
+        "new_thumb" to "NOUVELLE MINIATURE PROMO","title" to "Titre","link" to "Lien externe","image" to "Choisir la miniature",
+        "save" to "Enregistrer la miniature","active" to "ACTIF","inactive" to "INACTIF","delete" to "Supprimer","confirm" to "Confirmer",
+        "book_manager" to "PROMOTION LIVRE & LECTEUR","book_title" to "Titre du livre","amazon" to "Lien Amazon",
+        "cover" to "Choisir miniature / couverture","preview_pdf" to "Importer PDF aperçu","full_pdf" to "Importer PDF complet",
+        "access" to "Accès livre complet","gift" to "Emails avec accès gratuit (séparés par virgules)","save_book" to "Enregistrer les réglages du livre",
+        "open_reader" to "Ouvrir le Lecteur","search" to "Rechercher dans le livre","next_match" to "Résultat suivant","no_match" to "Aucune page correspondante.",
+        "page" to "Page","back" to "Retour à la bibliothèque","thumb_ready" to "Miniature prête.","cover_ready" to "Couverture prête.",
+        "preview_ready" to "PDF aperçu importé.","preview_error" to "Impossible d’importer le PDF aperçu.",
+        "full_ready" to "PDF complet importé.","full_error" to "Impossible d’importer le PDF complet.","book_saved" to "Réglages du livre enregistrés."
+    )
+    val de=en+mapOf(
+        "promo_page" to "Aktionen","promo_sub" to "Angebote, Produkte und hervorgehobene RS KICKBOX-Inhalte.",
+        "featured" to "HERVORGEHOBENE AKTIONEN","book" to "HERVORGEHOBENES BUCH","buy" to "Bei Amazon kaufen",
+        "preview" to "Vorschau lesen","read" to "Ganzes Buch lesen","locked" to "Der vollständige Buchzugriff ist in deiner aktuellen Stufe nicht enthalten.",
+        "manager" to "Promo-Manager","manager_sub" to "Lade klickbare Miniaturen und externe Links hoch und verwalte das In-App-Buch.",
+        "new_thumb" to "NEUE PROMO-MINIATUR","title" to "Titel","link" to "Externer Link","image" to "Miniatur auswählen",
+        "save" to "Miniatur speichern","active" to "AKTIV","inactive" to "INAKTIV","delete" to "Löschen","confirm" to "Bestätigen",
+        "book_manager" to "BUCHPROMOTION & READER","book_title" to "Buchtitel","amazon" to "Amazon-Link",
+        "cover" to "Buchminiatur / Cover wählen","preview_pdf" to "Vorschau-PDF hochladen","full_pdf" to "Ganzes Buch-PDF hochladen",
+        "access" to "Vollständiger Buchzugriff","gift" to "E-Mails mit Gratiszugriff (kommagetrennt)","save_book" to "Bucheinstellungen speichern",
+        "open_reader" to "Reader öffnen","search" to "Buch durchsuchen","next_match" to "Nächster Treffer","no_match" to "Keine passende Seite gefunden.",
+        "page" to "Seite","back" to "Zur Bibliothek","thumb_ready" to "Miniatur bereit.","cover_ready" to "Buchcover bereit.",
+        "preview_ready" to "Vorschau-PDF importiert.","preview_error" to "Vorschau-PDF konnte nicht importiert werden.",
+        "full_ready" to "Vollständiges PDF importiert.","full_error" to "Vollständiges PDF konnte nicht importiert werden.","book_saved" to "Bucheinstellungen gespeichert."
+    )
+    val it=en+mapOf(
+        "promo_page" to "Promozioni","promo_sub" to "Offerte, prodotti e contenuti RS KICKBOX in evidenza.",
+        "featured" to "PROMOZIONI IN EVIDENZA","book" to "LIBRO IN EVIDENZA","buy" to "Acquista su Amazon",
+        "preview" to "Leggi Anteprima","read" to "Leggi Libro Completo","locked" to "L’accesso al libro completo non è incluso nel tuo livello attuale.",
+        "manager" to "Gestione Promozioni","manager_sub" to "Carica miniature cliccabili, link esterni e gestisci il libro nell’app.",
+        "new_thumb" to "NUOVA MINIATURA PROMO","title" to "Titolo","link" to "Link esterno","image" to "Scegli miniatura",
+        "save" to "Salva miniatura","active" to "ATTIVO","inactive" to "INATTIVO","delete" to "Elimina","confirm" to "Conferma",
+        "book_manager" to "PROMO LIBRO & LETTORE","book_title" to "Titolo del libro","amazon" to "Link Amazon",
+        "cover" to "Scegli miniatura / copertina","preview_pdf" to "Carica PDF anteprima","full_pdf" to "Carica PDF completo",
+        "access" to "Accesso libro completo","gift" to "Email con accesso gratuito (separate da virgole)","save_book" to "Salva impostazioni libro",
+        "open_reader" to "Apri Lettore","search" to "Cerca nel libro","next_match" to "Risultato successivo","no_match" to "Nessuna pagina corrispondente.",
+        "page" to "Pagina","back" to "Torna alla libreria","thumb_ready" to "Miniatura pronta.","cover_ready" to "Copertina pronta.",
+        "preview_ready" to "PDF anteprima importato.","preview_error" to "Impossibile importare il PDF anteprima.",
+        "full_ready" to "PDF completo importato.","full_error" to "Impossibile importare il PDF completo.","book_saved" to "Impostazioni libro salvate."
+    )
+    val pl=en+mapOf(
+        "promo_page" to "Promocje","promo_sub" to "Oferty, produkty i wyróżnione treści RS KICKBOX.",
+        "featured" to "WYRÓŻNIONE PROMOCJE","book" to "WYRÓŻNIONA KSIĄŻKA","buy" to "Kup na Amazon",
+        "preview" to "Czytaj Podgląd","read" to "Czytaj Pełną Książkę","locked" to "Pełny dostęp do książki nie jest dostępny w Twoim obecnym poziomie.",
+        "manager" to "Menedżer Promocji","manager_sub" to "Dodawaj klikalne miniatury, linki zewnętrzne i zarządzaj książką w aplikacji.",
+        "new_thumb" to "NOWA MINIATURA PROMOCYJNA","title" to "Tytuł","link" to "Link zewnętrzny","image" to "Wybierz miniaturę",
+        "save" to "Zapisz miniaturę","active" to "AKTYWNE","inactive" to "NIEAKTYWNE","delete" to "Usuń","confirm" to "Potwierdź",
+        "book_manager" to "PROMOCJA KSIĄŻKI & CZYTNIK","book_title" to "Tytuł książki","amazon" to "Link Amazon",
+        "cover" to "Wybierz miniaturę / okładkę","preview_pdf" to "Wgraj PDF podglądu","full_pdf" to "Wgraj pełny PDF",
+        "access" to "Dostęp do pełnej książki","gift" to "E-maile z darmowym dostępem (oddzielone przecinkami)","save_book" to "Zapisz ustawienia książki",
+        "open_reader" to "Otwórz Czytnik","search" to "Szukaj w książce","next_match" to "Następny wynik","no_match" to "Nie znaleziono pasującej strony.",
+        "page" to "Strona","back" to "Wróć do biblioteki","thumb_ready" to "Miniatura gotowa.","cover_ready" to "Okładka gotowa.",
+        "preview_ready" to "PDF podglądu zaimportowany.","preview_error" to "Nie udało się zaimportować PDF podglądu.",
+        "full_ready" to "Pełny PDF zaimportowany.","full_error" to "Nie udało się zaimportować pełnego PDF.","book_saved" to "Ustawienia książki zapisane."
+    )
+    val tr=en+mapOf(
+        "promo_page" to "Promosyonlar","promo_sub" to "Teklifler, ürünler ve öne çıkan RS KICKBOX içerikleri.",
+        "featured" to "ÖNE ÇIKAN PROMOSYONLAR","book" to "ÖNE ÇIKAN KİTAP","buy" to "Amazon’dan Satın Al",
+        "preview" to "Önizlemeyi Oku","read" to "Tam Kitabı Oku","locked" to "Tam kitap erişimi mevcut erişim seviyene dahil değil.",
+        "manager" to "Promosyon Yönetimi","manager_sub" to "Tıklanabilir görseller, harici bağlantılar yükle ve uygulama içi kitabı yönet.",
+        "new_thumb" to "YENİ PROMOSYON GÖRSELİ","title" to "Başlık","link" to "Harici bağlantı","image" to "Görsel seç",
+        "save" to "Görseli kaydet","active" to "AKTİF","inactive" to "PASİF","delete" to "Sil","confirm" to "Onayla",
+        "book_manager" to "KİTAP PROMOSYONU & OKUYUCU","book_title" to "Kitap başlığı","amazon" to "Amazon bağlantısı",
+        "cover" to "Kitap görseli / kapak seç","preview_pdf" to "Önizleme PDF yükle","full_pdf" to "Tam kitap PDF yükle",
+        "access" to "Tam kitap erişimi","gift" to "Ücretsiz erişim e-postaları (virgülle ayır)","save_book" to "Kitap ayarlarını kaydet",
+        "open_reader" to "Okuyucuyu Aç","search" to "Kitapta ara","next_match" to "Sonraki sonuç","no_match" to "Eşleşen sayfa bulunamadı.",
+        "page" to "Sayfa","back" to "Kütüphaneye dön","thumb_ready" to "Görsel hazır.","cover_ready" to "Kitap kapağı hazır.",
+        "preview_ready" to "Önizleme PDF içe aktarıldı.","preview_error" to "Önizleme PDF içe aktarılamadı.",
+        "full_ready" to "Tam kitap PDF içe aktarıldı.","full_error" to "Tam kitap PDF içe aktarılamadı.","book_saved" to "Kitap ayarları kaydedildi."
+    )
+    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
 }
 
@@ -219,7 +341,7 @@ fun RsPromotionManagerV45(c:RsPalette,store:RsStore,lang:RsLang){
                 onComplete={info->
                     if(promoImage.isNotBlank()&&promoImage!=info.uri)rsDeleteOwnedVisualV29(context,promoImage)
                     promoImage=info.uri
-                    promoStatus="Thumbnail ready."
+                    promoStatus=rsPromoUiV45(lang,"thumb_ready")
                 },
                 onError={promoStatus=it}
             )
@@ -234,7 +356,7 @@ fun RsPromotionManagerV45(c:RsPalette,store:RsStore,lang:RsLang){
                     val old=book.coverUri
                     book=book.copy(coverUri=info.uri)
                     if(old.isNotBlank()&&old!=info.uri)rsDeleteOwnedVisualV29(context,old)
-                    promoStatus="Book cover ready."
+                    promoStatus=rsPromoUiV45(lang,"cover_ready")
                 },
                 onError={promoStatus=it}
             )
@@ -246,8 +368,8 @@ fun RsPromotionManagerV45(c:RsPalette,store:RsStore,lang:RsLang){
             val saved=rsCopyBookPdfV45(context,uri,"preview")
             book=book.copy(previewPdfUri=saved)
             if(old.isNotBlank()&&old!=saved)rsDeleteBookPdfV45(context,old)
-            promoStatus="Preview PDF imported."
-        }.onFailure{promoStatus="Could not import preview PDF."}
+            promoStatus=rsPromoUiV45(lang,"preview_ready")
+        }.onFailure{promoStatus=rsPromoUiV45(lang,"preview_error")}
     }
     val fullPdfPicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
         if(uri!=null)runCatching{
@@ -255,8 +377,8 @@ fun RsPromotionManagerV45(c:RsPalette,store:RsStore,lang:RsLang){
             val saved=rsCopyBookPdfV45(context,uri,"full")
             book=book.copy(fullPdfUri=saved)
             if(old.isNotBlank()&&old!=saved)rsDeleteBookPdfV45(context,old)
-            promoStatus="Full book PDF imported."
-        }.onFailure{promoStatus="Could not import full book PDF."}
+            promoStatus=rsPromoUiV45(lang,"full_ready")
+        }.onFailure{promoStatus=rsPromoUiV45(lang,"full_error")}
     }
 
     fun savePromos(items:List<RsPromoItemV45>){rsSavePromosV45(store,items);revision++}
@@ -342,7 +464,7 @@ fun RsPromotionManagerV45(c:RsPalette,store:RsStore,lang:RsLang){
                     val emails=giftedText.split(',',';','\n').map{it.trim().lowercase()}.filter{it.contains("@")}.toSet()
                     book=book.copy(giftedEmails=emails)
                     rsSaveBookV45(store,book)
-                    promoStatus="Book settings saved."
+                    promoStatus=rsPromoUiV45(lang,"book_saved")
                     revision++
                 },
                 modifier=Modifier.fillMaxWidth()
