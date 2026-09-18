@@ -208,12 +208,12 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
         RsPanel(c) {
             val backend=rsBackendStatusV36()
             Text("CURRENT ACCEPTANCE BUILD", color = c.bright, fontWeight = FontWeight.Bold)
-            Text("RS KICKBOX v0.54.0 · versionCode 54", color = c.text)
+            Text("RS KICKBOX v0.55.0 · versionCode 55", color = c.text)
             Text("Package: com.rskickbox.app · targetSdk 36", color = c.muted)
             Text("Backend mode: "+if(backend.readyForClientInitialization)"SUPABASE CONFIGURED" else "LOCAL ACCEPTANCE", color = c.bright)
             Text("Supabase URL: "+if(backend.projectUrlConfigured)"configured" else "not configured", color = c.muted)
             Text("Publishable key: "+if(backend.publishableKeyConfigured)"configured" else "not configured", color = c.muted)
-            Text("Local-ready: premium navigation drawer · 9-language enrollment UI · QR creation/scanning/gallery import · compact 100-student manager · per-student classes/bookings/attendance · memberships/payments/invoice ledger · trainer/student notification center with read state · persistent RS Events/RSVPs · trainer availability/private lesson requests · private coach messaging with unread state · clickable promotion carousel · controlled preview/full in-app PDF book reader with search/zoom/page-swipe effect · shared homework/coach notes/assessments/progress · persistent challenges/8-week Fight Camp/earned badges · shared searchable content library/favorites/history · trainer-controlled membership plans/access · persistent profile/community/groups · club documents/support/referrals · trainer-built session player · QR attendance/check-in · live analytics/integrated trainer progress · trainer App Guide with workflows/visual examples · functional Academy/Technique Library/Home Training/Workout Generator/Technique Compare · private technique-video history storage · local data export/account deactivation · visual/splash media tools.", color = c.text)
+            Text("Local-ready: premium navigation drawer · 9-language enrollment UI · QR creation/scanning/gallery import · compact 100-student manager · per-student classes/bookings/attendance · memberships/payments/invoice ledger · trainer/student notification center with read state · persistent RS Events/RSVPs · trainer availability/private lesson requests · private coach messaging with unread state · clickable promotion carousel · controlled preview/full in-app PDF book reader with search/zoom/page-swipe effect · shared homework/coach notes/assessments/progress · persistent challenges/8-week Fight Camp/earned badges · shared searchable content library/favorites/history · trainer-controlled membership plans/access · persistent profile/community/groups · club documents/support/referrals · trainer-built session player · QR attendance/check-in · live analytics/integrated trainer progress · trainer App Guide with workflows/visual examples · complete member-services dashboard · live attention badges · functional Academy/Technique Library/Home Training/Workout Generator/Technique Compare · private technique-video history storage · local data export/account deactivation · visual/splash media tools.", color = c.text)
             Text("Not production-connected yet: multi-device authentication, Supabase database, cloud media, push delivery, real AI vision, payment webhooks, signed Play Store AAB.", color = c.muted)
         }
         RsPanel(c) {
@@ -236,7 +236,7 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
         RsPanel(c) {
             Text("PLAY STORE RELEASE CHECK", color = c.bright, fontWeight = FontWeight.Bold)
             val checks = listOf(
-                "v0.54 Android acceptance source" to true,
+                "v0.55 Android acceptance source" to true,
                 "Private QR enrollment workflow" to true,
                 "Nine-language enrollment UI" to true,
                 "Premium role navigation drawer" to true,
