@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -145,7 +146,7 @@ fun RsDocumentsV51(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
         if(role==RsRole.TRAINER)RsPanel(c){
             OutlinedTextField(title,{title=it.take(120)},label={Text(rsServiceUiV51(lang,"title"))},modifier=Modifier.fillMaxWidth())
             OutlinedTextField(body,{body=it.take(10000)},label={Text(rsServiceUiV51(lang,"body"))},modifier=Modifier.fillMaxWidth(),minLines=5)
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(androidx.compose.ui.unit.dp(4))){
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
                 listOf("ALL","BASIC","PRO","ELITE").forEach{x->
                     FilterChip(selected=tier==x,onClick={tier=x},label={Text(x,fontSize=9.sp)},modifier=Modifier.weight(1f))
                 }
