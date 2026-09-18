@@ -62,7 +62,7 @@ private fun rsDecodeInvoicesV39(raw:String):List<RsInvoiceV39>{
     }.getOrDefault(emptyList())
 }
 
-private fun rsLoadInvoicesV39(store:RsStore):List<RsInvoiceV39>{
+fun rsLoadInvoicesV39(store:RsStore):List<RsInvoiceV39>{
     val raw=store.s("finance_invoices_v39","")
     if(raw.isBlank()){
         store.ps("finance_invoices_v39",rsEncodeInvoicesV39(rsSeedInvoicesV39))
