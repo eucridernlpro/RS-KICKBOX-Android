@@ -54,7 +54,11 @@ fun RsKickboxV21App() {
                     val scope = if(active==RsRole.TRAINER) BgScope.TRAINER_TRAINING else BgScope.STUDENT_TRAINING
                     RsLiveBackground(c, store, scope) {
                         RsPerPageBackgroundV21(store, route) {
-                            ShellV21(c, store, active, lang, route, { selected -> lang=selected;store.ps("lang",selected.code) }, { route=it }, { role=null }) {
+                            ShellV21(c, store, active, lang, route, { selected -> lang=selected;store.ps("lang",selected.code) }, { route=it }, {
+                                role=null
+                                route="home"
+                                kotlinx.coroutines.MainScope().launch { rsCloudLogoutV63() }
+                            }) {
                                 when(route) {
                                     "home", "trainer" -> RsPremiumDashboardV21(c, store, active, lang) { route=it }
                                     "themes" -> RsThemeStudio(c, theme) { selected -> theme=selected;store.ps("theme",selected.name) }
