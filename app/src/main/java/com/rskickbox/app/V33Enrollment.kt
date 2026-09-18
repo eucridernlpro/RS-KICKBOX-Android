@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.google.zxing.BarcodeFormat
+import com.google.zxing.DecodeHintType
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
@@ -127,13 +128,29 @@ fun rsQrBitmapV33(payload:String,size:Int=900):Bitmap{
 
 fun rsDecodeQrImageV33(context:Context,uri:Uri):String?{
     return runCatching{
-        val bitmap=context.contentResolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it)}?:return null
+        val bounds=BitmapFactory.Options().apply{inJustDecodeBounds=true}
+        context.contentResolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it,null,bounds)}
+        if(bounds.outWidth<=0 || bounds.outHeight<=0)return null
+
+        var sample=1
+        val maxSide=2200
+        while(bounds.outWidth/sample>maxSide || bounds.outHeight/sample>maxSide)sample*=2
+
+        val options=BitmapFactory.Options().apply{
+            inSampleSize=sample
+            inPreferredConfig=Bitmap.Config.ARGB_8888
+        }
+        val bitmap=context.contentResolver.openInputStream(uri)?.use{
+            BitmapFactory.decodeStream(it,null,options)
+        }?:return null
+
         val width=bitmap.width
         val height=bitmap.height
         val pixels=IntArray(width*height)
         bitmap.getPixels(pixels,0,width,0,0,width,height)
         val source=RGBLuminanceSource(width,height,pixels)
-        QRCodeReader().decode(BinaryBitmap(HybridBinarizer(source))).text
+        val hints=mapOf<DecodeHintType,Any>(DecodeHintType.TRY_HARDER to true)
+        QRCodeReader().decode(BinaryBitmap(HybridBinarizer(source)),hints).text
     }.getOrNull()
 }
 
@@ -147,9 +164,9 @@ fun rsShareStudentInviteV33(context:Context,account:RsStudentAccountV33){
     val text=buildString{
         append("RS KICKBOX invitation for ")
         append(account.name)
-        append("\\n\\nInstall the app: ")
+        append("\n\nInstall the app: ")
         append(RS_PLAY_STORE_URL_V33)
-        append("\\n\\nScan the attached QR on the RS KICKBOX login page. Your activation code is inside the QR invitation.")
+        append("\n\nScan the attached QR on the RS KICKBOX login page. Your activation code is inside the QR invitation.")
     }
     val intent=Intent(Intent.ACTION_SEND).apply{
         type="image/png"
