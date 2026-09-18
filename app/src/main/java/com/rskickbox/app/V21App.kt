@@ -88,7 +88,7 @@ fun RsKickboxV21App() {
                                     "badges" -> RsBadges(c)
                                     "vault" -> RsKnowledgeVault(c)
                                     "compare" -> RsTechniqueCompare(c)
-                                    "coachchat" -> RsPrivateCoachChat(c)
+                                    "coachchat" -> RsCoachChatV44(c,store,lang,active)
                                     "events" -> RsStudentEventsV42(c,store,lang)
                                     "notifications" -> RsNotificationsV41(c,store,lang,active)
                                     "analytics" -> RsAnalytics(c)
@@ -306,6 +306,7 @@ private fun ShellV21(
         "payments" to "Payment Center",
         "analytics" to "Analytics",
         "notifications" to "Notifications",
+        "coachchat" to "Coach Inbox",
         "schedule" to "Trainer Schedule",
         "release" to "Release & Legal Center",
         "settings" to "App Settings"
@@ -322,6 +323,7 @@ private fun ShellV21(
         "music" to "My RS Music",
         "finance" to "Membership & Payments",
         "notifications" to "Notifications",
+        "coachchat" to "Private Coach Chat",
         "private_lessons" to "Private Lessons",
         "profile" to "My Profile",
         "settings" to "Settings & Privacy"
