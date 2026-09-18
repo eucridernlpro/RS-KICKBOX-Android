@@ -81,7 +81,7 @@ fun RsKickboxV21App() {
                                     "fightcamp" -> RsStudentFightCampV47(c,store,lang)
                                     "finance" -> RsStudentFinanceV39(c,store,lang)
                                     "community" -> RsCommunityV50(c,store,lang,active)
-                                    "media" -> RsTrainingMediaV16(c, store)
+                                    "media" -> RsTrainingMediaV55(c,store,lang,active)
                                     "music", "music_admin" -> RsLocalMusicCenterV20(c, store, active, lang)
                                     "techniques" -> RsTechniqueLibraryV54(c,lang)
                                     "home_training" -> RsHomeTrainingV54(c,store,lang)
@@ -308,6 +308,7 @@ private fun ShellV21(
         "session_builder" to "Session Builder",
         "qr_attendance" to "QR Attendance",
         "content" to "Content Manager",
+        "media" to "Training Media Manager",
         "lesson_editor" to "Lesson Editor",
         "classes" to "Class Manager",
         "attendance" to "Attendance",
