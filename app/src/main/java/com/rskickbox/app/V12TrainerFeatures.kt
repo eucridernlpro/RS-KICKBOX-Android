@@ -124,15 +124,15 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                     FilterChip(selected=plan==p,onClick={plan=p},label={Text(p)},modifier=Modifier.weight(1f))
                 }
             }
-            Text("A secure invitation code is generated automatically. The QR contains the email + activation code, never a permanent password.",color=c.muted,fontSize=10.sp)
+            Text(rsEnrollMsg(lang,"secure_hint"),color=c.muted,fontSize=10.sp)
             Button(
                 onClick={
                     val cleanEmail=email.trim()
                     when{
-                        name.trim().isBlank()->status="Enter the student's name."
-                        !cleanEmail.contains("@")->status="Enter a valid email address."
-                        students.any{it.email.equals(cleanEmail,true)}->status="An account with this email already exists."
-                        activeCount>=RS_STUDENT_LIMIT_V33->status="The 100 active-student limit has been reached."
+                        name.trim().isBlank()->status=rsEnrollMsg(lang,"enter_name")
+                        !cleanEmail.contains("@")->status=rsEnrollMsg(lang,"invalid_email")
+                        students.any{it.email.equals(cleanEmail,true)}->status=rsEnrollMsg(lang,"email_exists")
+                        activeCount>=RS_STUDENT_LIMIT_V33->status=rsEnrollMsg(lang,"limit_reached")
                         else->{
                             val account=RsStudentAccountV33(
                                 id=java.util.UUID.randomUUID().toString(),
@@ -148,7 +148,7 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                             email=""
                             plan="PRO"
                             showCreate=false
-                            status="Student account created. QR invitation is ready to share."
+                            status=rsEnrollMsg(lang,"created")
                         }
                     }
                 },
@@ -158,8 +158,8 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
         }
 
         if(students.isEmpty())RsPanel(c){
-            Text("NO CREATED STUDENT ACCOUNTS YET",color=c.bright,fontWeight=FontWeight.Bold)
-            Text("Create the first student above. The account will immediately get an invitation QR.",color=c.muted)
+            Text(rsEnrollMsg(lang,"no_accounts_title"),color=c.bright,fontWeight=FontWeight.Bold)
+            Text(rsEnrollMsg(lang,"no_accounts_desc"),color=c.muted)
         } else {
             RsPanel(c){
                 OutlinedTextField(
@@ -185,10 +185,10 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                         checked=student.active,
                         onCheckedChange={on->
                             if(on && activeCount>=RS_STUDENT_LIMIT_V33){
-                                status="Cannot activate more than $RS_STUDENT_LIMIT_V33 students."
+                                status=rsEnrollMsg(lang,"cannot_activate")
                             }else{
                                 save(students.map{if(it.id==student.id)it.copy(active=on) else it})
-                                status=if(on)"${student.name} activated." else "${student.name} deactivated."
+                                status=if(on)rsEnrollMsg(lang,"activated",student.name) else rsEnrollMsg(lang,"deactivated",student.name)
                             }
                         }
                     )
@@ -215,8 +215,8 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                         )
                     }
                 }
-                Text("Activation code: ${student.activationCode}",color=c.bright,fontWeight=FontWeight.Bold)
-                Text("Play Store link ready to share",color=c.muted,fontSize=10.sp)
+                Text("${rsEnrollMsg(lang,"activation_label")}: ${student.activationCode}",color=c.bright,fontWeight=FontWeight.Bold)
+                Text(rsEnrollMsg(lang,"store_ready"),color=c.muted,fontSize=10.sp)
 
                 Button(
                     onClick={rsShareStudentInviteV33(context,student)},
@@ -232,7 +232,7 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                         onClick={
                             val newCode=rsNewActivationCodeV33()
                             save(students.map{if(it.id==student.id)it.copy(activationCode=newCode) else it})
-                            status="A new invitation code was generated for ${student.name}. The old QR is no longer valid in this preview."
+                            status=rsEnrollMsg(lang,"new_qr_ready",student.name)
                         },
                         modifier=Modifier.weight(1f)
                     ){Text(rsEnrollmentT(lang,"new_qr"),fontSize=10.sp)}
@@ -242,10 +242,10 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                                 save(students.filterNot{it.id==student.id})
                                 if(expandedQrStudentId==student.id)expandedQrStudentId=null
                                 pendingDeleteStudentId=null
-                                status="${student.name} deleted."
+                                status=rsEnrollMsg(lang,"deleted",student.name)
                             }else{
                                 pendingDeleteStudentId=student.id
-                                status="Tap Delete again to confirm removal of ${student.name}."
+                                status=rsEnrollMsg(lang,"delete_confirm",student.name)
                             }
                         },
                         modifier=Modifier.weight(1f)
@@ -270,7 +270,7 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
 
         RsPanel(c){
             Text(rsEnrollmentT(lang,"security_note"),color=c.bright,fontWeight=FontWeight.Bold)
-            Text("This acceptance build stores accounts locally. When the Supabase backend is connected, QR invitations will become one-time server tokens with expiry/revocation while keeping this same trainer/student workflow.",color=c.muted,fontSize=10.sp)
+            Text(rsEnrollMsg(lang,"security_body"),color=c.muted,fontSize=10.sp)
         }
         if(status.isNotBlank())Text(status,color=c.bright,fontSize=10.sp)
     }
