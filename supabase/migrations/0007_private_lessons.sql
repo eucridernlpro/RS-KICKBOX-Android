@@ -50,6 +50,10 @@ create index if not exists rs_private_bookings_student_idx on public.rs_private_
 create index if not exists rs_private_bookings_slot_idx on public.rs_private_bookings(slot_id);
 create index if not exists rs_private_bookings_status_idx on public.rs_private_bookings(status);
 
+create unique index if not exists rs_private_bookings_one_confirmed_per_slot
+on public.rs_private_bookings(slot_id)
+where status = 'confirmed';
+
 alter table public.rs_private_bookings enable row level security;
 revoke all on table public.rs_private_bookings from anon, authenticated;
 grant select, insert, update, delete on table public.rs_private_bookings to authenticated;
