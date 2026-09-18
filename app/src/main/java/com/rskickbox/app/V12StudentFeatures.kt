@@ -116,7 +116,15 @@ fun RsCommunity(c:RsPalette){
 @Composable
 fun RsTrainingMedia(c:RsPalette){
     RsScroll(c,"Training Media","Preview library for coach videos, drills and member uploads."){
-        listOf("Coach Demo · Jab Recovery · 02:14","Padwork Flow · 5-count combination · 03:46","Defense Drill · Slip & return · 04:10","Mobility · Post-training recovery · 06:20").forEach{RsPanel(c){Text(it,color=c.bright,fontWeight=FontWeight.Bold);Text("HD training media preview",color=c.muted);Button(onClick={},modifier=Modifier.fillMaxWidth()){Text("▶ Play")}}}
+        listOf("Coach Demo · Jab Recovery · 02:14","Padwork Flow · 5-count combination · 03:46","Defense Drill · Slip & return · 04:10","Mobility · Post-training recovery · 06:20").forEach{item->
+            var playing by remember(item){mutableStateOf(false)}
+            RsPanel(c){
+                Text(item,color=c.bright,fontWeight=FontWeight.Bold)
+                Text("HD training media preview",color=c.muted)
+                Button(onClick={playing=!playing},modifier=Modifier.fillMaxWidth()){Text(if(playing)"■ Close preview" else "▶ Play")}
+                if(playing)Text("Local media preview opened.",color=c.text)
+            }
+        }
     }
 }
 
@@ -124,6 +132,12 @@ fun RsTrainingMedia(c:RsPalette){
 fun RsStudentSettings(c:RsPalette,s:RsStore){
     RsScroll(c,"Settings & Privacy","Personal app preferences and privacy controls."){
         listOf("Push notifications","Booking reminders","Training reminders","Private profile","Voice coach auto-speak").forEachIndexed{i,t->var on by remember{mutableStateOf(s.b("student_setting_$i",i<3||i==4))};RsPanel(c){Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){Text(t,color=c.text,modifier=Modifier.weight(1f));Switch(on,{on=it;s.pb("student_setting_$i",it)})}}}
-        RsPanel(c){Text("YOUR DATA",color=c.bright,fontWeight=FontWeight.Bold);OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth()){Text("Download my data")};OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth()){Text("Request account deletion")}}
+        var dataStatus by remember{mutableStateOf("")}
+        RsPanel(c){
+            Text("YOUR DATA",color=c.bright,fontWeight=FontWeight.Bold)
+            OutlinedButton(onClick={dataStatus="Data export request recorded locally."},modifier=Modifier.fillMaxWidth()){Text("Download my data")}
+            OutlinedButton(onClick={dataStatus="Account deletion request recorded locally."},modifier=Modifier.fillMaxWidth()){Text("Request account deletion")}
+            if(dataStatus.isNotBlank())Text(dataStatus,color=c.muted,fontSize=10.sp)
+        }
     }
 }
