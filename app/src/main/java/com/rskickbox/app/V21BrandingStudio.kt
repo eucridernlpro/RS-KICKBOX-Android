@@ -6,7 +6,6 @@ import android.os.Build
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
 import android.widget.ImageView
-import android.widget.VideoView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
@@ -25,6 +24,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
 
 private data class VisualSlotV21(val key:String,val title:String,val group:String,val size:String,val hint:String)
 private fun visualKeyV21(slot:String)="visual_v21_$slot"
@@ -134,6 +138,7 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
     var message by remember{mutableStateOf("")}
     var optimizing by remember{mutableStateOf(false)}
     var refresh by remember{mutableIntStateOf(0)}
+    var fullPreview by remember{mutableStateOf(false)}
 
     val groups=remember{allVisualSlotsV26.map{it.group}.distinct()}
     val visibleSlots=remember(selectedGroup){allVisualSlotsV26.filter{it.group==selectedGroup}}
@@ -272,6 +277,14 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                     Text(if(uri.isBlank())"DEFAULT RS VISUAL" else "CUSTOM VISUAL SAVED",color=c.bright,fontWeight=FontWeight.Bold,fontSize=9.sp,modifier=Modifier.align(Alignment.BottomStart).padding(10.dp))
                 }
 
+                if(uri.isNotBlank()){
+                    Button(
+                        onClick={fullPreview=true},
+                        enabled=!optimizing,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text("▶ Preview selected background",fontSize=10.sp)}
+                }
+
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
                     Button(
                         onClick={galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))},
@@ -339,6 +352,38 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
 
         if(message.isNotBlank())Text(message,color=c.bright,fontSize=10.sp,maxLines=1)
     }
+
+    if(fullPreview && uri.isNotBlank()){
+        androidx.compose.ui.window.Dialog(onDismissRequest={fullPreview=false}){
+            Surface(
+                color=Color.Black,
+                modifier=Modifier.fillMaxWidth().fillMaxHeight(.94f)
+            ){
+                Box(Modifier.fillMaxSize().background(Color.Black)){
+                    RsUriPreviewV21(uri,Modifier.fillMaxSize(),pos)
+                    Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=opacity.coerceIn(0f,.85f))))
+                    Column(
+                        Modifier.align(Alignment.TopStart).fillMaxWidth().padding(14.dp),
+                        verticalArrangement=Arrangement.spacedBy(6.dp)
+                    ){
+                        Text(selected.title,color=Color.White,fontWeight=FontWeight.Black)
+                        Text("Position $pos · Overlay ${(opacity*100).toInt()}%",color=Color.White.copy(alpha=.74f),fontSize=10.sp)
+                    }
+                    TextButton(
+                        onClick={fullPreview=false},
+                        modifier=Modifier.align(Alignment.TopEnd).padding(8.dp)
+                    ){Text("Close preview",color=Color.White)}
+                    Text(
+                        "FULL-SCREEN BACKGROUND TEST",
+                        color=Color.White.copy(alpha=.72f),
+                        fontSize=9.sp,
+                        fontWeight=FontWeight.Bold,
+                        modifier=Modifier.align(Alignment.BottomCenter).padding(12.dp)
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -373,35 +418,34 @@ fun RsUriPreviewV21(uri:String,modifier:Modifier=Modifier,position:String="CENTE
     val parsed=remember(uri){Uri.parse(uri)}
     val kind=remember(uri){rsVisualKindV29(context,parsed)}
     when(kind){
-        "VIDEO"->AndroidView(
-            factory={ctx->
-                VideoView(ctx).apply{
-                    setOnPreparedListener{mp->
-                        mp.isLooping=true
-                        mp.setVolume(0f,0f)
-                        post{
-                            val vw=mp.videoWidth.toFloat().coerceAtLeast(1f)
-                            val vh=mp.videoHeight.toFloat().coerceAtLeast(1f)
-                            val viewW=width.toFloat().coerceAtLeast(1f)
-                            val viewH=height.toFloat().coerceAtLeast(1f)
-                            val videoRatio=vw/vh
-                            val viewRatio=viewW/viewH
-                            if(videoRatio>viewRatio){scaleX=videoRatio/viewRatio;scaleY=1f}
-                            else{scaleX=1f;scaleY=viewRatio/videoRatio}
-                        }
-                        start()
-                    }
+        "VIDEO"->{
+            val player=remember(uri){
+                ExoPlayer.Builder(context).build().apply{
+                    volume=0f
+                    repeatMode=Player.REPEAT_MODE_ONE
+                    setMediaItem(MediaItem.fromUri(parsed))
+                    prepare()
+                    playWhenReady=true
                 }
-            },
-            modifier=modifier,
-            update={view->
-                if(view.tag!=uri){
-                    view.tag=uri
-                    view.setVideoURI(parsed)
-                }
-                if(!view.isPlaying)runCatching{view.start()}
             }
-        )
+            DisposableEffect(player){onDispose{player.release()}}
+            AndroidView(
+                factory={ctx->
+                    PlayerView(ctx).apply{
+                        useController=false
+                        resizeMode=AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                        setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        this.player=player
+                    }
+                },
+                modifier=modifier,
+                update={view->
+                    view.player=player
+                    view.resizeMode=AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    if(!player.isPlaying)player.playWhenReady=true
+                }
+            )
+        }
         else->AndroidView(
             factory={ctx->ImageView(ctx).apply{adjustViewBounds=true;scaleType=ImageView.ScaleType.CENTER_CROP}},
             modifier=modifier,
