@@ -90,7 +90,7 @@ fun RsKickboxV21App() {
                                     "compare" -> RsTechniqueCompare(c)
                                     "coachchat" -> RsPrivateCoachChat(c)
                                     "events" -> RsEvents(c)
-                                    "notifications" -> RsNotificationsCenterV16(c, store)
+                                    "notifications" -> RsNotificationsV41(c,store,lang,active)
                                     "analytics" -> RsAnalytics(c)
                                     "documents" -> RsDocuments(c)
                                     "support" -> RsSupport(c)
@@ -305,6 +305,7 @@ private fun ShellV21(
         "branding" to "Branding & Site Settings",
         "payments" to "Payment Center",
         "analytics" to "Analytics",
+        "notifications" to "Notifications",
         "release" to "Release & Legal Center",
         "settings" to "App Settings"
     ) else listOf(
@@ -319,6 +320,7 @@ private fun ShellV21(
         "media" to "Training Media",
         "music" to "My RS Music",
         "finance" to "Membership & Payments",
+        "notifications" to "Notifications",
         "profile" to "My Profile",
         "settings" to "Settings & Privacy"
     )
