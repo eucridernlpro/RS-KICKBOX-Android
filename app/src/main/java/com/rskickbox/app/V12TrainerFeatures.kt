@@ -84,6 +84,7 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
     var expandedQrStudentId by remember{mutableStateOf<String?>(null)}
     var pendingDeleteStudentId by remember{mutableStateOf<String?>(null)}
     var studentSearch by remember{mutableStateOf("")}
+    var visibleStudentCount by remember{mutableIntStateOf(20)}
     val students=remember(revision){rsLoadStudentsV33(store)}
     val activeCount=students.count{it.active}
     val filteredStudents=remember(students,studentSearch){
@@ -94,6 +95,8 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
             it.plan.contains(q,ignoreCase=true)
         }
     }
+    LaunchedEffect(studentSearch){visibleStudentCount=20}
+    val visibleStudents=filteredStudents.take(visibleStudentCount)
 
     fun save(items:List<RsStudentAccountV33>){
         rsSaveStudentsV33(store,items)
@@ -170,7 +173,7 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
             }
         }
 
-        filteredStudents.forEach{student->
+        visibleStudents.forEach{student->
             RsPanel(c){
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
@@ -253,6 +256,15 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                         )
                     }
                 }
+            }
+        }
+
+        if(visibleStudents.size<filteredStudents.size){
+            OutlinedButton(
+                onClick={visibleStudentCount=(visibleStudentCount+20).coerceAtMost(filteredStudents.size)},
+                modifier=Modifier.fillMaxWidth()
+            ){
+                Text("Show more · ${visibleStudents.size} / ${filteredStudents.size}",fontSize=11.sp)
             }
         }
 
