@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -111,7 +112,7 @@ private fun RsTrainerNotificationsV41(c:RsPalette,store:RsStore,lang:RsLang){
             Text(rsNotificationUiV41(lang,"new"),color=c.bright,fontWeight=FontWeight.Bold)
             OutlinedTextField(title,{title=it},label={Text(rsNotificationUiV41(lang,"title"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
             OutlinedTextField(message,{message=it},label={Text(rsNotificationUiV41(lang,"message"))},modifier=Modifier.fillMaxWidth(),minLines=3)
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(androidx.compose.ui.unit.dp(4))){
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
                 listOf("ALL","BASIC","PRO","ELITE").forEach{plan->
                     FilterChip(selected=audience==plan,onClick={audience=plan},label={Text(plan)},modifier=Modifier.weight(1f))
                 }
