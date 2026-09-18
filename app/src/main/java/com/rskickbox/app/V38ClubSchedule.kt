@@ -144,7 +144,7 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
                     },
                     color=if(isBooked)c.bright else c.muted
                 )
-                if(!bookingAllowed && !isBooked)Text("New class bookings are temporarily disabled by the trainer.",color=c.muted,fontSize=10.sp)
+                if(!bookingAllowed && !isBooked)Text(rsOpsUiV56(lang,"booking_disabled"),color=c.muted,fontSize=10.sp)
                 Button(
                     onClick={
                         val next=bookedIds.toMutableSet()
