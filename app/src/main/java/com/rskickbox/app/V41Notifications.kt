@@ -71,6 +71,16 @@ private fun rsSaveReadNotificationIdsV41(store:RsStore,ids:Set<String>){
     store.ps("notification_read_v41_"+email,ids.joinToString(","))
 }
 
+fun rsUnreadNotificationCountV55(store:RsStore):Int{
+    val email=store.s("session_student_email","alex@rskickbox.nl")
+    val account=rsLoadStudentsV33(store).firstOrNull{it.email.equals(email,true)}
+    val plan=account?.plan?.uppercase()?:"PRO"
+    val read=rsReadNotificationIdsV41(store)
+    return rsLoadNotificationsV41(store).count{
+        (it.audience=="ALL"||it.audience==plan) && it.id !in read
+    }
+}
+
 private fun rsNotificationUiV41(lang:RsLang,key:String):String{
     val en=mapOf(
         "trainer_title" to "Notification Center","trainer_sub" to "Create local club notifications for all members or selected plans.",
