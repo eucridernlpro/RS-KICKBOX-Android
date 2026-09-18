@@ -79,7 +79,7 @@ fun RsKickboxV21App() {
                                     "challenges" -> RsStudentChallengesV47(c,store,lang)
                                     "fightcamp" -> RsStudentFightCampV47(c,store,lang)
                                     "finance" -> RsStudentFinanceV39(c,store,lang)
-                                    "community" -> RsCommunity(c)
+                                    "community" -> RsCommunityV50(c,store,lang,active)
                                     "media" -> RsTrainingMediaV16(c, store)
                                     "music", "music_admin" -> RsLocalMusicCenterV20(c, store, active, lang)
                                     "techniques" -> RsTechniqueLibrary(c)
@@ -103,8 +103,8 @@ fun RsKickboxV21App() {
                                     "favorites" -> RsFavoritesV48(c,store,lang)
                                     "history" -> RsHistoryV48(c,store,lang)
                                     "private_lessons" -> RsStudentPrivateLessonsV43(c,store,lang)
-                                    "profile" -> RsProfileHub(c)
-                                    "groups" -> RsGroupsHub(c)
+                                    "profile" -> RsProfileV50(c,store,lang)
+                                    "groups" -> RsGroupsV50(c,store,lang,active)
                                     "search" -> RsSearchV48(c,store,lang)
                                     "homework_admin" -> RsHomeworkManagerV46(c,store,lang)
                                     "lesson_editor" -> RsContentManagerV48(c,store,lang)
@@ -316,6 +316,8 @@ private fun ShellV21(
         "fightcamp_admin" to "Fight Camp Manager",
         "analytics" to "Analytics",
         "notifications" to "Notifications",
+        "community" to "Community Moderation",
+        "groups" to "Groups Manager",
         "landing_admin" to "Promotion Manager",
         "book" to "Book Manager",
         "coachchat" to "Coach Inbox",
@@ -335,6 +337,7 @@ private fun ShellV21(
         "fightcamp" to "Fight Camp",
         "badges" to "Badges",
         "community" to "Community",
+        "groups" to "Groups",
         "media" to "Training Media",
         "vault" to "Knowledge Vault",
         "favorites" to "Saved & Favorites",
