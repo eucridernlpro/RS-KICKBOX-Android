@@ -193,6 +193,15 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
     var deleteUrl by remember { mutableStateOf(s.s("legal_delete_url", "")) }
     var supportEmail by remember { mutableStateOf(s.s("support_email", "support@rskickbox.nl")) }
     var status by remember { mutableStateOf("") }
+    var backendProbe by remember { mutableStateOf<RsSupabaseProbeV62?>(null) }
+    var backendProbeRevision by remember { mutableIntStateOf(0) }
+    var backendProbeBusy by remember { mutableStateOf(false) }
+
+    LaunchedEffect(backendProbeRevision){
+        backendProbeBusy=true
+        backendProbe=rsSupabaseProbeV62()
+        backendProbeBusy=false
+    }
 
     fun openUrl(url: String) {
         if(!url.startsWith("https://")){
@@ -213,8 +222,24 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
             Text("Backend mode: "+if(backend.readyForClientInitialization)"SUPABASE CONFIGURED" else "LOCAL ACCEPTANCE", color = c.bright)
             Text("Supabase URL: "+if(backend.projectUrlConfigured)"configured" else "not configured", color = c.muted)
             Text("Publishable key: "+if(backend.publishableKeyConfigured)"configured" else "not configured", color = c.muted)
+            val probe=backendProbe
+            Text(
+                "Project probe: "+when(probe?.state){
+                    RsSupabaseSchemaStateV62.SCHEMA_READY->"SCHEMA READY"
+                    RsSupabaseSchemaStateV62.CLIENT_CONFIGURED_SCHEMA_PENDING->"CLIENT CONNECTED · SCHEMA PENDING"
+                    RsSupabaseSchemaStateV62.NOT_CONFIGURED->"NOT CONFIGURED"
+                    null->if(backendProbeBusy)"CHECKING…" else "NOT CHECKED"
+                },
+                color=if(probe?.state==RsSupabaseSchemaStateV62.SCHEMA_READY)c.bright else c.muted
+            )
+            if(probe!=null)Text(probe.message,color=c.muted,fontSize=10.sp)
+            OutlinedButton(
+                onClick={backendProbeRevision++},
+                enabled=!backendProbeBusy,
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(backendProbeBusy)"Checking Supabase…" else "Test Supabase project & schema")}
             Text("Local-ready: premium navigation drawer · 9-language enrollment UI · QR creation/scanning/gallery import · compact 100-student manager · per-student classes/bookings/attendance · memberships/payments/invoice ledger · trainer/student notification center with read state · persistent RS Events/RSVPs · trainer availability/private lesson requests · private coach messaging with unread state · clickable promotion carousel · controlled preview/full in-app PDF book reader with search/zoom/page-swipe effect · shared homework/coach notes/assessments/progress · persistent challenges/8-week Fight Camp/earned badges · shared searchable content library/favorites/history · trainer-controlled membership plans/access · persistent profile/community/groups · club documents/support/referrals · trainer-built session player · QR attendance/check-in · live analytics/integrated trainer progress · trainer App Guide with workflows/visual examples · trainer-managed private training-media library with tier access · live operational settings for maintenance/posting/bookings/private lessons/referrals · background-safe training-media import · 9-language media/operations UI · paginated lightweight media catalog · Gallery-first picker · Supabase-ready operational settings · adaptive one-column dashboard on narrow phones · localized media player/error states · unpublished-media cleanup · full-screen splash test preview · ExoPlayer background previews/full-screen test · complete member-services dashboard · live attention badges · nine-language newest-module UI · localized App Guide controls · resumable bookmarked PDF reader · fully localized dashboard titles/hints · localized remaining Fight Camp/access/session/progress states · phone-layout QC · functional Academy/Technique Library/Home Training/Workout Generator/Technique Compare · private technique-video history storage · local data export/account deactivation · visual/splash media tools.", color = c.text)
-            Text("Not production-connected yet: multi-device authentication, Supabase database, cloud media, push delivery, real AI vision, payment webhooks, signed Play Store AAB.", color = c.muted)
+            Text("Not production-connected yet: multi-device authenticated data sync until schema/auth migration is completed, cloud media, push delivery, real AI vision, payment webhooks, signed Play Store AAB.", color = c.muted)
         }
         RsPanel(c) {
             Text("PUBLIC LEGAL LINKS", color = c.bright, fontWeight = FontWeight.Bold)
