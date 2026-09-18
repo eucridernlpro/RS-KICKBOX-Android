@@ -93,9 +93,9 @@ fun RsKickboxV21App() {
                                     "promotions" -> RsPromotionPageV45(c,store,lang){route="book"}
                                     "notifications" -> RsNotificationsV41(c,store,lang,active)
                                     "analytics" -> RsAnalytics(c)
-                                    "documents" -> RsDocuments(c)
-                                    "support" -> RsSupport(c)
-                                    "referrals" -> RsReferrals(c)
+                                    "documents" -> RsDocumentsV51(c,store,lang,active)
+                                    "support" -> RsSupportV51(c,store,lang,active)
+                                    "referrals" -> RsReferralsV51(c,store,lang)
                                     "schedule" -> RsTrainerScheduleV43(c,store,lang)
                                     "content" -> RsContentManagerV48(c,store,lang)
                                     "notes" -> RsCoachNotesV46(c,store,lang)
@@ -316,6 +316,8 @@ private fun ShellV21(
         "fightcamp_admin" to "Fight Camp Manager",
         "analytics" to "Analytics",
         "notifications" to "Notifications",
+        "documents" to "Documents Manager",
+        "support" to "Support Inbox",
         "community" to "Community Moderation",
         "groups" to "Groups Manager",
         "landing_admin" to "Promotion Manager",
@@ -348,6 +350,9 @@ private fun ShellV21(
         "promotions" to "Promotions",
         "book" to "Trainer Book",
         "notifications" to "Notifications",
+        "documents" to "Club Documents",
+        "support" to "Support",
+        "referrals" to "Referrals",
         "coachchat" to "Private Coach Chat",
         "private_lessons" to "Private Lessons",
         "profile" to "My Profile",
