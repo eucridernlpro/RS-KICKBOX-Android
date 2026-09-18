@@ -69,7 +69,7 @@ fun RsKickboxV21App() {
                                     "classes" -> if(active==RsRole.TRAINER) RsClassManagerV38(c,store,lang) else RsStudentClassesV38(c,store,lang)
                                     "attendance" -> RsAttendanceV38(c,store,lang)
                                     "invoices" -> RsTrainerInvoicesV39(c,store,lang)
-                                    "book" -> if(active==RsRole.TRAINER) RsBookManager(c) else RsTrainerBook(c)
+                                    "book" -> if(active==RsRole.TRAINER) RsBookManagerV45(c,store,lang) else RsBookLibraryV45(c,store,lang)
                                     "settings" -> if(active==RsRole.TRAINER) RsAdminSettingsV16(c,store) else RsStudentPrivacyV40(c,store,lang){
                                         role=null
                                         route="home"
@@ -90,6 +90,7 @@ fun RsKickboxV21App() {
                                     "compare" -> RsTechniqueCompare(c)
                                     "coachchat" -> RsCoachChatV44(c,store,lang,active)
                                     "events" -> RsStudentEventsV42(c,store,lang)
+                                    "promotions" -> RsPromotionPageV45(c,store,lang){route="book"}
                                     "notifications" -> RsNotificationsV41(c,store,lang,active)
                                     "analytics" -> RsAnalytics(c)
                                     "documents" -> RsDocuments(c)
@@ -115,7 +116,7 @@ fun RsKickboxV21App() {
                                     "session_builder" -> RsSessionBuilderV14(c)
                                     "challenge_admin" -> RsChallengeManagerV14(c)
                                     "fightcamp_admin" -> RsFightCampManagerV14(c)
-                                    "landing_admin" -> RsLandingManagerV14(c)
+                                    "landing_admin" -> RsPromotionManagerV45(c,store,lang)
                                     "release" -> RsReleaseCenterV16(c, store)
                                     else -> RsScroll(c, route.replaceFirstChar { it.uppercase() }, "RS premium native module") {
                                         RsPanel(c) {
@@ -306,6 +307,8 @@ private fun ShellV21(
         "payments" to "Payment Center",
         "analytics" to "Analytics",
         "notifications" to "Notifications",
+        "landing_admin" to "Promotion Manager",
+        "book" to "Book Manager",
         "coachchat" to "Coach Inbox",
         "schedule" to "Trainer Schedule",
         "release" to "Release & Legal Center",
@@ -322,6 +325,8 @@ private fun ShellV21(
         "media" to "Training Media",
         "music" to "My RS Music",
         "finance" to "Membership & Payments",
+        "promotions" to "Promotions",
+        "book" to "Trainer Book",
         "notifications" to "Notifications",
         "coachchat" to "Private Coach Chat",
         "private_lessons" to "Private Lessons",
