@@ -87,9 +87,28 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
     var studentSearch by remember{mutableStateOf("")}
     var visibleStudentCount by remember{mutableIntStateOf(20)}
     var cloudBusy by remember{mutableStateOf(false)}
+    var cloudLoading by remember{mutableStateOf(RsSupabaseV60.configured)}
+    var cloudStudents by remember{mutableStateOf<List<RsStudentAccountV33>>(emptyList())}
     val scope=rememberCoroutineScope()
-    val students=remember(revision){rsLoadStudentsV33(store)}
+    val localStudents=remember(revision){rsLoadStudentsV33(store)}
+    val students=remember(revision,cloudStudents){
+        if(!RsSupabaseV60.configured) localStudents
+        else {
+            val cloudEmails=cloudStudents.map{it.email.lowercase()}.toSet()
+            cloudStudents + localStudents.filter{it.email.lowercase() !in cloudEmails}
+        }
+    }
     val activeCount=students.count{it.active}
+
+    LaunchedEffect(RsSupabaseV60.configured){
+        if(RsSupabaseV60.configured){
+            cloudLoading=true
+            rsCloudStudentsV67()
+                .onSuccess{cloudStudents=it}
+                .onFailure{status="Cloud student sync: "+(it.message?:"Could not load students.")}
+            cloudLoading=false
+        }
+    }
     val filteredStudents=remember(students,studentSearch){
         val q=studentSearch.trim()
         if(q.isBlank())students else students.filter{
@@ -109,6 +128,14 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
     RsScroll(c,rsEnrollmentT(lang,"student_manager"),rsEnrollmentT(lang,"student_manager_sub")){
         RsPanel(c){
             Text(rsEnrollmentT(lang,"student_capacity"),color=c.bright,fontWeight=FontWeight.Black)
+            if(RsSupabaseV60.configured){
+                Text(
+                    if(cloudLoading)"Syncing students from Supabase…" else "Cloud student list connected",
+                    color=if(cloudLoading)c.muted else c.bright,
+                    fontSize=10.sp,
+                    fontWeight=FontWeight.Bold
+                )
+            }
             Text("$activeCount / $RS_STUDENT_LIMIT_V33 ${rsEnrollmentT(lang,"active_accounts")}",color=c.text,fontSize=20.sp,fontWeight=FontWeight.Bold)
             LinearProgressIndicator(progress={activeCount.toFloat()/RS_STUDENT_LIMIT_V33},modifier=Modifier.fillMaxWidth())
             Button(
