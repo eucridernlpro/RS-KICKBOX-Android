@@ -21,7 +21,7 @@ object RsOpsKeysV56{
 
 fun rsOpsEnabledV56(store:RsStore,key:String,default:Boolean=true)=store.b(key,default)
 
-private fun rsOpsUiV56(lang:RsLang,key:String):String{
+fun rsOpsUiV56(lang:RsLang,key:String):String{
     val en=mapOf(
         "title" to "App Settings & Operations",
         "sub" to "Live trainer controls that change what students can do inside RS KICKBOX.",
@@ -45,7 +45,11 @@ private fun rsOpsUiV56(lang:RsLang,key:String):String{
         "status" to "OPERATIONAL STATUS",
         "enabled" to "ENABLED",
         "disabled" to "DISABLED",
-        "saved" to "Settings save immediately."
+        "saved" to "Settings save immediately.",
+        "community_disabled" to "Community posting is temporarily disabled by the trainer.",
+        "booking_disabled" to "New class bookings are temporarily disabled by the trainer.",
+        "private_disabled" to "New private-lesson requests are temporarily disabled by the trainer.",
+        "referrals_disabled" to "Referral sharing is temporarily disabled by the trainer."
     )
     val nl=en+mapOf(
         "title" to "App-instellingen & Operaties",
@@ -70,7 +74,11 @@ private fun rsOpsUiV56(lang:RsLang,key:String):String{
         "status" to "OPERATIONELE STATUS",
         "enabled" to "INGESCHAKELD",
         "disabled" to "UITGESCHAKELD",
-        "saved" to "Instellingen worden direct opgeslagen."
+        "saved" to "Instellingen worden direct opgeslagen.",
+        "community_disabled" to "Community-posts zijn tijdelijk uitgeschakeld door de trainer.",
+        "booking_disabled" to "Nieuwe lesboekingen zijn tijdelijk uitgeschakeld door de trainer.",
+        "private_disabled" to "Nieuwe privélesverzoeken zijn tijdelijk uitgeschakeld door de trainer.",
+        "referrals_disabled" to "Referral delen is tijdelijk uitgeschakeld door de trainer."
     )
     val pt=en+mapOf(
         "title" to "Definições & Operações",
@@ -88,7 +96,11 @@ private fun rsOpsUiV56(lang:RsLang,key:String):String{
         "status" to "ESTADO OPERACIONAL",
         "enabled" to "ATIVO",
         "disabled" to "DESATIVADO",
-        "saved" to "As definições são guardadas imediatamente."
+        "saved" to "As definições são guardadas imediatamente.",
+        "community_disabled" to "As publicações na comunidade estão temporariamente desativadas pelo treinador.",
+        "booking_disabled" to "Novas reservas de aulas estão temporariamente desativadas pelo treinador.",
+        "private_disabled" to "Novos pedidos de aulas privadas estão temporariamente desativados pelo treinador.",
+        "referrals_disabled" to "A partilha de referências está temporariamente desativada pelo treinador."
     )
     val es=en+mapOf(
         "title" to "Ajustes y Operaciones",
@@ -113,7 +125,11 @@ private fun rsOpsUiV56(lang:RsLang,key:String):String{
         "status" to "ESTADO OPERATIVO",
         "enabled" to "ACTIVADO",
         "disabled" to "DESACTIVADO",
-        "saved" to "Los ajustes se guardan inmediatamente."
+        "saved" to "Los ajustes se guardan inmediatamente.",
+        "community_disabled" to "Las publicaciones en la comunidad están temporalmente desactivadas por el entrenador.",
+        "booking_disabled" to "Las nuevas reservas de clases están temporalmente desactivadas por el entrenador.",
+        "private_disabled" to "Las nuevas solicitudes de clases privadas están temporalmente desactivadas por el entrenador.",
+        "referrals_disabled" to "Compartir referidos está temporalmente desactivado por el entrenador."
     )
     val fr=en+mapOf(
         "title" to "Réglages & Opérations",
@@ -138,7 +154,11 @@ private fun rsOpsUiV56(lang:RsLang,key:String):String{
         "status" to "ÉTAT OPÉRATIONNEL",
         "enabled" to "ACTIVÉ",
         "disabled" to "DÉSACTIVÉ",
-        "saved" to "Les réglages sont enregistrés immédiatement."
+        "saved" to "Les réglages sont enregistrés immédiatement.",
+        "community_disabled" to "Les publications communautaires sont temporairement désactivées par l’entraîneur.",
+        "booking_disabled" to "Les nouvelles réservations sont temporairement désactivées par l’entraîneur.",
+        "private_disabled" to "Les nouvelles demandes de cours privés sont temporairement désactivées par l’entraîneur.",
+        "referrals_disabled" to "Le partage de parrainage est temporairement désactivé par l’entraîneur."
     )
     val de=en+mapOf(
         "title" to "App-Einstellungen & Betrieb",
@@ -163,7 +183,11 @@ private fun rsOpsUiV56(lang:RsLang,key:String):String{
         "status" to "BETRIEBSSTATUS",
         "enabled" to "AKTIV",
         "disabled" to "DEAKTIVIERT",
-        "saved" to "Einstellungen werden sofort gespeichert."
+        "saved" to "Einstellungen werden sofort gespeichert.",
+        "community_disabled" to "Community-Beiträge sind vorübergehend vom Trainer deaktiviert.",
+        "booking_disabled" to "Neue Kursbuchungen sind vorübergehend vom Trainer deaktiviert.",
+        "private_disabled" to "Neue Privatstunden-Anfragen sind vorübergehend vom Trainer deaktiviert.",
+        "referrals_disabled" to "Referral-Teilen ist vorübergehend vom Trainer deaktiviert."
     )
     val it=en+mapOf(
         "title" to "Impostazioni & Operazioni",
@@ -188,7 +212,11 @@ private fun rsOpsUiV56(lang:RsLang,key:String):String{
         "status" to "STATO OPERATIVO",
         "enabled" to "ATTIVO",
         "disabled" to "DISATTIVATO",
-        "saved" to "Le impostazioni vengono salvate immediatamente."
+        "saved" to "Le impostazioni vengono salvate immediatamente.",
+        "community_disabled" to "I post della community sono temporaneamente disattivati dal trainer.",
+        "booking_disabled" to "Le nuove prenotazioni sono temporaneamente disattivate dal trainer.",
+        "private_disabled" to "Le nuove richieste di lezioni private sono temporaneamente disattivate dal trainer.",
+        "referrals_disabled" to "La condivisione referral è temporaneamente disattivata dal trainer."
     )
     val pl=en+mapOf(
         "title" to "Ustawienia i Operacje",
@@ -213,7 +241,11 @@ private fun rsOpsUiV56(lang:RsLang,key:String):String{
         "status" to "STATUS OPERACYJNY",
         "enabled" to "WŁĄCZONE",
         "disabled" to "WYŁĄCZONE",
-        "saved" to "Ustawienia zapisują się natychmiast."
+        "saved" to "Ustawienia zapisują się natychmiast.",
+        "community_disabled" to "Publikowanie w społeczności zostało tymczasowo wyłączone przez trenera.",
+        "booking_disabled" to "Nowe rezerwacje zajęć zostały tymczasowo wyłączone przez trenera.",
+        "private_disabled" to "Nowe prośby o lekcje prywatne zostały tymczasowo wyłączone przez trenera.",
+        "referrals_disabled" to "Udostępnianie poleceń zostało tymczasowo wyłączone przez trenera."
     )
     val tr=en+mapOf(
         "title" to "Uygulama Ayarları ve Operasyonlar",
@@ -238,7 +270,11 @@ private fun rsOpsUiV56(lang:RsLang,key:String):String{
         "status" to "OPERASYON DURUMU",
         "enabled" to "AÇIK",
         "disabled" to "KAPALI",
-        "saved" to "Ayarlar anında kaydedilir."
+        "saved" to "Ayarlar anında kaydedilir.",
+        "community_disabled" to "Topluluk paylaşımı antrenör tarafından geçici olarak kapatıldı.",
+        "booking_disabled" to "Yeni ders rezervasyonları antrenör tarafından geçici olarak kapatıldı.",
+        "private_disabled" to "Yeni özel ders istekleri antrenör tarafından geçici olarak kapatıldı.",
+        "referrals_disabled" to "Referans paylaşımı antrenör tarafından geçici olarak kapatıldı."
     )
     val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
