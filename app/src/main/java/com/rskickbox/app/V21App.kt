@@ -93,7 +93,7 @@ fun RsKickboxV21App() {
                                     "events" -> RsStudentEventsV42(c,store,lang)
                                     "promotions" -> RsPromotionPageV45(c,store,lang){route="book"}
                                     "notifications" -> RsNotificationsV41(c,store,lang,active)
-                                    "analytics" -> RsAnalytics(c)
+                                    "analytics" -> RsAnalyticsV53(c,store,lang)
                                     "documents" -> RsDocumentsV51(c,store,lang,active)
                                     "support" -> RsSupportV51(c,store,lang,active)
                                     "referrals" -> RsReferralsV51(c,store,lang)
@@ -110,7 +110,7 @@ fun RsKickboxV21App() {
                                     "homework_admin" -> RsHomeworkManagerV46(c,store,lang)
                                     "lesson_editor" -> RsContentManagerV48(c,store,lang)
                                     "plans_admin" -> RsMembershipPlansV49(c,store,lang)
-                                    "progress_admin" -> RsStudentProgressV46(c,store,lang)
+                                    "progress_admin" -> RsProgressManagerV53(c,store,lang)
                                     "assessments" -> RsAssessmentsV46(c,store,lang)
                                     "events_admin" -> RsEventManagerV42(c,store,lang)
                                     "qr_attendance" -> RsQrAttendanceTrainerV52(c,store,lang)
@@ -315,6 +315,7 @@ private fun ShellV21(
         "homework_admin" to "Homework Manager",
         "notes" to "Coach Notes",
         "assessments" to "Assessments",
+        "progress_admin" to "Progress Manager",
         "challenge_admin" to "Challenge Manager",
         "fightcamp_admin" to "Fight Camp Manager",
         "analytics" to "Analytics",
