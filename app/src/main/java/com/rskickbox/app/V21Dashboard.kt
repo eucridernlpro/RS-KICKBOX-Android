@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -27,6 +28,7 @@ private data class SectionV21(val title:String,val items:List<DashV21>)
 @Composable
 fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRoute:(String)->Unit){
     val sections=if(role==RsRole.TRAINER)trainerV21() else studentV21()
+    val compactPhone=LocalConfiguration.current.screenWidthDp<380
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(15.dp)){
         RsPanel(c){
             Text(if(role==RsRole.TRAINER)rsT(lang,"trainer_dashboard") else rsT(lang,"student_dashboard"),color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
@@ -34,10 +36,10 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
         }
         sections.forEach{section->
             Text(sectionTitleV25(lang,section.title).uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=sectionFontV25(sectionTitleV25(lang,section.title)),letterSpacing=.5.sp,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(horizontal=4.dp))
-            section.items.chunked(2).forEach{pair->
+            section.items.chunked(if(compactPhone)1 else 2).forEach{pair->
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
                     pair.forEach{item->Box(Modifier.weight(1f)){TileV21(c,store,role,lang,item,onRoute)}}
-                    if(pair.size==1)Spacer(Modifier.weight(1f))
+                    if(pair.size==1 && !compactPhone)Spacer(Modifier.weight(1f))
                 }
             }
         }
