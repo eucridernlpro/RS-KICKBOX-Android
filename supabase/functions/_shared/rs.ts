@@ -10,8 +10,10 @@ function keyMap(name: string): Record<string,string> {
 
 export const publishableKey = keyMap("SUPABASE_PUBLISHABLE_KEYS")["default"]
 export const secretKey = keyMap("SUPABASE_SECRET_KEYS")["default"]
+const legacyServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+export const adminKey = legacyServiceRoleKey || secretKey
 
-export const admin = createClient(supabaseUrl, secretKey, {
+export const admin = createClient(supabaseUrl, adminKey, {
   auth: { persistSession: false, autoRefreshToken: false }
 })
 
