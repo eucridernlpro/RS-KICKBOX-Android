@@ -116,7 +116,7 @@ fun RsStudentFinanceV39(c:RsPalette,store:RsStore,lang:RsLang){
     val sessionName=store.s("session_student_name","Alex de Vries")
     val account=rsLoadStudentsV33(store).firstOrNull{it.email.equals(sessionEmail,true)}
     val plan=account?.plan?.uppercase()?:"PRO"
-    val amountCents=when(plan){"BASIC"->2900;"ELITE"->6900;else->4900}
+    val amountCents=rsPlanMonthlyCentsV49(store,plan)
     val invoices=rsLoadInvoicesV39(store).filter{
         if(it.studentEmail.isNotBlank())it.studentEmail.equals(sessionEmail,true)
         else it.studentName.equals(sessionName,true)
