@@ -30,11 +30,47 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val RS_TECH_VIDEO_MAX_MS = 20_000L
+
+private fun rsTechniqueVideoDirV36(context:android.content.Context):File =
+    File(context.filesDir,"rs_technique_videos").apply{mkdirs()}
+
+private fun rsCopyTechniqueVideoV36(context:android.content.Context,source:Uri):String{
+    val mime=context.contentResolver.getType(source).orEmpty()
+    val ext=when{
+        mime.contains("webm",true)->"webm"
+        mime.contains("quicktime",true)->"mov"
+        mime.contains("3gpp",true)->"3gp"
+        else->"mp4"
+    }
+    val out=File(rsTechniqueVideoDirV36(context),"tech_"+UUID.randomUUID()+"."+ext)
+    context.contentResolver.openInputStream(source)!!.use{input->
+        FileOutputStream(out).use{output->input.copyTo(output)}
+    }
+    return Uri.fromFile(out).toString()
+}
+
+private fun rsDeleteTechniqueVideoV36(context:android.content.Context,uriString:String){
+    if(uriString.isBlank())return
+    runCatching{
+        val uri=Uri.parse(uriString)
+        if(uri.scheme!="file")return
+        val file=uri.path?.let(::File)?:return
+        val root=rsTechniqueVideoDirV36(context).canonicalFile
+        val target=file.canonicalFile
+        if(target.parentFile==root && target.exists())target.delete()
+    }
+}
 
 private data class TechniqueSubmissionV27(
     val id:String,val uri:String,val name:String,val technique:String,
@@ -111,6 +147,8 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
     var techniqueMenu by remember{mutableStateOf(false)}
     var coachGender by remember{mutableStateOf(store.s("ai_coach_gender","male"))}
     var speaking by remember{mutableStateOf(false)}
+    var importingVideo by remember{mutableStateOf(false)}
+    val scope=rememberCoroutineScope()
 
     DisposableEffect(Unit){
         val engine=TextToSpeech(context){status->ready=status==TextToSpeech.SUCCESS}
@@ -125,11 +163,24 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
         else if(d>RS_TECH_VIDEO_MAX_MS)feedback="Video is too long. Technique uploads are limited to 20 seconds."
         else{
             if(persist)runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
-            videoUri=uri.toString()
-            videoName=displayNameV27(context,uri)
-            durationMs=d
-            analysisReady=false
-            feedback="Video ready for local preview."
+            val pickedName=displayNameV27(context,uri)
+            importingVideo=true
+            feedback="Importing video into private RS KICKBOX storage…"
+            scope.launch{
+                val local=withContext(Dispatchers.IO){
+                    runCatching{rsCopyTechniqueVideoV36(context,uri)}.getOrNull()
+                }
+                importingVideo=false
+                if(local==null){
+                    feedback="Could not import this video into private app storage."
+                }else{
+                    videoUri=local
+                    videoName=pickedName
+                    durationMs=d
+                    analysisReady=false
+                    feedback="Video ready for local preview."
+                }
+            }
         }
     }
 
@@ -173,11 +224,13 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
                 Button(
                     onClick={galleryVideoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))},
-                    modifier=Modifier.weight(1f)
-                ){Text(if(videoUri.isBlank())"Gallery" else "Replace")}
+                    modifier=Modifier.weight(1f),
+                    enabled=!importingVideo
+                ){Text(if(importingVideo)"Importing…" else if(videoUri.isBlank())"Gallery" else "Replace")}
                 OutlinedButton(
                     onClick={fileVideoPicker.launch(arrayOf("video/*"))},
-                    modifier=Modifier.weight(1f)
+                    modifier=Modifier.weight(1f),
+                    enabled=!importingVideo
                 ){Text("Files")}
             }
             Text("Gallery opens first for phone videos · Files is a fallback · maximum 20 seconds",color=c.muted,fontSize=10.sp)
@@ -185,7 +238,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                 RsTechniqueVideoPreviewV27(videoUri)
                 Text("$videoName · ${"%.1f".format(durationMs/1000.0)} s",color=c.muted,fontSize=10.sp)
                 Button(onClick={analysisReady=true;feedback="Structured coaching preview generated."},modifier=Modifier.fillMaxWidth()){Text("Analyze technique")}
-                OutlinedButton(onClick={videoUri="";videoName="";durationMs=0L;analysisReady=false},modifier=Modifier.fillMaxWidth()){Text("Remove video")}
+                OutlinedButton(onClick={rsDeleteTechniqueVideoV36(context,videoUri);videoUri="";videoName="";durationMs=0L;analysisReady=false},modifier=Modifier.fillMaxWidth()){Text("Remove video")}
             }
             if(feedback.isNotBlank())Text(feedback,color=c.muted,fontSize=10.sp)
         }
@@ -317,6 +370,7 @@ private fun VisualCueV27(c:RsPalette,index:Int){
 
 @Composable
 private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore){
+    val context=LocalContext.current
     var revision by remember{mutableIntStateOf(0)}
     var message by remember{mutableStateOf("")}
     val items=remember(revision){decodeTechniqueSubsV27(store.s("technique_submissions_v27",""))}
@@ -349,6 +403,7 @@ private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore){
                     },modifier=Modifier.weight(1f)){Text(if(item.favorite)"Unfavorite" else "Favorite")}
                     OutlinedButton(onClick={
                         save(items.filterNot{it.id==item.id})
+                        rsDeleteTechniqueVideoV36(context,item.uri)
                         message="Technique submission deleted."
                     },modifier=Modifier.weight(1f)){Text("Delete")}
                 }
