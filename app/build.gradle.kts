@@ -16,15 +16,13 @@ android {
         targetSdk = 36
         versionCode = 36
         versionName = "0.36.0"
+        buildConfigField("String", "SUPABASE_URL", "\""+rsSupabaseUrl.replace("\\","\\\\").replace("\"","\\\"")+"\"")
+        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\""+rsSupabasePublishableKey.replace("\\","\\\\").replace("\"","\\\"")+"\"")
     }
 
     buildFeatures {
         compose = true
         buildConfig = true
-    }
-    defaultConfig {
-        buildConfigField("String", "SUPABASE_URL", "\""+rsSupabaseUrl.replace("\\","\\\\").replace("\"","\\\"")+"\"")
-        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\""+rsSupabasePublishableKey.replace("\\","\\\\").replace("\"","\\\"")+"\"")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
