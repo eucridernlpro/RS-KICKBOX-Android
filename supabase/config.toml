@@ -1,0 +1,5 @@
+[functions.create-student-invite]
+verify_jwt = true
+
+[functions.redeem-student-invite]
+verify_jwt = false
