@@ -48,8 +48,17 @@ private fun rsBuildLocalExportV40(store:RsStore):String{
             put("email",email)
         })
         put("bookings",JSONArray(store.s(bookingKey,"").split(',').filter{it.isNotBlank()}))
-        put("finance_invoices",store.s("finance_invoices_v39",""))
-        put("technique_history",store.s("technique_submissions_v27",""))
+        put("finance_invoices",JSONArray().apply{
+            rsFinanceInvoicesForStudentV40(store,name).forEach{inv->
+                put(JSONObject().apply{
+                    put("id",inv.id)
+                    put("period",inv.period)
+                    put("amount_cents",inv.amountCents)
+                    put("status",inv.status)
+                })
+            }
+        })
+        put("technique_history",rsTechniqueHistoryRawForStudentV40(store,email))
         put("preferences",JSONObject().apply{
             put("language",store.s("lang","en"))
             put("voice_auto",store.b("voice_auto",true))
@@ -133,6 +142,8 @@ fun RsStudentPrivacyV40(c:RsPalette,store:RsStore,lang:RsLang,onLocalAccountDisa
                             rsSaveStudentsV33(store,remaining)
                         }
                         store.pb("account_delete_requested",true)
+                        store.ps("student_bookings_v38_"+email.lowercase(),"")
+                        rsRemoveTechniqueHistoryForStudentV40(context,store,email)
                         store.ps("session_student_email","")
                         store.ps("session_student_name","")
                         status=rsAccountUiV40(lang,"delete_done")
