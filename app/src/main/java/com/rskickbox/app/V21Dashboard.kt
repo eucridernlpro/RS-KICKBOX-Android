@@ -99,6 +99,17 @@ private fun sectionTitleV25(lang:RsLang,title:String)=when(title){
     "Members & Access"->rsT(lang,"members_access")
     "Club Operations"->rsT(lang,"club_operations")
     "Business & Release"->rsT(lang,"business_release")
+    "Member Services"->when(lang.code){
+        "nl"->"Ledenservices"
+        "pt"->"Serviços para Membros"
+        "es"->"Servicios para Miembros"
+        "fr"->"Services Membres"
+        "de"->"Mitgliederservice"
+        "it"->"Servizi Membri"
+        "pl"->"Usługi dla Członków"
+        "tr"->"Üye Hizmetleri"
+        else->"Member Services"
+    }
     "Trainer Help"->when(lang.code){
         "nl"->"Trainer Hulp"
         "pt"->"Ajuda do Treinador"
@@ -147,6 +158,14 @@ private fun glyphV21(kind:String)=when(kind){"ai"->"AI";"music"->"♫";"payment"
 private fun studentV21()=listOf(
     SectionV21("Core Training",listOf(DashV21("voice","AI Technique Coach","Video · text · visuals · voice","ai"),DashV21("session","Session Player","Rounds · timer · cues","training"),DashV21("academy","RS Academy","Structured premium lessons","training"),DashV21("techniques","Technique Library","Moves · drills · details","technique"),DashV21("home_training","Home Training","Train anywhere","training"),DashV21("workout","Workout Generator","Build your session","training"))),
     SectionV21("Club & Coaching",listOf(DashV21("classes","Classes & Events","Book club training","training"),DashV21("events","RS Events","Seminars · club days","brand"),DashV21("coachchat","Private Coach Chat","Direct coach support","ai"),DashV21("community","Community","Club feed · connection","brand"),DashV21("groups","Groups","Team spaces","brand"),DashV21("private_lessons","Private Lessons","1-to-1 coaching","training"))),
+    SectionV21("Member Services",listOf(
+        DashV21("notifications","Notifications","Club updates · unread messages","ai"),
+        DashV21("promotions","Promotions","Offers · book · external links","brand"),
+        DashV21("checkin","Class Check-In","Scan trainer attendance QR","brand"),
+        DashV21("documents","Club Documents","Rules · guides · information","brand"),
+        DashV21("support","Support","Private member requests","settings"),
+        DashV21("referrals","Referrals","Invite · share · grow","brand")
+    )),
     SectionV21("Performance",listOf(DashV21("progress","Progress","XP · technique · streak","progress"),DashV21("challenges","Challenges","Goals · XP · consistency","progress"),DashV21("badges","Badges","Achievements","progress"),DashV21("fightcamp","Fight Camp","Structured preparation","fight"),DashV21("compare","Technique Compare","Compare movement","technique"),DashV21("history","Training History","Sessions · attendance","progress"))),
     SectionV21("Library, Music & Account",listOf(DashV21("vault","Knowledge Vault","Premium learning library","brand"),DashV21("homework","Homework","Coach assignments","training"),DashV21("favorites","Saved & Favorites","Your saved content","brand"),DashV21("media","Training Media","Videos · uploads","training"),DashV21("music","My RS Music","Local playlists · live player","music"),DashV21("finance","Membership & Payments","Plan · payments · history","payment"),DashV21("book","Trainer Book","Van Stilte Naar Strijd","brand"),DashV21("profile","My Profile","Goals · identity","settings"),DashV21("search","Search","Find anything in RS","brand"),DashV21("settings","Settings & Privacy","Preferences · account","settings")))
 )
