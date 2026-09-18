@@ -110,19 +110,19 @@ private fun sectionFontV25(text:String)=when{
 }
 
 private fun tileTitleFontV25(text:String)=when{
-    text.length>=34->11.sp
-    text.length>=28->12.sp
-    text.length>=23->13.sp
-    text.length>=18->14.sp
-    else->17.sp
+    text.length>=34->10.sp
+    text.length>=28->11.sp
+    text.length>=23->12.sp
+    text.length>=18->13.sp
+    else->15.sp
 }
 
 private fun tileTitleLineV25(text:String)=when{
-    text.length>=34->13.sp
-    text.length>=28->14.sp
-    text.length>=23->15.sp
-    text.length>=18->17.sp
-    else->20.sp
+    text.length>=34->12.sp
+    text.length>=28->13.sp
+    text.length>=23->14.sp
+    text.length>=18->15.sp
+    else->18.sp
 }
 
 private fun tileHintFontV25(text:String)=when{
