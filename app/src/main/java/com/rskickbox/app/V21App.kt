@@ -27,6 +27,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 fun RsKickboxV21App() {
     val context = LocalContext.current
     val store = remember { RsStore(context) }
+    val appScope = rememberCoroutineScope()
     var role by remember { mutableStateOf<RsRole?>(null) }
     var route by remember { mutableStateOf("home") }
     var lang by remember { mutableStateOf(rsLangs.firstOrNull { it.code == store.s("lang", "en") } ?: rsLangs.first()) }
@@ -57,7 +58,7 @@ fun RsKickboxV21App() {
                             ShellV21(c, store, active, lang, route, { selected -> lang=selected;store.ps("lang",selected.code) }, { route=it }, {
                                 role=null
                                 route="home"
-                                kotlinx.coroutines.MainScope().launch { rsCloudLogoutV63() }
+                                appScope.launch { rsCloudLogoutV63() }
                             }) {
                                 when(route) {
                                     "home", "trainer" -> RsPremiumDashboardV21(c, store, active, lang) { route=it }
