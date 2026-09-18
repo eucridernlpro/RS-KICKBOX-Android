@@ -285,14 +285,24 @@ private fun ShellV21(
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(9.dp),verticalArrangement=Arrangement.spacedBy(7.dp)) {
         RsBrandedHeaderV21(c,store) {
             Text("♛ ${store.s("brand_header_name","RS KICKBOX")}",color=c.bright,fontSize=20.sp,fontWeight=FontWeight.Black)
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
-                LanguageV21(lang,onLang)
-                Row(horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-                    if(route!=home) OutlinedButton(onClick={onRoute(home)},contentPadding=PaddingValues(horizontal=10.dp)){Text("‹")}
-                    OutlinedButton(onClick=onLogout,contentPadding=PaddingValues(horizontal=8.dp)){
-                        val logout=rsT(lang,"logout")
-                        Text(logout,fontSize=adaptiveLabelSp(logout,10f).sp,maxLines=1)
-                    }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement=Arrangement.spacedBy(6.dp),
+                verticalAlignment=Alignment.CenterVertically
+            ) {
+                LanguageV21(lang,onLang,Modifier.weight(1f))
+                if(route!=home) OutlinedButton(
+                    onClick={onRoute(home)},
+                    modifier=Modifier.widthIn(min=42.dp,max=50.dp).heightIn(min=40.dp),
+                    contentPadding=PaddingValues(horizontal=8.dp)
+                ){Text("‹")}
+                OutlinedButton(
+                    onClick=onLogout,
+                    modifier=Modifier.widthIn(min=72.dp,max=112.dp).heightIn(min=40.dp),
+                    contentPadding=PaddingValues(horizontal=7.dp)
+                ){
+                    val logout=rsT(lang,"logout")
+                    Text(logout,fontSize=adaptiveLabelSp(logout,9.5f).sp,maxLines=1)
                 }
             }
         }
@@ -302,10 +312,21 @@ private fun ShellV21(
 }
 
 @Composable
-private fun LanguageV21(current:RsLang,onSelect:(RsLang)->Unit) {
+private fun LanguageV21(current:RsLang,onSelect:(RsLang)->Unit,modifier:Modifier=Modifier) {
     var open by remember { mutableStateOf(false) }
-    Box {
-        OutlinedButton(onClick={open=true},contentPadding=PaddingValues(horizontal=12.dp,vertical=4.dp)){Text("🌐 ${current.name}",fontSize=11.sp,maxLines=1)}
+    Box(modifier) {
+        OutlinedButton(
+            onClick={open=true},
+            modifier=Modifier.fillMaxWidth().heightIn(min=40.dp),
+            contentPadding=PaddingValues(horizontal=9.dp,vertical=4.dp)
+        ){
+            Text(
+                "🌐 ${current.name}",
+                fontSize=adaptiveLabelSp(current.name,10.5f).sp,
+                maxLines=1,
+                overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
         DropdownMenu(expanded=open,onDismissRequest={open=false}) {
             rsLangs.forEach { language -> DropdownMenuItem(text={Text(language.name)},onClick={onSelect(language);open=false}) }
         }
