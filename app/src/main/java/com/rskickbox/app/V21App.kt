@@ -75,7 +75,7 @@ fun RsKickboxV21App() {
                                         role=null
                                         route="home"
                                     }
-                                    "academy" -> RsAcademy(c)
+                                    "academy" -> RsAcademyV54(c,store,lang)
                                     "progress" -> RsStudentProgressV46(c,store,lang)
                                     "challenges" -> RsStudentChallengesV47(c,store,lang)
                                     "fightcamp" -> RsStudentFightCampV47(c,store,lang)
@@ -83,12 +83,12 @@ fun RsKickboxV21App() {
                                     "community" -> RsCommunityV50(c,store,lang,active)
                                     "media" -> RsTrainingMediaV16(c, store)
                                     "music", "music_admin" -> RsLocalMusicCenterV20(c, store, active, lang)
-                                    "techniques" -> RsTechniqueLibrary(c)
-                                    "home_training" -> RsHomeTraining(c)
-                                    "workout" -> RsWorkoutGenerator(c)
+                                    "techniques" -> RsTechniqueLibraryV54(c,lang)
+                                    "home_training" -> RsHomeTrainingV54(c,store,lang)
+                                    "workout" -> RsWorkoutGeneratorV54(c,lang)
                                     "badges" -> RsBadgesV47(c,store,lang)
                                     "vault" -> RsKnowledgeVaultV48(c,store,lang)
-                                    "compare" -> RsTechniqueCompare(c)
+                                    "compare" -> RsTechniqueCompareV54(c,lang)
                                     "coachchat" -> RsCoachChatV44(c,store,lang,active)
                                     "events" -> RsStudentEventsV42(c,store,lang)
                                     "promotions" -> RsPromotionPageV45(c,store,lang){route="book"}
@@ -336,6 +336,9 @@ private fun ShellV21(
         "session" to "Session Player",
         "academy" to "RS Academy",
         "techniques" to "Technique Library",
+        "home_training" to "Home Training",
+        "workout" to "Workout Generator",
+        "compare" to "Technique Compare",
         "classes" to "Classes & Events",
         "checkin" to "Class Check-In",
         "homework" to "Homework",
