@@ -94,6 +94,43 @@ private fun rsSaveAssessmentsV46(store:RsStore,items:List<RsAssessmentV46>){
     store.ps("assessments_v46",a.toString())
 }
 
+fun rsHomeworkRawForStudentV46(store:RsStore,email:String):String{
+    val a=JSONArray()
+    rsLoadHomeworkV46(store).filter{it.studentEmail.equals(email,true)}.forEach{x->
+        a.put(JSONObject().apply{
+            put("id",x.id);put("title",x.title);put("details",x.details);put("due",x.dueLabel)
+            put("completed",x.completed);put("createdAt",x.createdAt)
+        })
+    }
+    return a.toString()
+}
+
+fun rsAssessmentsRawForStudentV46(store:RsStore,email:String):String{
+    val a=JSONArray()
+    rsLoadAssessmentsV46(store).filter{it.studentEmail.equals(email,true)}.forEach{x->
+        a.put(JSONObject().apply{
+            put("id",x.id);put("punches",x.punches);put("kicks",x.kicks);put("defense",x.defense)
+            put("footwork",x.footwork);put("combinations",x.combinations);put("conditioning",x.conditioning)
+            put("summary",x.summary);put("createdAt",x.createdAt)
+        })
+    }
+    return a.toString()
+}
+
+fun rsCoachNotesRawForPrivacyV46(store:RsStore,email:String):String{
+    val a=JSONArray()
+    rsLoadNotesV46(store).filter{it.studentEmail.equals(email,true)}.forEach{x->
+        a.put(JSONObject().apply{put("id",x.id);put("note",x.note);put("createdAt",x.createdAt)})
+    }
+    return a.toString()
+}
+
+fun rsRemoveDevelopmentDataForStudentV46(store:RsStore,email:String){
+    rsSaveHomeworkV46(store,rsLoadHomeworkV46(store).filterNot{it.studentEmail.equals(email,true)})
+    rsSaveNotesV46(store,rsLoadNotesV46(store).filterNot{it.studentEmail.equals(email,true)})
+    rsSaveAssessmentsV46(store,rsLoadAssessmentsV46(store).filterNot{it.studentEmail.equals(email,true)})
+}
+
 private fun rsDateV46(ms:Long)=if(ms<=0L)"" else SimpleDateFormat("dd MMM yyyy",Locale.getDefault()).format(Date(ms))
 
 private fun rsDevUiV46(lang:RsLang,key:String):String{
