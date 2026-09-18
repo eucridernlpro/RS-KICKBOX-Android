@@ -169,8 +169,14 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
         val demo=email.equals("alex@rskickbox.nl",true) && pass=="preview123"
         val match=rsFindStudentV33(store,email,pass)
         when{
-            demo->onLogin(RsRole.STUDENT)
+            demo->{
+                store.ps("session_student_email","alex@rskickbox.nl")
+                store.ps("session_student_name","Alex de Vries")
+                onLogin(RsRole.STUDENT)
+            }
             match!=null->{
+                store.ps("session_student_email",match.email)
+                store.ps("session_student_name",match.name.ifBlank{match.email})
                 status=rsEnrollMsg(lang,"welcome",match.name)
                 onLogin(RsRole.STUDENT)
             }
@@ -250,7 +256,7 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                 Button(onClick={tryStudentLogin()},modifier=Modifier.fillMaxWidth()){
                     Text(rsT(lang,"student_preview"),fontSize=adaptiveLabelSp(rsT(lang,"student_preview"),12f).sp,maxLines=1)
                 }
-                OutlinedButton(onClick={onLogin(RsRole.TRAINER)},modifier=Modifier.fillMaxWidth()){
+                OutlinedButton(onClick={store.ps("session_student_email","");store.ps("session_student_name","");onLogin(RsRole.TRAINER)},modifier=Modifier.fillMaxWidth()){
                     Text(rsT(lang,"trainer_preview"),fontSize=adaptiveLabelSp(rsT(lang,"trainer_preview"),12f).sp,maxLines=1)
                 }
                 if(status.isNotBlank())Text(status,color=Color.White,fontSize=10.sp)
