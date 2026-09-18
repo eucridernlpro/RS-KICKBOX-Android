@@ -238,7 +238,7 @@ fun RsSessionPlayerV52(c:RsPalette,store:RsStore,lang:RsLang){
 }
 
 private fun rsAttendancePayloadV52(classId:String,code:String)=
-    "rskickbox://attendance?v=1&classId="+Uri.encode(classId)+"&code="+Uri.encode(code)
+    "rskickbox://attendance?v=1&classId="+android.net.Uri.encode(classId)+"&code="+android.net.Uri.encode(code)
 
 private fun rsParseAttendanceV52(raw:String):Pair<String,String>? = runCatching{
     val uri=android.net.Uri.parse(raw)
