@@ -15,15 +15,16 @@ import java.util.UUID
 data class RsInvoiceV39(
     val id:String,
     val studentName:String,
+    val studentEmail:String,
     val period:String,
     val amountCents:Int,
     val status:String
 )
 
 private val rsSeedInvoicesV39=listOf(
-    RsInvoiceV39("INV-26091","Alex de Vries","Sep 2026",4900,"PAID"),
-    RsInvoiceV39("INV-26090","Alex de Vries","Aug 2026",4900,"PAID"),
-    RsInvoiceV39("INV-26089","Alex de Vries","Jul 2026",4900,"PAID")
+    RsInvoiceV39("INV-26091","Alex de Vries","alex@rskickbox.nl","Sep 2026",4900,"PAID"),
+    RsInvoiceV39("INV-26090","Alex de Vries","alex@rskickbox.nl","Aug 2026",4900,"PAID"),
+    RsInvoiceV39("INV-26089","Alex de Vries","alex@rskickbox.nl","Jul 2026",4900,"PAID")
 )
 
 private fun rsEncodeInvoicesV39(items:List<RsInvoiceV39>):String{
@@ -32,6 +33,7 @@ private fun rsEncodeInvoicesV39(items:List<RsInvoiceV39>):String{
         arr.put(JSONObject().apply{
             put("id",i.id)
             put("student",i.studentName)
+            put("email",i.studentEmail)
             put("period",i.period)
             put("amount",i.amountCents)
             put("status",i.status)
@@ -50,6 +52,7 @@ private fun rsDecodeInvoicesV39(raw:String):List<RsInvoiceV39>{
                 add(RsInvoiceV39(
                     o.optString("id"),
                     o.optString("student"),
+                    o.optString("email"),
                     o.optString("period"),
                     o.optInt("amount",0),
                     o.optString("status","PENDING")
@@ -71,8 +74,11 @@ private fun rsLoadInvoicesV39(store:RsStore):List<RsInvoiceV39>{
 private fun rsSaveInvoicesV39(store:RsStore,items:List<RsInvoiceV39>)=
     store.ps("finance_invoices_v39",rsEncodeInvoicesV39(items))
 
-fun rsFinanceInvoicesForStudentV40(store:RsStore,studentName:String):List<RsInvoiceV39> =
-    rsLoadInvoicesV39(store).filter{it.studentName.equals(studentName,true)}
+fun rsFinanceInvoicesForStudentV40(store:RsStore,studentEmail:String,studentName:String):List<RsInvoiceV39> =
+    rsLoadInvoicesV39(store).filter{
+        if(it.studentEmail.isNotBlank())it.studentEmail.equals(studentEmail,true)
+        else it.studentName.equals(studentName,true)
+    }
 
 private fun rsMoneyV39(cents:Int)="€"+String.format("%.2f",cents/100.0)
 
@@ -111,7 +117,10 @@ fun RsStudentFinanceV39(c:RsPalette,store:RsStore,lang:RsLang){
     val account=rsLoadStudentsV33(store).firstOrNull{it.email.equals(sessionEmail,true)}
     val plan=account?.plan?.uppercase()?:"PRO"
     val amountCents=when(plan){"BASIC"->2900;"ELITE"->6900;else->4900}
-    val invoices=rsLoadInvoicesV39(store).filter{it.studentName.equals(sessionName,true)}
+    val invoices=rsLoadInvoicesV39(store).filter{
+        if(it.studentEmail.isNotBlank())it.studentEmail.equals(sessionEmail,true)
+        else it.studentName.equals(sessionName,true)
+    }
     val enabledMethods=rsPaymentMethodsV39.filterIndexed{i,_->store.b("pay_v39_"+i,i<2||i==7)}
     RsScroll(c,rsFinanceUiV39(lang,"student_title"),rsFinanceUiV39(lang,"student_sub")){
         RsPanel(c){
@@ -160,6 +169,7 @@ fun RsTrainerInvoicesV39(c:RsPalette,store:RsStore,lang:RsLang){
     var revision by remember{mutableIntStateOf(0)}
     var showCreate by remember{mutableStateOf(false)}
     var student by remember{mutableStateOf("")}
+    var studentEmail by remember{mutableStateOf("")}
     var period by remember{mutableStateOf("")}
     var amount by remember{mutableStateOf("49.00")}
     var pendingDelete by remember{mutableStateOf<String?>(null)}
@@ -179,18 +189,20 @@ fun RsTrainerInvoicesV39(c:RsPalette,store:RsStore,lang:RsLang){
         }
         if(showCreate)RsPanel(c){
             OutlinedTextField(student,{student=it},label={Text(rsFinanceUiV39(lang,"student"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
+            OutlinedTextField(studentEmail,{studentEmail=it},label={Text("Email")},modifier=Modifier.fillMaxWidth(),singleLine=true)
             OutlinedTextField(period,{period=it},label={Text(rsFinanceUiV39(lang,"period"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
             OutlinedTextField(amount,{amount=it.filter{ch->ch.isDigit()||ch=='.'||ch==','}},label={Text(rsFinanceUiV39(lang,"amount"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
             Button(
                 onClick={
                     val cents=((amount.replace(',','.').toDoubleOrNull()?:0.0)*100).toInt().coerceAtLeast(0)
-                    save(listOf(RsInvoiceV39("INV-"+UUID.randomUUID().toString().take(8).uppercase(),student.trim(),period.trim(),cents,"PENDING"))+invoices)
+                    save(listOf(RsInvoiceV39("INV-"+UUID.randomUUID().toString().take(8).uppercase(),student.trim(),studentEmail.trim(),period.trim(),cents,"PENDING"))+invoices)
                     student=""
+                    studentEmail=""
                     period=""
                     amount="49.00"
                     showCreate=false
                 },
-                enabled=student.isNotBlank()&&period.isNotBlank()&&(amount.replace(',','.').toDoubleOrNull()?:0.0)>0.0,
+                enabled=student.isNotBlank()&&studentEmail.contains("@")&&period.isNotBlank()&&(amount.replace(',','.').toDoubleOrNull()?:0.0)>0.0,
                 modifier=Modifier.fillMaxWidth()
             ){Text(rsFinanceUiV39(lang,"save"))}
         }
@@ -198,6 +210,7 @@ fun RsTrainerInvoicesV39(c:RsPalette,store:RsStore,lang:RsLang){
         invoices.forEach{inv->
             RsPanel(c){
                 Text(inv.id+" · "+inv.studentName,color=c.bright,fontWeight=FontWeight.Bold)
+                if(inv.studentEmail.isNotBlank())Text(inv.studentEmail,color=c.muted)
                 Text(inv.period+" · "+rsMoneyV39(inv.amountCents),color=c.text)
                 Text(if(inv.status=="PAID")rsFinanceUiV39(lang,"paid") else rsFinanceUiV39(lang,"pending"),color=c.muted)
                 Button(
