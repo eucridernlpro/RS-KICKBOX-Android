@@ -1,0 +1,288 @@
+package com.rskickbox.app
+
+import android.content.Intent
+import android.media.MediaMetadataRetriever
+import android.net.Uri
+import android.provider.OpenableColumns
+import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
+import android.widget.MediaController
+import android.widget.VideoView
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+private const val RS_TECH_VIDEO_MAX_MS = 20_000L
+
+private data class TechniqueSubmissionV27(
+    val id:String,val uri:String,val name:String,val technique:String,
+    val created:String,val favorite:Boolean,val summary:String
+)
+
+private fun encodeTechniqueSubsV27(items:List<TechniqueSubmissionV27>)=items.joinToString("§"){
+    listOf(it.id,it.uri,it.name,it.technique,it.created,it.favorite.toString(),it.summary.replace("¤"," ")).joinToString("¤")
+}
+
+private fun decodeTechniqueSubsV27(raw:String)=raw.split("§").mapNotNull{row->
+    val p=row.split("¤",limit=7)
+    if(p.size<7)null else TechniqueSubmissionV27(p[0],p[1],p[2],p[3],p[4],p[5].toBooleanStrictOrNull()?:false,p[6])
+}
+
+private fun videoDurationV27(context:android.content.Context,uri:Uri):Long=runCatching{
+    val mmr=MediaMetadataRetriever()
+    mmr.setDataSource(context,uri)
+    val ms=mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()?:0L
+    mmr.release()
+    ms
+}.getOrDefault(0L)
+
+private fun displayNameV27(context:android.content.Context,uri:Uri):String{
+    var name="Technique video"
+    runCatching{
+        context.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use{cur->
+            if(cur.moveToFirst())name=cur.getString(0)?:name
+        }
+    }
+    return name
+}
+
+private fun coachSummaryV27(lang:RsLang):String=when(lang.code){
+    "nl"->"Focus op balans, hoge dekking, gecontroleerde heuprotatie en een snelle terugkeer naar je basispositie. Werk eerst langzaam en technisch zuiver."
+    "pt"->"Foca no equilíbrio, guarda alta, rotação controlada da anca e regresso rápido à posição base. Treina primeiro devagar e com boa técnica."
+    "es"->"Concéntrate en el equilibrio, guardia alta, rotación controlada de cadera y regreso rápido a la posición base. Practica primero despacio y limpio."
+    "fr"->"Travaille l'équilibre, une garde haute, une rotation contrôlée des hanches et un retour rapide en position. Commence lentement et proprement."
+    "de"->"Achte auf Balance, hohe Deckung, kontrollierte Hüftrotation und eine schnelle Rückkehr in die Grundstellung. Übe zuerst langsam und sauber."
+    "it"->"Concentrati su equilibrio, guardia alta, rotazione controllata dell'anca e rapido ritorno alla posizione base. Lavora prima lentamente e pulito."
+    "pl"->"Skup się na równowadze, wysokiej gardzie, kontrolowanej rotacji bioder i szybkim powrocie do pozycji bazowej. Najpierw ćwicz wolno i czysto."
+    "tr"->"Dengeye, yüksek garda, kontrollü kalça dönüşüne ve temel duruşa hızlı dönüşe odaklan. Önce yavaş ve temiz çalış."
+    else->"Focus on balance, a high guard, controlled hip rotation, and a quick return to your base stance. Train slowly and cleanly before adding speed."
+}
+
+private fun techniquePointsV27(lang:RsLang):List<Pair<String,String>>=when(lang.code){
+    "nl"->listOf("Basis & balans" to "Voeten stabiel, knieën zacht en gewicht gecentreerd.","Dekking" to "Handen keren direct terug naar het gezicht.","Rotatie" to "Draai heup en schouder samen zonder over te draaien.","Herstel" to "Kom na de techniek direct terug in een sterke positie.")
+    "pt"->listOf("Base & equilíbrio" to "Pés estáveis, joelhos soltos e peso centrado.","Guarda" to "As mãos voltam imediatamente ao rosto.","Rotação" to "Anca e ombro rodam juntos sem exagerar.","Recuperação" to "Volta logo a uma posição forte depois da técnica.")
+    "es"->listOf("Base & equilibrio" to "Pies estables, rodillas sueltas y peso centrado.","Guardia" to "Las manos vuelven inmediatamente al rostro.","Rotación" to "Cadera y hombro giran juntos sin exceso.","Recuperación" to "Vuelve rápido a una posición fuerte.")
+    "fr"->listOf("Base & équilibre" to "Pieds stables, genoux souples et poids centré.","Garde" to "Les mains reviennent immédiatement au visage.","Rotation" to "Hanche et épaule tournent ensemble sans excès.","Retour" to "Reviens vite dans une position forte.")
+    else->listOf("Base & balance" to "Stable feet, soft knees, and centered weight.","Guard" to "Hands return immediately to the face after each strike.","Rotation" to "Turn hip and shoulder together without over-rotating.","Recovery" to "Return quickly to a strong stance after the technique.")
+}
+
+@Composable
+fun RsTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore,role:RsRole){
+    if(role==RsRole.TRAINER)TrainerTechniqueHistoryV27(c,store)
+    else StudentTechniqueCoachV27(c,lang,store)
+}
+
+@Composable
+private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
+    val context=LocalContext.current
+    var tts by remember{mutableStateOf<TextToSpeech?>(null)}
+    var ready by remember{mutableStateOf(false)}
+    var selectedTechnique by remember{mutableStateOf("Roundhouse Kick")}
+    var videoUri by remember{mutableStateOf("")}
+    var videoName by remember{mutableStateOf("")}
+    var durationMs by remember{mutableLongStateOf(0L)}
+    var analysisReady by remember{mutableStateOf(false)}
+    var feedback by remember{mutableStateOf("")}
+    var question by remember{mutableStateOf("")}
+    var answer by remember{mutableStateOf("")}
+    var autoSpeak by remember{mutableStateOf(store.b("voice_auto",true))}
+    var techniqueMenu by remember{mutableStateOf(false)}
+
+    DisposableEffect(Unit){
+        val engine=TextToSpeech(context){status->ready=status==TextToSpeech.SUCCESS}
+        tts=engine
+        onDispose{engine.stop();engine.shutdown()}
+    }
+    LaunchedEffect(lang.code,ready){if(ready)tts?.language=lang.locale}
+
+    val videoPicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null){
+            val d=videoDurationV27(context,uri)
+            if(d<=0L)feedback="Could not read this video file."
+            else if(d>RS_TECH_VIDEO_MAX_MS)feedback="Video is too long. Technique uploads are limited to 20 seconds."
+            else{
+                runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+                videoUri=uri.toString()
+                videoName=displayNameV27(context,uri)
+                durationMs=d
+                analysisReady=false
+                feedback="Video ready for local preview."
+            }
+        }
+    }
+
+    val speechLauncher=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
+        val spoken=result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+        if(!spoken.isNullOrBlank())question=spoken
+    }
+
+    val summary=coachSummaryV27(lang)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(9.dp)){
+        Text("AI TECHNIQUE COACH",color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
+        Text("Upload a short kickboxing move or combination. Get text, visual and spoken coaching in ${lang.name}.",color=c.muted)
+
+        RsPanel(c){
+            Text("1 · VIDEO & TECHNIQUE",color=c.bright,fontWeight=FontWeight.Bold)
+            Box{
+                OutlinedButton(onClick={techniqueMenu=true},modifier=Modifier.fillMaxWidth()){Text(selectedTechnique)}
+                DropdownMenu(expanded=techniqueMenu,onDismissRequest={techniqueMenu=false}){
+                    listOf("Jab","Cross","Jab · Cross","Roundhouse Kick","Low Kick","Front Kick","Knee","Defense & Counter","Custom Combination").forEach{t->
+                        DropdownMenuItem(text={Text(t)},onClick={selectedTechnique=t;techniqueMenu=false;analysisReady=false})
+                    }
+                }
+            }
+            Button(onClick={videoPicker.launch(arrayOf("video/*"))},modifier=Modifier.fillMaxWidth()){Text(if(videoUri.isBlank())"＋ Upload technique video" else "✎ Replace video")}
+            Text("Maximum 20 seconds · local preview before analysis",color=c.muted,fontSize=10.sp)
+            if(videoUri.isNotBlank()){
+                RsTechniqueVideoPreviewV27(videoUri)
+                Text("$videoName · ${"%.1f".format(durationMs/1000.0)} s",color=c.muted,fontSize=10.sp)
+                Button(onClick={analysisReady=true;feedback="Structured coaching preview generated."},modifier=Modifier.fillMaxWidth()){Text("Analyze technique")}
+                OutlinedButton(onClick={videoUri="";videoName="";durationMs=0L;analysisReady=false},modifier=Modifier.fillMaxWidth()){Text("Remove video")}
+            }
+            if(feedback.isNotBlank())Text(feedback,color=c.muted,fontSize=10.sp)
+        }
+
+        if(analysisReady)RsPanel(c){
+            Text("2 · COACHING RESULT",color=c.bright,fontWeight=FontWeight.Black)
+            Surface(shape=RoundedCornerShape(14.dp),color=c.gold.copy(alpha=.12f)){
+                Text("PREVIEW MODE · Production frame-by-frame AI vision is not connected yet.",color=c.bright,fontSize=10.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(10.dp))
+            }
+            Text(summary,color=c.text)
+            techniquePointsV27(lang).forEachIndexed{i,(title,body)->
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                    VisualCueV27(c,i)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)){
+                        Text(title,color=c.bright,fontWeight=FontWeight.Bold)
+                        Text(body,color=c.muted,fontSize=11.sp)
+                    }
+                }
+            }
+            Button(onClick={if(ready){tts?.language=lang.locale;tts?.speak(summary,TextToSpeech.QUEUE_FLUSH,null,"technique-coach")}},enabled=ready,modifier=Modifier.fillMaxWidth()){Text("🔊 Speak coaching")}
+            Button(onClick={
+                val items=decodeTechniqueSubsV27(store.s("technique_submissions_v27","")).toMutableList()
+                val id=System.currentTimeMillis().toString()
+                val created=SimpleDateFormat("dd MMM yyyy · HH:mm",Locale.getDefault()).format(Date())
+                items.add(0,TechniqueSubmissionV27(id,videoUri,videoName,selectedTechnique,created,false,summary))
+                store.ps("technique_submissions_v27",encodeTechniqueSubsV27(items.take(40)))
+                feedback="Analysis saved to technique history."
+            },modifier=Modifier.fillMaxWidth()){Text("Save to history")}
+        }
+
+        RsPanel(c){
+            Text("3 · ASK THE COACH",color=c.bright,fontWeight=FontWeight.Bold)
+            Text("Voice is an extra input/output layer for the technique coach.",color=c.muted,fontSize=10.sp)
+            OutlinedTextField(question,{question=it},label={Text("Ask about this movement")},modifier=Modifier.fillMaxWidth(),minLines=2)
+            OutlinedButton(onClick={
+                val intent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE,lang.locale.toLanguageTag())
+                }
+                speechLauncher.launch(intent)
+            },modifier=Modifier.fillMaxWidth()){Text("🎙 Ask by voice")}
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                Text("Speak replies automatically",color=c.text,modifier=Modifier.weight(1f))
+                Switch(autoSpeak,{v->autoSpeak=v;store.pb("voice_auto",v)})
+            }
+            Button(onClick={
+                answer=summary
+                if(autoSpeak&&ready){tts?.language=lang.locale;tts?.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"technique-answer")}
+            },enabled=question.isNotBlank(),modifier=Modifier.fillMaxWidth()){Text("Ask AI Coach")}
+            if(answer.isNotBlank())Text(answer,color=c.text)
+        }
+        Spacer(Modifier.height(18.dp))
+    }
+}
+
+@Composable
+private fun RsTechniqueVideoPreviewV27(uri:String){
+    AndroidView(
+        factory={ctx->
+            VideoView(ctx).apply{
+                val controller=MediaController(ctx)
+                controller.setAnchorView(this)
+                setMediaController(controller)
+                setVideoURI(Uri.parse(uri))
+                setOnPreparedListener{seekTo(1)}
+            }
+        },
+        modifier=Modifier.fillMaxWidth().height(230.dp).background(Color.Black)
+    )
+}
+
+@Composable
+private fun VisualCueV27(c:RsPalette,index:Int){
+    Canvas(Modifier.size(58.dp)){
+        val w=size.width;val h=size.height
+        drawCircle(c.bright.copy(alpha=.16f),w*.46f,Offset(w*.5f,h*.5f),style=Stroke(3f))
+        when(index%4){
+            0->{drawLine(c.bright,Offset(w*.28f,h*.72f),Offset(w*.72f,h*.72f),5f);drawCircle(c.bright,w*.07f,Offset(w*.5f,h*.32f))}
+            1->{drawLine(c.bright,Offset(w*.32f,h*.25f),Offset(w*.68f,h*.25f),5f);drawLine(c.bright,Offset(w*.5f,h*.25f),Offset(w*.5f,h*.72f),5f)}
+            2->{drawArc(c.bright,200f,220f,false,topLeft=Offset(w*.18f,h*.18f),size=androidx.compose.ui.geometry.Size(w*.64f,h*.64f),style=Stroke(5f))}
+            else->{drawLine(c.bright,Offset(w*.24f,h*.5f),Offset(w*.76f,h*.5f),5f)}
+        }
+    }
+}
+
+@Composable
+private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore){
+    var revision by remember{mutableIntStateOf(0)}
+    var message by remember{mutableStateOf("")}
+    val items=remember(revision){decodeTechniqueSubsV27(store.s("technique_submissions_v27",""))}
+    fun save(updated:List<TechniqueSubmissionV27>){store.ps("technique_submissions_v27",encodeTechniqueSubsV27(updated));revision++}
+
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(9.dp)){
+        Text("TECHNIQUE REVIEW HISTORY",color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
+        Text("Student technique uploads, saved analyses and trainer favorites.",color=c.muted)
+        if(message.isNotBlank())Text(message,color=c.bright,fontSize=10.sp)
+        if(items.isEmpty())RsPanel(c){
+            Text("No technique uploads yet",color=c.bright,fontWeight=FontWeight.Bold)
+            Text("Saved student technique submissions will appear here.",color=c.muted)
+        }
+        items.forEach{item->
+            RsPanel(c){
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
+                    Column(Modifier.weight(1f)){
+                        Text(item.technique,color=c.bright,fontWeight=FontWeight.Black)
+                        Text(item.created,color=c.muted,fontSize=10.sp)
+                        Text(item.name,color=c.text,fontSize=11.sp,maxLines=1)
+                    }
+                    Text(if(item.favorite)"★" else "☆",color=c.bright,fontSize=26.sp)
+                }
+                if(item.uri.isNotBlank())RsTechniqueVideoPreviewV27(item.uri)
+                Text(item.summary,color=c.text,fontSize=11.sp)
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                    Button(onClick={
+                        save(items.map{if(it.id==item.id)it.copy(favorite=!it.favorite) else it})
+                        message=if(item.favorite)"Removed from favorites." else "Saved to trainer favorites."
+                    },modifier=Modifier.weight(1f)){Text(if(item.favorite)"Unfavorite" else "Favorite")}
+                    OutlinedButton(onClick={
+                        save(items.filterNot{it.id==item.id})
+                        message="Technique submission deleted."
+                    },modifier=Modifier.weight(1f)){Text("Delete")}
+                }
+            }
+        }
+        Spacer(Modifier.height(18.dp))
+    }
+}
