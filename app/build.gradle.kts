@@ -15,8 +15,8 @@ android {
         applicationId = "com.rskickbox.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 60
-        versionName = "0.60.0"
+        versionCode = 61
+        versionName = "0.61.0"
         buildConfigField("String", "SUPABASE_URL", "\""+rsSupabaseUrl.replace("\\","\\\\").replace("\"","\\\"")+"\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\""+rsSupabasePublishableKey.replace("\\","\\\\").replace("\"","\\\"")+"\"")
     }
