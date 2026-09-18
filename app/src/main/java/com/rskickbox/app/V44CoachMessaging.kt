@@ -64,6 +64,20 @@ private fun rsLoadCoachMessagesV44(store:RsStore)=
 private fun rsSaveCoachMessagesV44(store:RsStore,items:List<RsCoachMessageV44>)=
     store.ps("coach_messages_v44",rsEncodeCoachMessagesV44(items))
 
+fun rsCoachMessagesRawForStudentV44(store:RsStore,email:String):String =
+    rsEncodeCoachMessagesV44(
+        rsLoadCoachMessagesV44(store).filter{it.studentEmail.equals(email,true)}
+    )
+
+fun rsRemoveCoachMessagesForStudentV44(store:RsStore,email:String){
+    rsSaveCoachMessagesV44(
+        store,
+        rsLoadCoachMessagesV44(store).filterNot{it.studentEmail.equals(email,true)}
+    )
+    store.ps(rsTrainerReadKeyV44(email),"0")
+    store.ps(rsStudentReadKeyV44(email),"0")
+}
+
 private fun rsThreadKeyV44(email:String)=email.trim().lowercase().replace(Regex("[^a-z0-9]"),"_")
 private fun rsTrainerReadKeyV44(email:String)="coach_read_trainer_v44_"+rsThreadKeyV44(email)
 private fun rsStudentReadKeyV44(email:String)="coach_read_student_v44_"+rsThreadKeyV44(email)
