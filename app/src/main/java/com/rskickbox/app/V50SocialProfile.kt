@@ -187,6 +187,7 @@ fun RsCommunityV50(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
     val email=store.s("session_student_email","alex@rskickbox.nl")
     val name=store.s("session_student_name","Alex de Vries")
     val posts=remember(revision){rsLoadPostsV50(store).sortedByDescending{it.createdAt}}
+    val postingAllowed=rsOpsEnabledV56(store,RsOpsKeysV56.COMMUNITY_POSTS,true)
     fun save(list:List<RsCommunityPostV50>){rsSavePostsV50(store,list);revision++}
 
     RsScroll(
@@ -195,13 +196,14 @@ fun RsCommunityV50(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
         if(role==RsRole.TRAINER)rsSocialUiV50(lang,"manager_sub") else rsSocialUiV50(lang,"community_sub")
     ){
         if(role==RsRole.STUDENT)RsPanel(c){
+            if(!postingAllowed)Text("Community posting is temporarily disabled by the trainer.",color=c.muted,fontSize=10.sp)
             OutlinedTextField(draft,{draft=it.take(1000)},label={Text(rsSocialUiV50(lang,"write"))},modifier=Modifier.fillMaxWidth(),minLines=3)
             Button(
                 onClick={
                     save(listOf(RsCommunityPostV50(UUID.randomUUID().toString(),email,name,draft.trim(),System.currentTimeMillis(),true))+posts)
                     draft=""
                 },
-                enabled=draft.isNotBlank(),
+                enabled=draft.isNotBlank()&&postingAllowed,
                 modifier=Modifier.fillMaxWidth()
             ){Text(rsSocialUiV50(lang,"post"))}
         }
