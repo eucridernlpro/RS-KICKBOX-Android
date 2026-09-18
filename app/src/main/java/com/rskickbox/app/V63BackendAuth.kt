@@ -75,6 +75,45 @@ suspend fun rsCloudLoginV63(email:String,password:String):Result<RsCloudSessionV
     )
 }
 
+
+suspend fun rsCloudCurrentSessionV67():Result<RsCloudSessionV63?> = runCatching {
+    val client=rsSupabaseClientV60() ?: return@runCatching null
+    val user=client.auth.currentUserOrNull() ?: return@runCatching null
+    val profile=client.from("rs_profiles").select{
+        filter{eq("id",user.id)}
+    }.decodeSingle<RsCloudProfileV63>()
+    if(!profile.active){
+        client.auth.signOut()
+        return@runCatching null
+    }
+    val appRole=if(profile.role=="trainer" || profile.role=="admin") RsRole.TRAINER else RsRole.STUDENT
+    RsCloudSessionV63(
+        role=appRole,
+        email=profile.email,
+        displayName=profile.displayName.ifBlank{profile.email},
+        plan=profile.plan
+    )
+}
+
+suspend fun rsCloudStudentsV67():Result<List<RsStudentAccountV33>> = runCatching {
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.from("rs_profiles").select{
+        filter{eq("role","student")}
+    }.decodeList<RsCloudProfileV63>()
+        .sortedBy{it.displayName.lowercase()}
+        .map{profile->
+            RsStudentAccountV33(
+                id=profile.id,
+                name=profile.displayName,
+                email=profile.email,
+                plan=profile.plan,
+                activationCode="",
+                active=profile.active,
+                createdAt=0L
+            )
+        }
+}
+
 suspend fun rsCloudLogoutV63():Result<Unit> = runCatching {
     rsSupabaseClientV60()?.auth?.signOut()
 }
