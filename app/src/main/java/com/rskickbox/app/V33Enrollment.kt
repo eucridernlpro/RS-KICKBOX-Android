@@ -76,8 +76,9 @@ fun rsSaveStudentsV33(store:RsStore,items:List<RsStudentAccountV33>){
 fun rsNewActivationCodeV33():String =
     UUID.randomUUID().toString().replace("-","").take(8).uppercase()
 
-fun rsInvitePayloadV33(account:RsStudentAccountV33):String =
-    Uri.Builder()
+fun rsInvitePayloadV33(account:RsStudentAccountV33):String {
+    if(account.activationCode.startsWith("rskickbox://invite"))return account.activationCode
+    return Uri.Builder()
         .scheme("rskickbox")
         .authority("invite")
         .appendQueryParameter("v","1")
@@ -88,6 +89,7 @@ fun rsInvitePayloadV33(account:RsStudentAccountV33):String =
         .appendQueryParameter("code",account.activationCode)
         .build()
         .toString()
+}
 
 fun rsParseInviteV33(payload:String):RsStudentAccountV33?{
     return runCatching{
@@ -95,13 +97,15 @@ fun rsParseInviteV33(payload:String):RsStudentAccountV33?{
         if(uri.scheme!="rskickbox" || uri.host!="invite")return null
         val email=uri.getQueryParameter("email").orEmpty().trim()
         val code=uri.getQueryParameter("code").orEmpty().trim()
-        if(email.isBlank()||code.isBlank())return null
+        val token=uri.getQueryParameter("token").orEmpty().trim()
+        val credential=if(token.isNotBlank())token else code
+        if(email.isBlank()||credential.isBlank())return null
         RsStudentAccountV33(
             id=uri.getQueryParameter("id").orEmpty(),
             name=uri.getQueryParameter("name").orEmpty(),
             email=email,
             plan=uri.getQueryParameter("plan").orEmpty().ifBlank{"PRO"},
-            activationCode=code,
+            activationCode=credential,
             active=true,
             createdAt=0L
         )
