@@ -98,7 +98,7 @@ private fun rsDeleteTechniqueVideoIfUnusedV36(context:android.content.Context,st
 fun rsTechniqueHistoryRawForStudentV40(store:RsStore,email:String):String =
     encodeTechniqueSubsV27(
         decodeTechniqueSubsV27(store.s("technique_submissions_v27",""))
-            .filter{it.ownerEmail.isBlank() || it.ownerEmail.equals(email,true)}
+            .filter{it.ownerEmail.equals(email,true)}
     )
 
 fun rsRemoveTechniqueHistoryForStudentV40(context:android.content.Context,store:RsStore,email:String){
