@@ -33,8 +33,6 @@ private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 
 private val visualSlotsV21=listOf(
     VisualSlotV21("login","Login page","Splash / Login","BIG","Behind member access"),
-    VisualSlotV21("intro_fighter","Intro fighter scene","Splash / Login","BIG","Opening fighter visual"),
-    VisualSlotV21("intro_gloves","Intro gloves scene","Splash / Login","BIG","Hanging gloves reveal"),
     VisualSlotV21("student_home","Student dashboard","Dashboards","BIG","Student dashboard background"),
     VisualSlotV21("trainer_home","Trainer dashboard","Dashboards","BIG","Trainer dashboard background"),
     VisualSlotV21("header","App header banner","Banners","MEDIUM","Global header banner"),
