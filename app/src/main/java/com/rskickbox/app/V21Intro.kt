@@ -264,6 +264,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
     RsScroll(c,"Intro Director","Upload and preview the opening video locally before accepting it. All intro elements can be switched on or off from this same screen."){
         RsPanel(c){
             Text("INTRO MASTER CONTROLS",color=c.bright,fontWeight=FontWeight.Black)
+            Text("All intro controls remain visible on this screen.",color=Color.White.copy(alpha=.68f),fontSize=10.sp)
             IntroToggleV23("Enable cinematic intro","Master on/off switch",enabled){enabled=it;store.pb("intro_enabled",it)}
             IntroToggleV23("Use uploaded intro video","Play the accepted local video first",videoEnabled){videoEnabled=it;store.pb("intro_video_enabled",it)}
             IntroToggleV23("Video sound","Play the uploaded video's own audio",videoSound){videoSound=it;store.pb("intro_video_sound",it)}
@@ -348,8 +349,8 @@ private fun IntroToggleV23(title:String,subtitle:String,checked:Boolean,onChecke
         Switch(checked=checked,onCheckedChange=onChecked)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)){
-            Text(title,fontWeight=FontWeight.Bold)
-            Text(subtitle,style=MaterialTheme.typography.bodySmall)
+            Text(title,color=Color.White,fontWeight=FontWeight.Bold,fontSize=15.sp)
+            Text(subtitle,color=Color.White.copy(alpha=.68f),fontSize=11.sp)
         }
     }
 }
