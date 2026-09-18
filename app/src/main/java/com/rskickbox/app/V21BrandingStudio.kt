@@ -5,6 +5,7 @@ import android.net.Uri
 import android.widget.ImageView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -39,6 +40,8 @@ private val visualSlotsV21=listOf(
     VisualSlotV21("music_wall_3","Music wallpaper 3","Music Player","BIG","Rotating live-audio wallpaper"),
     VisualSlotV21("music_wall_4","Music wallpaper 4","Music Player","BIG","Rotating live-audio wallpaper"),
     VisualSlotV21("voice","AI Technique Coach","Student / Training","BIG","AI coach background"),
+    VisualSlotV21("ai_trainer_male","AI male trainer visual","AI Trainer Personas","BIG","Photorealistic cinematic male trainer artwork"),
+    VisualSlotV21("ai_trainer_female","AI female trainer visual","AI Trainer Personas","BIG","Photorealistic cinematic female trainer artwork"),
     VisualSlotV21("session","Session Player","Student / Training","BIG","Session timer background"),
     VisualSlotV21("academy","RS Academy","Student / Training","BIG","Academy background"),
     VisualSlotV21("techniques","Technique Library","Student / Training","BIG","Technique library background"),
@@ -141,13 +144,17 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
     var opacity by remember(selected.key,refresh){mutableFloatStateOf(store.s(opacityKeyV21(selected.key),"0.55").toFloatOrNull()?:.55f)}
     val uri=store.s(visualKeyV21(selected.key),"")
 
-    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){picked->
-        if(picked!=null){
-            runCatching{context.contentResolver.takePersistableUriPermission(picked,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
-            store.ps(visualKeyV21(selected.key),picked.toString())
-            message="${selected.title} saved."
-            refresh++
-        }
+    fun saveVisual(picked:Uri,persist:Boolean){
+        if(persist)runCatching{context.contentResolver.takePersistableUriPermission(picked,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+        store.ps(visualKeyV21(selected.key),picked.toString())
+        message="${selected.title} saved."
+        refresh++
+    }
+    val galleryPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){picked->
+        if(picked!=null)saveVisual(picked,false)
+    }
+    val filePicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){picked->
+        if(picked!=null)saveVisual(picked,true)
     }
 
     Column(
@@ -247,15 +254,17 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                     Text(if(uri.isBlank())"DEFAULT RS VISUAL" else "CUSTOM VISUAL SAVED",color=c.bright,fontWeight=FontWeight.Bold,fontSize=9.sp,modifier=Modifier.align(Alignment.BottomStart).padding(10.dp))
                 }
 
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
-                    Button(onClick={picker.launch(arrayOf("image/*"))},modifier=Modifier.weight(1f)){
-                        Text(if(uri.isBlank())"Upload" else "Replace",fontSize=11.sp)
-                    }
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                    Button(
+                        onClick={galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
+                        modifier=Modifier.weight(1f)
+                    ){Text("Gallery",fontSize=10.sp)}
+                    OutlinedButton(onClick={filePicker.launch(arrayOf("image/*"))},modifier=Modifier.weight(1f)){Text("Files",fontSize=10.sp)}
                     OutlinedButton(
                         onClick={store.ps(visualKeyV21(selected.key),"");message="${selected.title} reset.";refresh++},
                         enabled=uri.isNotBlank(),
                         modifier=Modifier.weight(1f)
-                    ){Text("Reset",fontSize=11.sp)}
+                    ){Text("Reset",fontSize=10.sp)}
                 }
 
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
@@ -293,12 +302,18 @@ fun RsBrandSiteSettingsV21(c:RsPalette,store:RsStore){
     var subtitle by remember{mutableStateOf(store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"))}
     var footer by remember{mutableStateOf(store.s("brand_footer_text","RS KICKBOX · TRAIN · LEARN · CONNECT · GROW"))}
     var active by remember{mutableStateOf("")};var refresh by remember{mutableIntStateOf(0)};var message by remember{mutableStateOf("")}
-    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null&&active.isNotBlank()){runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)};store.ps("brand_asset_$active",uri.toString());refresh++;message="$active updated."}}
+    fun saveBrandAsset(uri:Uri,persist:Boolean){
+        if(active.isBlank())return
+        if(persist)runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+        store.ps("brand_asset_$active",uri.toString());refresh++;message="$active updated."
+    }
+    val galleryPickerBrand=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->if(uri!=null)saveBrandAsset(uri,false)}
+    val filePickerBrand=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null)saveBrandAsset(uri,true)}
     RsScroll(c,"Branding & Site Settings","Trainer-controlled RS identity, logos and app presentation."){
         RsPanel(c){Text("APP IDENTITY",color=c.bright,fontWeight=FontWeight.Black);OutlinedTextField(header,{header=it},label={Text("Header / app name")},modifier=Modifier.fillMaxWidth());OutlinedTextField(title,{title=it},label={Text("Login title")},modifier=Modifier.fillMaxWidth());OutlinedTextField(subtitle,{subtitle=it},label={Text("Login subtitle")},modifier=Modifier.fillMaxWidth());OutlinedTextField(footer,{footer=it},label={Text("Footer text")},modifier=Modifier.fillMaxWidth());Button(onClick={store.ps("brand_header_name",header.trim());store.ps("brand_login_title",title.trim());store.ps("brand_login_subtitle",subtitle.trim());store.ps("brand_footer_text",footer.trim());message="Brand text saved."},modifier=Modifier.fillMaxWidth()){Text("Save brand text")};if(message.isNotBlank())Text(message,color=c.muted)}
         listOf("main_logo" to "Main RS logo","compact_logo" to "Compact header logo","royal_crown" to "Royal crown artwork","favicon" to "Favicon / release icon preview").forEach{(keyName,label)->
             val uri=store.s("brand_asset_$keyName","")
-            RsPanel(c){Text(label,color=c.bright,fontWeight=FontWeight.Bold);if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.fillMaxWidth().height(110.dp),"CENTER") else Box(Modifier.fillMaxWidth().height(70.dp).background(c.panel2),contentAlignment=Alignment.Center){Text("♛ RS",color=c.bright,fontSize=24.sp,fontWeight=FontWeight.Black)};Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){Button(onClick={active=keyName;picker.launch(arrayOf("image/*"))},modifier=Modifier.weight(1f)){Text(if(uri.isBlank())"Upload" else "Replace")};OutlinedButton(onClick={store.ps("brand_asset_$keyName","");refresh++},enabled=uri.isNotBlank(),modifier=Modifier.weight(1f)){Text("Reset")}}}
+            RsPanel(c){Text(label,color=c.bright,fontWeight=FontWeight.Bold);if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.fillMaxWidth().height(110.dp),"CENTER") else Box(Modifier.fillMaxWidth().height(70.dp).background(c.panel2),contentAlignment=Alignment.Center){Text("♛ RS",color=c.bright,fontSize=24.sp,fontWeight=FontWeight.Black)};Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){Button(onClick={active=keyName;galleryPickerBrand.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},modifier=Modifier.weight(1f)){Text(if(uri.isBlank())"Upload" else "Replace")};OutlinedButton(onClick={store.ps("brand_asset_$keyName","");refresh++},enabled=uri.isNotBlank(),modifier=Modifier.weight(1f)){Text("Reset")}}}
         }
         RsPanel(c){Text("RELEASE NOTE",color=c.bright,fontWeight=FontWeight.Bold);Text("The favicon / icon upload is a release artwork reference. Android launcher icons remain build-time resources and will be packaged for the signed Play Store release.",color=c.muted)}
         key(refresh){Spacer(Modifier.height(1.dp))}
