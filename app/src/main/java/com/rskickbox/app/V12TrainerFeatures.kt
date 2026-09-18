@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
 @Composable
 fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
@@ -85,6 +86,8 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
     var pendingDeleteStudentId by remember{mutableStateOf<String?>(null)}
     var studentSearch by remember{mutableStateOf("")}
     var visibleStudentCount by remember{mutableIntStateOf(20)}
+    var cloudBusy by remember{mutableStateOf(false)}
+    val scope=rememberCoroutineScope()
     val students=remember(revision){rsLoadStudentsV33(store)}
     val activeCount=students.count{it.active}
     val filteredStudents=remember(students,studentSearch){
@@ -133,6 +136,25 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                         !cleanEmail.contains("@")->status=rsEnrollMsg(lang,"invalid_email")
                         students.any{it.email.equals(cleanEmail,true)}->status=rsEnrollMsg(lang,"email_exists")
                         activeCount>=RS_STUDENT_LIMIT_V33->status=rsEnrollMsg(lang,"limit_reached")
+                        RsSupabaseV60.configured->{
+                            cloudBusy=true
+                            status="Creating secure cloud invitation…"
+                            val requestedName=name.trim()
+                            val requestedPlan=plan
+                            scope.launch{
+                                rsCreateStudentInviteV63(requestedName,cleanEmail,requestedPlan)
+                                    .onSuccess{invite->
+                                        save(listOf(rsCloudInviteAsLocalV63(invite))+students)
+                                        name=""
+                                        email=""
+                                        plan="PRO"
+                                        showCreate=false
+                                        status="Secure QR invitation created."
+                                    }
+                                    .onFailure{status=it.message?:"Could not create cloud invitation."}
+                                cloudBusy=false
+                            }
+                        }
                         else->{
                             val account=RsStudentAccountV33(
                                 id=java.util.UUID.randomUUID().toString(),
@@ -152,8 +174,9 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                         }
                     }
                 },
+                enabled=!cloudBusy,
                 modifier=Modifier.fillMaxWidth()
-            ){Text(rsEnrollmentT(lang,"create_qr"))}
+            ){Text(if(cloudBusy)"Creating secure invite…" else rsEnrollmentT(lang,"create_qr"))}
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
 
@@ -215,7 +238,11 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                         )
                     }
                 }
-                Text("${rsEnrollMsg(lang,"activation_label")}: ${student.activationCode}",color=c.bright,fontWeight=FontWeight.Bold)
+                Text(
+                    if(student.activationCode.startsWith("rskickbox://invite"))"Secure cloud QR invitation" else "${rsEnrollMsg(lang,"activation_label")}: ${student.activationCode}",
+                    color=c.bright,
+                    fontWeight=FontWeight.Bold
+                )
                 Text(rsEnrollMsg(lang,"store_ready"),color=c.muted,fontSize=10.sp)
 
                 Button(
@@ -234,8 +261,9 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                             save(students.map{if(it.id==student.id)it.copy(activationCode=newCode) else it})
                             status=rsEnrollMsg(lang,"new_qr_ready",student.name)
                         },
+                        enabled=!student.activationCode.startsWith("rskickbox://invite"),
                         modifier=Modifier.weight(1f)
-                    ){Text(rsEnrollmentT(lang,"new_qr"),fontSize=10.sp)}
+                    ){Text(if(student.activationCode.startsWith("rskickbox://invite"))"Cloud QR" else rsEnrollmentT(lang,"new_qr"),fontSize=10.sp)}
                     OutlinedButton(
                         onClick={
                             if(pendingDeleteStudentId==student.id){
