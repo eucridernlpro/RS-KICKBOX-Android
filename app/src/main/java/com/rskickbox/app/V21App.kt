@@ -1,11 +1,16 @@
 package com.rskickbox.app
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -13,6 +18,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 
 @Composable
 fun RsKickboxV21App() {
@@ -56,7 +64,7 @@ fun RsKickboxV21App() {
                                     "session" -> SessionV21(c,lang)
                                     "access" -> RsAccessControl(c, store)
                                     "payments" -> RsPaymentCenter(c, store)
-                                    "members" -> RsMemberManager(c)
+                                    "members" -> RsMemberManager(c,store)
                                     "classes" -> if(active==RsRole.TRAINER) RsClassManager(c) else RsStudentClasses(c)
                                     "attendance" -> RsAttendance(c)
                                     "invoices" -> RsInvoices(c)
@@ -123,25 +131,141 @@ fun RsKickboxV21App() {
 
 @Composable
 private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit,onLogin:(RsRole)->Unit) {
+    val context=LocalContext.current
     var email by remember { mutableStateOf("alex@rskickbox.nl") }
     var pass by remember { mutableStateOf("preview123") }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().navigationBarsPadding().padding(16.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
+    var status by remember { mutableStateOf("") }
+    val formOpacity=store.s("login_form_opacity","0.82").toFloatOrNull()?.coerceIn(.20f,1f)?:.82f
+
+    fun applyInvite(raw:String){
+        val invite=rsParseInviteV33(raw)
+        if(invite==null){
+            status="This QR is not a valid RS KICKBOX student invitation."
+        }else{
+            email=invite.email
+            pass=invite.activationCode
+            status="Invitation loaded for ${invite.name.ifBlank{"student"}} · ${invite.plan}. You can now log in."
+        }
+    }
+
+    val galleryQrPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
+        if(uri!=null){
+            val raw=rsDecodeQrImageV33(context,uri)
+            if(raw==null)status="No readable RS KICKBOX QR code was found in this image."
+            else applyInvite(raw)
+        }
+    }
+
+    val scannerOptions=remember{
+        GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+            .enableAutoZoom()
+            .build()
+    }
+    val scanner=remember{GmsBarcodeScanning.getClient(context,scannerOptions)}
+
+    fun tryStudentLogin(){
+        val accounts=rsLoadStudentsV33(store)
+        val demo=email.equals("alex@rskickbox.nl",true) && pass=="preview123"
+        val match=rsFindStudentV33(store,email,pass)
+        when{
+            demo || (accounts.isEmpty() && email.isNotBlank() && pass.isNotBlank())->onLogin(RsRole.STUDENT)
+            match!=null->{
+                status="Welcome ${match.name}."
+                onLogin(RsRole.STUDENT)
+            }
+            else->status="Student account not found, inactive, or activation code is incorrect."
+        }
+    }
+
+    val fieldColors=OutlinedTextFieldDefaults.colors(
+        focusedTextColor=Color.White,
+        unfocusedTextColor=Color.White,
+        focusedLabelColor=Color.White,
+        unfocusedLabelColor=Color.White.copy(alpha=.78f),
+        cursorColor=c.bright,
+        focusedBorderColor=c.bright,
+        unfocusedBorderColor=Color.White.copy(alpha=.55f)
+    )
+
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().navigationBarsPadding().padding(16.dp),
+        verticalArrangement=Arrangement.spacedBy(14.dp)
+    ) {
         val mainLogo=store.s("brand_asset_main_logo","")
         if(mainLogo.isNotBlank())RsUriPreviewV21(mainLogo,Modifier.fillMaxWidth().height(120.dp),"CENTER")
         Text("♛ ${store.s("brand_header_name","RS KICKBOX")}",color=c.bright,fontSize=31.sp,fontWeight=FontWeight.Black)
         LanguageV21(lang,onLang)
-        Text(store.s("brand_login_title","Premium cinematic kickboxing"),color=c.text,style=MaterialTheme.typography.headlineMedium)
-        Text(store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"),color=c.muted,fontSize=11.sp)
-        RsPanel(c) {
-            Text(rsT(lang,"member_access"),color=c.bright,fontWeight=FontWeight.Bold)
-            OutlinedTextField(email,{email=it},label={Text(rsT(lang,"email"))},singleLine=true,modifier=Modifier.fillMaxWidth())
-            OutlinedTextField(pass,{pass=it},label={Text(rsT(lang,"password"))},singleLine=true,visualTransformation=PasswordVisualTransformation(),modifier=Modifier.fillMaxWidth())
-            Button(onClick={onLogin(RsRole.STUDENT)},modifier=Modifier.fillMaxWidth()){Text(rsT(lang,"student_preview"),fontSize=adaptiveLabelSp(rsT(lang,"student_preview"),12f).sp,maxLines=1)}
-            OutlinedButton(onClick={onLogin(RsRole.TRAINER)},modifier=Modifier.fillMaxWidth()){Text(rsT(lang,"trainer_preview"),fontSize=adaptiveLabelSp(rsT(lang,"trainer_preview"),12f).sp,maxLines=1)}
+        Text(store.s("brand_login_title","Premium cinematic kickboxing"),color=Color.White,style=MaterialTheme.typography.headlineMedium)
+        Text(store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"),color=Color.White.copy(alpha=.78f),fontSize=11.sp)
+
+        Surface(
+            shape=RoundedCornerShape(24.dp),
+            color=c.panel.copy(alpha=formOpacity),
+            border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.55f)),
+            modifier=Modifier.fillMaxWidth()
+        ){
+            Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+                Text(rsT(lang,"member_access"),color=Color.White,fontWeight=FontWeight.Bold)
+                Text("Student invitation QR",color=c.bright,fontWeight=FontWeight.Bold,fontSize=12.sp)
+                Text("Scan the QR from your trainer or upload the QR image from your gallery. Your email and activation code will be filled automatically.",color=Color.White.copy(alpha=.74f),fontSize=10.sp)
+
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                    Button(
+                        onClick={
+                            scanner.startScan()
+                                .addOnSuccessListener{barcode->
+                                    val raw=barcode.rawValue
+                                    if(raw.isNullOrBlank())status="The scanned QR did not contain an invitation."
+                                    else applyInvite(raw)
+                                }
+                                .addOnCanceledListener{status="QR scan cancelled."}
+                                .addOnFailureListener{status="QR scanner could not open: ${it.message?:"unknown error"}"}
+                        },
+                        modifier=Modifier.weight(1f)
+                    ){Text("Scan QR",fontSize=11.sp)}
+                    OutlinedButton(
+                        onClick={galleryQrPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
+                        modifier=Modifier.weight(1f)
+                    ){Text("Upload QR",fontSize=11.sp)}
+                }
+
+                OutlinedTextField(
+                    email,
+                    {email=it},
+                    label={Text(rsT(lang,"email"))},
+                    colors=fieldColors,
+                    singleLine=true,
+                    modifier=Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    pass,
+                    {pass=it},
+                    label={Text(rsT(lang,"password")+" / activation code")},
+                    colors=fieldColors,
+                    singleLine=true,
+                    visualTransformation=PasswordVisualTransformation(),
+                    modifier=Modifier.fillMaxWidth()
+                )
+                Button(onClick={tryStudentLogin()},modifier=Modifier.fillMaxWidth()){
+                    Text(rsT(lang,"student_preview"),fontSize=adaptiveLabelSp(rsT(lang,"student_preview"),12f).sp,maxLines=1)
+                }
+                OutlinedButton(onClick={onLogin(RsRole.TRAINER)},modifier=Modifier.fillMaxWidth()){
+                    Text(rsT(lang,"trainer_preview"),fontSize=adaptiveLabelSp(rsT(lang,"trainer_preview"),12f).sp,maxLines=1)
+                }
+                if(status.isNotBlank())Text(status,color=Color.White,fontSize=10.sp)
+            }
         }
-        RsPanel(c) {
-            Text("v0.31 FULL QC BUILD",color=c.bright,fontWeight=FontWeight.Bold)
-            Text("QC repairs · dual clean splash · adaptive media · AI Technique Coach · multilingual premium UI.",color=c.muted)
+
+        Surface(
+            shape=RoundedCornerShape(20.dp),
+            color=c.panel.copy(alpha=(formOpacity*.92f).coerceIn(.18f,1f)),
+            modifier=Modifier.fillMaxWidth()
+        ){
+            Column(Modifier.padding(14.dp)){
+                Text("v0.33 PRIVATE ENROLLMENT BUILD",color=c.bright,fontWeight=FontWeight.Bold)
+                Text("Trainer-created accounts · QR invitations · camera/gallery login · adjustable transparent login form.",color=Color.White.copy(alpha=.72f))
+            }
         }
     }
 }
