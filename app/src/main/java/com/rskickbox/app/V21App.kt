@@ -69,7 +69,7 @@ fun RsKickboxV21App() {
                                     "finance" -> RsFinance(c)
                                     "community" -> RsCommunity(c)
                                     "media" -> RsTrainingMediaV16(c, store)
-                                    "music", "music_admin" -> RsLocalMusicCenterV20(c, store, active)
+                                    "music", "music_admin" -> RsLocalMusicCenterV20(c, store, active, lang)
                                     "techniques" -> RsTechniqueLibrary(c)
                                     "home_training" -> RsHomeTraining(c)
                                     "workout" -> RsWorkoutGenerator(c)
