@@ -234,6 +234,14 @@ begin
         raise exception 'auth user does not match invitation' using errcode = '42501';
     end if;
 
+    if (
+        select count(*)
+        from public.rs_profiles p
+        where p.role='student' and p.active=true
+    ) >= 100 then
+        raise exception 'active student limit reached' using errcode = 'P0001';
+    end if;
+
     insert into public.rs_profiles (
         id,email,display_name,role,plan,active
     )
