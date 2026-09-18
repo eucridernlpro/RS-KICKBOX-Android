@@ -188,13 +188,17 @@ fun RsNotificationsCenterV16(c: RsPalette, s: RsStore) {
 @Composable
 fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
     val context = LocalContext.current
-    var privacyUrl by remember { mutableStateOf(s.s("legal_privacy_url", "https://example.com/privacy")) }
-    var termsUrl by remember { mutableStateOf(s.s("legal_terms_url", "https://example.com/terms")) }
-    var deleteUrl by remember { mutableStateOf(s.s("legal_delete_url", "https://example.com/delete-account")) }
+    var privacyUrl by remember { mutableStateOf(s.s("legal_privacy_url", "")) }
+    var termsUrl by remember { mutableStateOf(s.s("legal_terms_url", "")) }
+    var deleteUrl by remember { mutableStateOf(s.s("legal_delete_url", "")) }
     var supportEmail by remember { mutableStateOf(s.s("support_email", "support@rskickbox.nl")) }
     var status by remember { mutableStateOf("") }
 
     fun openUrl(url: String) {
+        if(!url.startsWith("https://")){
+            status="Enter a valid public https:// URL first."
+            return
+        }
         runCatching {
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }.onFailure { status = "Could not open link on this device." }
@@ -214,15 +218,15 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
                 s.ps("support_email", supportEmail)
                 status = "Legal/release settings saved locally."
             }, modifier = Modifier.fillMaxWidth()) { Text("Save legal settings") }
-            OutlinedButton(onClick = { openUrl(privacyUrl) }, modifier = Modifier.fillMaxWidth()) { Text("Test privacy link") }
-            OutlinedButton(onClick = { openUrl(deleteUrl) }, modifier = Modifier.fillMaxWidth()) { Text("Test deletion-request link") }
+            OutlinedButton(onClick = { openUrl(privacyUrl) }, enabled=privacyUrl.startsWith("https://"), modifier = Modifier.fillMaxWidth()) { Text("Test privacy link") }
+            OutlinedButton(onClick = { openUrl(deleteUrl) }, enabled=deleteUrl.startsWith("https://"), modifier = Modifier.fillMaxWidth()) { Text("Test deletion-request link") }
         }
 
         RsPanel(c) {
             Text("PLAY STORE RELEASE CHECK", color = c.bright, fontWeight = FontWeight.Bold)
             val checks = listOf(
-                "Privacy policy URL" to !privacyUrl.contains("example.com"),
-                "Account deletion URL" to !deleteUrl.contains("example.com"),
+                "Privacy policy URL" to privacyUrl.startsWith("https://"),
+                "Account deletion URL" to deleteUrl.startsWith("https://"),
                 "Support email" to supportEmail.contains("@"),
                 "Secure production backend" to false,
                 "Signed release AAB" to false,
