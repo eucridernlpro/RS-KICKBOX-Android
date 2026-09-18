@@ -24,21 +24,28 @@ Deno.serve(async (req)=>{
 
   if(!email.includes("@") || !displayName) return json({error:"Valid name and email required"},400)
 
-  const { count:activeCount, error:countError }=await admin
+  const { data:activeStudents, error:countError }=await client
     .from("rs_profiles")
-    .select("id",{count:"exact",head:true})
+    .select("id")
     .eq("role","student")
     .eq("active",true)
 
-  if(countError) return json({error:"Could not verify student capacity"},500)
-  if((activeCount || 0)>=100) return json({error:"Active student limit reached"},409)
+  if(countError){
+    console.error("create-student-invite capacity query failed",countError)
+    return json({error:"Could not verify student capacity"},500)
+  }
+  if((activeStudents?.length || 0)>=100) return json({error:"Active student limit reached"},409)
 
-  const { data:existing }=await admin
+  const { data:existing, error:existingError }=await client
     .from("rs_profiles")
     .select("id")
     .ilike("email",email)
     .maybeSingle()
 
+  if(existingError){
+    console.error("create-student-invite existing profile query failed",existingError)
+    return json({error:"Could not verify existing student accounts"},500)
+  }
   if(existing) return json({error:"A student account already exists for this email"},409)
 
   const token=randomToken(32)
