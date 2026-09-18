@@ -32,6 +32,18 @@ data class RsVisualMediaInfoV29(
 private fun rsVisualDirV29(context:Context):File =
     File(context.filesDir,"rs_visual_media").apply{mkdirs()}
 
+fun rsDeleteOwnedVisualV29(context:Context,uriString:String){
+    if(uriString.isBlank())return
+    runCatching{
+        val uri=Uri.parse(uriString)
+        if(uri.scheme!="file")return
+        val file=uri.path?.let(::File)?:return
+        val root=rsVisualDirV29(context).canonicalFile
+        val target=file.canonicalFile
+        if(target.parentFile==root && target.exists())target.delete()
+    }
+}
+
 fun rsVisualMimeV29(context:Context,uri:Uri):String {
     val direct=context.contentResolver.getType(uri)
     if(!direct.isNullOrBlank())return direct
