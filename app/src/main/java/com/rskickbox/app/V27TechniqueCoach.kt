@@ -390,6 +390,7 @@ private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore){
     val context=LocalContext.current
     var revision by remember{mutableIntStateOf(0)}
     var message by remember{mutableStateOf("")}
+    var pendingDeleteId by remember{mutableStateOf<String?>(null)}
     val items=remember(revision){decodeTechniqueSubsV27(store.s("technique_submissions_v27",""))}
     fun save(updated:List<TechniqueSubmissionV27>){store.ps("technique_submissions_v27",encodeTechniqueSubsV27(updated));revision++}
 
@@ -419,11 +420,19 @@ private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore){
                         message=if(item.favorite)"Removed from favorites." else "Saved to trainer favorites."
                     },modifier=Modifier.weight(1f)){Text(if(item.favorite)"Unfavorite" else "Favorite")}
                     OutlinedButton(onClick={
-                        val updated=items.filterNot{it.id==item.id}
-                        save(updated)
-                        if(updated.none{it.uri==item.uri})rsDeleteTechniqueVideoV36(context,item.uri)
-                        message="Technique submission deleted."
-                    },modifier=Modifier.weight(1f)){Text("Delete")}
+                        if(pendingDeleteId==item.id){
+                            val updated=items.filterNot{it.id==item.id}
+                            save(updated)
+                            if(updated.none{it.uri==item.uri})rsDeleteTechniqueVideoV36(context,item.uri)
+                            pendingDeleteId=null
+                            message="Technique submission deleted."
+                        }else{
+                            pendingDeleteId=item.id
+                            message="Tap Delete again to confirm this technique submission."
+                        }
+                    },modifier=Modifier.weight(1f)){
+                        Text(if(pendingDeleteId==item.id)"Confirm" else "Delete")
+                    }
                 }
             }
         }
