@@ -141,18 +141,18 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
     fun applyInvite(raw:String){
         val invite=rsParseInviteV33(raw)
         if(invite==null){
-            status="This QR is not a valid RS KICKBOX student invitation."
+            status=rsEnrollMsg(lang,"invalid_qr")
         }else{
             email=invite.email
             pass=invite.activationCode
-            status="Invitation loaded for ${invite.name.ifBlank{"student"}} · ${invite.plan}. You can now log in."
+            status=rsEnrollMsg(lang,"invite_loaded",invite.name.ifBlank{rsT(lang,"student")},invite.plan)
         }
     }
 
     val galleryQrPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
         if(uri!=null){
             val raw=rsDecodeQrImageV33(context,uri)
-            if(raw==null)status="No readable RS KICKBOX QR code was found in this image."
+            if(raw==null)status=rsEnrollMsg(lang,"qr_unreadable")
             else applyInvite(raw)
         }
     }
@@ -171,10 +171,10 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
         when{
             demo->onLogin(RsRole.STUDENT)
             match!=null->{
-                status="Welcome ${match.name}."
+                status=rsEnrollMsg(lang,"welcome",match.name)
                 onLogin(RsRole.STUDENT)
             }
-            else->status="Student account not found, inactive, or activation code is incorrect."
+            else->status=rsEnrollMsg(lang,"login_failed")
         }
     }
 
@@ -216,11 +216,11 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                             scanner.startScan()
                                 .addOnSuccessListener{barcode->
                                     val raw=barcode.rawValue
-                                    if(raw.isNullOrBlank())status="The scanned QR did not contain an invitation."
+                                    if(raw.isNullOrBlank())status=rsEnrollMsg(lang,"scan_empty")
                                     else applyInvite(raw)
                                 }
-                                .addOnCanceledListener{status="QR scan cancelled."}
-                                .addOnFailureListener{status="QR scanner could not open: ${it.message?:"unknown error"}"}
+                                .addOnCanceledListener{status=rsEnrollMsg(lang,"scan_cancelled")}
+                                .addOnFailureListener{status=rsEnrollMsg(lang,"scanner_error",detail=it.message?:"unknown error")}
                         },
                         modifier=Modifier.weight(1f)
                     ){Text(rsEnrollmentT(lang,"scan_qr"),fontSize=11.sp)}
