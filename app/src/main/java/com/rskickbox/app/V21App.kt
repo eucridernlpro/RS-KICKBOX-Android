@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
@@ -282,32 +283,124 @@ private fun ShellV21(
     content: @Composable () -> Unit
 ) {
     val home=if(role==RsRole.TRAINER)"trainer" else "home"
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(9.dp),verticalArrangement=Arrangement.spacedBy(7.dp)) {
-        RsBrandedHeaderV21(c,store) {
-            Text("♛ ${store.s("brand_header_name","RS KICKBOX")}",color=c.bright,fontSize=20.sp,fontWeight=FontWeight.Black)
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement=Arrangement.spacedBy(6.dp),
-                verticalAlignment=Alignment.CenterVertically
-            ) {
-                LanguageV21(lang,onLang,Modifier.weight(1f))
-                if(route!=home) OutlinedButton(
-                    onClick={onRoute(home)},
-                    modifier=Modifier.widthIn(min=42.dp,max=50.dp).heightIn(min=40.dp),
-                    contentPadding=PaddingValues(horizontal=8.dp)
-                ){Text("‹")}
-                OutlinedButton(
-                    onClick=onLogout,
-                    modifier=Modifier.widthIn(min=72.dp,max=112.dp).heightIn(min=40.dp),
-                    contentPadding=PaddingValues(horizontal=7.dp)
+    val drawerState=rememberDrawerState(initialValue=DrawerValue.Closed)
+    val scope=rememberCoroutineScope()
+    val drawerItems=if(role==RsRole.TRAINER) listOf(
+        "trainer" to "Trainer Dashboard",
+        "members" to "Student Manager",
+        "voice" to "AI Technique Coach",
+        "session" to "Trainer Session",
+        "classes" to "Class Manager",
+        "attendance" to "Attendance",
+        "backgrounds" to "Visual Asset Studio",
+        "branding" to "Branding & Site Settings",
+        "payments" to "Payment Center",
+        "analytics" to "Analytics",
+        "release" to "Release & Legal Center",
+        "settings" to "App Settings"
+    ) else listOf(
+        "home" to "RS Live Dashboard",
+        "voice" to "AI Technique Coach",
+        "session" to "Session Player",
+        "academy" to "RS Academy",
+        "techniques" to "Technique Library",
+        "classes" to "Classes & Events",
+        "progress" to "Progress",
+        "community" to "Community",
+        "media" to "Training Media",
+        "music" to "My RS Music",
+        "finance" to "Membership & Payments",
+        "profile" to "My Profile",
+        "settings" to "Settings & Privacy"
+    )
+
+    ModalNavigationDrawer(
+        drawerState=drawerState,
+        drawerContent={
+            ModalDrawerSheet(
+                drawerContainerColor=c.bg,
+                drawerContentColor=c.text
+            ){
+                Column(
+                    Modifier.fillMaxHeight().widthIn(max=330.dp).statusBarsPadding().navigationBarsPadding().padding(12.dp),
+                    verticalArrangement=Arrangement.spacedBy(6.dp)
                 ){
-                    val logout=rsT(lang,"logout")
-                    Text(logout,fontSize=adaptiveLabelSp(logout,9.5f).sp,maxLines=1)
+                    RsPanel(c){
+                        Text("♛ ${store.s("brand_header_name","RS KICKBOX")}",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp)
+                        Text(
+                            if(role==RsRole.TRAINER)rsT(lang,"trainer_admin") else rsT(lang,"student"),
+                            color=c.muted,
+                            fontSize=11.sp
+                        )
+                    }
+                    Column(
+                        Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                        verticalArrangement=Arrangement.spacedBy(3.dp)
+                    ){
+                        drawerItems.forEach{(target,fallback)->
+                            val title=rsRouteTitle(lang,target,fallback)
+                            NavigationDrawerItem(
+                                label={Text(title,maxLines=1,overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis)},
+                                selected=route==target,
+                                onClick={
+                                    onRoute(target)
+                                    scope.launch{drawerState.close()}
+                                },
+                                colors=NavigationDrawerItemDefaults.colors(
+                                    selectedContainerColor=c.gold.copy(alpha=.22f),
+                                    selectedTextColor=c.bright,
+                                    unselectedContainerColor=Color.Transparent,
+                                    unselectedTextColor=c.text
+                                )
+                            )
+                        }
+                    }
+                    OutlinedButton(
+                        onClick={
+                            scope.launch{drawerState.close()}
+                            onLogout()
+                        },
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(rsT(lang,"logout"))}
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().weight(1f)){content()}
-        RsBrandedFooterV21(c,store)
+    ){
+        Column(
+            Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(9.dp),
+            verticalArrangement=Arrangement.spacedBy(7.dp)
+        ) {
+            RsBrandedHeaderV21(c,store) {
+                Text("♛ ${store.s("brand_header_name","RS KICKBOX")}",color=c.bright,fontSize=20.sp,fontWeight=FontWeight.Black)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(6.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick={scope.launch{drawerState.open()}},
+                        modifier=Modifier.widthIn(min=42.dp,max=50.dp).heightIn(min=40.dp),
+                        contentPadding=PaddingValues(horizontal=8.dp)
+                    ){Text("☰")}
+                    LanguageV21(lang,onLang,Modifier.weight(1f))
+                    if(route!=home) OutlinedButton(
+                        onClick={onRoute(home)},
+                        modifier=Modifier.widthIn(min=42.dp,max=50.dp).heightIn(min=40.dp),
+                        contentPadding=PaddingValues(horizontal=8.dp)
+                    ){Text("‹")}
+                    OutlinedButton(
+                        onClick=onLogout,
+                        modifier=Modifier.widthIn(min=68.dp,max=106.dp).heightIn(min=40.dp),
+                        contentPadding=PaddingValues(horizontal=6.dp)
+                    ){
+                        val logout=rsT(lang,"logout")
+                        Text(logout,fontSize=adaptiveLabelSp(logout,9f).sp,maxLines=1)
+                    }
+                }
+            }
+            Box(Modifier.fillMaxWidth().weight(1f)){content()}
+            RsBrandedFooterV21(c,store)
+        }
     }
 }
 
