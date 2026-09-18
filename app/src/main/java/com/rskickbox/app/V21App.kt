@@ -140,8 +140,8 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
             OutlinedButton(onClick={onLogin(RsRole.TRAINER)},modifier=Modifier.fillMaxWidth()){Text(rsT(lang,"trainer_preview"),fontSize=adaptiveLabelSp(rsT(lang,"trainer_preview"),12f).sp,maxLines=1)}
         }
         RsPanel(c) {
-            Text("v0.25 MULTILINGUAL PREMIUM BUILD",color=c.bright,fontWeight=FontWeight.Bold)
-            Text("9 language packs · adaptive dashboard typography · premium visuals · cinematic intro · internal RS audio.",color=c.muted)
+            Text("v0.31 FULL QC BUILD",color=c.bright,fontWeight=FontWeight.Bold)
+            Text("QC repairs · dual clean splash · adaptive media · AI Technique Coach · multilingual premium UI.",color=c.muted)
         }
     }
 }
