@@ -49,7 +49,7 @@ private fun rsBuildLocalExportV40(store:RsStore):String{
         })
         put("bookings",JSONArray(store.s(bookingKey,"").split(',').filter{it.isNotBlank()}))
         put("finance_invoices",JSONArray().apply{
-            rsFinanceInvoicesForStudentV40(store,name).forEach{inv->
+            rsFinanceInvoicesForStudentV40(store,email,name).forEach{inv->
                 put(JSONObject().apply{
                     put("id",inv.id)
                     put("period",inv.period)
