@@ -20,7 +20,7 @@ data class RsFightCampV47(
     val focus:String,val active:Boolean
 )
 
-private fun rsLoadChallengesV47(store:RsStore):List<RsChallengeV47>{
+fun rsLoadChallengesV47(store:RsStore):List<RsChallengeV47>{
     val raw=store.s("challenges_v47","")
     if(raw.isBlank())return emptyList()
     return runCatching{
@@ -46,7 +46,7 @@ private fun rsSaveChallengesV47(store:RsStore,items:List<RsChallengeV47>){
     store.ps("challenges_v47",a.toString())
 }
 
-private fun rsLoadFightCampsV47(store:RsStore):List<RsFightCampV47>{
+fun rsLoadFightCampsV47(store:RsStore):List<RsFightCampV47>{
     val raw=store.s("fightcamps_v47","")
     if(raw.isBlank())return emptyList()
     return runCatching{
