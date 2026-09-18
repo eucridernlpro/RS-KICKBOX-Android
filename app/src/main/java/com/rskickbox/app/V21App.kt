@@ -139,10 +139,57 @@ fun RsKickboxV21App() {
 @Composable
 private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit,onLogin:(RsRole)->Unit) {
     val context=LocalContext.current
-    var email by remember { mutableStateOf("alex@rskickbox.nl") }
-    var pass by remember { mutableStateOf("preview123") }
+    val scope=rememberCoroutineScope()
+    var email by remember { mutableStateOf("") }
+    var pass by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var pendingInviteToken by remember { mutableStateOf("") }
     val formOpacity=store.s("login_form_opacity","0.82").toFloatOrNull()?.coerceIn(.20f,1f)?:.82f
+
+    fun finishCloudLogin(session:RsCloudSessionV63){
+        store.ps("session_student_email",session.email)
+        store.ps("session_student_name",session.displayName)
+        store.ps("session_plan",session.plan)
+        store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
+        status=rsEnrollMsg(lang,"welcome",session.displayName)
+        onLogin(session.role)
+    }
+
+    fun signInCloud(){
+        if(busy)return
+        busy=true
+        status="Signing in securely…"
+        scope.launch{
+            rsCloudLoginV63(email,pass)
+                .onSuccess{finishCloudLogin(it)}
+                .onFailure{status=it.message?:"Sign-in failed."}
+            busy=false
+        }
+    }
+
+    fun activateInvite(){
+        if(busy)return
+        if(pass.length<10){
+            status="Choose a password with at least 10 characters."
+            return
+        }
+        busy=true
+        status="Activating your RS KICKBOX account…"
+        scope.launch{
+            rsRedeemStudentInviteV63(email,pendingInviteToken,pass)
+                .onSuccess{
+                    rsCloudLoginV63(email,pass)
+                        .onSuccess{
+                            pendingInviteToken=""
+                            finishCloudLogin(it)
+                        }
+                        .onFailure{status=it.message?:"Account created, but sign-in failed."}
+                }
+                .onFailure{status=it.message?:"Could not activate invitation."}
+            busy=false
+        }
+    }
 
     fun applyInvite(raw:String){
         val invite=rsParseInviteV33(raw)
@@ -150,8 +197,9 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
             status=rsEnrollMsg(lang,"invalid_qr")
         }else{
             email=invite.email
-            pass=invite.activationCode
-            status=rsEnrollMsg(lang,"invite_loaded",invite.name.ifBlank{rsT(lang,"student")},invite.plan)
+            pendingInviteToken=invite.activationCode
+            pass=""
+            status="Invitation loaded for "+invite.name.ifBlank{rsT(lang,"student")}+". Choose a password with at least 10 characters."
         }
     }
 
@@ -171,25 +219,6 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
     }
     val scanner=remember{GmsBarcodeScanning.getClient(context,scannerOptions)}
 
-    fun tryStudentLogin(){
-        val demo=email.equals("alex@rskickbox.nl",true) && pass=="preview123"
-        val match=rsFindStudentV33(store,email,pass)
-        when{
-            demo->{
-                store.ps("session_student_email","alex@rskickbox.nl")
-                store.ps("session_student_name","Alex de Vries")
-                onLogin(RsRole.STUDENT)
-            }
-            match!=null->{
-                store.ps("session_student_email",match.email)
-                store.ps("session_student_name",match.name.ifBlank{match.email})
-                status=rsEnrollMsg(lang,"welcome",match.name)
-                onLogin(RsRole.STUDENT)
-            }
-            else->status=rsEnrollMsg(lang,"login_failed")
-        }
-    }
-
     val fieldColors=OutlinedTextFieldDefaults.colors(
         focusedTextColor=Color.White,
         unfocusedTextColor=Color.White,
@@ -206,7 +235,7 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
     ) {
         val mainLogo=store.s("brand_asset_main_logo","")
         if(mainLogo.isNotBlank())RsUriPreviewV21(mainLogo,Modifier.fillMaxWidth().height(120.dp),"CENTER")
-        Text("♛ ${store.s("brand_header_name","RS KICKBOX")}",color=c.bright,fontSize=31.sp,fontWeight=FontWeight.Black)
+        Text("♛ "+store.s("brand_header_name","RS KICKBOX"),color=c.bright,fontSize=31.sp,fontWeight=FontWeight.Black)
         LanguageV21(lang,onLang)
         Text(store.s("brand_login_title","Premium cinematic kickboxing"),color=Color.White,style=MaterialTheme.typography.headlineMedium)
         Text(store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"),color=Color.White.copy(alpha=.78f),fontSize=11.sp)
@@ -234,36 +263,54 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                                 .addOnCanceledListener{status=rsEnrollMsg(lang,"scan_cancelled")}
                                 .addOnFailureListener{status=rsEnrollMsg(lang,"scanner_error",detail=it.message?:"unknown error")}
                         },
+                        enabled=!busy,
                         modifier=Modifier.weight(1f)
                     ){Text(rsEnrollmentT(lang,"scan_qr"),fontSize=11.sp)}
                     OutlinedButton(
                         onClick={galleryQrPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
+                        enabled=!busy,
                         modifier=Modifier.weight(1f)
                     ){Text(rsEnrollmentT(lang,"upload_qr"),fontSize=11.sp)}
                 }
 
                 OutlinedTextField(
                     email,
-                    {email=it},
+                    {email=it; if(pendingInviteToken.isNotBlank() && !it.equals(email,true))pendingInviteToken=""},
                     label={Text(rsT(lang,"email"))},
                     colors=fieldColors,
                     singleLine=true,
+                    enabled=!busy,
                     modifier=Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     pass,
                     {pass=it},
-                    label={Text(rsEnrollmentT(lang,"activation_code"))},
+                    label={Text(if(pendingInviteToken.isNotBlank())"Create password (10+ characters)" else "Password")},
                     colors=fieldColors,
                     singleLine=true,
+                    enabled=!busy,
                     visualTransformation=PasswordVisualTransformation(),
                     modifier=Modifier.fillMaxWidth()
                 )
-                Button(onClick={tryStudentLogin()},modifier=Modifier.fillMaxWidth()){
-                    Text(rsT(lang,"student_preview"),fontSize=adaptiveLabelSp(rsT(lang,"student_preview"),12f).sp,maxLines=1)
+                Button(
+                    onClick={if(pendingInviteToken.isNotBlank())::activateInvite else ::signInCloud},
+                    enabled=!busy && email.isNotBlank() && pass.isNotBlank(),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Text(
+                        when{
+                            busy->"Please wait…"
+                            pendingInviteToken.isNotBlank()->"Activate account"
+                            else->"Sign in"
+                        },
+                        fontSize=12.sp,
+                        maxLines=1
+                    )
                 }
-                OutlinedButton(onClick={store.ps("session_student_email","");store.ps("session_student_name","");onLogin(RsRole.TRAINER)},modifier=Modifier.fillMaxWidth()){
-                    Text(rsT(lang,"trainer_preview"),fontSize=adaptiveLabelSp(rsT(lang,"trainer_preview"),12f).sp,maxLines=1)
+                if(!RsSupabaseV60.configured){
+                    Text("Cloud backend is not configured in this build.",color=c.muted,fontSize=10.sp)
+                }else{
+                    Text("Secure Supabase account login · role and access are verified from the server.",color=c.muted,fontSize=10.sp)
                 }
                 if(status.isNotBlank())Text(status,color=Color.White,fontSize=10.sp)
             }
@@ -276,12 +323,11 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
         ){
             Column(Modifier.padding(14.dp)){
                 Text(rsEnrollmentT(lang,"build_label"),color=c.bright,fontWeight=FontWeight.Bold)
-                Text("Trainer-created accounts · QR invitations · camera/gallery login · adjustable transparent login form.",color=Color.White.copy(alpha=.72f))
+                Text("Trainer-created accounts · secure QR invitations · camera/gallery activation · authenticated cloud sessions.",color=Color.White.copy(alpha=.72f))
             }
         }
     }
 }
-
 @Composable
 private fun ShellV21(
     c:RsPalette,
