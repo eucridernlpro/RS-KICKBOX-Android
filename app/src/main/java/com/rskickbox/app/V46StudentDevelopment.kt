@@ -70,7 +70,7 @@ private fun rsSaveNotesV46(store:RsStore,items:List<RsCoachNoteV46>){
     store.ps("coach_notes_v46",a.toString())
 }
 
-private fun rsLoadAssessmentsV46(store:RsStore):List<RsAssessmentV46>{
+fun rsLoadAssessmentsV46(store:RsStore):List<RsAssessmentV46>{
     val a=rsArrayV46(store,"assessments_v46")
     return buildList{
         for(i in 0 until a.length()){
@@ -162,7 +162,7 @@ private fun rsDevUiV46(lang:RsLang,key:String):String{
     return pack[key]?:en[key]?:key
 }
 
-private fun rsStudentsV46(store:RsStore):List<Pair<String,String>> =
+fun rsStudentsV46(store:RsStore):List<Pair<String,String>> =
     (listOf("alex@rskickbox.nl" to "Alex de Vries")+
         rsLoadStudentsV33(store).map{it.email to it.name.ifBlank{it.email}})
         .distinctBy{it.first.lowercase()}
