@@ -29,7 +29,7 @@ fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
 
 @Composable
 fun RsAccessControl(c:RsPalette,s:RsStore){
-    val features=listOf("AI Voice Coach","RS Academy","Session Player","Technique Library","Community","Fight Camp","Challenges","Trainer Book","Training Media","Private Coach Chat")
+    val features=listOf("AI Technique Coach","RS Academy","Session Player","Technique Library","Community","Fight Camp","Challenges","Trainer Book","Training Media","Private Coach Chat")
     var plan by remember{mutableStateOf("PRO")}
     RsScroll(c,"Access & Subscriptions","Control what every subscription and individual student can see and use."){
         RsPanel(c){
