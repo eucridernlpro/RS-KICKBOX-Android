@@ -161,6 +161,7 @@ fun rsT(lang:RsLang,key:String):String{
 private val routeTitlesV25=mapOf(
     "home" to listOf("RS Live Dashboard","RS Live Dashboard","Painel RS Live","Panel RS Live","Tableau RS Live","RS Live Dashboard","Dashboard RS Live","Panel RS Live","RS Live Paneli"),
     "trainer" to listOf("Trainer Dashboard","Trainer Dashboard","Painel do Treinador","Panel del Entrenador","Tableau Entraîneur","Trainer-Dashboard","Dashboard Allenatore","Panel Trenera","Antrenör Paneli"),
+    "guide" to listOf("App Guide","App Gids","Guia da App","Guía de la App","Guide de l’App","App-Anleitung","Guida App","Przewodnik po aplikacji","Uygulama Rehberi"),
     "voice" to listOf("AI Technique Coach","AI Techniekcoach","Coach Técnico IA","Coach Técnico IA","Coach Technique IA","KI-Technikcoach","Coach Tecnico IA","Trener Techniki AI","AI Teknik Koçu"),
     "session" to listOf("Session Player","Sessiespeler","Leitor de Sessão","Reproductor de Sesión","Lecteur de Session","Session-Player","Player Sessione","Odtwarzacz Sesji","Seans Oynatıcı"),
     "academy" to listOf("RS Academy","RS Academy","Academia RS","Academia RS","Académie RS","RS Akademie","Accademia RS","Akademia RS","RS Akademi"),
