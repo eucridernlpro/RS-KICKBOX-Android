@@ -2,6 +2,7 @@ package com.rskickbox.app
 
 import android.content.Intent
 import android.net.Uri
+import android.media.MediaMetadataRetriever
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -92,6 +93,19 @@ fun RsCinematicIntroV21(c:RsPalette,store:RsStore,onFinished:()->Unit){
 }
 
 @Composable
+private const val RS_INTRO_VIDEO_MAX_MS = 15_000L
+
+private fun introVideoDurationMsV24(context:android.content.Context,uri:String):Long?{
+    return runCatching{
+        val mmr=MediaMetadataRetriever()
+        mmr.setDataSource(context,Uri.parse(uri))
+        val value=mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+        mmr.release()
+        value
+    }.getOrNull()
+}
+
+@Composable
 private fun RsIntroVideoStageV23(uri:String,sound:Boolean,onFinished:()->Unit){
     AndroidView(
         factory={ctx->
@@ -102,6 +116,12 @@ private fun RsIntroVideoStageV23(uri:String,sound:Boolean,onFinished:()->Unit){
                     val v=if(sound)1f else 0f
                     mp.setVolume(v,v)
                     start()
+                    postDelayed({
+                        if(isPlaying && currentPosition>=RS_INTRO_VIDEO_MAX_MS.toInt()-250){
+                            pause()
+                            onFinished()
+                        }
+                    },RS_INTRO_VIDEO_MAX_MS)
                 }
                 setOnCompletionListener{onFinished()}
                 setOnErrorListener{_,_,_->onFinished();true}
@@ -223,8 +243,22 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
         if(uri!=null){
             runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
-            pendingVideo=uri.toString()
-            message="Preview this local video below. It is not saved until you press Save / Accept."
+            val candidate=uri.toString()
+            val duration=introVideoDurationMsV24(context,candidate)
+            when{
+                duration==null || duration<=0L->{
+                    pendingVideo=""
+                    message="Could not read this video's duration. Please choose another file."
+                }
+                duration>RS_INTRO_VIDEO_MAX_MS->{
+                    pendingVideo=""
+                    message="Video rejected: "+String.format("%.1f",duration/1000f)+" sec. Maximum allowed intro video is 15.0 sec."
+                }
+                else->{
+                    pendingVideo=candidate
+                    message="Local preview ready: "+String.format("%.2f",duration/1000f)+" sec. It is not saved until you press Save / Accept."
+                }
+            }
         }
     }
 
@@ -243,25 +277,35 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
 
         RsPanel(c){
             Text("LOCAL INTRO VIDEO",color=c.bright,fontWeight=FontWeight.Black)
-            Text("Choose a video from the phone, tablet or compatible document library. The selected file is preview-only until explicitly accepted.",color=c.muted)
+            Text("Choose a video from the phone, tablet or compatible document library. Maximum length is 15 seconds. The selected file is preview-only until explicitly accepted.",color=c.muted)
+            Text("15 SEC MAX · local validation before save",color=c.bright,fontWeight=FontWeight.Bold,fontSize=11.sp)
             Button(
                 onClick={picker.launch(arrayOf("video/*"))},
                 modifier=Modifier.fillMaxWidth()
             ){Text(if(savedVideo.isBlank() && pendingVideo.isBlank())"＋ Upload intro video" else "✎ Edit / Replace video")}
 
             val previewUri=if(pendingVideo.isNotBlank())pendingVideo else savedVideo
+            val previewDuration=remember(previewUri){if(previewUri.isBlank())null else introVideoDurationMsV24(context,previewUri)}
             if(previewUri.isNotBlank()){
                 Text(if(pendingVideo.isNotBlank())"PENDING LOCAL PREVIEW — NOT SAVED" else "SAVED INTRO VIDEO",color=c.bright,fontWeight=FontWeight.Bold,fontSize=11.sp)
+                previewDuration?.let{d->
+                    Text("Duration: "+String.format("%.2f",d/1000f)+" sec / 15.00 sec max",color=if(d<=RS_INTRO_VIDEO_MAX_MS)c.muted else MaterialTheme.colorScheme.error,fontSize=10.sp)
+                }
                 RsIntroVideoPreviewV23(previewUri,videoSound)
             }
 
             if(pendingVideo.isNotBlank()){
                 Button(
                     onClick={
-                        savedVideo=pendingVideo
-                        store.ps("intro_video_uri",pendingVideo)
-                        pendingVideo=""
-                        message="Intro video accepted and saved."
+                        val duration=introVideoDurationMsV24(context,pendingVideo)
+                        if(duration!=null && duration in 1..RS_INTRO_VIDEO_MAX_MS){
+                            savedVideo=pendingVideo
+                            store.ps("intro_video_uri",pendingVideo)
+                            pendingVideo=""
+                            message="Intro video accepted and saved. 15-second safety limit active."
+                        }else{
+                            message="This video cannot be saved because it exceeds the 15-second intro limit or its duration cannot be verified."
+                        }
                     },
                     modifier=Modifier.fillMaxWidth()
                 ){Text("✓ Save / Accept video")}
@@ -294,7 +338,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                 if(logoEnabled)add("RS crown + logo")
             }
             Text(if(active.isEmpty())"No intro stages selected — login opens immediately." else active.joinToString("  →  "),color=c.text)
-            Text("Video duration follows the uploaded file. The optional fighter, gloves and logo stages add a short premium reveal after it.",color=c.muted,fontSize=10.sp)
+            Text("Uploaded video is limited to 15 seconds maximum. The optional fighter, gloves and logo stages can follow it as separate premium reveal steps.",color=c.muted,fontSize=10.sp)
         }
     }
 }
