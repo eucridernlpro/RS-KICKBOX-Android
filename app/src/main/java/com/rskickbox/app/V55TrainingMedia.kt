@@ -144,14 +144,14 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
 @Composable
 private fun RsTrainingMediaPlayerV55(c:RsPalette,item:RsTrainingMediaItemV55,onClose:()->Unit){
     val context=LocalContext.current
-    val player=remember(item.uri){
+    val player=if(item.kind=="VIDEO")remember(item.uri){
         ExoPlayer.Builder(context).build().apply{
             setMediaItem(MediaItem.fromUri(Uri.parse(item.uri)))
             repeatMode=Player.REPEAT_MODE_OFF
             prepare()
         }
-    }
-    DisposableEffect(player){onDispose{player.release()}}
+    }else null
+    DisposableEffect(player){onDispose{player?.release()}}
     RsScroll(c,item.title,item.category+" · "+item.accessTier){
         OutlinedButton(onClick=onClose,modifier=Modifier.fillMaxWidth()){Text("Close")}
         RsPanel(c){
