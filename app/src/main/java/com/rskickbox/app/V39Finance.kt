@@ -103,12 +103,17 @@ private fun rsFinanceUiV39(lang:RsLang,key:String):String{
 
 @Composable
 fun RsStudentFinanceV39(c:RsPalette,store:RsStore,lang:RsLang){
-    val invoices=rsLoadInvoicesV39(store).filter{it.studentName=="Alex de Vries"}
+    val sessionEmail=store.s("session_student_email","alex@rskickbox.nl")
+    val sessionName=store.s("session_student_name","Alex de Vries")
+    val account=rsLoadStudentsV33(store).firstOrNull{it.email.equals(sessionEmail,true)}
+    val plan=account?.plan?.uppercase()?:"PRO"
+    val amountCents=when(plan){"BASIC"->2900;"ELITE"->6900;else->4900}
+    val invoices=rsLoadInvoicesV39(store).filter{it.studentName.equals(sessionName,true)}
     val enabledMethods=rsPaymentMethodsV39.filterIndexed{i,_->store.b("pay_v39_"+i,i<2||i==7)}
     RsScroll(c,rsFinanceUiV39(lang,"student_title"),rsFinanceUiV39(lang,"student_sub")){
         RsPanel(c){
-            Text("RS PRO",color=c.bright,fontSize=26.sp,fontWeight=FontWeight.Black)
-            Text(rsMoneyV39(4900)+" / month · "+rsFinanceUiV39(lang,"active"),color=c.text)
+            Text("RS "+plan,color=c.bright,fontSize=26.sp,fontWeight=FontWeight.Black)
+            Text(rsMoneyV39(amountCents)+" / month · "+rsFinanceUiV39(lang,"active"),color=c.text)
             Text(rsFinanceUiV39(lang,"next_renewal")+" · 01 Oct 2026",color=c.muted)
         }
         if(enabledMethods.isNotEmpty())RsPanel(c){
