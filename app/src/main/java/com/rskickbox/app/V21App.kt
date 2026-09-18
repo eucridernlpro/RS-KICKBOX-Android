@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -148,7 +149,9 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
+    var statusIsError by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    var showPassword by remember { mutableStateOf(false) }
     var pendingInviteToken by remember { mutableStateOf("") }
     val formOpacity=store.s("login_form_opacity","0.82").toFloatOrNull()?.coerceIn(.20f,1f)?:.82f
 
@@ -157,18 +160,33 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
         store.ps("session_student_name",session.displayName)
         store.ps("session_plan",session.plan)
         store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
-        status=rsEnrollMsg(lang,"welcome",session.displayName)
+        statusIsError=false
+        status="✓ Login successful. Welcome "+session.displayName
         onLogin(session.role)
     }
 
     fun signInCloud(){
         if(busy)return
+        if(email.isBlank()){
+            statusIsError=true
+            status="Enter your email address."
+            return
+        }
+        if(pass.isBlank()){
+            statusIsError=true
+            status="Enter your password."
+            return
+        }
         busy=true
-        status="Signing in securely…"
+        statusIsError=false
+        status="Checking your email and password…"
         scope.launch{
             rsCloudLoginV63(email,pass)
                 .onSuccess{finishCloudLogin(it)}
-                .onFailure{status=it.message?:"Sign-in failed."}
+                .onFailure{
+                    statusIsError=true
+                    status="Login failed: "+(it.message?.takeIf{msg->msg.isNotBlank()}?:"Email or password was not accepted.")
+                }
             busy=false
         }
     }
@@ -176,10 +194,12 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
     fun activateInvite(){
         if(busy)return
         if(pass.length<10){
+            statusIsError=true
             status="Choose a password with at least 10 characters."
             return
         }
         busy=true
+        statusIsError=false
         status="Activating your RS KICKBOX account…"
         scope.launch{
             rsRedeemStudentInviteV63(email,pendingInviteToken,pass)
@@ -189,9 +209,9 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                             pendingInviteToken=""
                             finishCloudLogin(it)
                         }
-                        .onFailure{status=it.message?:"Account created, but sign-in failed."}
+                        .onFailure{statusIsError=true;status=it.message?:"Account created, but sign-in failed."}
                 }
-                .onFailure{status=it.message?:"Could not activate invitation."}
+                .onFailure{statusIsError=true;status=it.message?:"Could not activate invitation."}
             busy=false
         }
     }
@@ -199,11 +219,13 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
     fun applyInvite(raw:String){
         val invite=rsParseInviteV33(raw)
         if(invite==null){
+            statusIsError=true
             status=rsEnrollMsg(lang,"invalid_qr")
         }else{
             email=invite.email
             pendingInviteToken=invite.activationCode
             pass=""
+            statusIsError=false
             status="Invitation loaded for "+invite.name.ifBlank{rsT(lang,"student")}+". Choose a password with at least 10 characters."
         }
     }
@@ -294,7 +316,16 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                     colors=fieldColors,
                     singleLine=true,
                     enabled=!busy,
-                    visualTransformation=PasswordVisualTransformation(),
+                    visualTransformation=if(showPassword)VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon={
+                        TextButton(
+                            onClick={showPassword=!showPassword},
+                            enabled=!busy,
+                            contentPadding=PaddingValues(horizontal=8.dp,vertical=0.dp)
+                        ){
+                            Text(if(showPassword)"HIDE" else "👁",color=Color.White,fontSize=13.sp)
+                        }
+                    },
                     modifier=Modifier.fillMaxWidth()
                 )
                 Button(
@@ -312,12 +343,39 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                         maxLines=1
                     )
                 }
-                if(!RsSupabaseV60.configured){
-                    Text("Cloud backend is not configured in this build.",color=c.muted,fontSize=10.sp)
-                }else{
-                    Text("Secure Supabase account login · role and access are verified from the server.",color=c.muted,fontSize=10.sp)
+                if(status.isNotBlank()){
+                    Surface(
+                        shape=RoundedCornerShape(12.dp),
+                        color=if(statusIsError)Color(0xFF4A1414).copy(alpha=.92f) else c.panel2.copy(alpha=.96f),
+                        border=androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if(statusIsError)Color(0xFFFF8A80) else c.bright.copy(alpha=.65f)
+                        ),
+                        modifier=Modifier.fillMaxWidth()
+                    ){
+                        Row(
+                            Modifier.fillMaxWidth().padding(12.dp),
+                            horizontalArrangement=Arrangement.spacedBy(8.dp),
+                            verticalAlignment=Alignment.CenterVertically
+                        ){
+                            if(busy)CircularProgressIndicator(modifier=Modifier.size(18.dp),strokeWidth=2.dp)
+                            Text(
+                                status,
+                                color=if(statusIsError)Color(0xFFFFD7D2) else Color.White,
+                                fontSize=12.sp,
+                                fontWeight=FontWeight.Bold,
+                                modifier=Modifier.weight(1f)
+                            )
+                        }
+                    }
                 }
-                if(status.isNotBlank())Text(status,color=Color.White,fontSize=10.sp)
+                Text(
+                    if(RsSupabaseV60.configured)"● Cloud login connected" else "● Cloud backend is not configured in this build",
+                    color=if(RsSupabaseV60.configured)c.bright else Color(0xFFFF8A80),
+                    fontSize=10.sp,
+                    fontWeight=FontWeight.Bold
+                )
+                Text("Your account role and access are verified securely from Supabase.",color=c.muted,fontSize=10.sp)
             }
         }
 
