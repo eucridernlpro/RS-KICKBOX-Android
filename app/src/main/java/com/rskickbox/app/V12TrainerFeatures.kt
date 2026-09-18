@@ -69,16 +69,44 @@ fun RsPaymentCenter(c:RsPalette,s:RsStore){
 
 @Composable
 fun RsMemberManager(c:RsPalette){
+    var status by remember{mutableStateOf("")}
     RsScroll(c,"Student Manager","Preview member administration with status, subscription, attendance and quick actions."){
-        listOf("Alex de Vries|PRO|86%|Active","Sofia Martins|ELITE|94%|Active","Noah Jansen|BASIC|68%|Review","Mila Costa|PRO|91%|Active").forEach{row->val x=row.split('|');RsPanel(c){Text(x[0],color=c.bright,fontWeight=FontWeight.Bold);Text("${x[1]} · Attendance ${x[2]} · ${x[3]}",color=c.muted);Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){Button(onClick={}){Text("Profile")};OutlinedButton(onClick={}){Text("Message")}}}}
+        listOf("Alex de Vries|PRO|86%|Active","Sofia Martins|ELITE|94%|Active","Noah Jansen|BASIC|68%|Review","Mila Costa|PRO|91%|Active").forEach{row->
+            val x=row.split('|')
+            RsPanel(c){
+                Text(x[0],color=c.bright,fontWeight=FontWeight.Bold)
+                Text("${x[1]} · Attendance ${x[2]} · ${x[3]}",color=c.muted)
+                Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                    Button(onClick={status="Opened local profile preview for ${x[0]}."}){Text("Profile")}
+                    OutlinedButton(onClick={status="Message composer preview opened for ${x[0]}."}){Text("Message")}
+                }
+            }
+        }
+        if(status.isNotBlank())RsPanel(c){Text(status,color=c.text)}
     }
 }
 
 @Composable
 fun RsClassManager(c:RsPalette){
+    var status by remember{mutableStateOf("")}
+    var created by remember{mutableStateOf(false)}
     RsScroll(c,"Class Manager","Create and manage training sessions, capacity and booking state."){
-        listOf("Kickboxing Fundamentals · 18:00 · 14/18","Advanced Pads · 19:15 · 10/12","Sparring Lab · 20:30 · 8/10").forEach{item->RsPanel(c){Text(item,color=c.bright,fontWeight=FontWeight.Bold);LinearProgressIndicator(progress={.72f},modifier=Modifier.fillMaxWidth());Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){Button(onClick={}){Text("Edit")};OutlinedButton(onClick={}){Text("Attendance")}}}}
-        Button(onClick={},modifier=Modifier.fillMaxWidth()){Text("+ Create new class")}
+        listOf("Kickboxing Fundamentals · 18:00 · 14/18","Advanced Pads · 19:15 · 10/12","Sparring Lab · 20:30 · 8/10").forEach{item->
+            RsPanel(c){
+                Text(item,color=c.bright,fontWeight=FontWeight.Bold)
+                LinearProgressIndicator(progress={.72f},modifier=Modifier.fillMaxWidth())
+                Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                    Button(onClick={status="Edit preview opened for $item"}){Text("Edit")}
+                    OutlinedButton(onClick={status="Attendance preview opened for $item"}){Text("Attendance")}
+                }
+            }
+        }
+        Button(onClick={created=!created;status=if(created)"New-class form preview opened." else ""},modifier=Modifier.fillMaxWidth()){Text(if(created)"Close new-class form" else "+ Create new class")}
+        if(created)RsPanel(c){
+            Text("NEW CLASS PREVIEW",color=c.bright,fontWeight=FontWeight.Bold)
+            Text("Title · time · capacity · level · booking state",color=c.muted)
+        }
+        if(status.isNotBlank())Text(status,color=c.muted)
     }
 }
 
