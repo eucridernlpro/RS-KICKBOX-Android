@@ -128,12 +128,30 @@ private fun techniquePointsV27(lang:RsLang):List<Pair<String,String>> = when(lan
     "pt"->listOf("Base & equilíbrio" to "Pés estáveis, joelhos soltos e peso centrado.","Guarda" to "As mãos voltam imediatamente ao rosto.","Rotação" to "Anca e ombro rodam juntos sem exagerar.","Recuperação" to "Volta logo a uma posição forte depois da técnica.")
     "es"->listOf("Base & equilibrio" to "Pies estables, rodillas sueltas y peso centrado.","Guardia" to "Las manos vuelven inmediatamente al rostro.","Rotación" to "Cadera y hombro giran juntos sin exceso.","Recuperación" to "Vuelve rápido a una posición fuerte.")
     "fr"->listOf("Base & équilibre" to "Pieds stables, genoux souples et poids centré.","Garde" to "Les mains reviennent immédiatement au visage.","Rotation" to "Hanche et épaule tournent ensemble sans excès.","Retour" to "Reviens vite dans une position forte.")
+    "de"->listOf("Basis & Balance" to "Stabile Füße, weiche Knie und zentriertes Gewicht.","Deckung" to "Die Hände kehren nach jedem Schlag sofort zum Gesicht zurück.","Rotation" to "Hüfte und Schulter drehen gemeinsam ohne Überrotation.","Rückkehr" to "Nach der Technik schnell in eine starke Grundstellung zurückkehren.")
+    "it"->listOf("Base & equilibrio" to "Piedi stabili, ginocchia morbide e peso centrato.","Guardia" to "Le mani tornano subito al viso dopo ogni colpo.","Rotazione" to "Anca e spalla ruotano insieme senza esagerare.","Recupero" to "Ritorna rapidamente in una posizione forte dopo la tecnica.")
+    "pl"->listOf("Baza i równowaga" to "Stabilne stopy, miękkie kolana i wycentrowany ciężar.","Garda" to "Dłonie natychmiast wracają do twarzy po każdym uderzeniu.","Rotacja" to "Biodro i bark obracają się razem bez nadmiernego skrętu.","Powrót" to "Po technice szybko wróć do mocnej pozycji.")
+    "tr"->listOf("Temel & denge" to "Ayaklar sağlam, dizler rahat ve ağırlık merkezde.","Gard" to "Her vuruştan sonra eller hemen yüze geri döner.","Dönüş" to "Kalça ve omuz aşırı dönmeden birlikte döner.","Toparlanma" to "Teknikten sonra hızlıca güçlü temel duruşa dön.")
     else->listOf("Base & balance" to "Stable feet, soft knees, and centered weight.","Guard" to "Hands return immediately to the face after each strike.","Rotation" to "Turn hip and shoulder together without over-rotating.","Recovery" to "Return quickly to a strong stance after the technique.")
+}
+
+private fun coachUiV36(lang:RsLang,key:String):String{
+    val en=mapOf("history_title" to "TECHNIQUE REVIEW HISTORY","history_sub" to "Student technique uploads, saved analyses and trainer favorites.","none" to "No technique uploads yet","none_sub" to "Saved student technique submissions will appear here.","favorite" to "Favorite","unfavorite" to "Unfavorite","delete" to "Delete","confirm" to "Confirm","deleted" to "Technique submission deleted.","confirm_delete" to "Tap Delete again to confirm this technique submission.","fav_saved" to "Saved to trainer favorites.","fav_removed" to "Removed from favorites.")
+    val nl=en+mapOf("history_title" to "TECHNIEK REVIEWGESCHIEDENIS","history_sub" to "Techniekvideo's van leerlingen, opgeslagen analyses en trainerfavorieten.","none" to "Nog geen techniekuploads","none_sub" to "Opgeslagen inzendingen verschijnen hier.","favorite" to "Favoriet","unfavorite" to "Uit favorieten","delete" to "Verwijderen","confirm" to "Bevestigen","deleted" to "Techniekinzending verwijderd.","confirm_delete" to "Tik nogmaals op Verwijderen om deze inzending te bevestigen.","fav_saved" to "Opgeslagen bij trainerfavorieten.","fav_removed" to "Uit favorieten verwijderd.")
+    val pt=en+mapOf("history_title" to "HISTÓRICO DE REVISÃO TÉCNICA","history_sub" to "Vídeos técnicos dos alunos, análises guardadas e favoritos do treinador.","none" to "Ainda não há vídeos técnicos","none_sub" to "As submissões guardadas aparecerão aqui.","favorite" to "Favorito","unfavorite" to "Retirar favorito","delete" to "Eliminar","confirm" to "Confirmar","deleted" to "Submissão técnica eliminada.","confirm_delete" to "Toca novamente em Eliminar para confirmar esta submissão.","fav_saved" to "Guardado nos favoritos do treinador.","fav_removed" to "Removido dos favoritos.")
+    val es=en+mapOf("history_title" to "HISTORIAL DE REVISIÓN TÉCNICA","history_sub" to "Vídeos técnicos de alumnos, análisis guardados y favoritos del entrenador.","none" to "Aún no hay vídeos técnicos","none_sub" to "Las entregas guardadas aparecerán aquí.","favorite" to "Favorito","unfavorite" to "Quitar favorito","delete" to "Eliminar","confirm" to "Confirmar","deleted" to "Entrega técnica eliminada.","confirm_delete" to "Pulsa Eliminar otra vez para confirmar esta entrega.","fav_saved" to "Guardado en favoritos del entrenador.","fav_removed" to "Eliminado de favoritos.")
+    val fr=en+mapOf("history_title" to "HISTORIQUE DE REVUE TECHNIQUE","history_sub" to "Vidéos techniques élèves, analyses enregistrées et favoris entraîneur.","none" to "Aucune vidéo technique","none_sub" to "Les soumissions enregistrées apparaîtront ici.","favorite" to "Favori","unfavorite" to "Retirer favori","delete" to "Supprimer","confirm" to "Confirmer","deleted" to "Soumission technique supprimée.","confirm_delete" to "Appuie encore sur Supprimer pour confirmer cette soumission.","fav_saved" to "Ajouté aux favoris entraîneur.","fav_removed" to "Retiré des favoris.")
+    val de=en+mapOf("history_title" to "TECHNIK-REVIEW-VERLAUF","history_sub" to "Technikvideos der Schüler, gespeicherte Analysen und Trainer-Favoriten.","none" to "Noch keine Technikvideos","none_sub" to "Gespeicherte Einsendungen erscheinen hier.","favorite" to "Favorit","unfavorite" to "Favorit entfernen","delete" to "Löschen","confirm" to "Bestätigen","deleted" to "Technik-Einsendung gelöscht.","confirm_delete" to "Tippe erneut auf Löschen, um diese Einsendung zu bestätigen.","fav_saved" to "In Trainer-Favoriten gespeichert.","fav_removed" to "Aus Favoriten entfernt.")
+    val it=en+mapOf("history_title" to "STORICO REVISIONE TECNICA","history_sub" to "Video tecnici degli allievi, analisi salvate e preferiti dell'allenatore.","none" to "Nessun video tecnico","none_sub" to "Le submission salvate appariranno qui.","favorite" to "Preferito","unfavorite" to "Rimuovi preferito","delete" to "Elimina","confirm" to "Conferma","deleted" to "Submission tecnica eliminata.","confirm_delete" to "Tocca di nuovo Elimina per confermare questa submission.","fav_saved" to "Salvato nei preferiti allenatore.","fav_removed" to "Rimosso dai preferiti.")
+    val pl=en+mapOf("history_title" to "HISTORIA OCENY TECHNIKI","history_sub" to "Filmy techniczne uczniów, zapisane analizy i ulubione trenera.","none" to "Brak filmów technicznych","none_sub" to "Zapisane zgłoszenia pojawią się tutaj.","favorite" to "Ulubione","unfavorite" to "Usuń z ulubionych","delete" to "Usuń","confirm" to "Potwierdź","deleted" to "Zgłoszenie techniczne usunięte.","confirm_delete" to "Naciśnij Usuń ponownie, aby potwierdzić to zgłoszenie.","fav_saved" to "Zapisano w ulubionych trenera.","fav_removed" to "Usunięto z ulubionych.")
+    val tr=en+mapOf("history_title" to "TEKNİK İNCELEME GEÇMİŞİ","history_sub" to "Öğrenci teknik videoları, kaydedilen analizler ve antrenör favorileri.","none" to "Henüz teknik videosu yok","none_sub" to "Kaydedilen gönderimler burada görünecek.","favorite" to "Favori","unfavorite" to "Favoriden çıkar","delete" to "Sil","confirm" to "Onayla","deleted" to "Teknik gönderim silindi.","confirm_delete" to "Bu gönderimi onaylamak için Sil'e tekrar dokun.","fav_saved" to "Antrenör favorilerine kaydedildi.","fav_removed" to "Favorilerden çıkarıldı.")
+    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
+    return pack[key]?:en[key]?:key
 }
 
 @Composable
 fun RsTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore,role:RsRole){
-    if(role==RsRole.TRAINER)TrainerTechniqueHistoryV27(c,store)
+    if(role==RsRole.TRAINER)TrainerTechniqueHistoryV27(c,store,lang)
     else StudentTechniqueCoachV27(c,lang,store)
 }
 
@@ -386,7 +404,7 @@ private fun VisualCueV27(c:RsPalette,index:Int){
 }
 
 @Composable
-private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore){
+private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore,lang:RsLang){
     val context=LocalContext.current
     var revision by remember{mutableIntStateOf(0)}
     var message by remember{mutableStateOf("")}
@@ -395,12 +413,12 @@ private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore){
     fun save(updated:List<TechniqueSubmissionV27>){store.ps("technique_submissions_v27",encodeTechniqueSubsV27(updated));revision++}
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(9.dp)){
-        Text("TECHNIQUE REVIEW HISTORY",color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
-        Text("Student technique uploads, saved analyses and trainer favorites.",color=c.muted)
+        Text(coachUiV36(lang,"history_title"),color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
+        Text(coachUiV36(lang,"history_sub"),color=c.muted)
         if(message.isNotBlank())Text(message,color=c.bright,fontSize=10.sp)
         if(items.isEmpty())RsPanel(c){
-            Text("No technique uploads yet",color=c.bright,fontWeight=FontWeight.Bold)
-            Text("Saved student technique submissions will appear here.",color=c.muted)
+            Text(coachUiV36(lang,"none"),color=c.bright,fontWeight=FontWeight.Bold)
+            Text(coachUiV36(lang,"none_sub"),color=c.muted)
         }
         items.forEach{item->
             RsPanel(c){
@@ -417,21 +435,21 @@ private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore){
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
                     Button(onClick={
                         save(items.map{if(it.id==item.id)it.copy(favorite=!it.favorite) else it})
-                        message=if(item.favorite)"Removed from favorites." else "Saved to trainer favorites."
-                    },modifier=Modifier.weight(1f)){Text(if(item.favorite)"Unfavorite" else "Favorite")}
+                        message=if(item.favorite)coachUiV36(lang,"fav_removed") else coachUiV36(lang,"fav_saved")
+                    },modifier=Modifier.weight(1f)){Text(if(item.favorite)coachUiV36(lang,"unfavorite") else coachUiV36(lang,"favorite"))}
                     OutlinedButton(onClick={
                         if(pendingDeleteId==item.id){
                             val updated=items.filterNot{it.id==item.id}
                             save(updated)
                             if(updated.none{it.uri==item.uri})rsDeleteTechniqueVideoV36(context,item.uri)
                             pendingDeleteId=null
-                            message="Technique submission deleted."
+                            message=coachUiV36(lang,"deleted")
                         }else{
                             pendingDeleteId=item.id
-                            message="Tap Delete again to confirm this technique submission."
+                            message=coachUiV36(lang,"confirm_delete")
                         }
                     },modifier=Modifier.weight(1f)){
-                        Text(if(pendingDeleteId==item.id)"Confirm" else "Delete")
+                        Text(if(pendingDeleteId==item.id)coachUiV36(lang,"confirm") else coachUiV36(lang,"delete"))
                     }
                 }
             }
