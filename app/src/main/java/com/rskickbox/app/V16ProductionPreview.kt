@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,24 +28,26 @@ fun RsTrainingMediaV16(c: RsPalette, s: RsStore) {
     val context = LocalContext.current
     var status by remember { mutableStateOf("") }
     var selectedName by remember { mutableStateOf(s.s("media_last_name", "")) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-        if (uri != null) {
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            selectedName = uri.lastPathSegment ?: "Selected media"
-            s.ps("media_last_uri", uri.toString())
-            s.ps("media_last_name", selectedName)
-            status = "Media selected from this device/library."
-        }
+    fun saveMedia(uri:Uri,persist:Boolean){
+        if(persist)runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+        selectedName=uri.lastPathSegment?:"Selected media"
+        s.ps("media_last_uri",uri.toString())
+        s.ps("media_last_name",selectedName)
+        status="Media selected."
     }
+    val galleryPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri:Uri?->if(uri!=null)saveMedia(uri,false)}
+    val filePicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri:Uri?->if(uri!=null)saveMedia(uri,true)}
 
     RsScroll(c, "Training Media", "Coach videos, drills and member uploads with device-library selection.") {
         RsPanel(c) {
             Text("UPLOAD / SELECT MEDIA", color = c.bright, fontWeight = FontWeight.Bold)
             Text("Choose a training video or image from phone, tablet, PC-compatible document provider or connected cloud library.", color = c.muted)
-            Button(onClick = { picker.launch(arrayOf("video/*", "image/*")) }, modifier = Modifier.fillMaxWidth()) {
-                Text("Upload from device / library")
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                Button(
+                    onClick={galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))},
+                    modifier=Modifier.weight(1f)
+                ){Text("Gallery")}
+                OutlinedButton(onClick={filePicker.launch(arrayOf("video/*","image/*"))},modifier=Modifier.weight(1f)){Text("Files")}
             }
             if (selectedName.isNotBlank()) {
                 Text("Selected: $selectedName", color = c.text)
