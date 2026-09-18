@@ -43,9 +43,21 @@ suspend fun rsCloudLoginV63(email:String,password:String):Result<RsCloudSessionV
     require(email.trim().contains("@")){"Enter a valid email address."}
     require(password.isNotBlank()){"Enter your password."}
 
-    client.auth.signInWith(Email){
-        this.email=email.trim()
-        this.password=password
+    try{
+        client.auth.signInWith(Email){
+            this.email=email.trim()
+            this.password=password
+        }
+    }catch(t:Throwable){
+        val raw=t.message.orEmpty()
+        val friendly=when{
+            raw.contains("Invalid login credentials",ignoreCase=true)->"Email or password is incorrect."
+            raw.contains("Email not confirmed",ignoreCase=true)->"This email address is not confirmed yet."
+            raw.contains("network",ignoreCase=true) || raw.contains("timeout",ignoreCase=true)->"Could not reach the RS KICKBOX server. Check your internet connection and try again."
+            raw.isBlank()->"The login request was not accepted."
+            else->raw
+        }
+        error(friendly)
     }
 
     val user=client.auth.currentUserOrNull() ?: error("Sign-in completed without an active user session.")
