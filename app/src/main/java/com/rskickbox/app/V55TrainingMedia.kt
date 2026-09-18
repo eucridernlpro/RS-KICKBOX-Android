@@ -120,7 +120,7 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
         "tier" to "Access","file" to "Choose image / video","save" to "Publish media","published" to "PUBLISHED",
         "draft" to "DRAFT","delete" to "Delete","confirm" to "Confirm","open" to "Open media","close" to "Close media",
         "none" to "No training media available yet.","importing" to "Importing media…","ready" to "Media ready.",
-        "preserved" to "Original media is stored privately in the app with video audio preserved."
+        "preserved" to "Original media is stored privately in the app with video audio preserved.","show_more" to "Show more"
     )
     val nl=en+mapOf(
         "student_title" to "Trainingsmedia","student_sub" to "Coachvideo's, drills en visuele trainingsbronnen voor jouw lidmaatschap.",
@@ -129,7 +129,7 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
         "tier" to "Toegang","file" to "Kies afbeelding / video","save" to "Media publiceren","published" to "GEPUBLICEERD",
         "draft" to "CONCEPT","delete" to "Verwijderen","confirm" to "Bevestigen","open" to "Media openen","close" to "Media sluiten",
         "none" to "Nog geen trainingsmedia beschikbaar.","importing" to "Media importeren…","ready" to "Media gereed.",
-        "preserved" to "Originele media wordt privé in de app opgeslagen met video-audio behouden."
+        "preserved" to "Originele media wordt privé in de app opgeslagen met video-audio behouden.","show_more" to "Meer tonen"
     )
     val pt=en+mapOf(
         "student_title" to "Media de Treino","student_sub" to "Vídeos do treinador, exercícios e recursos visuais desbloqueados para o teu plano.",
@@ -138,7 +138,7 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
         "tier" to "Acesso","file" to "Escolher imagem / vídeo","save" to "Publicar media","published" to "PUBLICADO",
         "draft" to "RASCUNHO","delete" to "Eliminar","confirm" to "Confirmar","open" to "Abrir media","close" to "Fechar media",
         "none" to "Ainda não há media de treino.","importing" to "A importar media…","ready" to "Media pronta.",
-        "preserved" to "A media original fica guardada de forma privada com o áudio do vídeo preservado."
+        "preserved" to "A media original fica guardada de forma privada com o áudio do vídeo preservado.","show_more" to "Mostrar mais"
     )
     val es=en+mapOf(
         "student_title" to "Media de Entrenamiento","student_sub" to "Vídeos del entrenador, ejercicios y recursos visuales desbloqueados para tu membresía.",
@@ -147,7 +147,7 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
         "tier" to "Acceso","file" to "Elegir imagen / vídeo","save" to "Publicar media","published" to "PUBLICADO",
         "draft" to "BORRADOR","delete" to "Eliminar","confirm" to "Confirmar","open" to "Abrir media","close" to "Cerrar media",
         "none" to "Aún no hay media de entrenamiento.","importing" to "Importando media…","ready" to "Media lista.",
-        "preserved" to "La media original se guarda de forma privada con el audio del vídeo preservado."
+        "preserved" to "La media original se guarda de forma privada con el audio del vídeo preservado.","show_more" to "Mostrar más"
     )
     val fr=en+mapOf(
         "student_title" to "Médias d’Entraînement","student_sub" to "Vidéos du coach, exercices et ressources visuelles débloqués pour ton abonnement.",
@@ -156,7 +156,7 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
         "tier" to "Accès","file" to "Choisir image / vidéo","save" to "Publier le média","published" to "PUBLIÉ",
         "draft" to "BROUILLON","delete" to "Supprimer","confirm" to "Confirmer","open" to "Ouvrir le média","close" to "Fermer le média",
         "none" to "Aucun média d’entraînement disponible.","importing" to "Import du média…","ready" to "Média prêt.",
-        "preserved" to "Le média original est stocké en privé avec l’audio vidéo conservé."
+        "preserved" to "Le média original est stocké en privé avec l’audio vidéo conservé.","show_more" to "Afficher plus"
     )
     val de=en+mapOf(
         "student_title" to "Trainingsmedien","student_sub" to "Coach-Videos, Drills und visuelle Trainingsressourcen passend zu deiner Mitgliedschaft.",
@@ -165,7 +165,7 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
         "tier" to "Zugang","file" to "Bild / Video wählen","save" to "Medium veröffentlichen","published" to "VERÖFFENTLICHT",
         "draft" to "ENTWURF","delete" to "Löschen","confirm" to "Bestätigen","open" to "Medium öffnen","close" to "Medium schließen",
         "none" to "Noch keine Trainingsmedien verfügbar.","importing" to "Medium wird importiert…","ready" to "Medium bereit.",
-        "preserved" to "Das Originalmedium wird privat gespeichert; Video-Audio bleibt erhalten."
+        "preserved" to "Das Originalmedium wird privat gespeichert; Video-Audio bleibt erhalten.","show_more" to "Mehr anzeigen"
     )
     val it=en+mapOf(
         "student_title" to "Media di Allenamento","student_sub" to "Video del trainer, esercizi e risorse visive disponibili per il tuo abbonamento.",
@@ -174,7 +174,7 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
         "tier" to "Accesso","file" to "Scegli immagine / video","save" to "Pubblica media","published" to "PUBBLICATO",
         "draft" to "BOZZA","delete" to "Elimina","confirm" to "Conferma","open" to "Apri media","close" to "Chiudi media",
         "none" to "Nessun media di allenamento disponibile.","importing" to "Importazione media…","ready" to "Media pronto.",
-        "preserved" to "Il media originale viene salvato privatamente mantenendo l’audio del video."
+        "preserved" to "Il media originale viene salvato privatamente mantenendo l’audio del video.","show_more" to "Mostra altro"
     )
     val pl=en+mapOf(
         "student_title" to "Media Treningowe","student_sub" to "Filmy trenera, ćwiczenia i zasoby wizualne dostępne dla twojego planu.",
@@ -183,7 +183,7 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
         "tier" to "Dostęp","file" to "Wybierz obraz / wideo","save" to "Opublikuj media","published" to "OPUBLIKOWANE",
         "draft" to "SZKIC","delete" to "Usuń","confirm" to "Potwierdź","open" to "Otwórz media","close" to "Zamknij media",
         "none" to "Brak dostępnych mediów treningowych.","importing" to "Importowanie mediów…","ready" to "Media gotowe.",
-        "preserved" to "Oryginalny plik jest przechowywany prywatnie z zachowaniem dźwięku wideo."
+        "preserved" to "Oryginalny plik jest przechowywany prywatnie z zachowaniem dźwięku wideo.","show_more" to "Pokaż więcej"
     )
     val tr=en+mapOf(
         "student_title" to "Antrenman Medyası","student_sub" to "Üyeliğin için açılmış antrenör videoları, çalışmalar ve görsel kaynaklar.",
@@ -192,7 +192,7 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
         "tier" to "Erişim","file" to "Görsel / video seç","save" to "Medyayı yayınla","published" to "YAYINDA",
         "draft" to "TASLAK","delete" to "Sil","confirm" to "Onayla","open" to "Medyayı aç","close" to "Medyayı kapat",
         "none" to "Henüz antrenman medyası yok.","importing" to "Medya içe aktarılıyor…","ready" to "Medya hazır.",
-        "preserved" to "Orijinal medya özel olarak saklanır ve video sesi korunur."
+        "preserved" to "Orijinal medya özel olarak saklanır ve video sesi korunur.","show_more" to "Daha fazla göster"
     )
     val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
@@ -369,12 +369,12 @@ fun RsTrainingMediaV55(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                     ){Text(if(pendingDelete==item.id)rsMediaUiV55(lang,"confirm") else rsMediaUiV55(lang,"delete"))}
                 }
             }
+        }
         if(visibleCount<visible.size){
             OutlinedButton(
                 onClick={visibleCount=(visibleCount+20).coerceAtMost(visible.size)},
                 modifier=Modifier.fillMaxWidth()
-            ){Text("Show more · "+visibleCount.coerceAtMost(visible.size)+" / "+visible.size)}
-        }
+            ){Text(rsMediaUiV55(lang,"show_more")+" · "+visibleCount.coerceAtMost(visible.size)+" / "+visible.size)}
         }
     }
 }
