@@ -10,6 +10,7 @@ import android.widget.MediaController
 import android.widget.VideoView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -107,6 +108,8 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
     var answer by remember{mutableStateOf("")}
     var autoSpeak by remember{mutableStateOf(store.b("voice_auto",true))}
     var techniqueMenu by remember{mutableStateOf(false)}
+    var coachGender by remember{mutableStateOf(store.s("ai_coach_gender","male"))}
+    var speaking by remember{mutableStateOf(false)}
 
     DisposableEffect(Unit){
         val engine=TextToSpeech(context){status->ready=status==TextToSpeech.SUCCESS}
@@ -115,20 +118,25 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
     }
     LaunchedEffect(lang.code,ready){if(ready)tts?.language=lang.locale}
 
-    val videoPicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
-        if(uri!=null){
-            val d=videoDurationV27(context,uri)
-            if(d<=0L)feedback="Could not read this video file."
-            else if(d>RS_TECH_VIDEO_MAX_MS)feedback="Video is too long. Technique uploads are limited to 20 seconds."
-            else{
-                runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
-                videoUri=uri.toString()
-                videoName=displayNameV27(context,uri)
-                durationMs=d
-                analysisReady=false
-                feedback="Video ready for local preview."
-            }
+    fun acceptVideo(uri:Uri,persist:Boolean){
+        val d=videoDurationV27(context,uri)
+        if(d<=0L)feedback="Could not read this video file."
+        else if(d>RS_TECH_VIDEO_MAX_MS)feedback="Video is too long. Technique uploads are limited to 20 seconds."
+        else{
+            if(persist)runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+            videoUri=uri.toString()
+            videoName=displayNameV27(context,uri)
+            durationMs=d
+            analysisReady=false
+            feedback="Video ready for local preview."
         }
+    }
+
+    val galleryVideoPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
+        if(uri!=null)acceptVideo(uri,false)
+    }
+    val fileVideoPicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null)acceptVideo(uri,true)
     }
 
     val speechLauncher=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
@@ -142,6 +150,16 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
         Text("Upload a short kickboxing move or combination. Get text, visual and spoken coaching in ${lang.name}.",color=c.muted)
 
         RsPanel(c){
+            Text("YOUR AI TRAINER",color=c.bright,fontWeight=FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                FilterChip(selected=coachGender=="male",onClick={coachGender="male";store.ps("ai_coach_gender","male")},label={Text("Male trainer")},modifier=Modifier.weight(1f))
+                FilterChip(selected=coachGender=="female",onClick={coachGender="female";store.ps("ai_coach_gender","female")},label={Text("Female trainer")},modifier=Modifier.weight(1f))
+            }
+            CoachAvatarV28(c,store,coachGender,speaking,selectedTechnique)
+            Text("The selected trainer demonstrates correction focus visually and speaks in the active app language. Production lip-synced dubbing can replace the preview voice layer later.",color=c.muted,fontSize=10.sp)
+        }
+
+        RsPanel(c){
             Text("1 · VIDEO & TECHNIQUE",color=c.bright,fontWeight=FontWeight.Bold)
             Box{
                 OutlinedButton(onClick={techniqueMenu=true},modifier=Modifier.fillMaxWidth()){Text(selectedTechnique)}
@@ -151,8 +169,17 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                     }
                 }
             }
-            Button(onClick={videoPicker.launch(arrayOf("video/*"))},modifier=Modifier.fillMaxWidth()){Text(if(videoUri.isBlank())"＋ Upload technique video" else "✎ Replace video")}
-            Text("Maximum 20 seconds · local preview before analysis",color=c.muted,fontSize=10.sp)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                Button(
+                    onClick={galleryVideoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))},
+                    modifier=Modifier.weight(1f)
+                ){Text(if(videoUri.isBlank())"Gallery" else "Replace")}
+                OutlinedButton(
+                    onClick={fileVideoPicker.launch(arrayOf("video/*"))},
+                    modifier=Modifier.weight(1f)
+                ){Text("Files")}
+            }
+            Text("Gallery opens first for phone videos · Files is a fallback · maximum 20 seconds",color=c.muted,fontSize=10.sp)
             if(videoUri.isNotBlank()){
                 RsTechniqueVideoPreviewV27(videoUri)
                 Text("$videoName · ${"%.1f".format(durationMs/1000.0)} s",color=c.muted,fontSize=10.sp)
@@ -178,7 +205,13 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                     }
                 }
             }
-            Button(onClick={if(ready){tts?.language=lang.locale;tts?.speak(summary,TextToSpeech.QUEUE_FLUSH,null,"technique-coach")}},enabled=ready,modifier=Modifier.fillMaxWidth()){Text("🔊 Speak coaching")}
+            Button(onClick={
+                if(ready){
+                    speaking=true
+                    tts?.language=lang.locale
+                    tts?.speak(summary,TextToSpeech.QUEUE_FLUSH,null,"technique-coach")
+                }
+            },enabled=ready,modifier=Modifier.fillMaxWidth()){Text("🔊 Speak coaching")}
             Button(onClick={
                 val items=decodeTechniqueSubsV27(store.s("technique_submissions_v27","")).toMutableList()
                 val id=System.currentTimeMillis().toString()
@@ -206,11 +239,48 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
             }
             Button(onClick={
                 answer=summary
-                if(autoSpeak&&ready){tts?.language=lang.locale;tts?.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"technique-answer")}
+                if(autoSpeak&&ready){
+                    speaking=true
+                    tts?.language=lang.locale
+                    tts?.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"technique-answer")
+                }
             },enabled=question.isNotBlank(),modifier=Modifier.fillMaxWidth()){Text("Ask AI Coach")}
             if(answer.isNotBlank())Text(answer,color=c.text)
         }
         Spacer(Modifier.height(18.dp))
+    }
+}
+
+
+@Composable
+private fun CoachAvatarV28(c:RsPalette,store:RsStore,gender:String,speaking:Boolean,technique:String){
+    val custom=store.s(if(gender=="female")"visual_v21_ai_trainer_female" else "visual_v21_ai_trainer_male","")
+    val pulse=rememberInfiniteTransition(label="coachPulse")
+    val glow by pulse.animateFloat(.35f,1f,infiniteRepeatable(tween(850),RepeatMode.Reverse),label="coachGlow")
+    Box(
+        Modifier.fillMaxWidth().height(230.dp).background(Color.Black,RoundedCornerShape(18.dp)),
+        contentAlignment=Alignment.Center
+    ){
+        if(custom.isNotBlank())RsUriPreviewV21(custom,Modifier.fillMaxSize(), "CENTER")
+        Canvas(Modifier.fillMaxSize()){
+            val w=size.width; val h=size.height
+            drawCircle(c.bright.copy(alpha=.08f+.08f*glow),w*.34f,Offset(w*.5f,h*.44f))
+            if(custom.isBlank()){
+                val head=Offset(w*.50f,h*.28f)
+                drawCircle(Color(0xFF111111),w*.055f,head)
+                drawLine(Color(0xFF111111),Offset(w*.50f,h*.34f),Offset(w*.48f,h*.62f),w*.05f)
+                drawLine(Color(0xFF111111),Offset(w*.48f,h*.43f),Offset(w*.30f,h*.51f),w*.035f)
+                drawLine(Color(0xFF111111),Offset(w*.48f,h*.43f),Offset(w*.70f,h*.35f),w*.035f)
+                drawLine(Color(0xFF111111),Offset(w*.48f,h*.61f),Offset(w*.31f,h*.82f),w*.042f)
+                drawLine(Color(0xFF111111),Offset(w*.48f,h*.61f),Offset(w*.70f,h*.75f),w*.042f)
+            }
+            if(speaking)drawCircle(c.bright.copy(alpha=.35f*glow),w*.075f,Offset(w*.5f,h*.31f),style=Stroke(4f))
+        }
+        Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=if(custom.isNotBlank()).32f else .08f)))
+        Column(Modifier.align(Alignment.BottomStart).padding(14.dp)){
+            Text(if(gender=="female")"RS AI FEMALE TRAINER" else "RS AI MALE TRAINER",color=c.bright,fontWeight=FontWeight.Black,fontSize=14.sp)
+            Text("Demonstrating focus · $technique",color=Color.White.copy(alpha=.76f),fontSize=10.sp)
+        }
     }
 }
 
