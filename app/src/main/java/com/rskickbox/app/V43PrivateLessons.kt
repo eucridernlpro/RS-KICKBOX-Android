@@ -269,7 +269,15 @@ fun RsTrainerScheduleV43(c:RsPalette,store:RsStore,lang:RsLang){
                 Text(statusText,color=c.bright,fontWeight=FontWeight.Bold)
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
                     Button(
-                        onClick={saveBookings(bookings.map{if(it.id==booking.id)it.copy(status="CONFIRMED") else it})},
+                        onClick={
+                            saveBookings(bookings.map{
+                                when{
+                                    it.id==booking.id->it.copy(status="CONFIRMED")
+                                    it.slotId==booking.slotId && it.status!="CANCELLED"->it.copy(status="DECLINED")
+                                    else->it
+                                }
+                            })
+                        },
                         modifier=Modifier.weight(1f)
                     ){Text(rsPrivateUiV43(lang,"approve"),fontSize=10.sp)}
                     OutlinedButton(
