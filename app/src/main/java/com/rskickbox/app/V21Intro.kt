@@ -5,6 +5,10 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.widget.MediaController
 import android.widget.VideoView
+import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,6 +27,30 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 
 private const val RS_INTRO_VIDEO_MAX_MS = 15_000L
+
+private fun localSplashUriV31(context:android.content.Context,source:String,target:String):String?{
+    if(source.isBlank())return null
+    val uri=Uri.parse(source)
+    if(uri.scheme=="file"){
+        val existing=uri.path?.let(::File)
+        return if(existing?.exists()==true)source else null
+    }
+    return runCatching{
+        val mime=context.contentResolver.getType(uri).orEmpty()
+        val ext=when{
+            mime.contains("webm",true)->"webm"
+            mime.contains("quicktime",true)->"mov"
+            else->"mp4"
+        }
+        val dir=File(context.filesDir,"rs_splash").apply{mkdirs()}
+        dir.listFiles()?.filter{it.name.startsWith(target+"_") }?.forEach{it.delete()}
+        val out=File(dir,target+"_"+UUID.randomUUID()+"."+ext)
+        context.contentResolver.openInputStream(uri)!!.use{input->
+            FileOutputStream(out).use{output->input.copyTo(output)}
+        }
+        Uri.fromFile(out).toString()
+    }.getOrNull()
+}
 
 private fun introVideoDurationMsV30(context:android.content.Context,uri:String):Long?{
     return runCatching{
@@ -63,27 +91,19 @@ fun RsCinematicIntroV21(c:RsPalette,store:RsStore,onFinished:()->Unit){
                 modifier=Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
             ){Text("Skip",color=Color.White.copy(alpha=.82f))}
         }
-        Surface(
-            modifier=Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(10.dp),
-            color=Color.Black.copy(alpha=.42f),
-            shape=androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
-        ){
-            Text(
-                if(isTablet && tabletUri.isNotBlank())"TABLET SPLASH" else "PHONE SPLASH",
-                color=c.bright,
-                fontSize=9.sp,
-                fontWeight=FontWeight.Bold,
-                modifier=Modifier.padding(horizontal=9.dp,vertical=5.dp)
-            )
-        }
     }
 }
 
 @Composable
 private fun RsIntroVideoStageV30(uri:String,sound:Boolean,onFinished:()->Unit){
+    val finished=remember(uri){AtomicBoolean(false)}
+    fun finishOnce(){
+        if(finished.compareAndSet(false,true))onFinished()
+    }
     AndroidView(
         factory={ctx->
             VideoView(ctx).apply{
+                setBackgroundColor(android.graphics.Color.BLACK)
                 setOnPreparedListener{mp->
                     mp.isLooping=false
                     val volume=if(sound)1f else 0f
@@ -100,23 +120,23 @@ private fun RsIntroVideoStageV30(uri:String,sound:Boolean,onFinished:()->Unit){
                     }
                     start()
                     postDelayed({
-                        if(isPlaying){
-                            pause()
-                            onFinished()
+                        if(!finished.get()){
+                            runCatching{pause()}
+                            finishOnce()
                         }
                     },RS_INTRO_VIDEO_MAX_MS)
                 }
-                setOnCompletionListener{onFinished()}
-                setOnErrorListener{_,_,_->onFinished();true}
+                setOnCompletionListener{finishOnce()}
+                setOnErrorListener{_,_,_->finishOnce();true}
             }
         },
         modifier=Modifier.fillMaxSize(),
         update={view->
             if(view.tag!=uri){
+                finished.set(false)
                 view.tag=uri
                 view.setVideoURI(Uri.parse(uri))
             }
-            if(!view.isPlaying)runCatching{view.start()}
         }
     )
 }
@@ -180,6 +200,21 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
         }
     }
 
+    LaunchedEffect(Unit){
+        if(savedPhone.isNotBlank() && !savedPhone.startsWith("file:")){
+            localSplashUriV31(context,savedPhone,"phone")?.let{
+                savedPhone=it
+                store.ps("intro_phone_video_uri",it)
+            }
+        }
+        if(savedTablet.isNotBlank() && !savedTablet.startsWith("file:")){
+            localSplashUriV31(context,savedTablet,"tablet")?.let{
+                savedTablet=it
+                store.ps("intro_tablet_video_uri",it)
+            }
+        }
+    }
+
     val galleryPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
         if(uri!=null)validate(uri,activeTarget,false)
     }
@@ -206,10 +241,13 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
             onGallery={activeTarget="phone";galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))},
             onFiles={activeTarget="phone";filePicker.launch(arrayOf("video/*"))},
             onSave={
-                savedPhone=pendingPhone.uri
-                store.ps("intro_phone_video_uri",pendingPhone.uri)
-                pendingPhone=PendingSplashV30()
-                message="Phone splash saved."
+                val local=localSplashUriV31(context,pendingPhone.uri,"phone")
+                if(local!=null){
+                    savedPhone=local
+                    store.ps("intro_phone_video_uri",local)
+                    pendingPhone=PendingSplashV30()
+                    message="Phone splash copied into app storage and saved."
+                }else message="Could not save the phone splash locally. Please choose the video again."
             },
             onCancel={pendingPhone=PendingSplashV30();message="Pending phone splash discarded."},
             onDelete={
@@ -230,10 +268,13 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
             onGallery={activeTarget="tablet";galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))},
             onFiles={activeTarget="tablet";filePicker.launch(arrayOf("video/*"))},
             onSave={
-                savedTablet=pendingTablet.uri
-                store.ps("intro_tablet_video_uri",pendingTablet.uri)
-                pendingTablet=PendingSplashV30()
-                message="Tablet splash saved."
+                val local=localSplashUriV31(context,pendingTablet.uri,"tablet")
+                if(local!=null){
+                    savedTablet=local
+                    store.ps("intro_tablet_video_uri",local)
+                    pendingTablet=PendingSplashV30()
+                    message="Tablet splash copied into app storage and saved."
+                }else message="Could not save the tablet splash locally. Please choose the video again."
             },
             onCancel={pendingTablet=PendingSplashV30();message="Pending tablet splash discarded."},
             onDelete={
