@@ -150,6 +150,7 @@ fun RsStudentPrivateLessonsV43(c:RsPalette,store:RsStore,lang:RsLang){
     val slots=remember(revision){rsLoadSlotsV43(store).filter{it.active}}
     val allBookings=remember(revision){rsLoadBookingsV43(store)}
     val mine=allBookings.filter{it.studentEmail.equals(email,true)}
+    val requestsAllowed=rsOpsEnabledV56(store,RsOpsKeysV56.PRIVATE_LESSONS,true)
 
     RsScroll(c,rsPrivateUiV43(lang,"student_title"),rsPrivateUiV43(lang,"student_sub")){
         slots.forEach{slot->
@@ -165,6 +166,7 @@ fun RsStudentPrivateLessonsV43(c:RsPalette,store:RsStore,lang:RsLang){
                 }
                 Text(statusText,color=c.text,fontWeight=FontWeight.Bold)
                 if(booking==null || booking.status=="DECLINED"){
+                    if(!requestsAllowed)Text("New private-lesson requests are temporarily disabled by the trainer.",color=c.muted,fontSize=10.sp)
                     OutlinedTextField(
                         value=noteBySlot[slot.id].orEmpty(),
                         onValueChange={v->noteBySlot=noteBySlot+(slot.id to v)},
@@ -181,6 +183,7 @@ fun RsStudentPrivateLessonsV43(c:RsPalette,store:RsStore,lang:RsLang){
                             rsSaveBookingsV43(store,updated)
                             revision++
                         },
+                        enabled=requestsAllowed,
                         modifier=Modifier.fillMaxWidth()
                     ){Text(rsPrivateUiV43(lang,"request"))}
                 }else{
