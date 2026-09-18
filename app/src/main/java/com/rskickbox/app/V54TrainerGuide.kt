@@ -234,27 +234,38 @@ private fun rsGuideItemsV54():List<RsGuideItemV54> = listOf(
 
 private fun rsGuideUiV54(lang:RsLang,key:String):String{
     val en=mapOf(
-        "title" to "Trainer App Guide",
-        "subtitle" to "How every major RS KICKBOX section works, with examples and visual walkthroughs.",
-        "search" to "Search app features…",
-        "all" to "ALL","purpose" to "WHAT THIS SECTION DOES","trainer" to "WHAT THE TRAINER DOES",
-        "student" to "WHAT THE STUDENT SEES","example" to "EXAMPLE","workflow" to "HOW TO USE IT",
-        "visual" to "VISUAL EXAMPLE","open" to "Open this section","quick" to "QUICK START",
+        "title" to "Trainer App Guide","subtitle" to "How every major RS KICKBOX section works, with examples and visual walkthroughs.",
+        "search" to "Search app features…","all" to "ALL","purpose" to "WHAT THIS SECTION DOES","trainer" to "WHAT THE TRAINER DOES",
+        "student" to "WHAT THE STUDENT SEES","example" to "EXAMPLE","workflow" to "HOW TO USE IT","visual" to "VISUAL EXAMPLE",
+        "open" to "Open this section","quick" to "QUICK START","show" to "Show how it works","hide" to "Hide guide","sections" to "sections",
         "quick_body" to "Start with Student Manager → Membership Plans → Classes → Content → Notifications. Then add coaching, finance, promotions and advanced tools as you need them.",
         "tip" to "TIP","tip_body" to "You do not need to use every feature. Activate the parts that fit your gym workflow and expand later."
     )
-    val nl=en+mapOf(
-        "title" to "Trainer App Gids",
-        "subtitle" to "Hoe elke belangrijke RS KICKBOX-sectie werkt, met voorbeelden en visuele uitleg.",
-        "search" to "Zoek appfuncties…",
-        "all" to "ALLES","purpose" to "WAT DEZE SECTIE DOET","trainer" to "WAT DE TRAINER DOET",
-        "student" to "WAT DE LEERLING ZIET","example" to "VOORBEELD","workflow" to "HOE JE HET GEBRUIKT",
-        "visual" to "VISUEEL VOORBEELD","open" to "Open deze sectie","quick" to "SNEL STARTEN",
-        "quick_body" to "Begin met Student Manager → Membership Plans → Classes → Content → Notifications. Voeg daarna coaching, finance, promoties en geavanceerde tools toe wanneer nodig.",
-        "tip" to "TIP","tip_body" to "Je hoeft niet elke functie te gebruiken. Activeer wat bij jouw sportschool past en breid later uit."
-    )
-    val pack=when(lang.code){"nl"->nl;else->en}
+    val nl=en+mapOf("title" to "Trainer App Gids","subtitle" to "Hoe elke belangrijke RS KICKBOX-sectie werkt, met voorbeelden en visuele uitleg.","search" to "Zoek appfuncties…","all" to "ALLES","purpose" to "WAT DEZE SECTIE DOET","trainer" to "WAT DE TRAINER DOET","student" to "WAT DE LEERLING ZIET","example" to "VOORBEELD","workflow" to "HOE JE HET GEBRUIKT","visual" to "VISUEEL VOORBEELD","open" to "Open deze sectie","quick" to "SNEL STARTEN","show" to "Laat zien hoe het werkt","hide" to "Verberg uitleg","sections" to "secties","quick_body" to "Begin met Student Manager → Membership Plans → Classes → Content → Notifications. Voeg daarna coaching, finance, promoties en geavanceerde tools toe wanneer nodig.","tip" to "TIP","tip_body" to "Je hoeft niet elke functie te gebruiken. Activeer wat bij jouw sportschool past en breid later uit.")
+    val pt=en+mapOf("title" to "Guia da App para Treinador","subtitle" to "Como funciona cada secção principal do RS KICKBOX, com exemplos e explicações visuais.","search" to "Pesquisar funcionalidades…","all" to "TODAS","purpose" to "O QUE ESTA SECÇÃO FAZ","trainer" to "O QUE O TREINADOR FAZ","student" to "O QUE O ALUNO VÊ","example" to "EXEMPLO","workflow" to "COMO USAR","visual" to "EXEMPLO VISUAL","open" to "Abrir esta secção","quick" to "INÍCIO RÁPIDO","show" to "Ver como funciona","hide" to "Ocultar guia","sections" to "secções","quick_body" to "Começa por Student Manager → Membership Plans → Classes → Content → Notifications. Depois adiciona coaching, finanças, promoções e ferramentas avançadas quando precisares.","tip" to "DICA","tip_body" to "Não precisas de usar todas as funções. Ativa as que combinam com o teu ginásio e expande depois.")
+    val es=en+mapOf("title" to "Guía de la App para Entrenador","subtitle" to "Cómo funciona cada sección principal de RS KICKBOX, con ejemplos y recorridos visuales.","search" to "Buscar funciones…","all" to "TODAS","purpose" to "QUÉ HACE ESTA SECCIÓN","trainer" to "QUÉ HACE EL ENTRENADOR","student" to "QUÉ VE EL ALUMNO","example" to "EJEMPLO","workflow" to "CÓMO USARLO","visual" to "EJEMPLO VISUAL","open" to "Abrir esta sección","quick" to "INICIO RÁPIDO","show" to "Ver cómo funciona","hide" to "Ocultar guía","sections" to "secciones","quick_body" to "Empieza con Student Manager → Membership Plans → Classes → Content → Notifications. Después añade coaching, finanzas, promociones y herramientas avanzadas según necesites.","tip" to "CONSEJO","tip_body" to "No necesitas usar todas las funciones. Activa las que encajen con tu gimnasio y amplía después.")
+    val fr=en+mapOf("title" to "Guide App Entraîneur","subtitle" to "Comment fonctionne chaque grande section de RS KICKBOX, avec exemples et explications visuelles.","search" to "Rechercher des fonctions…","all" to "TOUT","purpose" to "RÔLE DE CETTE SECTION","trainer" to "CE QUE FAIT L’ENTRAÎNEUR","student" to "CE QUE VOIT L’ÉLÈVE","example" to "EXEMPLE","workflow" to "COMMENT L’UTILISER","visual" to "EXEMPLE VISUEL","open" to "Ouvrir cette section","quick" to "DÉMARRAGE RAPIDE","show" to "Voir comment ça marche","hide" to "Masquer le guide","sections" to "sections","quick_body" to "Commence par Student Manager → Membership Plans → Classes → Content → Notifications. Ajoute ensuite coaching, finance, promotions et outils avancés selon tes besoins.","tip" to "ASTUCE","tip_body" to "Tu n’as pas besoin d’utiliser toutes les fonctions. Active celles adaptées à ton club et développe ensuite.")
+    val de=en+mapOf("title" to "Trainer-App-Anleitung","subtitle" to "So funktioniert jeder wichtige RS KICKBOX-Bereich – mit Beispielen und visuellen Abläufen.","search" to "App-Funktionen suchen…","all" to "ALLE","purpose" to "WAS DIESER BEREICH MACHT","trainer" to "WAS DER TRAINER MACHT","student" to "WAS DER SCHÜLER SIEHT","example" to "BEISPIEL","workflow" to "SO VERWENDEST DU ES","visual" to "VISUELLES BEISPIEL","open" to "Diesen Bereich öffnen","quick" to "SCHNELLSTART","show" to "So funktioniert es","hide" to "Anleitung ausblenden","sections" to "Bereiche","quick_body" to "Beginne mit Student Manager → Membership Plans → Classes → Content → Notifications. Füge danach Coaching, Finanzen, Aktionen und erweiterte Tools hinzu.","tip" to "TIPP","tip_body" to "Du musst nicht jede Funktion nutzen. Aktiviere die Bereiche, die zu deinem Gym passen, und erweitere später.")
+    val it=en+mapOf("title" to "Guida App Trainer","subtitle" to "Come funziona ogni sezione principale di RS KICKBOX, con esempi e walkthrough visivi.","search" to "Cerca funzioni…","all" to "TUTTE","purpose" to "COSA FA QUESTA SEZIONE","trainer" to "COSA FA IL TRAINER","student" to "COSA VEDE L’ALLIEVO","example" to "ESEMPIO","workflow" to "COME SI USA","visual" to "ESEMPIO VISIVO","open" to "Apri questa sezione","quick" to "AVVIO RAPIDO","show" to "Mostra come funziona","hide" to "Nascondi guida","sections" to "sezioni","quick_body" to "Inizia con Student Manager → Membership Plans → Classes → Content → Notifications. Poi aggiungi coaching, finanza, promozioni e strumenti avanzati quando servono.","tip" to "SUGGERIMENTO","tip_body" to "Non devi usare ogni funzione. Attiva quelle adatte al tuo club ed espandi in seguito.")
+    val pl=en+mapOf("title" to "Przewodnik Trenera","subtitle" to "Jak działa każda główna sekcja RS KICKBOX, z przykładami i wizualnym wyjaśnieniem.","search" to "Szukaj funkcji…","all" to "WSZYSTKIE","purpose" to "CO ROBI TA SEKCJA","trainer" to "CO ROBI TRENER","student" to "CO WIDZI UCZEŃ","example" to "PRZYKŁAD","workflow" to "JAK TEGO UŻYWAĆ","visual" to "PRZYKŁAD WIZUALNY","open" to "Otwórz tę sekcję","quick" to "SZYBKI START","show" to "Pokaż jak to działa","hide" to "Ukryj przewodnik","sections" to "sekcji","quick_body" to "Zacznij od Student Manager → Membership Plans → Classes → Content → Notifications. Potem dodaj coaching, finanse, promocje i narzędzia zaawansowane.","tip" to "WSKAZÓWKA","tip_body" to "Nie musisz używać każdej funkcji. Włącz te, które pasują do Twojego klubu, i rozwijaj później.")
+    val tr=en+mapOf("title" to "Antrenör Uygulama Rehberi","subtitle" to "RS KICKBOX’taki her önemli bölümün nasıl çalıştığı; örnekler ve görsel anlatımlarla.","search" to "Uygulama özelliklerinde ara…","all" to "TÜMÜ","purpose" to "BU BÖLÜM NE YAPAR","trainer" to "ANTRENÖR NE YAPAR","student" to "ÖĞRENCİ NE GÖRÜR","example" to "ÖRNEK","workflow" to "NASIL KULLANILIR","visual" to "GÖRSEL ÖRNEK","open" to "Bu bölümü aç","quick" to "HIZLI BAŞLANGIÇ","show" to "Nasıl çalıştığını göster","hide" to "Rehberi gizle","sections" to "bölüm","quick_body" to "Student Manager → Membership Plans → Classes → Content → Notifications ile başla. Sonra ihtiyacına göre coaching, finans, promosyon ve gelişmiş araçları ekle.","tip" to "İPUCU","tip_body" to "Her özelliği kullanmak zorunda değilsin. Salonuna uygun bölümleri etkinleştir ve sonra genişlet.")
+    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
+}
+
+private fun rsGuideCategoryLabelV54(lang:RsLang,category:String):String{
+    val values=when(category){
+        "START"->listOf("START","START","INÍCIO","INICIO","DÉPART","START","INIZIO","START","BAŞLANGIÇ")
+        "COACHING"->listOf("COACHING","COACHING","COACHING","COACHING","COACHING","COACHING","COACHING","COACHING","KOÇLUK")
+        "TRAINING"->listOf("TRAINING","TRAINING","TREINO","ENTRENAMIENTO","ENTRAÎNEMENT","TRAINING","ALLENAMENTO","TRENING","ANTRENMAN")
+        "CONTENT"->listOf("CONTENT","CONTENT","CONTEÚDO","CONTENIDO","CONTENU","INHALT","CONTENUTI","TREŚCI","İÇERİK")
+        "COMMUNITY"->listOf("COMMUNITY","COMMUNITY","COMUNIDADE","COMUNIDAD","COMMUNAUTÉ","COMMUNITY","COMMUNITY","SPOŁECZNOŚĆ","TOPLULUK")
+        "BUSINESS"->listOf("BUSINESS","BEDRIJF","NEGÓCIO","NEGOCIO","BUSINESS","BUSINESS","BUSINESS","BIZNES","İŞLETME")
+        "SETTINGS"->listOf("SETTINGS","INSTELLINGEN","DEFINIÇÕES","AJUSTES","RÉGLAGES","EINSTELLUNGEN","IMPOSTAZIONI","USTAWIENIA","AYARLAR")
+        else->listOf("ALL","ALLES","TODAS","TODAS","TOUT","ALLE","TUTTE","WSZYSTKIE","TÜMÜ")
+    }
+    val index=when(lang.code){"nl"->1;"pt"->2;"es"->3;"fr"->4;"de"->5;"it"->6;"pl"->7;"tr"->8;else->0}
+    return values[index]
 }
 
 @Composable
@@ -497,24 +508,24 @@ fun RsTrainerGuideV54(
                 FilterChip(
                     selected=category==cat,
                     onClick={category=cat},
-                    label={Text(if(cat=="ALL")rsGuideUiV54(lang,"all") else cat,fontSize=9.sp)}
+                    label={Text(if(cat=="ALL")rsGuideUiV54(lang,"all") else rsGuideCategoryLabelV54(lang,cat),fontSize=9.sp)}
                 )
             }
         }
 
-        Text(filtered.size.toString()+" sections",color=c.muted,fontSize=10.sp)
+        Text(filtered.size.toString()+" "+rsGuideUiV54(lang,"sections"),color=c.muted,fontSize=10.sp)
 
         filtered.forEach{item->
             val open=expanded==item.route
             RsPanel(c){
-                Text(item.category,color=c.muted,fontSize=9.sp,fontWeight=FontWeight.Bold)
+                Text(rsGuideCategoryLabelV54(lang,item.category),color=c.muted,fontSize=9.sp,fontWeight=FontWeight.Bold)
                 Text(item.title,color=c.bright,fontSize=19.sp,fontWeight=FontWeight.Black)
                 Text(item.purpose,color=c.text,maxLines=if(open)Int.MAX_VALUE else 3,overflow=TextOverflow.Ellipsis)
 
                 OutlinedButton(
                     onClick={expanded=if(open)null else item.route},
                     modifier=Modifier.fillMaxWidth()
-                ){Text(if(open)"Hide guide" else "Show how it works")}
+                ){Text(if(open)rsGuideUiV54(lang,"hide") else rsGuideUiV54(lang,"show"))}
 
                 if(open){
                     HorizontalDivider()
