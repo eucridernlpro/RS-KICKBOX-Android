@@ -262,8 +262,22 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
     ) {
         val mainLogo=store.s("brand_asset_main_logo","")
         if(mainLogo.isNotBlank())RsUriPreviewV21(mainLogo,Modifier.fillMaxWidth().height(120.dp),"CENTER")
-        Text("♛ "+store.s("brand_header_name","RS KICKBOX"),color=c.bright,fontSize=31.sp,fontWeight=FontWeight.Black)
-        LanguageV21(lang,onLang)
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement=Arrangement.spacedBy(10.dp),
+            verticalAlignment=Alignment.CenterVertically
+        ){
+            Text(
+                "♛ "+store.s("brand_header_name","RS KICKBOX"),
+                color=c.bright,
+                fontSize=31.sp,
+                fontWeight=FontWeight.Black,
+                maxLines=1,
+                overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier=Modifier.weight(1f)
+            )
+            LanguageV21(lang,onLang)
+        }
         Text(store.s("brand_login_title","Premium cinematic kickboxing"),color=Color.White,style=MaterialTheme.typography.headlineMedium)
         Text(store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"),color=Color.White.copy(alpha=.78f),fontSize=11.sp)
 
@@ -547,7 +561,7 @@ private fun ShellV21(
                         modifier=Modifier.widthIn(min=42.dp,max=50.dp).heightIn(min=40.dp),
                         contentPadding=PaddingValues(horizontal=8.dp)
                     ){Text("☰")}
-                    LanguageV21(lang,onLang,Modifier.weight(1f))
+                    LanguageV21(lang,onLang)
                     if(route!=home) OutlinedButton(
                         onClick={onRoute(home)},
                         modifier=Modifier.widthIn(min=42.dp,max=50.dp).heightIn(min=40.dp),
@@ -588,21 +602,26 @@ private fun ShellV21(
 @Composable
 private fun LanguageV21(current:RsLang,onSelect:(RsLang)->Unit,modifier:Modifier=Modifier) {
     var open by remember { mutableStateOf(false) }
-    Box(modifier) {
+    Box(modifier.widthIn(min=66.dp,max=82.dp)) {
         OutlinedButton(
             onClick={open=true},
-            modifier=Modifier.fillMaxWidth().heightIn(min=40.dp),
-            contentPadding=PaddingValues(horizontal=9.dp,vertical=4.dp)
+            modifier=Modifier.fillMaxWidth().heightIn(min=34.dp,max=36.dp),
+            contentPadding=PaddingValues(horizontal=7.dp,vertical=2.dp)
         ){
             Text(
-                "🌐 ${current.name}",
-                fontSize=adaptiveLabelSp(current.name,10.5f).sp,
-                maxLines=1,
-                overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                "🌐 "+current.code.uppercase(),
+                fontSize=9.5.sp,
+                fontWeight=FontWeight.Bold,
+                maxLines=1
             )
         }
         DropdownMenu(expanded=open,onDismissRequest={open=false}) {
-            rsLangs.forEach { language -> DropdownMenuItem(text={Text(language.name)},onClick={onSelect(language);open=false}) }
+            rsLangs.forEach { language ->
+                DropdownMenuItem(
+                    text={Text(language.name)},
+                    onClick={onSelect(language);open=false}
+                )
+            }
         }
     }
 }
