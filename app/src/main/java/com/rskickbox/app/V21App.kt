@@ -52,7 +52,7 @@ fun RsKickboxV21App() {
                                     "backgrounds" -> RsVisualAssetStudioV21(c, store)
                                     "branding" -> RsBrandSiteSettingsV21(c, store)
                                     "intro_settings" -> RsIntroSettingsV21(c, store)
-                                    "voice" -> RsVoiceCoach(c, lang, store)
+                                    "voice" -> RsTechniqueCoachV27(c, lang, store, active)
                                     "session" -> SessionV21(c,lang)
                                     "access" -> RsAccessControl(c, store)
                                     "payments" -> RsPaymentCenter(c, store)
