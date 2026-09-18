@@ -157,8 +157,10 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
             slotSize=selected.size,
             onStatus={message=it},
             onComplete={info->
+                val previous=store.s(visualKeyV21(selected.key),"")
                 store.ps(visualKeyV21(selected.key),info.uri)
                 store.ps("visual_v21_kind_${selected.key}",info.kind)
+                if(previous.isNotBlank() && previous!=info.uri)rsDeleteOwnedVisualV29(context,previous)
                 message=info.note
                 optimizing=false
                 refresh++
@@ -278,7 +280,14 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                     ){Text("Gallery",fontSize=10.sp)}
                     OutlinedButton(onClick={filePicker.launch(arrayOf("image/*","video/*"))},enabled=!optimizing,modifier=Modifier.weight(1f)){Text("Files",fontSize=10.sp)}
                     OutlinedButton(
-                        onClick={store.ps(visualKeyV21(selected.key),"");message="${selected.title} reset.";refresh++},
+                        onClick={
+                            val previous=store.s(visualKeyV21(selected.key),"")
+                            rsDeleteOwnedVisualV29(context,previous)
+                            store.ps(visualKeyV21(selected.key),"")
+                            store.ps("visual_v21_kind_${selected.key}","")
+                            message="${selected.title} reset."
+                            refresh++
+                        },
                         enabled=uri.isNotBlank(),
                         modifier=Modifier.weight(1f)
                     ){Text("Reset",fontSize=10.sp)}
