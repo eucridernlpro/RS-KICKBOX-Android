@@ -86,6 +86,12 @@ private fun decodeTechniqueSubsV27(raw:String)=raw.split("§").mapNotNull{row->
     if(p.size<7)null else TechniqueSubmissionV27(p[0],p[1],p[2],p[3],p[4],p[5].toBooleanStrictOrNull()?:false,p[6])
 }
 
+private fun rsDeleteTechniqueVideoIfUnusedV36(context:android.content.Context,store:RsStore,uriString:String){
+    if(uriString.isBlank())return
+    val referenced=decodeTechniqueSubsV27(store.s("technique_submissions_v27","")).any{it.uri==uriString}
+    if(!referenced)rsDeleteTechniqueVideoV36(context,uriString)
+}
+
 private fun videoDurationV27(context:android.content.Context,uri:Uri):Long=runCatching{
     val mmr=MediaMetadataRetriever()
     mmr.setDataSource(context,uri)
@@ -174,10 +180,14 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                 if(local==null){
                     feedback="Could not import this video into private app storage."
                 }else{
+                    val previous=videoUri
                     videoUri=local
                     videoName=pickedName
                     durationMs=d
                     analysisReady=false
+                    if(previous.isNotBlank() && previous!=local){
+                        rsDeleteTechniqueVideoIfUnusedV36(context,store,previous)
+                    }
                     feedback="Video ready for local preview."
                 }
             }
@@ -238,7 +248,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                 RsTechniqueVideoPreviewV27(videoUri)
                 Text("$videoName · ${"%.1f".format(durationMs/1000.0)} s",color=c.muted,fontSize=10.sp)
                 Button(onClick={analysisReady=true;feedback="Structured coaching preview generated."},modifier=Modifier.fillMaxWidth()){Text("Analyze technique")}
-                OutlinedButton(onClick={rsDeleteTechniqueVideoV36(context,videoUri);videoUri="";videoName="";durationMs=0L;analysisReady=false},modifier=Modifier.fillMaxWidth()){Text("Remove video")}
+                OutlinedButton(onClick={val previous=videoUri;videoUri="";videoName="";durationMs=0L;analysisReady=false;rsDeleteTechniqueVideoIfUnusedV36(context,store,previous)},modifier=Modifier.fillMaxWidth()){Text("Remove video")}
             }
             if(feedback.isNotBlank())Text(feedback,color=c.muted,fontSize=10.sp)
         }
@@ -402,8 +412,9 @@ private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore){
                         message=if(item.favorite)"Removed from favorites." else "Saved to trainer favorites."
                     },modifier=Modifier.weight(1f)){Text(if(item.favorite)"Unfavorite" else "Favorite")}
                     OutlinedButton(onClick={
-                        save(items.filterNot{it.id==item.id})
-                        rsDeleteTechniqueVideoV36(context,item.uri)
+                        val updated=items.filterNot{it.id==item.id}
+                        save(updated)
+                        if(updated.none{it.uri==item.uri})rsDeleteTechniqueVideoV36(context,item.uri)
                         message="Technique submission deleted."
                     },modifier=Modifier.weight(1f)){Text("Delete")}
                 }
