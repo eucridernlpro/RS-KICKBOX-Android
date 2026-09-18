@@ -217,7 +217,7 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
         RsPanel(c) {
             val backend=rsBackendStatusV36()
             Text("CURRENT ACCEPTANCE BUILD", color = c.bright, fontWeight = FontWeight.Bold)
-            Text("RS KICKBOX v0.61.0 · versionCode 61", color = c.text)
+            Text("RS KICKBOX v0.62.0 · versionCode 62", color = c.text)
             Text("Package: com.rskickbox.app · targetSdk 36", color = c.muted)
             Text("Backend mode: "+if(backend.readyForClientInitialization)"SUPABASE CONFIGURED" else "LOCAL ACCEPTANCE", color = c.bright)
             Text("Supabase URL: "+if(backend.projectUrlConfigured)"configured" else "not configured", color = c.muted)
@@ -261,7 +261,7 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
         RsPanel(c) {
             Text("PLAY STORE RELEASE CHECK", color = c.bright, fontWeight = FontWeight.Bold)
             val checks = listOf(
-                "v0.61 Android acceptance source" to true,
+                "v0.62 Android acceptance source" to true,
                 "Private QR enrollment workflow" to true,
                 "Nine-language enrollment UI" to true,
                 "Premium role navigation drawer" to true,
