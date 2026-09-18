@@ -76,8 +76,8 @@ fun RsKickboxV21App() {
                                     }
                                     "academy" -> RsAcademy(c)
                                     "progress" -> RsStudentProgressV46(c,store,lang)
-                                    "challenges" -> RsChallenges(c)
-                                    "fightcamp" -> RsFightCamp(c)
+                                    "challenges" -> RsStudentChallengesV47(c,store,lang)
+                                    "fightcamp" -> RsStudentFightCampV47(c,store,lang)
                                     "finance" -> RsStudentFinanceV39(c,store,lang)
                                     "community" -> RsCommunity(c)
                                     "media" -> RsTrainingMediaV16(c, store)
@@ -85,7 +85,7 @@ fun RsKickboxV21App() {
                                     "techniques" -> RsTechniqueLibrary(c)
                                     "home_training" -> RsHomeTraining(c)
                                     "workout" -> RsWorkoutGenerator(c)
-                                    "badges" -> RsBadges(c)
+                                    "badges" -> RsBadgesV47(c,store,lang)
                                     "vault" -> RsKnowledgeVault(c)
                                     "compare" -> RsTechniqueCompare(c)
                                     "coachchat" -> RsCoachChatV44(c,store,lang,active)
@@ -114,8 +114,8 @@ fun RsKickboxV21App() {
                                     "events_admin" -> RsEventManagerV42(c,store,lang)
                                     "qr_attendance" -> RsQrAttendanceV14(c)
                                     "session_builder" -> RsSessionBuilderV14(c)
-                                    "challenge_admin" -> RsChallengeManagerV14(c)
-                                    "fightcamp_admin" -> RsFightCampManagerV14(c)
+                                    "challenge_admin" -> RsChallengeManagerV47(c,store,lang)
+                                    "fightcamp_admin" -> RsFightCampManagerV47(c,store,lang)
                                     "landing_admin" -> RsPromotionManagerV45(c,store,lang)
                                     "release" -> RsReleaseCenterV16(c, store)
                                     else -> RsScroll(c, route.replaceFirstChar { it.uppercase() }, "RS premium native module") {
@@ -308,6 +308,8 @@ private fun ShellV21(
         "homework_admin" to "Homework Manager",
         "notes" to "Coach Notes",
         "assessments" to "Assessments",
+        "challenge_admin" to "Challenge Manager",
+        "fightcamp_admin" to "Fight Camp Manager",
         "analytics" to "Analytics",
         "notifications" to "Notifications",
         "landing_admin" to "Promotion Manager",
@@ -325,6 +327,9 @@ private fun ShellV21(
         "classes" to "Classes & Events",
         "homework" to "Homework",
         "progress" to "Progress",
+        "challenges" to "Challenges",
+        "fightcamp" to "Fight Camp",
+        "badges" to "Badges",
         "community" to "Community",
         "media" to "Training Media",
         "music" to "My RS Music",
