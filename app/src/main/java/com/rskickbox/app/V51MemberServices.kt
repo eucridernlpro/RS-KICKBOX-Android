@@ -279,7 +279,7 @@ fun RsReferralsV51(c:RsPalette,store:RsStore,lang:RsLang){
                 enabled=sharingAllowed,
                 modifier=Modifier.fillMaxWidth()
             ){Text(rsServiceUiV51(lang,"share"))}
-            if(!sharingAllowed)Text("Referral sharing is temporarily disabled by the trainer.",color=c.muted,fontSize=10.sp)
+            if(!sharingAllowed)Text(rsOpsUiV56(lang,"referrals_disabled"),color=c.muted,fontSize=10.sp)
         }
     }
 }
