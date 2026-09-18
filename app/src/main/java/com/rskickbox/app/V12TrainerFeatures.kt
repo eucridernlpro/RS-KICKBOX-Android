@@ -82,8 +82,18 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
     var plan by remember{mutableStateOf("PRO")}
     var status by remember{mutableStateOf("")}
     var expandedQrStudentId by remember{mutableStateOf<String?>(null)}
+    var pendingDeleteStudentId by remember{mutableStateOf<String?>(null)}
+    var studentSearch by remember{mutableStateOf("")}
     val students=remember(revision){rsLoadStudentsV33(store)}
     val activeCount=students.count{it.active}
+    val filteredStudents=remember(students,studentSearch){
+        val q=studentSearch.trim()
+        if(q.isBlank())students else students.filter{
+            it.name.contains(q,ignoreCase=true) ||
+            it.email.contains(q,ignoreCase=true) ||
+            it.plan.contains(q,ignoreCase=true)
+        }
+    }
 
     fun save(items:List<RsStudentAccountV33>){
         rsSaveStudentsV33(store,items)
@@ -147,10 +157,20 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
         if(students.isEmpty())RsPanel(c){
             Text("NO CREATED STUDENT ACCOUNTS YET",color=c.bright,fontWeight=FontWeight.Bold)
             Text("Create the first student above. The account will immediately get an invitation QR.",color=c.muted)
+        } else {
+            RsPanel(c){
+                OutlinedTextField(
+                    value=studentSearch,
+                    onValueChange={studentSearch=it},
+                    label={Text("Search students")},
+                    supportingText={Text("${filteredStudents.size} shown · ${students.size} total")},
+                    singleLine=true,
+                    modifier=Modifier.fillMaxWidth()
+                )
+            }
         }
 
-        students.forEach{student->
-            val qr=remember(student.id,student.activationCode){rsQrBitmapV33(rsInvitePayloadV33(student),720)}
+        filteredStudents.forEach{student->
             RsPanel(c){
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
@@ -177,6 +197,9 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                     modifier=Modifier.fillMaxWidth()
                 ){Text(if(qrExpanded)rsEnrollmentT(lang,"hide_qr") else rsEnrollmentT(lang,"show_qr"))}
                 if(qrExpanded){
+                    val qr=remember(student.id,student.activationCode){
+                        rsQrBitmapV33(rsInvitePayloadV33(student),720)
+                    }
                     Surface(
                         shape=MaterialTheme.shapes.large,
                         color=androidx.compose.ui.graphics.Color.White,
@@ -212,11 +235,23 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                     ){Text(rsEnrollmentT(lang,"new_qr"),fontSize=10.sp)}
                     OutlinedButton(
                         onClick={
-                            save(students.filterNot{it.id==student.id})
-                            status="${student.name} deleted."
+                            if(pendingDeleteStudentId==student.id){
+                                save(students.filterNot{it.id==student.id})
+                                if(expandedQrStudentId==student.id)expandedQrStudentId=null
+                                pendingDeleteStudentId=null
+                                status="${student.name} deleted."
+                            }else{
+                                pendingDeleteStudentId=student.id
+                                status="Tap Delete again to confirm removal of ${student.name}."
+                            }
                         },
                         modifier=Modifier.weight(1f)
-                    ){Text(rsEnrollmentT(lang,"delete"),fontSize=10.sp)}
+                    ){
+                        Text(
+                            if(pendingDeleteStudentId==student.id)"Confirm" else rsEnrollmentT(lang,"delete"),
+                            fontSize=10.sp
+                        )
+                    }
                 }
             }
         }
