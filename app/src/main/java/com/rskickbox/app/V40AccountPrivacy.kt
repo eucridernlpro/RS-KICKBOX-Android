@@ -63,6 +63,7 @@ private fun rsBuildLocalExportV40(store:RsStore):String{
         put("homework",rsHomeworkRawForStudentV46(store,email))
         put("assessments",rsAssessmentsRawForStudentV46(store,email))
         put("trainer_private_notes",rsCoachNotesRawForPrivacyV46(store,email))
+        put("social",rsSocialPrivacyRawV50(store,email))
         put("preferences",JSONObject().apply{
             put("language",store.s("lang","en"))
             put("voice_auto",store.b("voice_auto",true))
@@ -150,6 +151,7 @@ fun RsStudentPrivacyV40(c:RsPalette,store:RsStore,lang:RsLang,onLocalAccountDisa
                         rsRemoveTechniqueHistoryForStudentV40(context,store,email)
                         rsRemoveCoachMessagesForStudentV44(store,email)
                         rsRemoveDevelopmentDataForStudentV46(store,email)
+                        rsRemoveSocialDataForStudentV50(store,email)
                         store.ps("session_student_email","")
                         store.ps("session_student_name","")
                         status=rsAccountUiV40(lang,"delete_done")
