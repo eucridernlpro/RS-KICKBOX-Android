@@ -29,14 +29,14 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
     val sections=if(role==RsRole.TRAINER)trainerV21() else studentV21()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(15.dp)){
         RsPanel(c){
-            Text(if(role==RsRole.TRAINER)"TRAINER CONTROL CENTER" else "RS LIVE DASHBOARD",color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
-            Text("${lang.name} · ${if(role==RsRole.TRAINER)"Trainer / Admin" else "Student"} · Premium visual experience",color=c.muted)
+            Text(if(role==RsRole.TRAINER)rsT(lang,"trainer_dashboard") else rsT(lang,"student_dashboard"),color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
+            Text("${lang.name} · ${if(role==RsRole.TRAINER)rsT(lang,"trainer_admin") else rsT(lang,"student")} · ${rsT(lang,"premium_experience")}",color=c.muted)
         }
         sections.forEach{section->
-            Text(section.title.uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=13.sp,letterSpacing=.7.sp,modifier=Modifier.padding(horizontal=4.dp))
+            Text(sectionTitleV25(lang,section.title).uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=sectionFontV25(sectionTitleV25(lang,section.title)),letterSpacing=.5.sp,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(horizontal=4.dp))
             section.items.chunked(2).forEach{pair->
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-                    pair.forEach{item->Box(Modifier.weight(1f)){TileV21(c,store,item,onRoute)}}
+                    pair.forEach{item->Box(Modifier.weight(1f)){TileV21(c,store,lang,item,onRoute)}}
                     if(pair.size==1)Spacer(Modifier.weight(1f))
                 }
             }
@@ -46,7 +46,12 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
 }
 
 @Composable
-private fun TileV21(c:RsPalette,store:RsStore,item:DashV21,onRoute:(String)->Unit){
+private fun TileV21(c:RsPalette,store:RsStore,lang:RsLang,item:DashV21,onRoute:(String)->Unit){
+    val localizedTitle=rsRouteTitle(lang,item.route,item.title)
+    val localizedHint=rsRouteHint(lang,item.route,item.hint)
+    val titleSize=tileTitleFontV25(localizedTitle)
+    val titleLine=tileTitleLineV25(localizedTitle)
+    val hintSize=tileHintFontV25(localizedHint)
     val shape=RoundedCornerShape(26.dp)
     val custom=store.s("visual_v21_tile_${item.route}","")
     val overlay=store.s("visual_v21_opacity_tile_${item.route}","0.52").toFloatOrNull()?:.52f
@@ -59,8 +64,8 @@ private fun TileV21(c:RsPalette,store:RsStore,item:DashV21,onRoute:(String)->Uni
         }
         Surface(modifier=Modifier.align(Alignment.TopEnd).padding(13.dp),shape=RoundedCornerShape(20.dp),color=c.gold.copy(alpha=.24f)){Text("›",color=c.bright,fontSize=20.sp,fontWeight=FontWeight.Black,modifier=Modifier.padding(horizontal=10.dp,vertical=3.dp))}
         Column(Modifier.align(Alignment.BottomStart).padding(15.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
-            Text(item.title,color=Color.White,fontWeight=FontWeight.Black,fontSize=17.sp,maxLines=2,overflow=TextOverflow.Ellipsis,lineHeight=20.sp)
-            Text(item.hint,color=Color.White.copy(alpha=.72f),fontSize=10.sp,maxLines=2,overflow=TextOverflow.Ellipsis,lineHeight=13.sp)
+            Text(localizedTitle,color=Color.White,fontWeight=FontWeight.Black,fontSize=titleSize,maxLines=3,overflow=TextOverflow.Ellipsis,lineHeight=titleLine)
+            Text(localizedHint,color=Color.White.copy(alpha=.72f),fontSize=hintSize,maxLines=2,overflow=TextOverflow.Ellipsis,lineHeight=(hintSize.value+2f).sp)
         }
     }
 }
@@ -82,6 +87,48 @@ private fun DefaultTileArtworkV21(c:RsPalette,kind:String){
             else->{drawCircle(c.bright.copy(alpha=.14f),w*.18f,Offset(w*.70f,h*.38f),style=Stroke(6f));drawCircle(c.bright.copy(alpha=.18f),w*.08f,Offset(w*.70f,h*.38f),style=Stroke(5f))}
         }
     }
+}
+
+private fun sectionTitleV25(lang:RsLang,title:String)=when(title){
+    "Core Training"->rsT(lang,"core_training")
+    "Club & Coaching"->rsT(lang,"club_coaching")
+    "Performance"->rsT(lang,"performance")
+    "Library, Music & Account"->rsT(lang,"library_account")
+    "Brand & Experience"->rsT(lang,"brand_experience")
+    "Coaching, Content & Music"->rsT(lang,"coaching_content_music")
+    "Members & Access"->rsT(lang,"members_access")
+    "Club Operations"->rsT(lang,"club_operations")
+    "Business & Release"->rsT(lang,"business_release")
+    else->title
+}
+
+private fun sectionFontV25(text:String)=when{
+    text.length>=28->10.sp
+    text.length>=22->11.sp
+    text.length>=17->12.sp
+    else->13.sp
+}
+
+private fun tileTitleFontV25(text:String)=when{
+    text.length>=34->11.sp
+    text.length>=28->12.sp
+    text.length>=23->13.sp
+    text.length>=18->14.sp
+    else->17.sp
+}
+
+private fun tileTitleLineV25(text:String)=when{
+    text.length>=34->13.sp
+    text.length>=28->14.sp
+    text.length>=23->15.sp
+    text.length>=18->17.sp
+    else->20.sp
+}
+
+private fun tileHintFontV25(text:String)=when{
+    text.length>=34->8.sp
+    text.length>=24->9.sp
+    else->10.sp
 }
 
 private fun glyphV21(kind:String)=when(kind){"ai"->"AI";"music"->"♫";"payment"->"€";"progress"->"↗";"fight"->"FX";"training"->"TR";"technique"->"TK";"settings"->"⚙";"brand"->"♛";else->"RS"}
