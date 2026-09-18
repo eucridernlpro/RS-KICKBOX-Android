@@ -71,6 +71,9 @@ private fun rsLoadInvoicesV39(store:RsStore):List<RsInvoiceV39>{
 private fun rsSaveInvoicesV39(store:RsStore,items:List<RsInvoiceV39>)=
     store.ps("finance_invoices_v39",rsEncodeInvoicesV39(items))
 
+fun rsFinanceInvoicesForStudentV40(store:RsStore,studentName:String):List<RsInvoiceV39> =
+    rsLoadInvoicesV39(store).filter{it.studentName.equals(studentName,true)}
+
 private fun rsMoneyV39(cents:Int)="€"+String.format("%.2f",cents/100.0)
 
 private val rsPaymentMethodsV39=listOf(
