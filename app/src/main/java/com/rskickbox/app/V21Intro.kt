@@ -3,8 +3,6 @@ package com.rskickbox.app
 import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.widget.MediaController
-import android.widget.VideoView
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -25,6 +23,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
 
 private const val RS_INTRO_VIDEO_MAX_MS = 15_000L
 
@@ -96,72 +99,85 @@ fun RsCinematicIntroV21(c:RsPalette,store:RsStore,onFinished:()->Unit){
 
 @Composable
 private fun RsIntroVideoStageV30(uri:String,sound:Boolean,onFinished:()->Unit){
+    val context=LocalContext.current
     val finished=remember(uri){AtomicBoolean(false)}
+    val player=remember(uri){ExoPlayer.Builder(context).build()}
     fun finishOnce(){
         if(finished.compareAndSet(false,true))onFinished()
     }
-    AndroidView(
-        factory={ctx->
-            VideoView(ctx).apply{
-                setBackgroundColor(android.graphics.Color.BLACK)
-                setOnPreparedListener{mp->
-                    mp.isLooping=false
-                    val volume=if(sound)1f else 0f
-                    mp.setVolume(volume,volume)
-                    post{
-                        val vw=mp.videoWidth.toFloat().coerceAtLeast(1f)
-                        val vh=mp.videoHeight.toFloat().coerceAtLeast(1f)
-                        val viewW=width.toFloat().coerceAtLeast(1f)
-                        val viewH=height.toFloat().coerceAtLeast(1f)
-                        val videoRatio=vw/vh
-                        val viewRatio=viewW/viewH
-                        if(videoRatio>viewRatio){scaleX=videoRatio/viewRatio;scaleY=1f}
-                        else{scaleX=1f;scaleY=viewRatio/videoRatio}
-                    }
-                    start()
-                    postDelayed({
-                        if(!finished.get()){
-                            runCatching{pause()}
-                            finishOnce()
-                        }
-                    },RS_INTRO_VIDEO_MAX_MS)
-                }
-                setOnCompletionListener{finishOnce()}
-                setOnErrorListener{_,_,_->finishOnce();true}
+
+    DisposableEffect(player){
+        val listener=object:Player.Listener{
+            override fun onPlaybackStateChanged(state:Int){
+                if(state==Player.STATE_ENDED)finishOnce()
             }
-        },
-        modifier=Modifier.fillMaxSize(),
-        update={view->
-            if(view.tag!=uri){
-                finished.set(false)
-                view.tag=uri
-                view.setVideoURI(Uri.parse(uri))
+            override fun onPlayerError(error:androidx.media3.common.PlaybackException){
+                finishOnce()
             }
         }
+        player.addListener(listener)
+        onDispose{
+            player.removeListener(listener)
+            player.release()
+        }
+    }
+
+    LaunchedEffect(uri,sound){
+        finished.set(false)
+        player.volume=if(sound)1f else 0f
+        player.repeatMode=Player.REPEAT_MODE_OFF
+        player.setMediaItem(MediaItem.fromUri(Uri.parse(uri)))
+        player.prepare()
+        player.playWhenReady=true
+    }
+
+    LaunchedEffect(uri){
+        kotlinx.coroutines.delay(RS_INTRO_VIDEO_MAX_MS)
+        if(!finished.get()){
+            runCatching{player.pause()}
+            finishOnce()
+        }
+    }
+
+    AndroidView(
+        factory={ctx->
+            PlayerView(ctx).apply{
+                useController=false
+                resizeMode=AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                setShutterBackgroundColor(android.graphics.Color.BLACK)
+                this.player=player
+            }
+        },
+        update={view->
+            view.player=player
+            view.resizeMode=AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+        },
+        modifier=Modifier.fillMaxSize().background(Color.Black)
     )
 }
 
 @Composable
 private fun RsIntroVideoPreviewV30(uri:String,sound:Boolean,height:Int){
+    val context=LocalContext.current
+    val player=remember(uri){ExoPlayer.Builder(context).build()}
+    DisposableEffect(player){onDispose{player.release()}}
+    LaunchedEffect(uri,sound){
+        player.volume=if(sound)1f else 0f
+        player.setMediaItem(MediaItem.fromUri(Uri.parse(uri)))
+        player.prepare()
+        player.playWhenReady=false
+        player.seekTo(1)
+    }
     AndroidView(
         factory={ctx->
-            VideoView(ctx).apply{
-                val controls=MediaController(ctx)
-                controls.setAnchorView(this)
-                setMediaController(controls)
-                setOnPreparedListener{mp->
-                    val volume=if(sound)1f else 0f
-                    mp.setVolume(volume,volume)
-                    seekTo(1)
-                }
+            PlayerView(ctx).apply{
+                useController=true
+                resizeMode=AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                setShutterBackgroundColor(android.graphics.Color.BLACK)
+                this.player=player
             }
         },
-        update={view->
-            if(view.tag!=uri){
-                view.tag=uri
-                view.setVideoURI(Uri.parse(uri))
-            }
-        },
+        update={view->view.player=player},
         modifier=Modifier.fillMaxWidth().height(height.dp).background(Color.Black)
     )
 }
@@ -182,6 +198,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
     var pendingPhone by remember{mutableStateOf(PendingSplashV30())}
     var pendingTablet by remember{mutableStateOf(PendingSplashV30())}
     var activeTarget by remember{mutableStateOf("phone")}
+    var savingTarget by remember{mutableStateOf("")}
     var message by remember{mutableStateOf("")}
 
     fun validate(uri:Uri,target:String,persist:Boolean){
@@ -240,14 +257,23 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
             sound=videoSound,
             onGallery={activeTarget="phone";galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))},
             onFiles={activeTarget="phone";filePicker.launch(arrayOf("video/*"))},
+            saving=savingTarget=="phone",
             onSave={
-                val local=localSplashUriV31(context,pendingPhone.uri,"phone")
-                if(local!=null){
-                    savedPhone=local
-                    store.ps("intro_phone_video_uri",local)
-                    pendingPhone=PendingSplashV30()
-                    message="Phone splash copied into app storage and saved."
-                }else message="Could not save the phone splash locally. Please choose the video again."
+                savingTarget="phone"
+                rsOptimizeSplashVideoV32(
+                    context,
+                    Uri.parse(pendingPhone.uri),
+                    "phone",
+                    onStatus={message=it},
+                    onComplete={local->
+                        savedPhone=local
+                        store.ps("intro_phone_video_uri",local)
+                        pendingPhone=PendingSplashV30()
+                        savingTarget=""
+                        message="Phone splash converted to H.264/AAC and saved."
+                    },
+                    onError={err->savingTarget="";message=err}
+                )
             },
             onCancel={pendingPhone=PendingSplashV30();message="Pending phone splash discarded."},
             onDelete={
@@ -267,14 +293,23 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
             sound=videoSound,
             onGallery={activeTarget="tablet";galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))},
             onFiles={activeTarget="tablet";filePicker.launch(arrayOf("video/*"))},
+            saving=savingTarget=="tablet",
             onSave={
-                val local=localSplashUriV31(context,pendingTablet.uri,"tablet")
-                if(local!=null){
-                    savedTablet=local
-                    store.ps("intro_tablet_video_uri",local)
-                    pendingTablet=PendingSplashV30()
-                    message="Tablet splash copied into app storage and saved."
-                }else message="Could not save the tablet splash locally. Please choose the video again."
+                savingTarget="tablet"
+                rsOptimizeSplashVideoV32(
+                    context,
+                    Uri.parse(pendingTablet.uri),
+                    "tablet",
+                    onStatus={message=it},
+                    onComplete={local->
+                        savedTablet=local
+                        store.ps("intro_tablet_video_uri",local)
+                        pendingTablet=PendingSplashV30()
+                        savingTarget=""
+                        message="Tablet splash converted to H.264/AAC and saved."
+                    },
+                    onError={err->savingTarget="";message=err}
+                )
             },
             onCancel={pendingTablet=PendingSplashV30();message="Pending tablet splash discarded."},
             onDelete={
@@ -302,6 +337,7 @@ private fun SplashEditorV30(
     saved:String,
     pending:PendingSplashV30,
     sound:Boolean,
+    saving:Boolean,
     onGallery:()->Unit,
     onFiles:()->Unit,
     onSave:()->Unit,
@@ -312,8 +348,8 @@ private fun SplashEditorV30(
         Text(title,color=c.bright,fontWeight=FontWeight.Black)
         Text(format,color=Color.White.copy(alpha=.72f),fontSize=10.sp)
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
-            Button(onClick=onGallery,modifier=Modifier.weight(1f)){Text(if(saved.isBlank()&&pending.uri.isBlank())"Gallery" else "Replace")}
-            OutlinedButton(onClick=onFiles,modifier=Modifier.weight(1f)){Text("Files")}
+            Button(onClick=onGallery,enabled=!saving,modifier=Modifier.weight(1f)){Text(if(saved.isBlank()&&pending.uri.isBlank())"Gallery" else "Replace")}
+            OutlinedButton(onClick=onFiles,enabled=!saving,modifier=Modifier.weight(1f)){Text("Files")}
         }
         val preview=if(pending.uri.isNotBlank())pending.uri else saved
         if(preview.isNotBlank()){
@@ -322,12 +358,16 @@ private fun SplashEditorV30(
             if(d>0L)Text("Duration: "+String.format("%.2f",d/1000f)+" sec / 15.00 sec max",color=c.muted,fontSize=10.sp)
             RsIntroVideoPreviewV30(preview,sound,190)
         }
+        if(saving){
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+            Text("Optimizing video for reliable playback…",color=c.bright,fontSize=10.sp)
+        }
         if(pending.uri.isNotBlank()){
-            Button(onClick=onSave,modifier=Modifier.fillMaxWidth()){Text("✓ Save / Accept splash")}
-            OutlinedButton(onClick=onCancel,modifier=Modifier.fillMaxWidth()){Text("Cancel edit")}
+            Button(onClick=onSave,enabled=!saving,modifier=Modifier.fillMaxWidth()){Text("✓ Save / Accept splash")}
+            OutlinedButton(onClick=onCancel,enabled=!saving,modifier=Modifier.fillMaxWidth()){Text("Cancel edit")}
         }
         if(saved.isNotBlank()){
-            OutlinedButton(onClick=onDelete,modifier=Modifier.fillMaxWidth()){Text("Delete saved splash")}
+            OutlinedButton(onClick=onDelete,enabled=!saving,modifier=Modifier.fillMaxWidth()){Text("Delete saved splash")}
         }
     }
 }
