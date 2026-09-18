@@ -123,6 +123,7 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
     var revision by remember{mutableIntStateOf(0)}
     val classes=remember(revision){rsLoadClassesV38(store).filter{it.active}}
     val bookedIds=remember(revision){rsBookedIdsV38(store)}
+    val bookingAllowed=rsOpsEnabledV56(store,RsOpsKeysV56.CLASS_BOOKING,true)
     RsScroll(c,rsRouteTitle(lang,"classes","Classes & Events"),rsClassUiV38(lang,"student_sub")){
         if(classes.isEmpty())RsPanel(c){Text(rsClassUiV38(lang,"none"),color=c.muted)}
         classes.forEach{clazz->
@@ -143,6 +144,7 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
                     },
                     color=if(isBooked)c.bright else c.muted
                 )
+                if(!bookingAllowed && !isBooked)Text("New class bookings are temporarily disabled by the trainer.",color=c.muted,fontSize=10.sp)
                 Button(
                     onClick={
                         val next=bookedIds.toMutableSet()
@@ -161,7 +163,7 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
                         rsSaveBookedIdsV38(store,next)
                         revision++
                     },
-                    enabled=isBooked || (clazz.bookingOpen&&!full),
+                    enabled=isBooked || (bookingAllowed&&clazz.bookingOpen&&!full),
                     modifier=Modifier.fillMaxWidth()
                 ){Text(if(isBooked)rsClassUiV38(lang,"cancel") else rsClassUiV38(lang,"book"))}
             }
