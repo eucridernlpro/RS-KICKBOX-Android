@@ -81,6 +81,7 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null){
     var email by remember{mutableStateOf("")}
     var plan by remember{mutableStateOf("PRO")}
     var status by remember{mutableStateOf("")}
+    var expandedQrStudentId by remember{mutableStateOf<String?>(null)}
     val students=remember(revision){rsLoadStudentsV33(store)}
     val activeCount=students.count{it.active}
 
@@ -170,16 +171,26 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null){
                     )
                 }
 
-                Surface(shape=MaterialTheme.shapes.large,color=androidx.compose.ui.graphics.Color.White,modifier=Modifier.fillMaxWidth()){
-                    Image(
-                        bitmap=qr.asImageBitmap(),
-                        contentDescription="RS KICKBOX student invitation QR",
-                        modifier=Modifier.fillMaxWidth().aspectRatio(1f).padding(14.dp)
-                    )
+                val qrExpanded=expandedQrStudentId==student.id
+                OutlinedButton(
+                    onClick={expandedQrStudentId=if(qrExpanded)null else student.id},
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(qrExpanded)"Hide invitation QR" else "Show invitation QR")}
+                if(qrExpanded){
+                    Surface(
+                        shape=MaterialTheme.shapes.large,
+                        color=androidx.compose.ui.graphics.Color.White,
+                        modifier=Modifier.fillMaxWidth()
+                    ){
+                        Image(
+                            bitmap=qr.asImageBitmap(),
+                            contentDescription="RS KICKBOX student invitation QR",
+                            modifier=Modifier.fillMaxWidth().aspectRatio(1f).padding(14.dp)
+                        )
+                    }
                 }
                 Text("Activation code: ${student.activationCode}",color=c.bright,fontWeight=FontWeight.Bold)
-                Text("Play Store:",color=c.muted,fontSize=10.sp)
-                Text(RS_PLAY_STORE_URL_V33,color=c.text,fontSize=9.sp)
+                Text("Play Store link ready to share",color=c.muted,fontSize=10.sp)
 
                 Button(
                     onClick={rsShareStudentInviteV33(context,student)},
