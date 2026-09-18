@@ -165,7 +165,6 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
     val scanner=remember{GmsBarcodeScanning.getClient(context,scannerOptions)}
 
     fun tryStudentLogin(){
-        val accounts=rsLoadStudentsV33(store)
         val demo=email.equals("alex@rskickbox.nl",true) && pass=="preview123"
         val match=rsFindStudentV33(store,email,pass)
         when{
@@ -241,7 +240,7 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                 OutlinedTextField(
                     pass,
                     {pass=it},
-                    label={Text(rsT(lang,"password")+" / activation code")},
+                    label={Text(rsEnrollmentT(lang,"activation_code"))},
                     colors=fieldColors,
                     singleLine=true,
                     visualTransformation=PasswordVisualTransformation(),
