@@ -1,5 +1,6 @@
 package com.rskickbox.app
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -154,6 +155,7 @@ fun rsShareStudentInviteV33(context:Context,account:RsStudentAccountV33){
         type="image/png"
         putExtra(Intent.EXTRA_STREAM,uri)
         putExtra(Intent.EXTRA_TEXT,text)
+        clipData=ClipData.newRawUri("RS KICKBOX invitation QR",uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(intent,"Share RS KICKBOX invitation"))
