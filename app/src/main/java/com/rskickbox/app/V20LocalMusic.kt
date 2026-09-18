@@ -29,7 +29,7 @@ import kotlinx.coroutines.delay
 private data class RsLocalTrackV20(val uri:String,val name:String)
 
 @Composable
-fun RsLocalMusicCenterV20(c:RsPalette, store:RsStore, role:RsRole){
+fun RsLocalMusicCenterV20(c:RsPalette, store:RsStore, role:RsRole, lang:RsLang=rsLangs.first()){
     val context=LocalContext.current
     val tracks=remember{ mutableStateListOf<RsLocalTrackV20>().apply{
         val raw=store.s("local_music_tracks","")
@@ -102,11 +102,11 @@ fun RsLocalMusicCenterV20(c:RsPalette, store:RsStore, role:RsRole){
     LaunchedEffect(playing){ while(playing){ delay(500);position=player?.currentPosition?:0;duration=player?.duration?:duration } }
     LaunchedEffect(Unit){ while(true){delay(12000);scene=(scene+1)%4} }
 
-    RsScroll(c,if(role==RsRole.TRAINER)"RS Music Manager" else "My RS Music","Device music, internal playlists and a cinematic training player — no Spotify subscription required."){
+    RsScroll(c,if(role==RsRole.TRAINER)rsMusicT(lang,"trainer_title") else rsMusicT(lang,"student_title"),rsMusicT(lang,"subtitle")){
         RsPanel(c){
-            Text("ADD YOUR OWN MUSIC",color=c.bright,fontWeight=FontWeight.Bold)
-            Text("Choose MP3, M4A, AAC, WAV or other audio files supported by Android from your phone, tablet or connected document library.",color=c.muted)
-            Button(onClick={picker.launch(arrayOf("audio/*"))},modifier=Modifier.fillMaxWidth()){Text("＋ Add music from device / library")}
+            Text(rsMusicT(lang,"add_title"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=adaptiveLabelSp(rsMusicT(lang,"add_title"),14f).sp,maxLines=2)
+            Text(rsMusicT(lang,"add_desc"),color=c.muted)
+            Button(onClick={picker.launch(arrayOf("audio/*"))},modifier=Modifier.fillMaxWidth()){Text(rsMusicT(lang,"add_button"),fontSize=adaptiveLabelSp(rsMusicT(lang,"add_button"),12f).sp,maxLines=2)}
             if(feedback.isNotBlank())Text(feedback,color=c.muted)
         }
 
@@ -118,7 +118,7 @@ fun RsLocalMusicCenterV20(c:RsPalette, store:RsStore, role:RsRole){
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
                         Column{
                             Text("RS LIVE AUDIO",color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
-                            Text("Cinematic training player",color=Color.White.copy(.68f),fontSize=11.sp)
+                            Text(rsMusicT(lang,"player_sub"),color=Color.White.copy(.68f),fontSize=adaptiveLabelSp(rsMusicT(lang,"player_sub"),11f).sp,maxLines=2)
                         }
                         Text("♛",color=c.bright,fontSize=28.sp)
                     }
@@ -143,7 +143,7 @@ fun RsLocalMusicCenterV20(c:RsPalette, store:RsStore, role:RsRole){
                                 if(player==null) load(current,true)
                                 else if(playing){player?.pause();playing=false}
                                 else{player?.start();playing=true}
-                            }){Text(if(playing)"⏸ Pause" else "▶ Play")}
+                            }){Text(if(playing)"⏸ ${rsMusicT(lang,"pause")}" else "▶ ${rsMusicT(lang,"play")}",fontSize=adaptiveLabelSp(if(playing)rsMusicT(lang,"pause") else rsMusicT(lang,"play"),12f).sp,maxLines=1)}
                             FilledTonalButton(onClick={
                                 if(tracks.size>1){
                                     load((current+1)%tracks.size,true)
@@ -163,19 +163,19 @@ fun RsLocalMusicCenterV20(c:RsPalette, store:RsStore, role:RsRole){
             }
         }else{
             RsPanel(c){
-                Text("PLAYER READY",color=c.bright,fontWeight=FontWeight.Bold)
-                Text("The premium RS audio player appears automatically as soon as the first music file is added.",color=c.muted)
+                Text(rsMusicT(lang,"player_ready"),color=c.bright,fontWeight=FontWeight.Bold)
+                Text(rsMusicT(lang,"player_ready_desc"),color=c.muted)
             }
         }
 
         if(tracks.isNotEmpty())RsPanel(c){
-            Text("MY RS PLAYLIST",color=c.bright,fontWeight=FontWeight.Bold)
+            Text(rsMusicT(lang,"playlist"),color=c.bright,fontWeight=FontWeight.Bold)
             tracks.forEachIndexed{i,t->
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                     TextButton(onClick={load(i,true)},modifier=Modifier.weight(1f)){
                         Column(Modifier.fillMaxWidth()){
                             Text(if(i==current)"▶ ${t.name}" else t.name,color=if(i==current)c.bright else c.text,maxLines=1)
-                            Text("Local device audio",color=c.muted,fontSize=9.sp)
+                            Text(rsMusicT(lang,"local_audio"),color=c.muted,fontSize=9.sp)
                         }
                     }
                     TextButton(onClick={
@@ -184,15 +184,15 @@ fun RsLocalMusicCenterV20(c:RsPalette, store:RsStore, role:RsRole){
                         tracks.removeAt(i)
                         persistTracks()
                         if(current>tracks.lastIndex)current=(tracks.size-1).coerceAtLeast(0)
-                    }){Text("Remove")}
+                    }){Text(rsMusicT(lang,"remove"),fontSize=adaptiveLabelSp(rsMusicT(lang,"remove"),11f).sp)}
                 }
             }
         }
 
         RsPanel(c){
-            Text("YOUTUBE PLAYLIST SHORTCUT",color=c.bright,fontWeight=FontWeight.Bold)
+            Text(rsMusicT(lang,"youtube"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=adaptiveLabelSp(rsMusicT(lang,"youtube"),14f).sp,maxLines=2)
             Text("YouTube audio cannot be extracted into the RS background audio player. You can save a YouTube playlist shortcut and open it in YouTube instead.",color=c.muted)
-            OutlinedTextField(ytLink,{ytLink=it},label={Text("YouTube playlist link")},modifier=Modifier.fillMaxWidth(),singleLine=true)
+            OutlinedTextField(ytLink,{ytLink=it},label={Text(rsMusicT(lang,"youtube_link"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
             Button(
                 onClick={
                     ytSaved=ytLink.trim()
@@ -201,12 +201,12 @@ fun RsLocalMusicCenterV20(c:RsPalette, store:RsStore, role:RsRole){
                 },
                 enabled=ytLink.isNotBlank(),
                 modifier=Modifier.fillMaxWidth()
-            ){Text("Save YouTube playlist shortcut")}
-            if(ytSaved.isNotBlank())OutlinedButton(onClick={openExternal(ytSaved)},modifier=Modifier.fillMaxWidth()){Text("Open saved playlist in YouTube")}
+            ){Text(rsMusicT(lang,"save_youtube"),fontSize=adaptiveLabelSp(rsMusicT(lang,"save_youtube"),12f).sp,maxLines=2)}
+            if(ytSaved.isNotBlank())OutlinedButton(onClick={openExternal(ytSaved)},modifier=Modifier.fillMaxWidth()){Text(rsMusicT(lang,"open_youtube"),fontSize=adaptiveLabelSp(rsMusicT(lang,"open_youtube"),12f).sp,maxLines=2)}
         }
 
         if(role==RsRole.TRAINER)RsPanel(c){
-            Text("TRAINER MUSIC CONTROL",color=c.bright,fontWeight=FontWeight.Bold)
+            Text(rsMusicT(lang,"trainer_control"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=adaptiveLabelSp(rsMusicT(lang,"trainer_control"),14f).sp,maxLines=2)
             Text("The trainer can use the same local RS playlist for warm-up, pads, technical work, controlled sparring and cooldown. Future cloud sync can share approved playlist metadata without uploading copyrighted audio to RS servers.",color=c.muted)
             listOf("Warm-up","Pads / intensity","Technical work","Controlled sparring","Cooldown").forEach{block->
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
