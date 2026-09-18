@@ -165,8 +165,8 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                 OutlinedTextField(
                     value=studentSearch,
                     onValueChange={studentSearch=it},
-                    label={Text("Search students")},
-                    supportingText={Text("${filteredStudents.size} shown · ${students.size} total")},
+                    label={Text(rsEnrollmentT(lang,"search_students"))},
+                    supportingText={Text("${filteredStudents.size} ${rsEnrollmentT(lang,"shown")} · ${students.size} ${rsEnrollmentT(lang,"total")}")},
                     singleLine=true,
                     modifier=Modifier.fillMaxWidth()
                 )
@@ -251,7 +251,7 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                         modifier=Modifier.weight(1f)
                     ){
                         Text(
-                            if(pendingDeleteStudentId==student.id)"Confirm" else rsEnrollmentT(lang,"delete"),
+                            if(pendingDeleteStudentId==student.id)rsEnrollmentT(lang,"confirm") else rsEnrollmentT(lang,"delete"),
                             fontSize=10.sp
                         )
                     }
@@ -264,7 +264,7 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
                 onClick={visibleStudentCount=(visibleStudentCount+20).coerceAtMost(filteredStudents.size)},
                 modifier=Modifier.fillMaxWidth()
             ){
-                Text("Show more · ${visibleStudents.size} / ${filteredStudents.size}",fontSize=11.sp)
+                Text("${rsEnrollmentT(lang,"show_more")} · ${visibleStudents.size} / ${filteredStudents.size}",fontSize=11.sp)
             }
         }
 
