@@ -53,7 +53,7 @@ fun RsKickboxV21App() {
                                     "branding" -> RsBrandSiteSettingsV21(c, store)
                                     "intro_settings" -> RsIntroSettingsV21(c, store)
                                     "voice" -> RsVoiceCoach(c, lang, store)
-                                    "session" -> SessionV21(c)
+                                    "session" -> SessionV21(c,lang)
                                     "access" -> RsAccessControl(c, store)
                                     "payments" -> RsPaymentCenter(c, store)
                                     "members" -> RsMemberManager(c)
@@ -133,15 +133,15 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
         Text(store.s("brand_login_title","Premium cinematic kickboxing"),color=c.text,style=MaterialTheme.typography.headlineMedium)
         Text(store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"),color=c.muted,fontSize=11.sp)
         RsPanel(c) {
-            Text("MEMBER ACCESS",color=c.bright,fontWeight=FontWeight.Bold)
-            OutlinedTextField(email,{email=it},label={Text("Email")},singleLine=true,modifier=Modifier.fillMaxWidth())
-            OutlinedTextField(pass,{pass=it},label={Text("Password")},singleLine=true,visualTransformation=PasswordVisualTransformation(),modifier=Modifier.fillMaxWidth())
-            Button(onClick={onLogin(RsRole.STUDENT)},modifier=Modifier.fillMaxWidth()){Text("Student preview")}
-            OutlinedButton(onClick={onLogin(RsRole.TRAINER)},modifier=Modifier.fillMaxWidth()){Text("Trainer / Admin preview")}
+            Text(rsT(lang,"member_access"),color=c.bright,fontWeight=FontWeight.Bold)
+            OutlinedTextField(email,{email=it},label={Text(rsT(lang,"email"))},singleLine=true,modifier=Modifier.fillMaxWidth())
+            OutlinedTextField(pass,{pass=it},label={Text(rsT(lang,"password"))},singleLine=true,visualTransformation=PasswordVisualTransformation(),modifier=Modifier.fillMaxWidth())
+            Button(onClick={onLogin(RsRole.STUDENT)},modifier=Modifier.fillMaxWidth()){Text(rsT(lang,"student_preview"),fontSize=adaptiveLabelSp(rsT(lang,"student_preview"),12f).sp,maxLines=1)}
+            OutlinedButton(onClick={onLogin(RsRole.TRAINER)},modifier=Modifier.fillMaxWidth()){Text(rsT(lang,"trainer_preview"),fontSize=adaptiveLabelSp(rsT(lang,"trainer_preview"),12f).sp,maxLines=1)}
         }
         RsPanel(c) {
-            Text("v0.22 PREMIUM VISUAL LIBRARY",color=c.bright,fontWeight=FontWeight.Bold)
-            Text("All-page visuals · rotating music wallpapers · live branding · cinematic intro · internal RS audio.",color=c.muted)
+            Text("v0.25 MULTILINGUAL PREMIUM BUILD",color=c.bright,fontWeight=FontWeight.Bold)
+            Text("9 language packs · adaptive dashboard typography · premium visuals · cinematic intro · internal RS audio.",color=c.muted)
         }
     }
 }
@@ -166,7 +166,10 @@ private fun ShellV21(
                 LanguageV21(lang,onLang)
                 Row(horizontalArrangement=Arrangement.spacedBy(4.dp)) {
                     if(route!=home) OutlinedButton(onClick={onRoute(home)},contentPadding=PaddingValues(horizontal=10.dp)){Text("‹")}
-                    OutlinedButton(onClick=onLogout,contentPadding=PaddingValues(horizontal=10.dp)){Text("Log out",fontSize=10.sp)}
+                    OutlinedButton(onClick=onLogout,contentPadding=PaddingValues(horizontal=8.dp)){
+                        val logout=rsT(lang,"logout")
+                        Text(logout,fontSize=adaptiveLabelSp(logout,10f).sp,maxLines=1)
+                    }
                 }
             }
         }
@@ -187,7 +190,7 @@ private fun LanguageV21(current:RsLang,onSelect:(RsLang)->Unit) {
 }
 
 @Composable
-private fun SessionV21(c:RsPalette) {
+private fun SessionV21(c:RsPalette,lang:RsLang) {
     var running by remember{mutableStateOf(false)}
     var phase by remember{mutableStateOf("WORK")}
     var sec by remember{mutableIntStateOf(120)}
@@ -196,14 +199,28 @@ private fun SessionV21(c:RsPalette) {
         if(running&&sec>0){delay(1000);sec--}
         else if(running&&sec==0){if(phase=="WORK"){phase="REST";sec=45}else if(round<5){round++;phase="WORK";sec=120}else{running=false;phase="COMPLETE"}}
     }
-    RsScroll(c,"Session Player","Five-round training flow with 2:00 work and 0:45 rest phases.") {
+    val phaseText=when(phase){
+        "REST"->rsT(lang,"rest")
+        "COMPLETE"->rsT(lang,"complete")
+        else->rsT(lang,"work")
+    }
+    RsScroll(c,rsT(lang,"session_title"),rsT(lang,"session_sub")) {
         RsPanel(c) {
-            Text("ROUND $round / 5 · $phase",color=c.bright,fontWeight=FontWeight.Bold)
+            Text("${rsT(lang,"round")} $round / 5 · $phaseText",color=c.bright,fontWeight=FontWeight.Bold)
             Text("%d:%02d".format(sec/60,sec%60),color=c.bright,fontSize=50.sp,fontWeight=FontWeight.Black)
-            Text(if(phase=="REST")"Breathe · reset stance · stay composed" else "Jab · Cross · Low Kick",color=c.text)
-            Button(onClick={if(phase=="COMPLETE"){round=1;phase="WORK";sec=120};running=!running},modifier=Modifier.fillMaxWidth()){Text(if(running)"Pause" else "Start")}
-            OutlinedButton(onClick={if(round<5)round++;phase="WORK";sec=120;running=false},modifier=Modifier.fillMaxWidth()){Text("Next round")}
-            OutlinedButton(onClick={round=1;phase="WORK";sec=120;running=false},modifier=Modifier.fillMaxWidth()){Text("Reset session")}
+            Text(if(phase=="REST")rsRestInstruction(lang) else rsWorkInstruction(lang),color=c.text)
+            val mainLabel=if(running)rsT(lang,"pause") else rsT(lang,"start")
+            Button(onClick={if(phase=="COMPLETE"){round=1;phase="WORK";sec=120};running=!running},modifier=Modifier.fillMaxWidth()){
+                Text(mainLabel,fontSize=adaptiveLabelSp(mainLabel,14f).sp,maxLines=1)
+            }
+            val next=rsT(lang,"next_round")
+            OutlinedButton(onClick={if(round<5)round++;phase="WORK";sec=120;running=false},modifier=Modifier.fillMaxWidth()){
+                Text(next,fontSize=adaptiveLabelSp(next,13f).sp,maxLines=1)
+            }
+            val reset=rsT(lang,"reset_session")
+            OutlinedButton(onClick={round=1;phase="WORK";sec=120;running=false},modifier=Modifier.fillMaxWidth()){
+                Text(reset,fontSize=adaptiveLabelSp(reset,13f).sp,maxLines=1)
+            }
         }
     }
 }
