@@ -78,7 +78,7 @@ fun rsLoadClassesV38(store:RsStore):List<RsClubClassV38>{
         store.ps("club_classes_v38",rsEncodeClassesV38(rsSeedClassesV38))
         return rsSeedClassesV38
     }
-    return rsDecodeClassesV38(raw).ifEmpty{rsSeedClassesV38}
+    return rsDecodeClassesV38(raw)
 }
 
 fun rsSaveClassesV38(store:RsStore,items:List<RsClubClassV38>)=
