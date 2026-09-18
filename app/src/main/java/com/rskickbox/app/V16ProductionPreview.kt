@@ -208,12 +208,12 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
         RsPanel(c) {
             val backend=rsBackendStatusV36()
             Text("CURRENT ACCEPTANCE BUILD", color = c.bright, fontWeight = FontWeight.Bold)
-            Text("RS KICKBOX v0.40.0 · versionCode 40", color = c.text)
+            Text("RS KICKBOX v0.41.0 · versionCode 41", color = c.text)
             Text("Package: com.rskickbox.app · targetSdk 36", color = c.muted)
             Text("Backend mode: "+if(backend.readyForClientInitialization)"SUPABASE CONFIGURED" else "LOCAL ACCEPTANCE", color = c.bright)
             Text("Supabase URL: "+if(backend.projectUrlConfigured)"configured" else "not configured", color = c.muted)
             Text("Publishable key: "+if(backend.publishableKeyConfigured)"configured" else "not configured", color = c.muted)
-            Text("Local-ready: premium navigation drawer · 9-language enrollment UI · QR creation/scanning/gallery import · compact 100-student manager · per-student classes/bookings/attendance · memberships/payments/invoice ledger · private technique-video history storage · local data export/account deactivation · visual/splash media tools.", color = c.text)
+            Text("Local-ready: premium navigation drawer · 9-language enrollment UI · QR creation/scanning/gallery import · compact 100-student manager · per-student classes/bookings/attendance · memberships/payments/invoice ledger · trainer/student notification center with read state · private technique-video history storage · local data export/account deactivation · visual/splash media tools.", color = c.text)
             Text("Not production-connected yet: multi-device authentication, Supabase database, cloud media, push delivery, real AI vision, payment webhooks, signed Play Store AAB.", color = c.muted)
         }
         RsPanel(c) {
@@ -236,7 +236,7 @@ fun RsReleaseCenterV16(c: RsPalette, s: RsStore) {
         RsPanel(c) {
             Text("PLAY STORE RELEASE CHECK", color = c.bright, fontWeight = FontWeight.Bold)
             val checks = listOf(
-                "v0.40 Android acceptance source" to true,
+                "v0.41 Android acceptance source" to true,
                 "Private QR enrollment workflow" to true,
                 "Nine-language enrollment UI" to true,
                 "Premium role navigation drawer" to true,
