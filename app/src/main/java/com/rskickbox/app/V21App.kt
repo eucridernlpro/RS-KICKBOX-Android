@@ -63,7 +63,7 @@ fun RsKickboxV21App() {
                                     "intro_settings" -> RsIntroSettingsV21(c, store)
                                     "voice" -> RsTechniqueCoachV27(c, lang, store, active)
                                     "session" -> SessionV21(c,lang)
-                                    "access" -> RsAccessControl(c, store)
+                                    "access" -> RsAccessControlV49(c,store,lang)
                                     "payments" -> RsTrainerPaymentCenterV39(c,store,lang)
                                     "members" -> RsMemberManager(c,store,lang)
                                     "classes" -> if(active==RsRole.TRAINER) RsClassManagerV38(c,store,lang) else RsStudentClassesV38(c,store,lang)
@@ -108,7 +108,7 @@ fun RsKickboxV21App() {
                                     "search" -> RsSearchV48(c,store,lang)
                                     "homework_admin" -> RsHomeworkManagerV46(c,store,lang)
                                     "lesson_editor" -> RsContentManagerV48(c,store,lang)
-                                    "plans_admin" -> RsMembershipPlansV14(c)
+                                    "plans_admin" -> RsMembershipPlansV49(c,store,lang)
                                     "progress_admin" -> RsStudentProgressV46(c,store,lang)
                                     "assessments" -> RsAssessmentsV46(c,store,lang)
                                     "events_admin" -> RsEventManagerV42(c,store,lang)
@@ -298,6 +298,8 @@ private fun ShellV21(
     val drawerItems=if(role==RsRole.TRAINER) listOf(
         "trainer" to "Trainer Dashboard",
         "members" to "Student Manager",
+        "access" to "Access & Subscriptions",
+        "plans_admin" to "Membership Plans",
         "voice" to "AI Technique Coach",
         "session" to "Trainer Session",
         "content" to "Content Manager",
