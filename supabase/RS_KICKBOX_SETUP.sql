@@ -146,6 +146,127 @@ revoke execute on function public.rs_create_student_invite(text,text,text,text,t
 revoke execute on function public.rs_create_student_invite(text,text,text,text,timestamptz) from anon;
 grant execute on function public.rs_create_student_invite(text,text,text,text,timestamptz) to authenticated;
 
+
+-- Redemption lookup/finalization RPCs.
+-- The invitation token is a high-entropy bearer secret. These functions expose
+-- only the exact matching invite and atomically finalize a matching auth user.
+
+create or replace function public.rs_lookup_student_invite(
+    p_email text,
+    p_token_hash text
+)
+returns table (
+    id uuid,
+    email text,
+    display_name text,
+    plan text,
+    expires_at timestamptz,
+    redeemed_at timestamptz,
+    revoked_at timestamptz
+)
+language sql
+security definer
+set search_path = ''
+as $$
+    select
+        i.id,
+        i.email,
+        i.display_name,
+        i.plan,
+        i.expires_at,
+        i.redeemed_at,
+        i.revoked_at
+    from public.rs_student_invites i
+    where i.email = lower(trim(p_email))
+      and i.token_hash = p_token_hash
+    limit 1;
+$$;
+
+revoke execute on function public.rs_lookup_student_invite(text,text) from public;
+grant execute on function public.rs_lookup_student_invite(text,text) to anon, authenticated;
+
+create or replace function public.rs_finalize_student_invite(
+    p_invite_id uuid,
+    p_email text,
+    p_token_hash text,
+    p_user_id uuid
+)
+returns table (
+    email text,
+    display_name text,
+    plan text
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_invite public.rs_student_invites%rowtype;
+    v_auth_email text;
+begin
+    select *
+    into v_invite
+    from public.rs_student_invites i
+    where i.id = p_invite_id
+      and i.email = lower(trim(p_email))
+      and i.token_hash = p_token_hash
+    for update;
+
+    if v_invite.id is null then
+        raise exception 'invitation not found' using errcode = 'P0002';
+    end if;
+    if v_invite.revoked_at is not null then
+        raise exception 'invitation revoked' using errcode = 'P0001';
+    end if;
+    if v_invite.redeemed_at is not null then
+        raise exception 'invitation already used' using errcode = 'P0001';
+    end if;
+    if v_invite.expires_at <= now() then
+        raise exception 'invitation expired' using errcode = 'P0001';
+    end if;
+
+    select lower(u.email)
+    into v_auth_email
+    from auth.users u
+    where u.id = p_user_id;
+
+    if v_auth_email is null or v_auth_email <> v_invite.email then
+        raise exception 'auth user does not match invitation' using errcode = '42501';
+    end if;
+
+    insert into public.rs_profiles (
+        id,email,display_name,role,plan,active
+    )
+    values (
+        p_user_id,
+        v_invite.email,
+        v_invite.display_name,
+        'student',
+        v_invite.plan,
+        true
+    )
+    on conflict (id) do update
+    set
+        email=excluded.email,
+        display_name=excluded.display_name,
+        role='student',
+        plan=excluded.plan,
+        active=true,
+        updated_at=now();
+
+    update public.rs_student_invites
+    set redeemed_at=now()
+    where id=v_invite.id;
+
+    return query
+    select v_invite.email,v_invite.display_name,v_invite.plan;
+end;
+$$;
+
+revoke execute on function public.rs_finalize_student_invite(uuid,text,text,uuid) from public;
+grant execute on function public.rs_finalize_student_invite(uuid,text,text,uuid) to anon, authenticated;
+
+
 create table if not exists public.rs_technique_submissions (
     id uuid primary key default gen_random_uuid(),
     student_id uuid not null references auth.users(id) on delete cascade,
