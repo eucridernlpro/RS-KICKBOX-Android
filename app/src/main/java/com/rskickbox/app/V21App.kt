@@ -343,7 +343,7 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                     modifier=Modifier.fillMaxWidth()
                 )
                 Button(
-                    onClick={if(pendingInviteToken.isNotBlank())::activateInvite else ::signInCloud},
+                    onClick={if(pendingInviteToken.isNotBlank()) activateInvite() else signInCloud()},
                     enabled=!busy && email.isNotBlank() && pass.isNotBlank(),
                     modifier=Modifier.fillMaxWidth()
                 ){
