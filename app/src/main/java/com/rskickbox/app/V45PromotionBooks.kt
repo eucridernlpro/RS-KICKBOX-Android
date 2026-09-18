@@ -191,7 +191,7 @@ private fun rsPromoUiV45(lang:RsLang,key:String):String{
         "cover" to "Choose book thumbnail / cover","preview_pdf" to "Upload preview PDF","full_pdf" to "Upload full book PDF",
         "access" to "Full book access","gift" to "Free access emails (comma separated)","save_book" to "Save book settings",
         "open_reader" to "Open Reader","search" to "Search book","next_match" to "Next match","no_match" to "No matching page found.",
-        "page" to "Page","zoom" to "Zoom","back" to "Back to library",
+        "page" to "Page","zoom" to "Zoom","back" to "Back to library","bookmark" to "Bookmark","bookmarked" to "Bookmarked","bookmarks" to "BOOKMARKS","search_action" to "Search","open_error" to "Could not open this PDF.",
         "thumb_ready" to "Thumbnail ready.","cover_ready" to "Book cover ready.","preview_ready" to "Preview PDF imported.",
         "preview_error" to "Could not import preview PDF.","full_ready" to "Full book PDF imported.",
         "full_error" to "Could not import full book PDF.","book_saved" to "Book settings saved."
@@ -207,7 +207,7 @@ private fun rsPromoUiV45(lang:RsLang,key:String):String{
         "cover" to "Boekthumbnail / cover kiezen","preview_pdf" to "Preview-PDF uploaden","full_pdf" to "Volledig boek-PDF uploaden",
         "access" to "Toegang volledig boek","gift" to "Gratis toegang e-mails (komma gescheiden)","save_book" to "Boekinstellingen opslaan",
         "open_reader" to "Reader openen","search" to "Zoek in boek","next_match" to "Volgende match","no_match" to "Geen overeenkomende pagina gevonden.",
-        "page" to "Pagina","back" to "Terug naar bibliotheek","thumb_ready" to "Thumbnail klaar.","cover_ready" to "Boekcover klaar.",
+        "page" to "Pagina","back" to "Terug naar bibliotheek","bookmark" to "Bladwijzer","bookmarked" to "Opgeslagen","bookmarks" to "BLADWIJZERS","search_action" to "Zoeken","open_error" to "Deze PDF kon niet worden geopend.","thumb_ready" to "Thumbnail klaar.","cover_ready" to "Boekcover klaar.",
         "preview_ready" to "Preview-PDF geïmporteerd.","preview_error" to "Preview-PDF kon niet worden geïmporteerd.",
         "full_ready" to "Volledig boek-PDF geïmporteerd.","full_error" to "Volledig boek-PDF kon niet worden geïmporteerd.","book_saved" to "Boekinstellingen opgeslagen."
     )
@@ -222,7 +222,7 @@ private fun rsPromoUiV45(lang:RsLang,key:String):String{
         "cover" to "Escolher miniatura / capa","preview_pdf" to "Carregar PDF de prévia","full_pdf" to "Carregar PDF completo",
         "access" to "Acesso ao livro completo","gift" to "Emails com acesso grátis (separados por vírgula)","save_book" to "Guardar definições do livro",
         "open_reader" to "Abrir Leitor","search" to "Pesquisar no livro","next_match" to "Próximo resultado","no_match" to "Nenhuma página encontrada.",
-        "page" to "Página","back" to "Voltar à biblioteca","thumb_ready" to "Miniatura pronta.","cover_ready" to "Capa pronta.",
+        "page" to "Página","back" to "Voltar à biblioteca","bookmark" to "Marcador","bookmarked" to "Guardado","bookmarks" to "MARCADORES","search_action" to "Pesquisar","open_error" to "Não foi possível abrir este PDF.","thumb_ready" to "Miniatura pronta.","cover_ready" to "Capa pronta.",
         "preview_ready" to "PDF de prévia importado.","preview_error" to "Não foi possível importar o PDF de prévia.",
         "full_ready" to "PDF completo importado.","full_error" to "Não foi possível importar o PDF completo.","book_saved" to "Definições do livro guardadas."
     )
@@ -237,7 +237,7 @@ private fun rsPromoUiV45(lang:RsLang,key:String):String{
         "cover" to "Elegir miniatura / portada","preview_pdf" to "Subir PDF de vista previa","full_pdf" to "Subir PDF completo",
         "access" to "Acceso al libro completo","gift" to "Emails con acceso gratis (separados por comas)","save_book" to "Guardar ajustes del libro",
         "open_reader" to "Abrir Lector","search" to "Buscar en el libro","next_match" to "Siguiente resultado","no_match" to "No se encontró ninguna página.",
-        "page" to "Página","back" to "Volver a la biblioteca","thumb_ready" to "Miniatura lista.","cover_ready" to "Portada lista.",
+        "page" to "Página","back" to "Volver a la biblioteca","bookmark" to "Marcador","bookmarked" to "Guardado","bookmarks" to "MARCADORES","search_action" to "Buscar","open_error" to "No se pudo abrir este PDF.","thumb_ready" to "Miniatura lista.","cover_ready" to "Portada lista.",
         "preview_ready" to "PDF de vista previa importado.","preview_error" to "No se pudo importar el PDF de vista previa.",
         "full_ready" to "PDF completo importado.","full_error" to "No se pudo importar el PDF completo.","book_saved" to "Ajustes del libro guardados."
     )
@@ -252,7 +252,7 @@ private fun rsPromoUiV45(lang:RsLang,key:String):String{
         "cover" to "Choisir miniature / couverture","preview_pdf" to "Importer PDF aperçu","full_pdf" to "Importer PDF complet",
         "access" to "Accès livre complet","gift" to "Emails avec accès gratuit (séparés par virgules)","save_book" to "Enregistrer les réglages du livre",
         "open_reader" to "Ouvrir le Lecteur","search" to "Rechercher dans le livre","next_match" to "Résultat suivant","no_match" to "Aucune page correspondante.",
-        "page" to "Page","back" to "Retour à la bibliothèque","thumb_ready" to "Miniature prête.","cover_ready" to "Couverture prête.",
+        "page" to "Page","back" to "Retour à la bibliothèque","bookmark" to "Signet","bookmarked" to "Enregistré","bookmarks" to "SIGNETS","search_action" to "Rechercher","open_error" to "Impossible d’ouvrir ce PDF.","thumb_ready" to "Miniature prête.","cover_ready" to "Couverture prête.",
         "preview_ready" to "PDF aperçu importé.","preview_error" to "Impossible d’importer le PDF aperçu.",
         "full_ready" to "PDF complet importé.","full_error" to "Impossible d’importer le PDF complet.","book_saved" to "Réglages du livre enregistrés."
     )
@@ -267,7 +267,7 @@ private fun rsPromoUiV45(lang:RsLang,key:String):String{
         "cover" to "Buchminiatur / Cover wählen","preview_pdf" to "Vorschau-PDF hochladen","full_pdf" to "Ganzes Buch-PDF hochladen",
         "access" to "Vollständiger Buchzugriff","gift" to "E-Mails mit Gratiszugriff (kommagetrennt)","save_book" to "Bucheinstellungen speichern",
         "open_reader" to "Reader öffnen","search" to "Buch durchsuchen","next_match" to "Nächster Treffer","no_match" to "Keine passende Seite gefunden.",
-        "page" to "Seite","back" to "Zur Bibliothek","thumb_ready" to "Miniatur bereit.","cover_ready" to "Buchcover bereit.",
+        "page" to "Seite","back" to "Zur Bibliothek","bookmark" to "Lesezeichen","bookmarked" to "Gespeichert","bookmarks" to "LESEZEICHEN","search_action" to "Suchen","open_error" to "Dieses PDF konnte nicht geöffnet werden.","thumb_ready" to "Miniatur bereit.","cover_ready" to "Buchcover bereit.",
         "preview_ready" to "Vorschau-PDF importiert.","preview_error" to "Vorschau-PDF konnte nicht importiert werden.",
         "full_ready" to "Vollständiges PDF importiert.","full_error" to "Vollständiges PDF konnte nicht importiert werden.","book_saved" to "Bucheinstellungen gespeichert."
     )
@@ -282,7 +282,7 @@ private fun rsPromoUiV45(lang:RsLang,key:String):String{
         "cover" to "Scegli miniatura / copertina","preview_pdf" to "Carica PDF anteprima","full_pdf" to "Carica PDF completo",
         "access" to "Accesso libro completo","gift" to "Email con accesso gratuito (separate da virgole)","save_book" to "Salva impostazioni libro",
         "open_reader" to "Apri Lettore","search" to "Cerca nel libro","next_match" to "Risultato successivo","no_match" to "Nessuna pagina corrispondente.",
-        "page" to "Pagina","back" to "Torna alla libreria","thumb_ready" to "Miniatura pronta.","cover_ready" to "Copertina pronta.",
+        "page" to "Pagina","back" to "Torna alla libreria","bookmark" to "Segnalibro","bookmarked" to "Salvato","bookmarks" to "SEGNALIBRI","search_action" to "Cerca","open_error" to "Impossibile aprire questo PDF.","thumb_ready" to "Miniatura pronta.","cover_ready" to "Copertina pronta.",
         "preview_ready" to "PDF anteprima importato.","preview_error" to "Impossibile importare il PDF anteprima.",
         "full_ready" to "PDF completo importato.","full_error" to "Impossibile importare il PDF completo.","book_saved" to "Impostazioni libro salvate."
     )
@@ -297,7 +297,7 @@ private fun rsPromoUiV45(lang:RsLang,key:String):String{
         "cover" to "Wybierz miniaturę / okładkę","preview_pdf" to "Wgraj PDF podglądu","full_pdf" to "Wgraj pełny PDF",
         "access" to "Dostęp do pełnej książki","gift" to "E-maile z darmowym dostępem (oddzielone przecinkami)","save_book" to "Zapisz ustawienia książki",
         "open_reader" to "Otwórz Czytnik","search" to "Szukaj w książce","next_match" to "Następny wynik","no_match" to "Nie znaleziono pasującej strony.",
-        "page" to "Strona","back" to "Wróć do biblioteki","thumb_ready" to "Miniatura gotowa.","cover_ready" to "Okładka gotowa.",
+        "page" to "Strona","back" to "Wróć do biblioteki","bookmark" to "Zakładka","bookmarked" to "Zapisano","bookmarks" to "ZAKŁADKI","search_action" to "Szukaj","open_error" to "Nie udało się otworzyć tego PDF.","thumb_ready" to "Miniatura gotowa.","cover_ready" to "Okładka gotowa.",
         "preview_ready" to "PDF podglądu zaimportowany.","preview_error" to "Nie udało się zaimportować PDF podglądu.",
         "full_ready" to "Pełny PDF zaimportowany.","full_error" to "Nie udało się zaimportować pełnego PDF.","book_saved" to "Ustawienia książki zapisane."
     )
@@ -312,7 +312,7 @@ private fun rsPromoUiV45(lang:RsLang,key:String):String{
         "cover" to "Kitap görseli / kapak seç","preview_pdf" to "Önizleme PDF yükle","full_pdf" to "Tam kitap PDF yükle",
         "access" to "Tam kitap erişimi","gift" to "Ücretsiz erişim e-postaları (virgülle ayır)","save_book" to "Kitap ayarlarını kaydet",
         "open_reader" to "Okuyucuyu Aç","search" to "Kitapta ara","next_match" to "Sonraki sonuç","no_match" to "Eşleşen sayfa bulunamadı.",
-        "page" to "Sayfa","back" to "Kütüphaneye dön","thumb_ready" to "Görsel hazır.","cover_ready" to "Kitap kapağı hazır.",
+        "page" to "Sayfa","back" to "Kütüphaneye dön","bookmark" to "Yer imi","bookmarked" to "Kaydedildi","bookmarks" to "YER İMLERİ","search_action" to "Ara","open_error" to "Bu PDF açılamadı.","thumb_ready" to "Görsel hazır.","cover_ready" to "Kitap kapağı hazır.",
         "preview_ready" to "Önizleme PDF içe aktarıldı.","preview_error" to "Önizleme PDF içe aktarılamadı.",
         "full_ready" to "Tam kitap PDF içe aktarıldı.","full_error" to "Tam kitap PDF içe aktarılamadı.","book_saved" to "Kitap ayarları kaydedildi."
     )
@@ -442,14 +442,20 @@ fun RsPromotionManagerV45(c:RsPalette,store:RsStore,lang:RsLang){
                 Text(rsPromoUiV45(lang,"full_pdf")+(if(book.fullPdfUri.isNotBlank())" ✓" else ""))
             }
             Text(rsPromoUiV45(lang,"access"),color=c.muted,fontSize=10.sp)
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
-                listOf("ALL","BASIC","PRO","ELITE","PRIVATE").forEach{tier->
-                    FilterChip(
-                        selected=book.accessTier==tier,
-                        onClick={book=book.copy(accessTier=tier)},
-                        label={Text(tier,fontSize=8.sp)},
-                        modifier=Modifier.weight(1f)
-                    )
+            listOf(
+                listOf("ALL","BASIC","PRO"),
+                listOf("ELITE","PRIVATE")
+            ).forEach{rowTiers->
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
+                    rowTiers.forEach{tier->
+                        FilterChip(
+                            selected=book.accessTier==tier,
+                            onClick={book=book.copy(accessTier=tier)},
+                            label={Text(tier,fontSize=9.sp)},
+                            modifier=Modifier.weight(1f)
+                        )
+                    }
+                    if(rowTiers.size==2)Spacer(Modifier.weight(1f))
                 }
             }
             OutlinedTextField(
@@ -542,7 +548,7 @@ fun RsBookLibraryV45(c:RsPalette,store:RsStore,lang:RsLang){
     val fullAllowed=rsCanReadFullV45(store,book)
 
     if(readerUri.isNotBlank()){
-        RsPdfBookReaderV45(c,lang,readerTitle,readerUri){readerUri=""}
+        RsPdfBookReaderV45(c,store,lang,readerTitle,readerUri){readerUri=""}
         return
     }
 
@@ -559,7 +565,7 @@ fun RsBookLibraryV45(c:RsPalette,store:RsStore,lang:RsLang){
                 modifier=Modifier.fillMaxWidth()
             ){Text(rsPromoUiV45(lang,"buy"))}
             if(book.previewPdfUri.isNotBlank())OutlinedButton(
-                onClick={readerTitle=book.title+" · Preview";readerUri=book.previewPdfUri},
+                onClick={readerTitle=book.title+" · "+rsPromoUiV45(lang,"preview");readerUri=book.previewPdfUri},
                 modifier=Modifier.fillMaxWidth()
             ){Text(rsPromoUiV45(lang,"preview"))}
             if(book.fullPdfUri.isNotBlank()){
@@ -580,7 +586,7 @@ fun RsBookManagerV45(c:RsPalette,store:RsStore,lang:RsLang){
 }
 
 @Composable
-private fun RsPdfBookReaderV45(c:RsPalette,lang:RsLang,title:String,uriString:String,onBack:()->Unit){
+private fun RsPdfBookReaderV45(c:RsPalette,store:RsStore,lang:RsLang,title:String,uriString:String,onBack:()->Unit){
     val context=LocalContext.current
     val file=remember(uriString){Uri.parse(uriString).path?.let(::File)}
     var renderer by remember(uriString){mutableStateOf<PdfRenderer?>(null)}
@@ -591,6 +597,15 @@ private fun RsPdfBookReaderV45(c:RsPalette,lang:RsLang,title:String,uriString:St
     var matches by remember{mutableStateOf<List<Int>>(emptyList())}
     var matchIndex by remember{mutableIntStateOf(0)}
     var message by remember{mutableStateOf("")}
+    val readerKey=remember(uriString){uriString.hashCode().toString().replace("-","n")}
+    val pageKey=remember(readerKey){"book_reader_page_v57_"+readerKey}
+    val bookmarkKey=remember(readerKey){"book_reader_marks_v57_"+readerKey}
+    var bookmarks by remember(uriString){
+        mutableStateOf(
+            store.s(bookmarkKey,"").split(',').mapNotNull{it.toIntOrNull()}.filter{it>=0}.toSet()
+        )
+    }
+    var restored by remember(uriString){mutableStateOf(false)}
     val scope=rememberCoroutineScope()
 
     DisposableEffect(uriString){
@@ -602,7 +617,7 @@ private fun RsPdfBookReaderV45(c:RsPalette,lang:RsLang,title:String,uriString:St
             renderer=pdf
             pageCount=pdf.pageCount
         }
-        if(opened.isFailure)message="Could not open this PDF."
+        if(opened.isFailure)message=rsPromoUiV45(lang,"open_error")
         onDispose{
             runCatching{renderer?.close()}
             runCatching{descriptor?.close()}
@@ -612,6 +627,20 @@ private fun RsPdfBookReaderV45(c:RsPalette,lang:RsLang,title:String,uriString:St
     }
 
     val pagerState=rememberPagerState(pageCount={max(1,pageCount)})
+
+    LaunchedEffect(pageCount,uriString){
+        if(pageCount>0 && !restored){
+            val saved=store.s(pageKey,"0").toIntOrNull()?.coerceIn(0,pageCount-1)?:0
+            pagerState.scrollToPage(saved)
+            restored=true
+        }
+    }
+
+    LaunchedEffect(pagerState.currentPage,restored,pageCount){
+        if(restored && pageCount>0){
+            store.ps(pageKey,pagerState.currentPage.coerceIn(0,pageCount-1).toString())
+        }
+    }
 
     Column(
         Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(10.dp),
@@ -659,7 +688,7 @@ private fun RsPdfBookReaderV45(c:RsPalette,lang:RsLang,title:String,uriString:St
                 },
                 enabled=!searching&&search.isNotBlank(),
                 modifier=Modifier.widthIn(min=84.dp)
-            ){Text(if(searching)"…" else "Search")}
+            ){Text(if(searching)"…" else rsPromoUiV45(lang,"search_action"))}
         }
         if(matches.isNotEmpty())Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
             Text((matchIndex+1).toString()+" / "+matches.size,color=c.muted,fontSize=10.sp)
@@ -689,11 +718,42 @@ private fun RsPdfBookReaderV45(c:RsPalette,lang:RsLang,title:String,uriString:St
                     }
                 )
             }
-            Text(
-                rsPromoUiV45(lang,"page")+" "+(pagerState.currentPage+1)+" / "+pageCount,
-                color=c.muted,
-                modifier=Modifier.fillMaxWidth()
-            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement=Arrangement.spacedBy(8.dp),
+                verticalAlignment=Alignment.CenterVertically
+            ){
+                Text(
+                    rsPromoUiV45(lang,"page")+" "+(pagerState.currentPage+1)+" / "+pageCount,
+                    color=c.muted,
+                    modifier=Modifier.weight(1f)
+                )
+                val currentMarked=pagerState.currentPage in bookmarks
+                OutlinedButton(
+                    onClick={
+                        val next=bookmarks.toMutableSet()
+                        if(currentMarked)next.remove(pagerState.currentPage) else next.add(pagerState.currentPage)
+                        bookmarks=next
+                        store.ps(bookmarkKey,next.sorted().joinToString(","))
+                    }
+                ){
+                    Text(
+                        if(currentMarked)rsPromoUiV45(lang,"bookmarked") else rsPromoUiV45(lang,"bookmark"),
+                        fontSize=9.sp
+                    )
+                }
+            }
+            if(bookmarks.isNotEmpty()){
+                Text(rsPromoUiV45(lang,"bookmarks"),color=c.bright,fontWeight=FontWeight.Black,fontSize=9.sp)
+                LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                    items(bookmarks.sorted()){mark->
+                        AssistChip(
+                            onClick={scope.launch{pagerState.animateScrollToPage(mark.coerceIn(0,pageCount-1))}},
+                            label={Text((mark+1).toString(),fontSize=9.sp)}
+                        )
+                    }
+                }
+            }
         }else Box(Modifier.fillMaxWidth().weight(1f))
     }
 }
