@@ -36,7 +36,7 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
             Text(sectionTitleV25(lang,section.title).uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=sectionFontV25(sectionTitleV25(lang,section.title)),letterSpacing=.5.sp,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(horizontal=4.dp))
             section.items.chunked(2).forEach{pair->
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-                    pair.forEach{item->Box(Modifier.weight(1f)){TileV21(c,store,lang,item,onRoute)}}
+                    pair.forEach{item->Box(Modifier.weight(1f)){TileV21(c,store,role,lang,item,onRoute)}}
                     if(pair.size==1)Spacer(Modifier.weight(1f))
                 }
             }
@@ -46,7 +46,8 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
 }
 
 @Composable
-private fun TileV21(c:RsPalette,store:RsStore,lang:RsLang,item:DashV21,onRoute:(String)->Unit){
+private fun TileV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,item:DashV21,onRoute:(String)->Unit){
+    val badgeCount=rsDashboardBadgeCountV55(store,role,item.route)
     val localizedTitle=rsRouteTitle(lang,item.route,item.title)
     val localizedHint=rsRouteHint(lang,item.route,item.hint)
     val titleSize=tileTitleFontV25(localizedTitle)
@@ -62,7 +63,22 @@ private fun TileV21(c:RsPalette,store:RsStore,lang:RsLang,item:DashV21,onRoute:(
         Surface(modifier=Modifier.align(Alignment.TopStart).padding(14.dp),shape=RoundedCornerShape(13.dp),color=Color.Black.copy(alpha=.46f),border=androidx.compose.foundation.BorderStroke(1.dp,c.bright.copy(alpha=.45f))){
             Text(glyphV21(item.kind),color=c.bright,fontSize=18.sp,fontWeight=FontWeight.Black,modifier=Modifier.padding(horizontal=10.dp,vertical=6.dp))
         }
-        Surface(modifier=Modifier.align(Alignment.TopEnd).padding(13.dp),shape=RoundedCornerShape(20.dp),color=c.gold.copy(alpha=.24f)){Text("›",color=c.bright,fontSize=20.sp,fontWeight=FontWeight.Black,modifier=Modifier.padding(horizontal=10.dp,vertical=3.dp))}
+        Surface(modifier=Modifier.align(Alignment.TopEnd).padding(13.dp),shape=RoundedCornerShape(20.dp),color=c.gold.copy(alpha=.24f)){
+            Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp),modifier=Modifier.padding(horizontal=9.dp,vertical=3.dp)){
+                if(badgeCount>0){
+                    Surface(shape=RoundedCornerShape(12.dp),color=c.bright){
+                        Text(
+                            if(badgeCount>99)"99+" else badgeCount.toString(),
+                            color=Color.Black,
+                            fontSize=9.sp,
+                            fontWeight=FontWeight.Black,
+                            modifier=Modifier.padding(horizontal=6.dp,vertical=2.dp)
+                        )
+                    }
+                }
+                Text("›",color=c.bright,fontSize=20.sp,fontWeight=FontWeight.Black)
+            }
+        }
         Column(Modifier.align(Alignment.BottomStart).padding(15.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
             Text(localizedTitle,color=Color.White,fontWeight=FontWeight.Black,fontSize=titleSize,maxLines=3,overflow=TextOverflow.Ellipsis,lineHeight=titleLine)
             Text(localizedHint,color=Color.White.copy(alpha=.72f),fontSize=hintSize,maxLines=2,overflow=TextOverflow.Ellipsis,lineHeight=(hintSize.value+2f).sp)
@@ -151,6 +167,28 @@ private fun tileHintFontV25(text:String)=when{
     text.length>=34->8.sp
     text.length>=24->9.sp
     else->10.sp
+}
+
+private fun rsDashboardBadgeCountV55(store:RsStore,role:RsRole,route:String):Int{
+    return if(role==RsRole.TRAINER){
+        when(route){
+            "coachchat"->rsTrainerUnreadCoachCountV55(store)
+            "support"->rsLoadTicketsV51(store).count{it.status=="OPEN"}
+            "homework_admin"->rsLoadHomeworkV46(store).count{!it.completed}
+            "invoices"->rsLoadInvoicesV39(store).count{it.status!="PAID"}
+            else->0
+        }
+    }else{
+        val email=store.s("session_student_email","alex@rskickbox.nl")
+        when(route){
+            "notifications"->rsUnreadNotificationCountV55(store)
+            "coachchat"->rsStudentUnreadCoachCountV55(store)
+            "homework"->rsLoadHomeworkV46(store).count{it.studentEmail.equals(email,true)&&!it.completed}
+            "support"->rsLoadTicketsV51(store).count{it.studentEmail.equals(email,true)&&it.status=="OPEN"}
+            "finance"->rsLoadInvoicesV39(store).count{it.studentEmail.equals(email,true)&&it.status!="PAID"}
+            else->0
+        }
+    }
 }
 
 private fun glyphV21(kind:String)=when(kind){"ai"->"AI";"music"->"♫";"payment"->"€";"progress"->"↗";"fight"->"FX";"training"->"TR";"technique"->"TK";"settings"->"⚙";"brand"->"♛";else->"RS"}
