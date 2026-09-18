@@ -1,6 +1,6 @@
 # RS KICKBOX — Supabase handoff
 
-This repository is prepared for a future Supabase connection but remains in LOCAL_ACCEPTANCE mode until real project credentials are supplied at build time.
+This repository is now configured for the RS KICKBOX Supabase project using the public mobile Project URL + publishable key. The app remains local-first until the database schema and production auth flows are installed.
 
 ## Do not create the account yet unless ChatGPT asks for it
 
@@ -38,7 +38,7 @@ The repository now contains:
 ## Planned backend order
 
 1. Create the Supabase project only when the Android acceptance build is ready for backend connection.
-2. Apply all migrations in `supabase/migrations/` in numeric order.
+2. For a brand-new project, open Supabase SQL Editor and run `supabase/RS_KICKBOX_SETUP.sql` once. It contains all ordered migrations 0001–0019. For later incremental deployments, use the individual files in `supabase/migrations/`.
 3. Create the first trainer/admin Auth user and matching `rs_profiles` row.
 4. Deploy `create-student-invite` and `redeem-student-invite`.
 5. Test invitation creation, one-time redemption, expiry/revocation and the 100-active-student limit.
