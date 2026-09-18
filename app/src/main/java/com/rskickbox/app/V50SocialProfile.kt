@@ -107,6 +107,28 @@ private fun rsJoinedGroupsV50(store:RsStore,email:String):Set<String> =
 private fun rsSaveJoinedGroupsV50(store:RsStore,email:String,ids:Set<String>)=
     store.ps("joined_groups_v50_"+email.lowercase().replace(Regex("[^a-z0-9]"),"_"),ids.joinToString(","))
 
+fun rsSocialPrivacyRawV50(store:RsStore,email:String):String{
+    val name=store.s("session_student_name","")
+    val profile=rsLoadProfileV50(store,email,name)
+    val posts=rsLoadPostsV50(store).filter{it.authorEmail.equals(email,true)}
+    val joined=rsJoinedGroupsV50(store,email)
+    return JSONObject().apply{
+        put("profile",JSONObject().apply{
+            put("display_name",profile.displayName);put("bio",profile.bio);put("training_goal",profile.goal);put("public_profile",profile.publicProfile)
+        })
+        put("posts",JSONArray().apply{
+            posts.forEach{x->put(JSONObject().apply{put("id",x.id);put("body",x.body);put("created_at",x.createdAt);put("active",x.active)})}
+        })
+        put("joined_group_ids",JSONArray(joined.toList()))
+    }.toString()
+}
+
+fun rsRemoveSocialDataForStudentV50(store:RsStore,email:String){
+    store.ps(rsProfileKeyV50(email),"")
+    rsSavePostsV50(store,rsLoadPostsV50(store).filterNot{it.authorEmail.equals(email,true)})
+    rsSaveJoinedGroupsV50(store,email,emptySet())
+}
+
 private fun rsSocialUiV50(lang:RsLang,key:String):String{
     val en=mapOf(
         "profile" to "My Profile","profile_sub" to "Your RS KICKBOX identity and privacy controls.",
