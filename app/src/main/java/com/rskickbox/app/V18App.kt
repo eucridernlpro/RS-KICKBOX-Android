@@ -127,7 +127,7 @@ fun RsKickboxV18App() {
                                 "challenge_admin" -> RsChallengeManagerV14(c)
                                 "fightcamp_admin" -> RsFightCampManagerV14(c)
                                 "landing_admin" -> RsLandingManagerV14(c)
-                                "release" -> RsReleaseCenterV16(c, store)
+                                "release" -> RsReleaseCenterV16(c, store, lang)
                                 else -> RsScroll(c, route.replaceFirstChar { it.uppercase() }, "RS native module · ${lang.name}") {
                                     RsPanel(c) {
                                         Text("Module ready", color = c.bright, fontWeight = FontWeight.Bold)
