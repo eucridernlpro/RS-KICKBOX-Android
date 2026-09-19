@@ -182,7 +182,7 @@ fun RsProfileV50(c:RsPalette,store:RsStore,lang:RsLang){
                         avatarStatus=rsCloudT93(lang,"photo_updated")
                     }
                     .onFailure{
-                        avatarStatus=it.message?:"Could not upload profile photo."
+                        avatarStatus=rsReleaseT98(lang,"save_failed")
                     }
                 avatarBusy=false
             }
@@ -429,7 +429,7 @@ private fun RsCloudProfileV84(c:RsPalette,store:RsStore,lang:RsLang){
                 publicProfile=it.publicProfile
                 store.ps("session_student_name",it.displayName)
             }
-            .onFailure{status=it.message?:"Could not load profile."}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -443,7 +443,7 @@ private fun RsCloudProfileV84(c:RsPalette,store:RsStore,lang:RsLang){
                         avatarRefresh++
                         status="✓ Profile photo updated."
                     }
-                    .onFailure{status=it.message?:"Could not upload profile photo."}
+                    .onFailure{status=rsReleaseT98(lang,"save_failed")}
                 avatarBusy=false
             }
         }
@@ -528,7 +528,7 @@ private fun RsCloudProfileV84(c:RsPalette,store:RsStore,lang:RsLang){
                                 store.ps("session_student_name",displayName)
                                 status=rsCloudT93(lang,"profile_saved")
                             }
-                            .onFailure{status=it.message?:"Could not save profile."}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         saving=false
                     }
                 },
@@ -556,7 +556,7 @@ private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
         loading=true
         rsCloudCommunityV84()
             .onSuccess{posts=it}
-            .onFailure{status=it.message?:"Could not load community."}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -591,7 +591,7 @@ private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
                     scope.launch{
                         rsCreateCloudCommunityPostV84(draft.trim())
                             .onSuccess{draft="";status=rsCloudT93(lang,"post_published");revision++}
-                            .onFailure{status=it.message?:"Could not publish post."}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busyId=null
                     }
                 },
@@ -631,7 +631,7 @@ private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
                                 scope.launch{
                                     rsSetCloudCommunityPostActiveV84(x.id,value)
                                         .onSuccess{revision++}
-                                        .onFailure{status=it.message?:"Could not moderate post."}
+                                        .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                     busyId=null
                                 }
                             },
@@ -648,7 +648,7 @@ private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
                                 scope.launch{
                                     rsDeleteCloudCommunityPostV84(x.id)
                                         .onSuccess{pendingDelete=null;status=rsCloudT93(lang,"post_deleted");revision++}
-                                        .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
+                                        .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                     busyId=null
                                 }
                             }else pendingDelete=x.id
@@ -681,11 +681,11 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
         if(selectedGroup==null){
             rsCloudGroupsV84()
                 .onSuccess{groups=it}
-                .onFailure{status=it.message?:rsGroupChatT(lang,"update_error")}
+                .onFailure{status=rsGroupChatT(lang,"update_error")}
         }else{
             rsCloudGroupMessagesV92(selectedGroup!!.id)
                 .onSuccess{messages=it}
-                .onFailure{status=it.message?:rsGroupChatT(lang,"update_error")}
+                .onFailure{status=rsGroupChatT(lang,"update_error")}
         }
         loading=false
     }
@@ -788,7 +788,7 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                             scope.launch{
                                 rsSetMyCloudGroupMembershipV84(g.id,!g.joined)
                                     .onSuccess{status=if(g.joined)rsGroupChatT(lang,"left") else rsGroupChatT(lang,"joined");revision++}
-                                    .onFailure{status=it.message?:rsGroupChatT(lang,"update_error")}
+                                    .onFailure{status=rsGroupChatT(lang,"update_error")}
                                 busyId=null
                             }
                         },
@@ -817,7 +817,7 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                                 scope.launch{
                                     rsSetCloudGroupActiveV84(g.id,value)
                                         .onSuccess{revision++}
-                                        .onFailure{status=it.message?:rsGroupChatT(lang,"update_error")}
+                                        .onFailure{status=rsGroupChatT(lang,"update_error")}
                                     busyId=null
                                 }
                             },
