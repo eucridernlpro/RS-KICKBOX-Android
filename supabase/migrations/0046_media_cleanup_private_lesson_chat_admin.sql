@@ -171,6 +171,7 @@ begin
     update public.rs_coach_messages
     set body=trim(coalesce(p_body,''))
     where id=p_message_id
+      and sender_role in ('trainer','admin')
       and (trim(coalesce(p_body,''))<>'' or media_path is not null);
     if not found then raise exception 'message not found or empty message not allowed' using errcode='P0002'; end if;
 end;
@@ -209,10 +210,11 @@ as $$
 begin
     if not (select private.rs_is_staff()) then raise exception 'trainer/admin access required' using errcode='42501'; end if;
     if length(trim(coalesce(p_body,'')))>1200 then raise exception 'message too long' using errcode='22023'; end if;
-    update public.rs_group_messages
+    update public.rs_group_messages m
     set body=trim(coalesce(p_body,''))
-    where id=p_message_id
-      and (trim(coalesce(p_body,''))<>'' or media_path is not null);
+    where m.id=p_message_id
+      and m.sender_id=(select auth.uid())
+      and (trim(coalesce(p_body,''))<>'' or m.media_path is not null);
     if not found then raise exception 'message not found or empty message not allowed' using errcode='P0002'; end if;
 end;
 $$;
