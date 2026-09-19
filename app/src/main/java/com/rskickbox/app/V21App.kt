@@ -754,6 +754,7 @@ private fun ShellV21(
         "coachchat" to "Coach Inbox",
         "schedule" to "Trainer Schedule",
         "release" to "Release & Legal Center",
+        "privacy_admin" to "Privacy Requests",
         "settings" to "App Settings"
     ) else listOf(
         "home" to "RS Live Dashboard",
