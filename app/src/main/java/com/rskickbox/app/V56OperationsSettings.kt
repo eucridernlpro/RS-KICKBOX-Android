@@ -25,7 +25,7 @@ fun rsOpsEnabledV56(store:RsStore,key:String,default:Boolean=true)=store.b(key,d
 fun rsOpsUiV56(lang:RsLang,key:String):String{
     val en=mapOf(
         "title" to "App Settings & Operations",
-        "sub" to "Live trainer controls that change what students can do inside RS KICKBOX.",
+        "sub" to "Live trainer controls that change what students can do inside RS KICKBOXING.",
         "live" to "LIVE STUDENT CONTROLS",
         "maintenance" to "Maintenance banner",
         "maintenance_msg" to "Maintenance message",
@@ -54,7 +54,7 @@ fun rsOpsUiV56(lang:RsLang,key:String):String{
     )
     val nl=en+mapOf(
         "title" to "App-instellingen & Operaties",
-        "sub" to "Live trainerinstellingen die bepalen wat leerlingen in RS KICKBOX kunnen doen.",
+        "sub" to "Live trainerinstellingen die bepalen wat leerlingen in RS KICKBOXING kunnen doen.",
         "live" to "LIVE LEERLINGINSTELLINGEN",
         "maintenance" to "Onderhoudsbanner",
         "maintenance_msg" to "Onderhoudsbericht",
@@ -105,7 +105,7 @@ fun rsOpsUiV56(lang:RsLang,key:String):String{
     )
     val es=en+mapOf(
         "title" to "Ajustes y Operaciones",
-        "sub" to "Controles activos del entrenador que cambian lo que los alumnos pueden hacer dentro de RS KICKBOX.",
+        "sub" to "Controles activos del entrenador que cambian lo que los alumnos pueden hacer dentro de RS KICKBOXING.",
         "live" to "CONTROLES ACTIVOS DEL ALUMNO",
         "maintenance" to "Banner de mantenimiento",
         "maintenance_msg" to "Mensaje de mantenimiento",
@@ -134,7 +134,7 @@ fun rsOpsUiV56(lang:RsLang,key:String):String{
     )
     val fr=en+mapOf(
         "title" to "Réglages & Opérations",
-        "sub" to "Contrôles actifs du coach qui modifient ce que les élèves peuvent faire dans RS KICKBOX.",
+        "sub" to "Contrôles actifs du coach qui modifient ce que les élèves peuvent faire dans RS KICKBOXING.",
         "live" to "CONTRÔLES ÉLÈVE ACTIFS",
         "maintenance" to "Bannière de maintenance",
         "maintenance_msg" to "Message de maintenance",
@@ -163,7 +163,7 @@ fun rsOpsUiV56(lang:RsLang,key:String):String{
     )
     val de=en+mapOf(
         "title" to "App-Einstellungen & Betrieb",
-        "sub" to "Live-Trainersteuerungen, die beeinflussen, was Schüler in RS KICKBOX tun können.",
+        "sub" to "Live-Trainersteuerungen, die beeinflussen, was Schüler in RS KICKBOXING tun können.",
         "live" to "LIVE-SCHÜLERSTEUERUNGEN",
         "maintenance" to "Wartungsbanner",
         "maintenance_msg" to "Wartungsnachricht",
@@ -192,7 +192,7 @@ fun rsOpsUiV56(lang:RsLang,key:String):String{
     )
     val it=en+mapOf(
         "title" to "Impostazioni & Operazioni",
-        "sub" to "Controlli live del trainer che modificano ciò che gli allievi possono fare in RS KICKBOX.",
+        "sub" to "Controlli live del trainer che modificano ciò che gli allievi possono fare in RS KICKBOXING.",
         "live" to "CONTROLLI LIVE ALLIEVI",
         "maintenance" to "Banner di manutenzione",
         "maintenance_msg" to "Messaggio di manutenzione",
@@ -221,7 +221,7 @@ fun rsOpsUiV56(lang:RsLang,key:String):String{
     )
     val pl=en+mapOf(
         "title" to "Ustawienia i Operacje",
-        "sub" to "Aktywne ustawienia trenera wpływające na to, co uczniowie mogą robić w RS KICKBOX.",
+        "sub" to "Aktywne ustawienia trenera wpływające na to, co uczniowie mogą robić w RS KICKBOXING.",
         "live" to "AKTYWNE KONTROLE UCZNIA",
         "maintenance" to "Baner konserwacji",
         "maintenance_msg" to "Komunikat konserwacyjny",
@@ -250,7 +250,7 @@ fun rsOpsUiV56(lang:RsLang,key:String):String{
     )
     val tr=en+mapOf(
         "title" to "Uygulama Ayarları ve Operasyonlar",
-        "sub" to "Öğrencilerin RS KICKBOX içinde neler yapabileceğini değiştiren canlı antrenör kontrolleri.",
+        "sub" to "Öğrencilerin RS KICKBOXING içinde neler yapabileceğini değiştiren canlı antrenör kontrolleri.",
         "live" to "CANLI ÖĞRENCİ KONTROLLERİ",
         "maintenance" to "Bakım bandı",
         "maintenance_msg" to "Bakım mesajı",
