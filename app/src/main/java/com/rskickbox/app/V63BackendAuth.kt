@@ -19,7 +19,8 @@ data class RsCloudProfileV63(
     @SerialName("display_name") val displayName:String="",
     val role:String="student",
     val plan:String="PRO",
-    val active:Boolean=true
+    val active:Boolean=true,
+    @SerialName("avatar_path") val avatarPath:String?=null
 )
 
 data class RsCloudSessionV63(
