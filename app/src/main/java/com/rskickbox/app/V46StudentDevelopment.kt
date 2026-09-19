@@ -501,7 +501,7 @@ private fun RsCloudHomeworkManagerV80(c:RsPalette,lang:RsLang){
                     busy=true
                     scope.launch{
                         rsAssignHomeworkV80(selectedId,title.trim(),details.trim(),due.trim())
-                            .onSuccess{title="";details="";due="";status="Homework assigned.";revision++}
+                            .onSuccess{title="";details="";due="";status=rsCloudT93(lang,"homework_assigned");revision++}
                             .onFailure{status=it.message?:"Could not assign homework."}
                         busy=false
                     }
@@ -563,7 +563,7 @@ private fun RsCloudCoachNotesV80(c:RsPalette,lang:RsLang){
                     busy=true
                     scope.launch{
                         rsAddCoachNoteV80(selectedId,note.trim())
-                            .onSuccess{note="";status="Private coach note saved.";revision++}
+                            .onSuccess{note="";status=rsCloudT93(lang,"coach_note_saved");revision++}
                             .onFailure{status=it.message?:"Could not save coach note."}
                         busy=false
                     }
@@ -635,7 +635,7 @@ private fun RsCloudAssessmentsV80(c:RsPalette,lang:RsLang){
                     busy=true
                     scope.launch{
                         rsAddAssessmentV80(selectedId,punches.toInt(),kicks.toInt(),defense.toInt(),footwork.toInt(),combos.toInt(),conditioning.toInt(),summary.trim())
-                            .onSuccess{summary="";status="Assessment saved.";revision++}
+                            .onSuccess{summary="";status=rsCloudT93(lang,"assessment_saved");revision++}
                             .onFailure{status=it.message?:"Could not save assessment."}
                         busy=false
                     }
