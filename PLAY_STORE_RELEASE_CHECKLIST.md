@@ -1,6 +1,6 @@
 # RS KICKBOX — Play Store Release Checklist
 
-Current Android line: **v0.105.0** · **versionCode 105**  
+Current Android line: **v0.110.0** · **versionCode 110**  
 Package: **com.rskickbox.app**  
 Target SDK: **36**
 
@@ -10,13 +10,13 @@ Target SDK: **36**
 - Separate trainer/admin and student experiences.
 - Supabase authentication and cloud-backed modules where configured.
 - Student feature-access controls with Student Dashboard + App Guide filtering.
-- Persistent Media3 music playback with MediaSessionService, notification controls, mini-player, metadata and wake-mode hardening.
+- Persistent Media3 music playback with MediaSessionService, notification controls, mini-player, metadata, wake-mode hardening, named playlists and in-app volume control.
 - Private coach chat media + member-only group chat.
-- Cloud branding, theme, visual assets, splash/intro, promotions and trainer book.
+- Cloud branding, theme, visual assets, splash/intro, promotions and trainer book, with resume/foreground visual refresh for multi-device testing.
 - Cloud member services: documents, support and referrals.
-- Account password recovery/logout state repair.
+- Account password recovery/logout state repair, Android/Google Password Manager autofill semantics, remembered successful email and rotation-safe authenticated Activity state.
 - Trainer Privacy Requests center for secure review/status handling of member data-export and account-deletion requests.
-- Nine-language UI framework with cloud/error/localization cleanup across active modules.
+- Nine-language UI framework with cloud/error/localization cleanup across active modules, including splash, visual studio, profile/privacy, social, media and music controls.
 - AI Technique Coach:
   - local video import/private storage;
   - 20-second input limit;
