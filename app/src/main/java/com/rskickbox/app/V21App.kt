@@ -120,6 +120,19 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         }
     }
 
+    LaunchedEffect(Unit){
+        if(RsSupabaseV60.configured){
+            while(true){
+                kotlinx.coroutines.delay(60_000)
+                rsSyncCloudBrandV100(store).onSuccess{settings->
+                    theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
+                    brandRevision++
+                }
+                rsSyncCloudVisualAssetsV101(context,store).onSuccess{brandRevision++}
+            }
+        }
+    }
+
     val lifecycleOwner=LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner){
         val observer=LifecycleEventObserver{_,event->
