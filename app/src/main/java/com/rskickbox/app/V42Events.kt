@@ -143,7 +143,7 @@ fun RsStudentEventsV42(c:RsPalette,store:RsStore,lang:RsLang){
         loading=true
         rsCloudEventsV75()
             .onSuccess{items=it.filter{e->e.active}}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -166,7 +166,7 @@ fun RsStudentEventsV42(c:RsPalette,store:RsStore,lang:RsLang){
                         busyId=event.id
                         scope.launch{
                             val result=if(joined)rsCloudCancelEventRsvpV75(event.id) else rsCloudEventRsvpV75(event.id)
-                            result.onSuccess{revision++}.onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                            result.onSuccess{revision++}.onFailure{status=rsReleaseT98(lang,"update_failed")}
                             busyId=null
                         }
                     },
@@ -236,7 +236,7 @@ fun RsEventManagerV42(c:RsPalette,store:RsStore,lang:RsLang){
 
     LaunchedEffect(revision){
         loading=true
-        rsCloudEventsV75().onSuccess{items=it}.onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+        rsCloudEventsV75().onSuccess{items=it}.onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -260,7 +260,7 @@ fun RsEventManagerV42(c:RsPalette,store:RsStore,lang:RsLang){
                         .onSuccess{
                             title="";whenLabel="";location="";capacity="20";showCreate=false;status=rsCloudT93(lang,"event_created");revision++
                         }
-                        .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                        .onFailure{status=rsReleaseT98(lang,"save_failed")}
                     busy=false
                 }
             },enabled=!busy&&title.isNotBlank()&&whenLabel.isNotBlank()&&location.isNotBlank(),modifier=Modifier.fillMaxWidth()){
@@ -277,7 +277,7 @@ fun RsEventManagerV42(c:RsPalette,store:RsStore,lang:RsLang){
                     Switch(event.active,{v->
                         busy=true
                         scope.launch{
-                            rsCloudSetEventActiveV75(event.id,v).onSuccess{revision++}.onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                            rsCloudSetEventActiveV75(event.id,v).onSuccess{revision++}.onFailure{status=rsReleaseT98(lang,"update_failed")}
                             busy=false
                         }
                     },enabled=!busy)
@@ -286,7 +286,7 @@ fun RsEventManagerV42(c:RsPalette,store:RsStore,lang:RsLang){
                     if(pendingDelete==event.id){
                         busy=true
                         scope.launch{
-                            rsCloudDeleteEventV75(event.id).onSuccess{pendingDelete=null;revision++}.onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
+                            rsCloudDeleteEventV75(event.id).onSuccess{pendingDelete=null;revision++}.onFailure{status=rsReleaseT98(lang,"delete_failed")}
                             busy=false
                         }
                     }else pendingDelete=event.id
