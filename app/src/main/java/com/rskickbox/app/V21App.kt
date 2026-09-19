@@ -327,7 +327,7 @@ private fun LoginV21(
                 }
                 .onFailure{
                     statusIsError=true
-                    status=it.message?:rsLoginT94(lang,"reset_failed")
+                    status=rsLoginT94(lang,"reset_failed")
                 }
             busy=false
         }
@@ -361,7 +361,7 @@ private fun LoginV21(
                 }
                 .onFailure{
                     statusIsError=true
-                    status=it.message?:rsLoginT94(lang,"password_update_failed")
+                    status=rsLoginT94(lang,"password_update_failed")
                     pass=""
                     confirmPass=""
                 }
