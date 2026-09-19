@@ -169,8 +169,10 @@ private fun coachUiV36(lang:RsLang,key:String):String{
 
 @Composable
 fun RsTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore,role:RsRole){
-    if(role==RsRole.TRAINER)TrainerTechniqueHistoryV27(c,store,lang)
-    else StudentTechniqueCoachV27(c,lang,store)
+    if(role==RsRole.TRAINER){
+        if(RsSupabaseV60.configured)RsCloudTrainerTechniqueHistoryV78(c,lang)
+        else TrainerTechniqueHistoryV27(c,store,lang)
+    }else StudentTechniqueCoachV27(c,lang,store)
 }
 
 @Composable
@@ -191,6 +193,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
     var coachGender by remember{mutableStateOf(store.s("ai_coach_gender","male"))}
     var speaking by remember{mutableStateOf(false)}
     var importingVideo by remember{mutableStateOf(false)}
+    var cloudSaving by remember{mutableStateOf(false)}
     val scope=rememberCoroutineScope()
 
     DisposableEffect(Unit){
@@ -319,14 +322,35 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                     tts?.speak(summary,TextToSpeech.QUEUE_FLUSH,null,"technique-coach")
                 }
             },enabled=ready,modifier=Modifier.fillMaxWidth()){Text("🔊 Speak coaching")}
-            Button(onClick={
-                val items=decodeTechniqueSubsV27(store.s("technique_submissions_v27","")).toMutableList()
-                val id=System.currentTimeMillis().toString()
-                val created=SimpleDateFormat("dd MMM yyyy · HH:mm",Locale.getDefault()).format(Date())
-                items.add(0,TechniqueSubmissionV27(id,videoUri,videoName,selectedTechnique,created,false,summary,store.s("session_student_email","alex@rskickbox.nl")))
-                store.ps("technique_submissions_v27",encodeTechniqueSubsV27(items.take(40)))
-                feedback="Analysis saved to technique history."
-            },modifier=Modifier.fillMaxWidth()){Text("Save to history")}
+            Button(
+                onClick={
+                    if(RsSupabaseV60.configured){
+                        cloudSaving=true
+                        feedback="Saving technique review to secure cloud history…"
+                        scope.launch{
+                            rsUploadTechniqueSubmissionV78(
+                                context,
+                                videoUri,
+                                videoName,
+                                selectedTechnique,
+                                summary
+                            )
+                                .onSuccess{feedback="✓ Analysis saved to cloud technique history."}
+                                .onFailure{feedback=it.message?:"Could not save technique review."}
+                            cloudSaving=false
+                        }
+                    }else{
+                        val items=decodeTechniqueSubsV27(store.s("technique_submissions_v27","")).toMutableList()
+                        val id=System.currentTimeMillis().toString()
+                        val created=SimpleDateFormat("dd MMM yyyy · HH:mm",Locale.getDefault()).format(Date())
+                        items.add(0,TechniqueSubmissionV27(id,videoUri,videoName,selectedTechnique,created,false,summary,store.s("session_student_email","alex@rskickbox.nl")))
+                        store.ps("technique_submissions_v27",encodeTechniqueSubsV27(items.take(40)))
+                        feedback="Analysis saved to technique history."
+                    }
+                },
+                enabled=!cloudSaving,
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(cloudSaving)"Saving…" else "Save to history")}
         }
 
         RsPanel(c){
@@ -470,6 +494,160 @@ private fun TrainerTechniqueHistoryV27(c:RsPalette,store:RsStore,lang:RsLang){
                     },modifier=Modifier.weight(1f)){
                         Text(if(pendingDeleteId==item.id)coachUiV36(lang,"confirm") else coachUiV36(lang,"delete"))
                     }
+                }
+            }
+        }
+        Spacer(Modifier.height(18.dp))
+    }
+}
+
+
+@Composable
+private fun RsCloudTrainerTechniqueHistoryV78(c:RsPalette,lang:RsLang){
+    val context=LocalContext.current
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var items by remember{mutableStateOf<List<RsCloudTechniqueSubmissionV78>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busyId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+    var pendingDeleteId by remember{mutableStateOf<String?>(null)}
+    var playing by remember{mutableStateOf<RsCloudTechniqueSubmissionV78?>(null)}
+    var playingUri by remember{mutableStateOf("")}
+    var notes by remember{mutableStateOf<Map<String,String>>(emptyMap())}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudTechniqueSubmissionsV78()
+            .onSuccess{rows->
+                items=rows
+                notes=rows.associate{it.id to it.trainerNote}
+            }
+            .onFailure{status=it.message?:"Could not load cloud technique history."}
+        loading=false
+    }
+
+    val active=playing
+    if(active!=null){
+        LaunchedEffect(active.id){
+            playingUri=""
+            status="Loading protected technique video…"
+            rsTechniqueLocalUriV78(context,active)
+                .onSuccess{playingUri=it;status=""}
+                .onFailure{status=it.message?:"Could not open technique video."}
+        }
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            verticalArrangement=Arrangement.spacedBy(10.dp)
+        ){
+            Text(active.studentName.ifBlank{active.studentEmail},color=c.bright,fontSize=22.sp,fontWeight=FontWeight.Black)
+            Text(active.technique,color=c.text)
+            OutlinedButton(
+                onClick={playing=null;playingUri="";status=""},
+                modifier=Modifier.fillMaxWidth()
+            ){Text("Back to technique history")}
+            if(playingUri.isBlank()){
+                RsPanel(c){
+                    CircularProgressIndicator()
+                    Text(status.ifBlank{"Loading video…"},color=c.muted)
+                }
+            }else{
+                RsTechniqueVideoPreviewV27(playingUri)
+            }
+            RsPanel(c){
+                Text("Student coaching summary",color=c.bright,fontWeight=FontWeight.Bold)
+                Text(active.studentSummary,color=c.text)
+            }
+        }
+        return
+    }
+
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        verticalArrangement=Arrangement.spacedBy(9.dp)
+    ){
+        Text(coachUiV36(lang,"history_title"),color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
+        Text("Cloud student technique uploads, trainer notes and favorites.",color=c.muted)
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing technique submissions…" else "Secure cloud technique history connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        if(items.isEmpty()&&!loading)RsPanel(c){
+            Text(coachUiV36(lang,"none"),color=c.bright,fontWeight=FontWeight.Bold)
+            Text(coachUiV36(lang,"none_sub"),color=c.muted)
+        }
+        items.forEach{item->
+            RsPanel(c){
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(10.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    RsMemberAvatarV68(c,item.studentEmail,item.studentName,size=46.dp)
+                    Column(Modifier.weight(1f)){
+                        Text(item.studentName.ifBlank{item.studentEmail},color=c.bright,fontWeight=FontWeight.Black)
+                        Text(item.studentEmail,color=c.muted,fontSize=9.sp)
+                        Text(item.technique,color=c.text,fontSize=11.sp)
+                    }
+                    if(item.trainerFavorite)Text("★",color=c.bright,fontSize=22.sp)
+                }
+                if(item.studentSummary.isNotBlank())Text(item.studentSummary.take(220),color=c.text,maxLines=4)
+                Button(
+                    onClick={playing=item;status=""},
+                    modifier=Modifier.fillMaxWidth()
+                ){Text("Open technique video")}
+                OutlinedTextField(
+                    value=notes[item.id]?:item.trainerNote,
+                    onValueChange={v->notes=notes+(item.id to v.take(2000))},
+                    label={Text("Trainer note")},
+                    modifier=Modifier.fillMaxWidth(),
+                    enabled=busyId==null
+                )
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                    Button(
+                        onClick={
+                            busyId=item.id
+                            scope.launch{
+                                rsSetTechniqueReviewV78(
+                                    item.id,
+                                    !item.trainerFavorite,
+                                    notes[item.id].orEmpty()
+                                )
+                                    .onSuccess{
+                                        status=if(item.trainerFavorite)coachUiV36(lang,"fav_removed") else coachUiV36(lang,"fav_saved")
+                                        revision++
+                                    }
+                                    .onFailure{status=it.message?:"Could not save trainer review."}
+                                busyId=null
+                            }
+                        },
+                        enabled=busyId==null,
+                        modifier=Modifier.weight(1f)
+                    ){Text(if(item.trainerFavorite)coachUiV36(lang,"unfavorite") else coachUiV36(lang,"favorite"),fontSize=10.sp)}
+                    OutlinedButton(
+                        onClick={
+                            if(pendingDeleteId==item.id){
+                                busyId=item.id
+                                scope.launch{
+                                    rsDeleteTechniqueSubmissionV78(item)
+                                        .onSuccess{
+                                            pendingDeleteId=null
+                                            status=coachUiV36(lang,"deleted")
+                                            revision++
+                                        }
+                                        .onFailure{status=it.message?:"Could not delete technique submission."}
+                                    busyId=null
+                                }
+                            }else pendingDeleteId=item.id
+                        },
+                        enabled=busyId==null,
+                        modifier=Modifier.weight(1f)
+                    ){Text(if(pendingDeleteId==item.id)coachUiV36(lang,"confirm") else coachUiV36(lang,"delete"),fontSize=10.sp)}
                 }
             }
         }
