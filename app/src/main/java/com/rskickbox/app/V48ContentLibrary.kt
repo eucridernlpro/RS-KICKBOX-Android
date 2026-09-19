@@ -412,7 +412,7 @@ private fun RsCloudContentManagerV79(c:RsPalette,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsContentUiV48(lang,"manager"),"Create and publish shared training content by membership level."){
+    RsScroll(c,rsContentUiV48(lang,"manager"),rsContentUiV48(lang,"manager_sub")){
         RsPanel(c){
             Text(
                 if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
