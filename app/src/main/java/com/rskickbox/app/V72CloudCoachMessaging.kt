@@ -44,10 +44,16 @@ suspend fun rsCloudCoachMessagesV72(studentId:String):Result<List<RsCloudCoachMe
     ).decodeList<RsCloudCoachMessageV72>()
 }
 
+@Serializable
+private data class RsMyStudentIdRowV72(
+    @SerialName("student_id") val studentId:String
+)
+
 suspend fun rsCloudMyStudentIdV72():Result<String> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
-    val raw=client.postgrest.rpc("rs_my_student_id").body
-    raw.toString().trim().trim('"').takeIf{it.isNotBlank()&&it!="null"}
+    client.postgrest.rpc("rs_my_student_id")
+        .decodeList<RsMyStudentIdRowV72>()
+        .firstOrNull()?.studentId
         ?:error("Active student account not found.")
 }
 
