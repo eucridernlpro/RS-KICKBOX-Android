@@ -11,6 +11,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.UUID
+import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 data class RsClubClassV38(
     val id:String,
@@ -120,12 +122,41 @@ private fun rsClassUiV38(lang:RsLang,key:String):String{
 
 @Composable
 fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
+    val scope=rememberCoroutineScope()
     var revision by remember{mutableIntStateOf(0)}
-    val classes=remember(revision){rsLoadClassesV38(store).filter{it.active}}
-    val bookedIds=remember(revision){rsBookedIdsV38(store)}
+    var cloudItems by remember{mutableStateOf<List<RsCloudClassStateV69>>(emptyList())}
+    var cloudLoading by remember{mutableStateOf(RsSupabaseV60.configured)}
+    var cloudBusyId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+    val cloudMode=RsSupabaseV60.configured
+
+    LaunchedEffect(cloudMode,revision){
+        if(cloudMode){
+            cloudLoading=true
+            rsCloudClassesV69()
+                .onSuccess{cloudItems=it}
+                .onFailure{status=it.message?:"Could not load club classes."}
+            cloudLoading=false
+        }
+    }
+
+    val classes=if(cloudMode)cloudItems.map{it.clazz}.filter{it.active}
+        else remember(revision){rsLoadClassesV38(store).filter{it.active}}
+    val bookedIds=if(cloudMode)cloudItems.filter{it.bookedByMe}.map{it.clazz.id}.toSet()
+        else remember(revision){rsBookedIdsV38(store)}
     val bookingAllowed=rsOpsEnabledV56(store,RsOpsKeysV56.CLASS_BOOKING,true)
+
     RsScroll(c,rsRouteTitle(lang,"classes","Classes & Events"),rsClassUiV38(lang,"student_sub")){
-        if(classes.isEmpty())RsPanel(c){Text(rsClassUiV38(lang,"none"),color=c.muted)}
+        if(cloudMode)RsPanel(c){
+            Text(
+                if(cloudLoading)"Syncing live class schedule…" else "Live club schedule connected",
+                color=if(cloudLoading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        if(classes.isEmpty()&&!cloudLoading)RsPanel(c){Text(rsClassUiV38(lang,"none"),color=c.muted)}
         classes.forEach{clazz->
             val isBooked=bookedIds.contains(clazz.id)
             val effectiveBooked=clazz.booked.coerceAtMost(clazz.capacity)
@@ -134,7 +165,10 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
                 Text(clazz.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
                 Text(clazz.dayLabel+" · "+clazz.timeLabel+" · "+clazz.level,color=c.text,fontSize=11.sp)
                 Text(effectiveBooked.toString()+" / "+clazz.capacity,color=c.muted)
-                LinearProgressIndicator(progress={effectiveBooked.toFloat()/clazz.capacity},modifier=Modifier.fillMaxWidth())
+                LinearProgressIndicator(
+                    progress={if(clazz.capacity<=0)0f else effectiveBooked.toFloat()/clazz.capacity},
+                    modifier=Modifier.fillMaxWidth()
+                )
                 Text(
                     when{
                         isBooked->rsClassUiV38(lang,"booked")
@@ -147,25 +181,46 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
                 if(!bookingAllowed && !isBooked)Text(rsOpsUiV56(lang,"booking_disabled"),color=c.muted,fontSize=10.sp)
                 Button(
                     onClick={
-                        val next=bookedIds.toMutableSet()
-                        val allClasses=rsLoadClassesV38(store)
-                        if(isBooked){
-                            next.remove(clazz.id)
-                            rsSaveClassesV38(store,allClasses.map{
-                                if(it.id==clazz.id)it.copy(booked=(it.booked-1).coerceAtLeast(0)) else it
-                            })
+                        if(cloudMode){
+                            cloudBusyId=clazz.id
+                            status=""
+                            scope.launch{
+                                val result=if(isBooked)rsCancelClassV69(clazz.id) else rsBookClassV69(clazz.id)
+                                result
+                                    .onSuccess{
+                                        status=if(isBooked)"Booking cancelled." else "Class booked successfully."
+                                        revision++
+                                    }
+                                    .onFailure{status=it.message?:"Could not update booking."}
+                                cloudBusyId=null
+                            }
                         }else{
-                            next.add(clazz.id)
-                            rsSaveClassesV38(store,allClasses.map{
-                                if(it.id==clazz.id)it.copy(booked=(it.booked+1).coerceAtMost(it.capacity)) else it
-                            })
+                            val next=bookedIds.toMutableSet()
+                            val allClasses=rsLoadClassesV38(store)
+                            if(isBooked){
+                                next.remove(clazz.id)
+                                rsSaveClassesV38(store,allClasses.map{
+                                    if(it.id==clazz.id)it.copy(booked=(it.booked-1).coerceAtLeast(0)) else it
+                                })
+                            }else{
+                                next.add(clazz.id)
+                                rsSaveClassesV38(store,allClasses.map{
+                                    if(it.id==clazz.id)it.copy(booked=(it.booked+1).coerceAtMost(it.capacity)) else it
+                                })
+                            }
+                            rsSaveBookedIdsV38(store,next)
+                            revision++
                         }
-                        rsSaveBookedIdsV38(store,next)
-                        revision++
                     },
-                    enabled=isBooked || (bookingAllowed&&clazz.bookingOpen&&!full),
+                    enabled=cloudBusyId==null && (isBooked || (bookingAllowed&&clazz.bookingOpen&&!full)),
                     modifier=Modifier.fillMaxWidth()
-                ){Text(if(isBooked)rsClassUiV38(lang,"cancel") else rsClassUiV38(lang,"book"))}
+                ){
+                    Text(
+                        if(cloudBusyId==clazz.id)"Please wait…"
+                        else if(isBooked)rsClassUiV38(lang,"cancel")
+                        else rsClassUiV38(lang,"book")
+                    )
+                }
             }
         }
     }
@@ -173,45 +228,105 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    val cloudMode=RsSupabaseV60.configured
     var revision by remember{mutableIntStateOf(0)}
+    var cloudItems by remember{mutableStateOf<List<RsCloudClassStateV69>>(emptyList())}
+    var cloudLoading by remember{mutableStateOf(cloudMode)}
+    var cloudBusy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
     var showCreate by remember{mutableStateOf(false)}
     var title by remember{mutableStateOf("")}
-    var day by remember{mutableStateOf("")}
-    var time by remember{mutableStateOf("")}
+    var level by remember{mutableStateOf("ALL LEVELS")}
+    var day by remember{mutableStateOf(LocalDate.now().plusDays(1).toString())}
+    var time by remember{mutableStateOf("18:00")}
+    var duration by remember{mutableStateOf("60")}
     var capacity by remember{mutableStateOf("16")}
     var pendingDelete by remember{mutableStateOf<String?>(null)}
-    val classes=remember(revision){rsLoadClassesV38(store)}
 
-    fun save(items:List<RsClubClassV38>){
+    LaunchedEffect(cloudMode,revision){
+        if(cloudMode){
+            cloudLoading=true
+            rsCloudClassesV69()
+                .onSuccess{cloudItems=it}
+                .onFailure{status=it.message?:"Could not load cloud classes."}
+            cloudLoading=false
+        }
+    }
+
+    val classes=if(cloudMode)cloudItems.map{it.clazz} else remember(revision){rsLoadClassesV38(store)}
+
+    fun saveLocal(items:List<RsClubClassV38>){
         rsSaveClassesV38(store,items)
         revision++
     }
 
     RsScroll(c,rsClassUiV38(lang,"trainer_title"),rsClassUiV38(lang,"trainer_sub")){
-        Button(onClick={showCreate=!showCreate},modifier=Modifier.fillMaxWidth()){
+        if(cloudMode)RsPanel(c){
+            Text(
+                if(cloudLoading)"Syncing live class manager…" else "Supabase class manager connected",
+                color=if(cloudLoading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        Button(
+            onClick={showCreate=!showCreate},
+            enabled=!cloudBusy,
+            modifier=Modifier.fillMaxWidth()
+        ){
             Text(if(showCreate)rsClassUiV38(lang,"close_new") else rsClassUiV38(lang,"create_new"))
         }
+
         if(showCreate)RsPanel(c){
             Text(rsClassUiV38(lang,"new_class"),color=c.bright,fontWeight=FontWeight.Black)
-            OutlinedTextField(title,{title=it},label={Text(rsClassUiV38(lang,"class_title"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
+            OutlinedTextField(title,{title=it.take(100)},label={Text(rsClassUiV38(lang,"class_title"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
+            OutlinedTextField(level,{level=it.take(40)},label={Text("Level")},modifier=Modifier.fillMaxWidth(),singleLine=true)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
-                OutlinedTextField(day,{day=it},label={Text(rsClassUiV38(lang,"day"))},modifier=Modifier.weight(1f),singleLine=true)
-                OutlinedTextField(time,{time=it},label={Text(rsClassUiV38(lang,"time"))},modifier=Modifier.weight(1f),singleLine=true)
+                OutlinedTextField(day,{day=it.take(10)},label={Text("Date YYYY-MM-DD")},modifier=Modifier.weight(1f),singleLine=true)
+                OutlinedTextField(time,{time=it.take(5)},label={Text("Time HH:mm")},modifier=Modifier.weight(1f),singleLine=true)
             }
-            OutlinedTextField(capacity,{capacity=it.filter(Char::isDigit)},label={Text(rsClassUiV38(lang,"capacity"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                OutlinedTextField(duration,{duration=it.filter(Char::isDigit).take(3)},label={Text("Minutes")},modifier=Modifier.weight(1f),singleLine=true)
+                OutlinedTextField(capacity,{capacity=it.filter(Char::isDigit).take(3)},label={Text(rsClassUiV38(lang,"capacity"))},modifier=Modifier.weight(1f),singleLine=true)
+            }
             Button(
                 onClick={
                     val cap=capacity.toIntOrNull()?.coerceIn(1,100)?:16
-                    save(listOf(RsClubClassV38(UUID.randomUUID().toString(),title.trim(),day.trim(),time.trim(),"ALL LEVELS",cap,0,true,true))+classes)
-                    title=""
-                    day=""
-                    time=""
-                    capacity="16"
-                    showCreate=false
+                    val mins=duration.toIntOrNull()?.coerceIn(15,300)?:60
+                    if(cloudMode){
+                        cloudBusy=true
+                        status=""
+                        scope.launch{
+                            rsCreateCloudClassV69(title,level,day,time,mins,cap)
+                                .onSuccess{
+                                    title=""
+                                    level="ALL LEVELS"
+                                    day=LocalDate.now().plusDays(1).toString()
+                                    time="18:00"
+                                    duration="60"
+                                    capacity="16"
+                                    showCreate=false
+                                    status="Class created and published."
+                                    revision++
+                                }
+                                .onFailure{status=it.message?:"Could not create class. Use date YYYY-MM-DD and time HH:mm."}
+                            cloudBusy=false
+                        }
+                    }else{
+                        saveLocal(listOf(RsClubClassV38(UUID.randomUUID().toString(),title.trim(),day.trim(),time.trim(),level.trim().ifBlank{"ALL LEVELS"},cap,0,true,true))+classes)
+                        title=""
+                        day=LocalDate.now().plusDays(1).toString()
+                        time="18:00"
+                        capacity="16"
+                        showCreate=false
+                    }
                 },
-                enabled=title.isNotBlank()&&day.isNotBlank()&&time.isNotBlank(),
+                enabled=!cloudBusy&&title.isNotBlank()&&day.isNotBlank()&&time.isNotBlank(),
                 modifier=Modifier.fillMaxWidth()
-             ){Text(rsClassUiV38(lang,"save_class"))}
+            ){Text(if(cloudBusy)"Publishing…" else rsClassUiV38(lang,"save_class"))}
         }
 
         classes.forEach{clazz->
@@ -220,31 +335,76 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
                 Text(clazz.dayLabel+" · "+clazz.timeLabel+" · "+clazz.level,color=c.text,fontSize=11.sp)
                 Text(clazz.booked.toString()+" / "+clazz.capacity,color=c.muted)
                 LinearProgressIndicator(progress={(clazz.booked.toFloat()/clazz.capacity).coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth())
+
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){
                     Text(if(clazz.active)rsClassUiV38(lang,"active") else rsClassUiV38(lang,"inactive"),color=c.muted)
-                    Switch(clazz.active,{on->save(classes.map{if(it.id==clazz.id)it.copy(active=on) else it})})
+                    Switch(
+                        clazz.active,
+                        {on->
+                            if(cloudMode){
+                                cloudBusy=true
+                                scope.launch{
+                                    rsSetCloudClassStateV69(clazz.id,on,clazz.bookingOpen)
+                                        .onSuccess{revision++}
+                                        .onFailure{status=it.message?:"Could not update class."}
+                                    cloudBusy=false
+                                }
+                            }else saveLocal(classes.map{if(it.id==clazz.id)it.copy(active=on) else it})
+                        },
+                        enabled=!cloudBusy
+                    )
                 }
+
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){
                     Text(if(clazz.bookingOpen)rsClassUiV38(lang,"booking_open") else rsClassUiV38(lang,"booking_closed"),color=c.muted)
-                    Switch(clazz.bookingOpen,{on->save(classes.map{if(it.id==clazz.id)it.copy(bookingOpen=on) else it})})
+                    Switch(
+                        clazz.bookingOpen,
+                        {on->
+                            if(cloudMode){
+                                cloudBusy=true
+                                scope.launch{
+                                    rsSetCloudClassStateV69(clazz.id,clazz.active,on)
+                                        .onSuccess{revision++}
+                                        .onFailure{status=it.message?:"Could not update booking state."}
+                                    cloudBusy=false
+                                }
+                            }else saveLocal(classes.map{if(it.id==clazz.id)it.copy(bookingOpen=on) else it})
+                        },
+                        enabled=!cloudBusy
+                    )
                 }
+
                 OutlinedButton(
                     onClick={
                         if(pendingDelete==clazz.id){
-                            save(classes.filterNot{it.id==clazz.id})
-                            val next=rsBookedIdsV38(store).toMutableSet()
-                            next.remove(clazz.id)
-                            rsSaveBookedIdsV38(store,next)
-                            pendingDelete=null
+                            if(cloudMode){
+                                cloudBusy=true
+                                scope.launch{
+                                    rsDeleteCloudClassV69(clazz.id)
+                                        .onSuccess{
+                                            pendingDelete=null
+                                            status="Class deleted."
+                                            revision++
+                                        }
+                                        .onFailure{status=it.message?:"Could not delete class."}
+                                    cloudBusy=false
+                                }
+                            }else{
+                                saveLocal(classes.filterNot{it.id==clazz.id})
+                                val next=rsBookedIdsV38(store).toMutableSet()
+                                next.remove(clazz.id)
+                                rsSaveBookedIdsV38(store,next)
+                                pendingDelete=null
+                            }
                         }else pendingDelete=clazz.id
                     },
+                    enabled=!cloudBusy,
                     modifier=Modifier.fillMaxWidth()
-                 ){Text(if(pendingDelete==clazz.id)rsClassUiV38(lang,"confirm_delete") else rsClassUiV38(lang,"delete"))}
+                ){Text(if(pendingDelete==clazz.id)rsClassUiV38(lang,"confirm_delete") else rsClassUiV38(lang,"delete"))}
             }
         }
     }
 }
-
 @Composable
 fun RsAttendanceV38(c:RsPalette,store:RsStore,lang:RsLang){
     val classes=rsLoadClassesV38(store).filter{it.active}
