@@ -480,7 +480,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
     ){
         RsPanel(c){
             Text(
-                if(loading)"Syncing training media…" else "Protected cloud media connected",
+                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
