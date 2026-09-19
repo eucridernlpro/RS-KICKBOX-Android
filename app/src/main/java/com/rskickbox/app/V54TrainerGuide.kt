@@ -65,7 +65,7 @@ private fun rsGuideItemsV54():List<RsGuideItemV54> = listOf(
         "Create a plan once, add ordered exercises with sets/reps/time, and attach trainer-approved Training Media images or videos without uploading duplicate copies. The same plan can then be assigned to different students. The storage panel shows tracked student media, file size/source and cleanup controls.",
         "Student sees the assignment, follows each exercise step, studies the included visual/video examples and can mark steps plus the overall homework complete.",
         "Example: create a defense plan with footwork, guard recovery and a reference clip, then assign it to several students with separate due dates.",
-        listOf("Open Homework Manager","Select student","Create or select a reusable training plan","Add ordered exercise steps","Attach existing Training Media where useful","Set due label","Assign plan","Review step and homework completion","Check trainer-only storage usage"),
+        listOf("Open Homework Manager","Select student","Create or select a reusable training plan","Add ordered exercise steps","Attach existing Training Media where useful","Set due label","Assign plan","Review step and homework completion","Check trainer-only storage usage and choose the Free/Pro backend storage profile when your Supabase plan changes"),
         "HOMEWORK"
     ),
     RsGuideItemV54(
