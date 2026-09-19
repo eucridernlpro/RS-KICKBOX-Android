@@ -350,7 +350,7 @@ private fun RsCloudSessionBuilderV85(c:RsPalette,lang:RsLang){
     RsScroll(c,rsOpsUiV52(lang,"builder"),"Create the live training session shared with students across devices."){
         RsPanel(c){
             Text(
-                if(loading)"Syncing trainer sessions…" else "Cloud Session Builder connected",
+                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -490,7 +490,7 @@ private fun RsCloudSessionPlayerV85(c:RsPalette,lang:RsLang){
     RsScroll(c,rsOpsUiV52(lang,"player"),"Follow the current trainer session live from your account."){
         RsPanel(c){
             Text(
-                if(loading)"Loading active trainer session…" else "Cloud session connected",
+                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
