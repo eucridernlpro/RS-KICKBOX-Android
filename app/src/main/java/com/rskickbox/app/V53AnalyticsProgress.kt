@@ -104,7 +104,7 @@ fun RsProgressManagerV53(c:RsPalette,store:RsStore,lang:RsLang){
             Text(rsAnalyticsUiV53(lang,"plan")+" · "+(account?.plan?:"PRO"),color=c.muted)
             Text(rsAnalyticsUiV53(lang,"homework")+" · "+homework.count{!it.completed}+" "+rsAnalyticsUiV53(lang,"open_label")+" / "+homework.size+" "+rsAnalyticsUiV53(lang,"total_label"),color=c.text)
             Text(rsAnalyticsUiV53(lang,"challenges")+" · "+challenges.count{it.current>=it.target}+" "+rsAnalyticsUiV53(lang,"completed_label")+" / "+challenges.size+" "+rsAnalyticsUiV53(lang,"total_label"),color=c.text)
-            if(camp!=null)Text("Fight Camp · "+rsAnalyticsUiV53(lang,"week_label")+" "+camp.currentWeek+"/"+camp.totalWeeks+" · "+camp.focus,color=c.text)
+            if(camp!=null)Text(rsRouteTitle(lang,"fightcamp","Fight Camp")+" · "+rsAnalyticsUiV53(lang,"week_label")+" "+camp.currentWeek+"/"+camp.totalWeeks+" · "+camp.focus,color=c.text)
         }
         if(latest==null){
             RsPanel(c){Text(rsAnalyticsUiV53(lang,"none"),color=c.muted)}
