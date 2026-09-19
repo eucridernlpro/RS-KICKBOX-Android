@@ -222,10 +222,10 @@ private fun rsStudentGuideItemsV81()=listOf(
         "Keep volume low enough to hear coaching and your surroundings."
     ),
     RsStudentGuideItemV81("ACCOUNT","Settings & Privacy","settings",
-        "Manage personal app/privacy options and account-related controls.",
-        "Review privacy options or sign out of the app.",
-        listOf("Open Settings & Privacy","Review account/privacy options","Change available preferences","Use sign-out/account controls when needed"),
-        "Do not share your account password or invitation QR."
+        "Manage personal app/privacy options, account controls and language preferences.",
+        "RS KICKBOXING normally follows a supported phone language automatically. You can override it here with one of the languages included in the app, or switch back to phone language.",
+        listOf("Open Settings & Privacy","Review the App language panel","Keep Use phone language for automatic selection or choose a supported language manually","Review privacy/account options","Use account controls when needed"),
+        "Manual language selection stays active until you choose Use phone language again. Do not share your account password or invitation QR."
     )
 )
 
