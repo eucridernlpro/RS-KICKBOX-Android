@@ -113,6 +113,18 @@ private fun rsSaveTrainingMediaV55(store:RsStore,items:List<RsTrainingMediaItemV
     store.ps("training_media_v55",a.toString())
 }
 
+private fun rsMediaStorageNoteV109(lang:RsLang):String=when(lang.code){
+    "nl"->"Bestanden worden geüpload naar beveiligde Supabase Storage. Leerlingen krijgen toegang volgens hun actieve abonnement."
+    "pt"->"Os ficheiros são enviados para Supabase Storage protegido. Os alunos recebem acesso conforme o plano ativo."
+    "es"->"Los archivos se suben a Supabase Storage protegido. Los alumnos reciben acceso según su plan activo."
+    "fr"->"Les fichiers sont envoyés vers un stockage Supabase protégé. Les élèves ont accès selon leur abonnement actif."
+    "de"->"Dateien werden in geschützten Supabase Storage hochgeladen. Schüler erhalten Zugriff gemäß ihrem aktiven Plan."
+    "it"->"I file vengono caricati su Supabase Storage protetto. Gli allievi ricevono accesso in base al piano attivo."
+    "pl"->"Pliki są przesyłane do chronionego Supabase Storage. Uczniowie otrzymują dostęp zgodnie z aktywnym planem."
+    "tr"->"Dosyalar korumalı Supabase Storage alanına yüklenir. Öğrenciler aktif planlarına göre erişim alır."
+    else->rsMediaStorageNoteV109(lang)
+}
+
 private fun rsMediaUiV55(lang:RsLang,key:String):String{
     val en=mapOf(
         "student_title" to "Training Media","student_sub" to "Coach videos, drills and visual training resources unlocked for your membership.",
