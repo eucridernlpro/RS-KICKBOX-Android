@@ -34,6 +34,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     var authRestoreAttempted by remember { mutableStateOf(false) }
     var authRestoring by remember { mutableStateOf(false) }
     var cloudControlsRevision by remember { mutableIntStateOf(0) }
+    var brandRevision by remember { mutableIntStateOf(0) }
     var lang by remember { mutableStateOf(rsLangs.firstOrNull { it.code == store.s("lang", "en") } ?: rsLangs.first()) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
     var introDone by remember { mutableStateOf(!store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
@@ -41,6 +42,16 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
     }
     val c = paletteFor(theme)
+
+    LaunchedEffect(Unit){
+        if(RsSupabaseV60.configured){
+            rsSyncCloudBrandV100(store)
+                .onSuccess{settings->
+                    theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
+                    brandRevision++
+                }
+        }
+    }
 
     LaunchedEffect(introDone,authRestoreAttempted){
         if(introDone && !authRestoreAttempted){
@@ -83,6 +94,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     }
 
     MaterialTheme(colorScheme = darkColorScheme(primary=c.bright,secondary=c.gold,background=c.bg,surface=c.panel,onBackground=c.text,onSurface=c.text)) {
+        key(brandRevision){
         Box(Modifier.fillMaxSize()) {
             when {
                 !introDone -> RsCinematicIntroV21(c, store) {
@@ -117,7 +129,23 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                             }) {
                                 when(route) {
                                     "home", "trainer" -> RsPremiumDashboardV21(c, store, active, lang) { route=it }
-                                    "themes" -> RsThemeStudio(c, theme) { selected -> theme=selected;store.ps("theme",selected.name) }
+                                    "themes" -> RsThemeStudio(c, theme) { selected ->
+                                        theme=selected
+                                        store.ps("theme",selected.name)
+                                        brandRevision++
+                                        if(RsSupabaseV60.configured){
+                                            appScope.launch{
+                                                rsSaveCloudBrandV100(
+                                                    store.s("brand_header_name","RS KICKBOX"),
+                                                    store.s("brand_login_title","Premium cinematic kickboxing"),
+                                                    store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"),
+                                                    store.s("brand_footer_text","RS KICKBOX · TRAIN · LEARN · CONNECT · GROW"),
+                                                    selected.name,
+                                                    store.s("login_form_opacity","0.82").toFloatOrNull()?:.82f
+                                                )
+                                            }
+                                        }
+                                    }
                                     "backgrounds" -> RsVisualAssetStudioV21(c, store)
                                     "branding" -> RsBrandSiteSettingsV21(c, store)
                                     "intro_settings" -> RsIntroSettingsV21(c, store)
@@ -193,6 +221,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                     }
                 }
             }
+        }
         }
     }
 }
