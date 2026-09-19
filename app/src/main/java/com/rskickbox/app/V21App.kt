@@ -1,7 +1,5 @@
 package com.rskickbox.app
 
-import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -377,22 +375,6 @@ private fun LoginV21(
         }
     }
 
-    fun openAppUpdate(){
-        val marketIntent=Intent(Intent.ACTION_VIEW,Uri.parse("market://details?id="+context.packageName)).apply{
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        val webIntent=Intent(
-            Intent.ACTION_VIEW,
-            Uri.parse("https://play.google.com/store/apps/details?id="+context.packageName)
-        ).apply{addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)}
-        runCatching{context.startActivity(marketIntent)}
-            .recoverCatching{context.startActivity(webIntent)}
-            .onFailure{
-                statusIsError=true
-                status="The Play Store page is not available yet for this test build."
-            }
-    }
-
     val galleryQrPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
         if(uri!=null){
             val raw=rsDecodeQrImageV33(context,uri)
@@ -626,12 +608,6 @@ private fun LoginV21(
                     enabled=!busy,
                     modifier=Modifier.fillMaxWidth()
                 ){Text("Reset login screen")}
-
-                OutlinedButton(
-                    onClick={::openAppUpdate},
-                    enabled=!busy,
-                    modifier=Modifier.fillMaxWidth()
-                ){Text("Update app")}
 
                 if(status.isNotBlank()){
                     Surface(
