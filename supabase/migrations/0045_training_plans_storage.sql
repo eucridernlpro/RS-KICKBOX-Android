@@ -2,6 +2,11 @@
 -- Migration 0045: reusable training plans, homework media references and student storage accounting.
 -- Additive only. Existing homework/training media/chat flows remain compatible.
 
+-- Visible brand rename only. Preserve any custom trainer-set brand name.
+update public.rs_brand_settings
+set header_name='RS KICKBOXING', updated_at=now()
+where header_name='RS KICKBOX';
+
 alter table public.rs_training_media
     add column if not exists technique_tags text[] not null default '{}',
     add column if not exists ai_reference boolean not null default false;
