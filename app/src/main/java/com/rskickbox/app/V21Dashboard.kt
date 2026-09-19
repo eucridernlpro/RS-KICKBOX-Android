@@ -27,7 +27,12 @@ private data class SectionV21(val title:String,val items:List<DashV21>)
 
 @Composable
 fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRoute:(String)->Unit){
-    val sections=if(role==RsRole.TRAINER)trainerV21() else studentV21()
+    val baseSections=if(role==RsRole.TRAINER)trainerV21() else studentV21()
+    val sections=if(role==RsRole.STUDENT){
+        baseSections
+            .map{section->section.copy(items=section.items.filter{rsStudentRouteEnabledV82(store,it.route)})}
+            .filter{it.items.isNotEmpty()}
+    }else baseSections
     val compactPhone=LocalConfiguration.current.screenWidthDp<380
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(15.dp)){
         RsPanel(c){
