@@ -25,6 +25,11 @@ data class RsCloudNotificationV74(
     }.getOrDefault(createdAt)
 }
 
+@Serializable
+private data class RsUnreadNotificationCountRowV74(
+    val rs_unread_notification_count:Int
+)
+
 suspend fun rsCloudNotificationsV74():Result<List<RsCloudNotificationV74>> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     client.postgrest.rpc("rs_notification_feed")
@@ -34,10 +39,8 @@ suspend fun rsCloudNotificationsV74():Result<List<RsCloudNotificationV74>> = run
 suspend fun rsCloudUnreadNotificationCountV74():Int{
     val client=rsSupabaseClientV60() ?: return 0
     return runCatching{
-        @Serializable
-        data class CountRow(val rs_unread_notification_count:Int)
         client.postgrest.rpc("rs_unread_notification_count")
-            .decodeSingle<CountRow>()
+            .decodeSingle<RsUnreadNotificationCountRowV74>()
             .rs_unread_notification_count
     }.getOrDefault(0)
 }
