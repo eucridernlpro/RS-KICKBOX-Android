@@ -268,7 +268,7 @@ private fun RsCloudTrainerNotificationsV74(c:RsPalette,lang:RsLang){
                                 title=""
                                 message=""
                                 audience="ALL"
-                                status="Notification published."
+                                status=rsCloudT93(lang,"notification_published")
                                 revision++
                             }
                             .onFailure{status=it.message?:"Could not publish notification."}
@@ -299,7 +299,7 @@ private fun RsCloudTrainerNotificationsV74(c:RsPalette,lang:RsLang){
                                 rsDeleteCloudNotificationV74(item.id)
                                     .onSuccess{
                                         pendingDelete=null
-                                        status="Notification deleted."
+                                        status=rsCloudT93(lang,"notification_deleted")
                                         revision++
                                     }
                                     .onFailure{status=it.message?:"Could not delete notification."}
