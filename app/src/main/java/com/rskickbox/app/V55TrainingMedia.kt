@@ -476,7 +476,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
     RsScroll(
         c,
         if(role==RsRole.TRAINER)rsMediaUiV55(lang,"trainer_title") else rsMediaUiV55(lang,"student_title"),
-        if(role==RsRole.TRAINER)"Cloud training media shared securely with members." else "Secure coach media available for your membership."
+        if(role==RsRole.TRAINER)rsMediaUiV55(lang,"trainer_sub") else rsMediaUiV55(lang,"student_sub")
     ){
         RsPanel(c){
             Text(
