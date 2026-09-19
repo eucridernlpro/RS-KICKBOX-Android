@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.Locale
@@ -90,4 +91,29 @@ fun RsLanguageSettingsPanelV111(
             }
         }
     }
+}
+
+
+fun rsVisibleBrandNameV111(store:RsStore):String{
+    val raw=store.s("brand_header_name","RS KICKBOXING").trim()
+    return when{
+        raw.equals("RS KICKBOX",true)->"RS KICKBOXING"
+        raw.equals("RS KICKBOXING",true)->"RS KICKBOXING"
+        raw.isBlank()->"RS KICKBOXING"
+        else->raw
+    }
+}
+
+@Composable
+fun RsLettersLogoV111(c:RsPalette,store:RsStore,modifier:Modifier=Modifier){
+    Text(
+        text=rsVisibleBrandNameV111(store).uppercase(Locale.ROOT),
+        color=c.bright,
+        fontWeight=FontWeight.Black,
+        fontSize=20.sp,
+        letterSpacing=1.2.sp,
+        maxLines=1,
+        overflow=TextOverflow.Ellipsis,
+        modifier=modifier
+    )
 }
