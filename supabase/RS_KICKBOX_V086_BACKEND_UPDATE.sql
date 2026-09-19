@@ -2291,3 +2291,901 @@ revoke execute on function public.rs_staff_delete_invoice(uuid) from public;
 revoke execute on function public.rs_staff_delete_invoice(uuid) from anon;
 grant execute on function public.rs_staff_delete_invoice(uuid) to authenticated;
 
+
+
+-- ============================================================
+-- 0030_cloud_account_privacy.sql
+-- ============================================================
+
+-- RS KICKBOX backend foundation
+-- Migration 0030: production account/privacy request workflow.
+
+create or replace function public.rs_my_account_requests()
+returns table (
+    id uuid,
+    request_type text,
+    status text,
+    user_note text,
+    staff_note text,
+    requested_at timestamptz,
+    completed_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select
+        r.id,
+        r.request_type,
+        r.status,
+        r.user_note,
+        r.staff_note,
+        r.requested_at,
+        r.completed_at
+    from public.rs_account_requests r
+    where r.user_id=(select auth.uid())
+    order by r.requested_at desc;
+$$;
+
+revoke execute on function public.rs_my_account_requests() from public;
+revoke execute on function public.rs_my_account_requests() from anon;
+grant execute on function public.rs_my_account_requests() to authenticated;
+
+create or replace function public.rs_request_account_action(
+    p_request_type text,
+    p_user_note text default ''
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_uid uuid := (select auth.uid());
+    v_id uuid;
+begin
+    if v_uid is null then
+        raise exception 'authentication required' using errcode='42501';
+    end if;
+
+    if p_request_type not in ('data_export','account_deletion') then
+        raise exception 'invalid request type' using errcode='22023';
+    end if;
+
+    select r.id into v_id
+    from public.rs_account_requests r
+    where r.user_id=v_uid
+      and r.request_type=p_request_type
+      and r.status in ('requested','processing')
+    order by r.requested_at desc
+    limit 1;
+
+    if v_id is not null then
+        return v_id;
+    end if;
+
+    insert into public.rs_account_requests(
+        user_id,
+        request_type,
+        status,
+        user_note
+    )
+    values(
+        v_uid,
+        p_request_type,
+        'requested',
+        left(coalesce(p_user_note,''),1000)
+    )
+    returning id into v_id;
+
+    return v_id;
+end;
+$$;
+
+revoke execute on function public.rs_request_account_action(text,text) from public;
+revoke execute on function public.rs_request_account_action(text,text) from anon;
+grant execute on function public.rs_request_account_action(text,text) to authenticated;
+
+create or replace function public.rs_staff_account_requests()
+returns table (
+    id uuid,
+    user_id uuid,
+    email text,
+    display_name text,
+    request_type text,
+    status text,
+    user_note text,
+    staff_note text,
+    requested_at timestamptz,
+    completed_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select
+        r.id,
+        r.user_id,
+        p.email,
+        p.display_name,
+        r.request_type,
+        r.status,
+        r.user_note,
+        r.staff_note,
+        r.requested_at,
+        r.completed_at
+    from public.rs_account_requests r
+    left join public.rs_profiles p on p.id=r.user_id
+    where (select private.rs_is_staff())
+    order by
+        case r.status when 'requested' then 1 when 'processing' then 2 else 3 end,
+        r.requested_at desc;
+$$;
+
+revoke execute on function public.rs_staff_account_requests() from public;
+revoke execute on function public.rs_staff_account_requests() from anon;
+grant execute on function public.rs_staff_account_requests() to authenticated;
+
+create or replace function public.rs_staff_update_account_request(
+    p_request_id uuid,
+    p_status text,
+    p_staff_note text default ''
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    if p_status not in ('requested','processing','completed','rejected','cancelled') then
+        raise exception 'invalid request status' using errcode='22023';
+    end if;
+
+    update public.rs_account_requests
+    set
+        status=p_status,
+        staff_note=left(coalesce(p_staff_note,''),2000),
+        completed_at=case when p_status in ('completed','rejected','cancelled') then now() else null end
+    where id=p_request_id;
+
+    if not found then
+        raise exception 'account request not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_update_account_request(uuid,text,text) from public;
+revoke execute on function public.rs_staff_update_account_request(uuid,text,text) from anon;
+grant execute on function public.rs_staff_update_account_request(uuid,text,text) to authenticated;
+
+
+
+-- ============================================================
+-- 0030_cloud_technique_coach.sql
+-- ============================================================
+
+-- RS KICKBOX backend foundation
+-- Migration 0030: protected cloud Technique Coach submissions.
+
+insert into storage.buckets(
+    id,name,public,file_size_limit,allowed_mime_types
+)
+values(
+    'rs-technique-submissions',
+    'rs-technique-submissions',
+    false,
+    52428800,
+    array['video/mp4','video/webm','video/quicktime','video/3gpp']
+)
+on conflict(id) do update
+set public=excluded.public,
+    file_size_limit=excluded.file_size_limit,
+    allowed_mime_types=excluded.allowed_mime_types;
+
+drop policy if exists "rs_technique_storage_insert_own" on storage.objects;
+create policy "rs_technique_storage_insert_own"
+on storage.objects
+for insert
+to authenticated
+with check(
+    bucket_id='rs-technique-submissions'
+    and (storage.foldername(name))[1]=(select auth.uid())::text
+);
+
+drop policy if exists "rs_technique_storage_select_own_or_staff" on storage.objects;
+create policy "rs_technique_storage_select_own_or_staff"
+on storage.objects
+for select
+to authenticated
+using(
+    bucket_id='rs-technique-submissions'
+    and (
+        (storage.foldername(name))[1]=(select auth.uid())::text
+        or (select private.rs_is_staff())
+    )
+);
+
+drop policy if exists "rs_technique_storage_delete_own_or_staff" on storage.objects;
+create policy "rs_technique_storage_delete_own_or_staff"
+on storage.objects
+for delete
+to authenticated
+using(
+    bucket_id='rs-technique-submissions'
+    and (
+        (storage.foldername(name))[1]=(select auth.uid())::text
+        or (select private.rs_is_staff())
+    )
+);
+
+create or replace function public.rs_staff_set_technique_review(
+    p_submission_id uuid,
+    p_favorite boolean,
+    p_trainer_note text
+)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    update public.rs_technique_submissions
+    set trainer_favorite=p_favorite,
+        trainer_note=coalesce(p_trainer_note,''),
+        updated_at=now()
+    where id=p_submission_id;
+
+    if not found then
+        raise exception 'technique submission not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_set_technique_review(uuid,boolean,text) from public;
+revoke execute on function public.rs_staff_set_technique_review(uuid,boolean,text) from anon;
+grant execute on function public.rs_staff_set_technique_review(uuid,boolean,text) to authenticated;
+
+create or replace function public.rs_technique_submission_catalog()
+returns table(
+    id uuid,
+    student_id uuid,
+    student_email text,
+    student_name text,
+    technique text,
+    media_path text,
+    media_name text,
+    student_summary text,
+    trainer_note text,
+    trainer_favorite boolean,
+    created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path=''
+as $$
+    select
+        s.id,
+        s.student_id,
+        p.email,
+        p.display_name,
+        s.technique,
+        s.media_path,
+        s.media_name,
+        s.student_summary,
+        s.trainer_note,
+        s.trainer_favorite,
+        s.created_at
+    from public.rs_technique_submissions s
+    join public.rs_profiles p on p.id=s.student_id
+    where s.student_id=(select auth.uid())
+       or (select private.rs_is_staff())
+    order by s.created_at desc;
+$$;
+
+revoke execute on function public.rs_technique_submission_catalog() from public;
+revoke execute on function public.rs_technique_submission_catalog() from anon;
+grant execute on function public.rs_technique_submission_catalog() to authenticated;
+
+
+
+-- ============================================================
+-- 0031_cloud_content_library.sql
+-- ============================================================
+
+-- RS KICKBOX backend foundation
+-- Migration 0031: production cloud content library actions.
+
+create or replace function public.rs_content_catalog()
+returns table(
+    id uuid,
+    title text,
+    category text,
+    body text,
+    access_tier text,
+    published boolean,
+    favorite boolean,
+    last_opened_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path=''
+as $$
+    select
+        c.id,
+        c.title,
+        c.category,
+        c.body,
+        c.access_tier,
+        c.published,
+        exists(
+            select 1
+            from public.rs_content_favorites f
+            where f.user_id=(select auth.uid())
+              and f.content_id=c.id
+        ) as favorite,
+        (
+            select max(h.opened_at)
+            from public.rs_content_history h
+            where h.user_id=(select auth.uid())
+              and h.content_id=c.id
+        ) as last_opened_at
+    from public.rs_content c
+    where
+        (select private.rs_is_staff())
+        or (
+            c.published=true
+            and exists(
+                select 1
+                from public.rs_profiles p
+                where p.id=(select auth.uid())
+                  and p.active=true
+                  and (
+                      c.access_tier='ALL'
+                      or c.access_tier='BASIC'
+                      or (c.access_tier='PRO' and p.plan in ('PRO','ELITE'))
+                      or (c.access_tier='ELITE' and p.plan='ELITE')
+                  )
+            )
+        )
+    order by c.updated_at desc,c.created_at desc;
+$$;
+
+revoke execute on function public.rs_content_catalog() from public;
+revoke execute on function public.rs_content_catalog() from anon;
+grant execute on function public.rs_content_catalog() to authenticated;
+
+create or replace function public.rs_toggle_content_favorite(
+    p_content_id uuid,
+    p_favorite boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+    v_uid uuid := (select auth.uid());
+begin
+    if v_uid is null then
+        raise exception 'authentication required' using errcode='42501';
+    end if;
+
+    if p_favorite then
+        insert into public.rs_content_favorites(user_id,content_id)
+        values(v_uid,p_content_id)
+        on conflict(user_id,content_id) do nothing;
+    else
+        delete from public.rs_content_favorites
+        where user_id=v_uid and content_id=p_content_id;
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_toggle_content_favorite(uuid,boolean) from public;
+revoke execute on function public.rs_toggle_content_favorite(uuid,boolean) from anon;
+grant execute on function public.rs_toggle_content_favorite(uuid,boolean) to authenticated;
+
+create or replace function public.rs_record_content_open(p_content_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+    v_uid uuid := (select auth.uid());
+begin
+    if v_uid is null then
+        raise exception 'authentication required' using errcode='42501';
+    end if;
+
+    insert into public.rs_content_history(user_id,content_id,opened_at)
+    values(v_uid,p_content_id,now());
+
+    delete from public.rs_content_history h
+    where h.user_id=v_uid
+      and h.id not in(
+          select x.id
+          from public.rs_content_history x
+          where x.user_id=v_uid
+          order by x.opened_at desc
+          limit 100
+      );
+end;
+$$;
+
+revoke execute on function public.rs_record_content_open(uuid) from public;
+revoke execute on function public.rs_record_content_open(uuid) from anon;
+grant execute on function public.rs_record_content_open(uuid) to authenticated;
+
+create or replace function public.rs_staff_create_content(
+    p_title text,
+    p_category text,
+    p_body text,
+    p_access_tier text,
+    p_published boolean
+)
+returns uuid
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare v_id uuid;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+    if trim(p_title)='' or trim(p_body)='' then
+        raise exception 'title and content required' using errcode='22023';
+    end if;
+    if p_access_tier not in ('ALL','BASIC','PRO','ELITE') then
+        raise exception 'invalid access tier' using errcode='22023';
+    end if;
+
+    insert into public.rs_content(
+        title,category,body,access_tier,published,created_by
+    )
+    values(
+        trim(p_title),
+        coalesce(nullif(trim(p_category),''),'TECHNIQUE'),
+        p_body,
+        p_access_tier,
+        p_published,
+        (select auth.uid())
+    )
+    returning id into v_id;
+
+    return v_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_create_content(text,text,text,text,boolean) from public;
+revoke execute on function public.rs_staff_create_content(text,text,text,text,boolean) from anon;
+grant execute on function public.rs_staff_create_content(text,text,text,text,boolean) to authenticated;
+
+create or replace function public.rs_staff_set_content_published(
+    p_content_id uuid,
+    p_published boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    update public.rs_content
+    set published=p_published,updated_at=now()
+    where id=p_content_id;
+
+    if not found then
+        raise exception 'content not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_set_content_published(uuid,boolean) from public;
+revoke execute on function public.rs_staff_set_content_published(uuid,boolean) from anon;
+grant execute on function public.rs_staff_set_content_published(uuid,boolean) to authenticated;
+
+create or replace function public.rs_staff_delete_content(p_content_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    delete from public.rs_content where id=p_content_id;
+    if not found then
+        raise exception 'content not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_delete_content(uuid) from public;
+revoke execute on function public.rs_staff_delete_content(uuid) from anon;
+grant execute on function public.rs_staff_delete_content(uuid) to authenticated;
+
+
+
+-- ============================================================
+-- 0032_cloud_student_development.sql
+-- ============================================================
+
+-- RS KICKBOX backend foundation
+-- Migration 0032: cloud student development workflows.
+
+create or replace function public.rs_development_students()
+returns table(
+    id uuid,
+    email text,
+    display_name text,
+    plan text,
+    active boolean
+)
+language sql
+stable
+security definer
+set search_path=''
+as $$
+    select p.id,p.email,p.display_name,p.plan,p.active
+    from public.rs_profiles p
+    where p.role='student'
+      and p.active=true
+      and (select private.rs_is_staff())
+    order by lower(p.display_name),lower(p.email);
+$$;
+
+revoke execute on function public.rs_development_students() from public;
+revoke execute on function public.rs_development_students() from anon;
+grant execute on function public.rs_development_students() to authenticated;
+
+create or replace function public.rs_homework_feed()
+returns table(
+    id uuid,
+    student_id uuid,
+    student_email text,
+    student_name text,
+    title text,
+    details text,
+    due_label text,
+    completed boolean,
+    created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path=''
+as $$
+    select h.id,h.student_id,p.email,p.display_name,h.title,h.details,h.due_label,h.completed,h.created_at
+    from public.rs_homework h
+    join public.rs_profiles p on p.id=h.student_id
+    where h.student_id=(select auth.uid())
+       or (select private.rs_is_staff())
+    order by h.created_at desc;
+$$;
+
+revoke execute on function public.rs_homework_feed() from public;
+revoke execute on function public.rs_homework_feed() from anon;
+grant execute on function public.rs_homework_feed() to authenticated;
+
+create or replace function public.rs_staff_assign_homework(
+    p_student_id uuid,
+    p_title text,
+    p_details text,
+    p_due_label text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare v_id uuid;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+    if trim(p_title)='' or trim(p_details)='' then
+        raise exception 'title and details required' using errcode='22023';
+    end if;
+
+    insert into public.rs_homework(student_id,title,details,due_label,assigned_by)
+    values(p_student_id,trim(p_title),trim(p_details),coalesce(p_due_label,''),(select auth.uid()))
+    returning id into v_id;
+    return v_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_assign_homework(uuid,text,text,text) from public;
+revoke execute on function public.rs_staff_assign_homework(uuid,text,text,text) from anon;
+grant execute on function public.rs_staff_assign_homework(uuid,text,text,text) to authenticated;
+
+create or replace function public.rs_set_homework_completed(
+    p_homework_id uuid,
+    p_completed boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $$
+begin
+    update public.rs_homework h
+    set completed=p_completed,updated_at=now()
+    where h.id=p_homework_id
+      and (
+          h.student_id=(select auth.uid())
+          or (select private.rs_is_staff())
+      );
+    if not found then
+        raise exception 'homework not found or not permitted' using errcode='42501';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_set_homework_completed(uuid,boolean) from public;
+revoke execute on function public.rs_set_homework_completed(uuid,boolean) from anon;
+grant execute on function public.rs_set_homework_completed(uuid,boolean) to authenticated;
+
+create or replace function public.rs_staff_delete_homework(p_homework_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $$
+begin
+    if not (select private.rs_is_staff()) then raise exception 'trainer/admin access required' using errcode='42501'; end if;
+    delete from public.rs_homework where id=p_homework_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_delete_homework(uuid) from public;
+revoke execute on function public.rs_staff_delete_homework(uuid) from anon;
+grant execute on function public.rs_staff_delete_homework(uuid) to authenticated;
+
+create or replace function public.rs_coach_notes_feed()
+returns table(
+    id uuid,
+    student_id uuid,
+    student_email text,
+    student_name text,
+    note text,
+    created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path=''
+as $$
+    select n.id,n.student_id,p.email,p.display_name,n.note,n.created_at
+    from public.rs_coach_notes n
+    join public.rs_profiles p on p.id=n.student_id
+    where (select private.rs_is_staff())
+    order by n.created_at desc;
+$$;
+
+revoke execute on function public.rs_coach_notes_feed() from public;
+revoke execute on function public.rs_coach_notes_feed() from anon;
+grant execute on function public.rs_coach_notes_feed() to authenticated;
+
+create or replace function public.rs_staff_add_coach_note(p_student_id uuid,p_note text)
+returns uuid
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare v_id uuid;
+begin
+    if not (select private.rs_is_staff()) then raise exception 'trainer/admin access required' using errcode='42501'; end if;
+    insert into public.rs_coach_notes(student_id,note,created_by)
+    values(p_student_id,trim(p_note),(select auth.uid()))
+    returning id into v_id;
+    return v_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_add_coach_note(uuid,text) from public;
+revoke execute on function public.rs_staff_add_coach_note(uuid,text) from anon;
+grant execute on function public.rs_staff_add_coach_note(uuid,text) to authenticated;
+
+create or replace function public.rs_staff_delete_coach_note(p_note_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $$
+begin
+    if not (select private.rs_is_staff()) then raise exception 'trainer/admin access required' using errcode='42501'; end if;
+    delete from public.rs_coach_notes where id=p_note_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_delete_coach_note(uuid) from public;
+revoke execute on function public.rs_staff_delete_coach_note(uuid) from anon;
+grant execute on function public.rs_staff_delete_coach_note(uuid) to authenticated;
+
+create or replace function public.rs_assessment_feed()
+returns table(
+    id uuid,
+    student_id uuid,
+    student_email text,
+    student_name text,
+    punches integer,
+    kicks integer,
+    defense integer,
+    footwork integer,
+    combinations integer,
+    conditioning integer,
+    summary text,
+    created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path=''
+as $$
+    select a.id,a.student_id,p.email,p.display_name,a.punches,a.kicks,a.defense,a.footwork,a.combinations,a.conditioning,a.summary,a.created_at
+    from public.rs_assessments a
+    join public.rs_profiles p on p.id=a.student_id
+    where a.student_id=(select auth.uid())
+       or (select private.rs_is_staff())
+    order by a.created_at desc;
+$$;
+
+revoke execute on function public.rs_assessment_feed() from public;
+revoke execute on function public.rs_assessment_feed() from anon;
+grant execute on function public.rs_assessment_feed() to authenticated;
+
+create or replace function public.rs_staff_add_assessment(
+    p_student_id uuid,
+    p_punches integer,
+    p_kicks integer,
+    p_defense integer,
+    p_footwork integer,
+    p_combinations integer,
+    p_conditioning integer,
+    p_summary text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare v_id uuid;
+begin
+    if not (select private.rs_is_staff()) then raise exception 'trainer/admin access required' using errcode='42501'; end if;
+
+    insert into public.rs_assessments(
+        student_id,punches,kicks,defense,footwork,combinations,conditioning,summary,assessed_by
+    )
+    values(
+        p_student_id,
+        greatest(0,least(100,p_punches)),
+        greatest(0,least(100,p_kicks)),
+        greatest(0,least(100,p_defense)),
+        greatest(0,least(100,p_footwork)),
+        greatest(0,least(100,p_combinations)),
+        greatest(0,least(100,p_conditioning)),
+        coalesce(p_summary,''),
+        (select auth.uid())
+    )
+    returning id into v_id;
+    return v_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_add_assessment(uuid,integer,integer,integer,integer,integer,integer,text) from public;
+revoke execute on function public.rs_staff_add_assessment(uuid,integer,integer,integer,integer,integer,integer,text) from anon;
+grant execute on function public.rs_staff_add_assessment(uuid,integer,integer,integer,integer,integer,integer,text) to authenticated;
+
+
+
+-- ============================================================
+-- 0033_cloud_student_feature_controls.sql
+-- ============================================================
+
+-- RS KICKBOX backend foundation
+-- Migration 0033: cloud operational controls and student route locks.
+
+alter table public.rs_app_settings
+add column if not exists disabled_student_routes text[] not null default '{}';
+
+create or replace function public.rs_app_controls()
+returns table(
+    maintenance_enabled boolean,
+    maintenance_message text,
+    community_posts_enabled boolean,
+    class_booking_enabled boolean,
+    private_lessons_enabled boolean,
+    referrals_enabled boolean,
+    in_app_reminders_enabled boolean,
+    retention_months integer,
+    disabled_student_routes text[]
+)
+language sql
+stable
+security definer
+set search_path=''
+as $$
+    select
+        s.maintenance_enabled,
+        s.maintenance_message,
+        s.community_posts_enabled,
+        s.class_booking_enabled,
+        s.private_lessons_enabled,
+        s.referrals_enabled,
+        s.in_app_reminders_enabled,
+        s.retention_months,
+        s.disabled_student_routes
+    from public.rs_app_settings s
+    where s.singleton=true;
+$$;
+
+revoke execute on function public.rs_app_controls() from public;
+revoke execute on function public.rs_app_controls() from anon;
+grant execute on function public.rs_app_controls() to authenticated;
+
+create or replace function public.rs_staff_update_app_controls(
+    p_maintenance_enabled boolean,
+    p_maintenance_message text,
+    p_community_posts_enabled boolean,
+    p_class_booking_enabled boolean,
+    p_private_lessons_enabled boolean,
+    p_referrals_enabled boolean,
+    p_in_app_reminders_enabled boolean,
+    p_retention_months integer,
+    p_disabled_student_routes text[]
+)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    if p_retention_months not in (12,24,36) then
+        raise exception 'invalid retention period' using errcode='22023';
+    end if;
+
+    update public.rs_app_settings
+    set
+        maintenance_enabled=p_maintenance_enabled,
+        maintenance_message=left(coalesce(p_maintenance_message,''),240),
+        community_posts_enabled=p_community_posts_enabled,
+        class_booking_enabled=p_class_booking_enabled,
+        private_lessons_enabled=p_private_lessons_enabled,
+        referrals_enabled=p_referrals_enabled,
+        in_app_reminders_enabled=p_in_app_reminders_enabled,
+        retention_months=p_retention_months,
+        disabled_student_routes=coalesce(p_disabled_student_routes,'{}'::text[]),
+        updated_by=(select auth.uid()),
+        updated_at=now()
+    where singleton=true;
+end;
+$$;
+
+revoke execute on function public.rs_staff_update_app_controls(boolean,text,boolean,boolean,boolean,boolean,boolean,integer,text[]) from public;
+revoke execute on function public.rs_staff_update_app_controls(boolean,text,boolean,boolean,boolean,boolean,boolean,integer,text[]) from anon;
+grant execute on function public.rs_staff_update_app_controls(boolean,text,boolean,boolean,boolean,boolean,boolean,integer,text[]) to authenticated;
+
