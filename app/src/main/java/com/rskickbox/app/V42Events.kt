@@ -258,7 +258,7 @@ fun RsEventManagerV42(c:RsPalette,store:RsStore,lang:RsLang){
                 scope.launch{
                     rsCloudCreateEventV75(title,whenLabel,location,capacity.toIntOrNull()?.coerceIn(1,500)?:20)
                         .onSuccess{
-                            title="";whenLabel="";location="";capacity="20";showCreate=false;status="Event created.";revision++
+                            title="";whenLabel="";location="";capacity="20";showCreate=false;status=rsCloudT93(lang,"event_created");revision++
                         }
                         .onFailure{status=it.message?:"Could not create event."}
                     busy=false
