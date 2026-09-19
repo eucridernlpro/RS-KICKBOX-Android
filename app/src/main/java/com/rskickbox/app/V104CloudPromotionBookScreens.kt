@@ -400,7 +400,7 @@ fun RsCloudBookLibraryV104(c:RsPalette,store:RsStore,lang:RsLang){
     RsScroll(c,rsRouteTitle(lang,"book","Trainer Book"),b?.title.orEmpty()){
         if(loading)RsPanel(c){Text(rsReleaseT98(lang,"syncing"),color=c.muted)}
         if(status.isNotBlank())RsPanel(c){Text(status,color=c.muted)}
-        if(b==null&&!loading)RsPanel(c){Text(rsServiceUiV51(lang,"none"),color=c.muted)}
+        if(b==null&&!loading)RsPanel(c){Text(rsCommonT95(lang,"none"),color=c.muted)}
         if(b!=null)RsPanel(c){
             if(b.coverUri.isNotBlank())RsUriPreviewV21(
                 b.coverUri,
