@@ -14,7 +14,11 @@ data class RsCloudBrandSettingsV100(
     @SerialName("login_subtitle") val loginSubtitle:String,
     @SerialName("footer_text") val footerText:String,
     @SerialName("theme_name") val themeName:String,
-    @SerialName("login_form_opacity") val loginFormOpacity:Double
+    @SerialName("login_form_opacity") val loginFormOpacity:Double,
+    @SerialName("intro_enabled") val introEnabled:Boolean=true,
+    @SerialName("intro_every_launch") val introEveryLaunch:Boolean=true,
+    @SerialName("intro_video_sound") val introVideoSound:Boolean=true,
+    @SerialName("intro_skip_enabled") val introSkipEnabled:Boolean=true
 )
 
 suspend fun rsCloudBrandSettingsV100():Result<RsCloudBrandSettingsV100> = runCatching{
@@ -32,6 +36,10 @@ suspend fun rsSyncCloudBrandV100(store:RsStore):Result<RsCloudBrandSettingsV100>
     store.ps("brand_footer_text",settings.footerText)
     store.ps("theme",settings.themeName)
     store.ps("login_form_opacity",settings.loginFormOpacity.coerceIn(.20,1.0).toString())
+    store.pb("intro_enabled",settings.introEnabled)
+    store.pb("intro_every_launch",settings.introEveryLaunch)
+    store.pb("intro_video_sound",settings.introVideoSound)
+    store.pb("intro_skip_enabled",settings.introSkipEnabled)
     settings
 }
 
@@ -127,4 +135,24 @@ fun rsBrandUiV100(lang:RsLang,key:String):String{
     )
     val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
+}
+
+
+suspend fun rsSaveCloudIntroSettingsV102(
+    enabled:Boolean,
+    everyLaunch:Boolean,
+    sound:Boolean,
+    skipEnabled:Boolean
+):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc(
+        "rs_staff_save_intro_settings",
+        buildJsonObject{
+            put("p_intro_enabled",enabled)
+            put("p_intro_every_launch",everyLaunch)
+            put("p_intro_video_sound",sound)
+            put("p_intro_skip_enabled",skipEnabled)
+        }
+    )
+    Unit
 }
