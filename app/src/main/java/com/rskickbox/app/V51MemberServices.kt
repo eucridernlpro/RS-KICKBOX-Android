@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 data class RsClubDocumentV51(
     val id:String,val title:String,val body:String,val accessTier:String,val active:Boolean
@@ -125,6 +126,7 @@ private fun rsServiceUiV51(lang:RsLang,key:String):String{
 
 @Composable
 fun RsDocumentsV51(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
+    if(RsSupabaseV60.configured){RsCloudDocumentsV99(c,lang,role);return}
     var revision by remember{mutableIntStateOf(0)}
     var title by remember{mutableStateOf("")}
     var body by remember{mutableStateOf("")}
@@ -181,6 +183,7 @@ fun RsDocumentsV51(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
 
 @Composable
 fun RsSupportV51(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
+    if(RsSupabaseV60.configured){RsCloudSupportV99(c,lang,role);return}
     var revision by remember{mutableIntStateOf(0)}
     var subject by remember{mutableStateOf("")}
     var message by remember{mutableStateOf("")}
@@ -252,6 +255,11 @@ fun RsSupportV51(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
 
 @Composable
 fun RsReferralsV51(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){
+        val role=if(store.s("session_role","student").equals("trainer",true))RsRole.TRAINER else RsRole.STUDENT
+        RsCloudReferralsV99(c,store,lang,role)
+        return
+    }
     val context=androidx.compose.ui.platform.LocalContext.current
     val email=store.s("session_student_email","alex@rskickbox.nl")
     var revision by remember{mutableIntStateOf(0)}
@@ -280,6 +288,336 @@ fun RsReferralsV51(c:RsPalette,store:RsStore,lang:RsLang){
                 modifier=Modifier.fillMaxWidth()
             ){Text(rsServiceUiV51(lang,"share"))}
             if(!sharingAllowed)Text(rsOpsUiV56(lang,"referrals_disabled"),color=c.muted,fontSize=10.sp)
+        }
+    }
+}
+
+
+@Composable
+private fun RsCloudDocumentsV99(c:RsPalette,lang:RsLang,role:RsRole){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var items by remember{mutableStateOf<List<RsCloudDocumentV99>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var title by remember{mutableStateOf("")}
+    var body by remember{mutableStateOf("")}
+    var tier by remember{mutableStateOf("ALL")}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudDocumentsV99()
+            .onSuccess{items=it}
+            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+        loading=false
+    }
+
+    RsScroll(
+        c,
+        if(role==RsRole.TRAINER)rsServiceUiV51(lang,"documents_admin") else rsServiceUiV51(lang,"documents"),
+        if(role==RsRole.TRAINER)rsServiceUiV51(lang,"documents_admin_sub") else rsServiceUiV51(lang,"documents_sub")
+    ){
+        RsPanel(c){
+            Text(
+                if(loading)rsReleaseT98(lang,"syncing") else rsReleaseT98(lang,"connected"),
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        if(role==RsRole.TRAINER)RsPanel(c){
+            OutlinedTextField(title,{title=it.take(120)},label={Text(rsServiceUiV51(lang,"title"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            OutlinedTextField(body,{body=it.take(10000)},label={Text(rsServiceUiV51(lang,"body"))},modifier=Modifier.fillMaxWidth(),minLines=5,enabled=!busy)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
+                listOf("ALL","BASIC","PRO","ELITE").forEach{x->
+                    FilterChip(selected=tier==x,onClick={tier=x},enabled=!busy,label={Text(x,fontSize=9.sp)},modifier=Modifier.weight(1f))
+                }
+            }
+            Button(
+                onClick={
+                    busy=true
+                    scope.launch{
+                        rsCreateCloudDocumentV99(title,body,tier)
+                            .onSuccess{
+                                title="";body="";tier="ALL"
+                                status=rsCloudT93(lang,"content_saved")
+                                revision++
+                            }
+                            .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                        busy=false
+                    }
+                },
+                enabled=!busy&&title.isNotBlank()&&body.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)rsReleaseT98(lang,"saving") else rsServiceUiV51(lang,"publish"))}
+        }
+
+        if(items.isEmpty()&&!loading)RsPanel(c){Text(rsServiceUiV51(lang,"none"),color=c.muted)}
+        items.forEach{x->
+            RsPanel(c){
+                Text(x.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                if(role==RsRole.TRAINER)Text(x.accessTier,color=c.muted)
+                Text(x.body,color=c.text)
+                if(role==RsRole.TRAINER){
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                        Text(if(x.active)"ACTIVE" else "INACTIVE",color=c.muted)
+                        Switch(
+                            checked=x.active,
+                            onCheckedChange={value->
+                                busy=true
+                                scope.launch{
+                                    rsSetCloudDocumentActiveV99(x.id,value)
+                                        .onSuccess{revision++}
+                                        .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                    busy=false
+                                }
+                            },
+                            enabled=!busy
+                        )
+                    }
+                    OutlinedButton(
+                        onClick={
+                            if(pendingDelete==x.id){
+                                busy=true
+                                scope.launch{
+                                    rsDeleteCloudDocumentV99(x.id)
+                                        .onSuccess{pendingDelete=null;revision++}
+                                        .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
+                                    busy=false
+                                }
+                            }else pendingDelete=x.id
+                        },
+                        enabled=!busy,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(if(pendingDelete==x.id)rsServiceUiV51(lang,"confirm") else rsServiceUiV51(lang,"delete"))}
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudSupportV99(c:RsPalette,lang:RsLang,role:RsRole){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var items by remember{mutableStateOf<List<RsCloudSupportTicketV99>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busyId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+    var subject by remember{mutableStateOf("")}
+    var message by remember{mutableStateOf("")}
+    var drafts by remember{mutableStateOf<Map<String,String>>(emptyMap())}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudSupportFeedV99()
+            .onSuccess{
+                items=it
+                drafts=it.associate{x->x.id to x.trainerReply}
+            }
+            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+        loading=false
+    }
+
+    RsScroll(
+        c,
+        if(role==RsRole.TRAINER)rsServiceUiV51(lang,"support_admin") else rsServiceUiV51(lang,"support"),
+        if(role==RsRole.TRAINER)rsServiceUiV51(lang,"support_admin_sub") else rsServiceUiV51(lang,"support_sub")
+    ){
+        RsPanel(c){
+            Text(
+                if(loading)rsReleaseT98(lang,"syncing") else rsReleaseT98(lang,"connected"),
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        if(role==RsRole.STUDENT)RsPanel(c){
+            OutlinedTextField(subject,{subject=it.take(120)},label={Text(rsServiceUiV51(lang,"subject"))},modifier=Modifier.fillMaxWidth(),enabled=busyId==null)
+            OutlinedTextField(message,{message=it.take(2000)},label={Text(rsServiceUiV51(lang,"message"))},modifier=Modifier.fillMaxWidth(),minLines=4,enabled=busyId==null)
+            Button(
+                onClick={
+                    busyId="new"
+                    scope.launch{
+                        rsCreateCloudSupportTicketV99(subject,message)
+                            .onSuccess{
+                                subject="";message=""
+                                status=rsReleaseT98(lang,"connected")
+                                revision++
+                            }
+                            .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                        busyId=null
+                    }
+                },
+                enabled=busyId==null&&subject.isNotBlank()&&message.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busyId=="new")rsReleaseT98(lang,"saving") else rsServiceUiV51(lang,"send"))}
+        }
+
+        if(items.isEmpty()&&!loading)RsPanel(c){Text(rsServiceUiV51(lang,"none"),color=c.muted)}
+        items.forEach{x->
+            RsPanel(c){
+                Text(x.subject,color=c.bright,fontWeight=FontWeight.Black)
+                if(role==RsRole.TRAINER)Text(x.studentName+" · "+x.studentEmail,color=c.muted,fontSize=10.sp)
+                Text(x.message,color=c.text)
+                Text(SimpleDateFormat("dd MMM yyyy · HH:mm",Locale.getDefault()).format(Date(x.createdAtMillis())),color=c.muted,fontSize=9.sp)
+                if(x.trainerReply.isNotBlank()){
+                    Text(rsServiceUiV51(lang,"reply"),color=c.bright,fontWeight=FontWeight.Bold)
+                    Text(x.trainerReply,color=c.text)
+                }
+                Text(if(x.status=="RESOLVED")rsServiceUiV51(lang,"resolved") else rsServiceUiV51(lang,"open"),color=c.muted)
+
+                if(role==RsRole.TRAINER){
+                    OutlinedTextField(
+                        drafts[x.id]?:x.trainerReply,
+                        {v->drafts=drafts+(x.id to v.take(2000))},
+                        label={Text(rsServiceUiV51(lang,"reply"))},
+                        modifier=Modifier.fillMaxWidth(),
+                        minLines=2,
+                        enabled=busyId==null
+                    )
+                    Button(
+                        onClick={
+                            busyId=x.id
+                            scope.launch{
+                                rsUpdateCloudSupportTicketV99(x.id,drafts[x.id].orEmpty(),x.status)
+                                    .onSuccess{revision++}
+                                    .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                                busyId=null
+                            }
+                        },
+                        enabled=busyId==null,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(if(busyId==x.id)rsReleaseT98(lang,"saving") else rsServiceUiV51(lang,"save_reply"))}
+
+                    OutlinedButton(
+                        onClick={
+                            busyId=x.id
+                            val next=if(x.status=="RESOLVED")"OPEN" else "RESOLVED"
+                            scope.launch{
+                                rsUpdateCloudSupportTicketV99(x.id,drafts[x.id].orEmpty(),next)
+                                    .onSuccess{revision++}
+                                    .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                busyId=null
+                            }
+                        },
+                        enabled=busyId==null,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(if(x.status=="RESOLVED")rsServiceUiV51(lang,"reopen") else rsServiceUiV51(lang,"resolve"))}
+
+                    OutlinedButton(
+                        onClick={
+                            if(pendingDelete==x.id){
+                                busyId=x.id
+                                scope.launch{
+                                    rsDeleteCloudSupportTicketV99(x.id)
+                                        .onSuccess{pendingDelete=null;revision++}
+                                        .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
+                                    busyId=null
+                                }
+                            }else pendingDelete=x.id
+                        },
+                        enabled=busyId==null,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(if(pendingDelete==x.id)rsServiceUiV51(lang,"confirm") else rsServiceUiV51(lang,"delete"))}
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudReferralsV99(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
+    val context=androidx.compose.ui.platform.LocalContext.current
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var items by remember{mutableStateOf<List<RsCloudReferralV99>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busyId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudReferralsV99()
+            .onSuccess{items=it}
+            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+        loading=false
+    }
+
+    RsScroll(c,rsServiceUiV51(lang,"referrals"),rsServiceUiV51(lang,"referrals_sub")){
+        RsPanel(c){
+            Text(
+                if(loading)rsReleaseT98(lang,"syncing") else rsReleaseT98(lang,"connected"),
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        if(items.isEmpty()&&!loading)RsPanel(c){Text(rsServiceUiV51(lang,"none"),color=c.muted)}
+        items.forEach{referral->
+            RsPanel(c){
+                if(role==RsRole.TRAINER){
+                    Text(referral.ownerName.ifBlank{referral.ownerEmail},color=c.bright,fontWeight=FontWeight.Black)
+                    Text(referral.ownerEmail,color=c.muted,fontSize=9.sp)
+                }else{
+                    Text(rsServiceUiV51(lang,"your_code"),color=c.muted)
+                }
+                Text(referral.code,color=c.bright,fontWeight=FontWeight.Black,fontSize=28.sp)
+                Text(referral.uses.toString()+" "+rsServiceUiV51(lang,"uses"),color=c.text)
+
+                if(role==RsRole.STUDENT){
+                    val sharingAllowed=rsOpsEnabledV56(store,RsOpsKeysV56.REFERRALS,true)&&referral.active
+                    Button(
+                        onClick={
+                            val shareText=when(lang.code){
+                                "nl"->"Word lid van RS KICKBOX met referralcode "
+                                "pt"->"Junta-te à RS KICKBOX com o código de referência "
+                                "es"->"Únete a RS KICKBOX con el código de referido "
+                                "fr"->"Rejoins RS KICKBOX avec le code de parrainage "
+                                "de"->"Tritt RS KICKBOX mit diesem Empfehlungscode bei: "
+                                "it"->"Unisciti a RS KICKBOX con il codice referral "
+                                "pl"->"Dołącz do RS KICKBOX z kodem polecającym "
+                                "tr"->"RS KICKBOX'a şu referans koduyla katıl: "
+                                else->"Join RS KICKBOX with referral code "
+                            }
+                            val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{
+                                type="text/plain"
+                                putExtra(android.content.Intent.EXTRA_TEXT,shareText+referral.code+"\n"+RS_PLAY_STORE_URL_V33)
+                            }
+                            context.startActivity(android.content.Intent.createChooser(intent,rsServiceUiV51(lang,"share")))
+                        },
+                        enabled=sharingAllowed,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(rsServiceUiV51(lang,"share"))}
+                    if(!sharingAllowed)Text(rsOpsUiV56(lang,"referrals_disabled"),color=c.muted,fontSize=10.sp)
+                }else{
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                        Text(if(referral.active)"ACTIVE" else "INACTIVE",color=c.muted)
+                        Switch(
+                            checked=referral.active,
+                            onCheckedChange={value->
+                                busyId=referral.id
+                                scope.launch{
+                                    rsSetCloudReferralActiveV99(referral.id,value)
+                                        .onSuccess{revision++}
+                                        .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                    busyId=null
+                                }
+                            },
+                            enabled=busyId==null
+                        )
+                    }
+                }
+            }
         }
     }
 }
