@@ -1011,3 +1011,1283 @@ revoke execute on function public.rs_my_student_id() from public;
 revoke execute on function public.rs_my_student_id() from anon;
 grant execute on function public.rs_my_student_id() to authenticated;
 
+
+
+-- ============================================================
+-- 0025_cloud_training_media.sql
+-- ============================================================
+
+-- RS KICKBOX backend foundation
+-- Migration 0025: protected cloud training media storage and catalog actions.
+
+insert into storage.buckets (
+    id,
+    name,
+    public,
+    file_size_limit,
+    allowed_mime_types
+)
+values (
+    'rs-training-media',
+    'rs-training-media',
+    false,
+    104857600,
+    array[
+        'video/mp4',
+        'video/webm',
+        'video/quicktime',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'image/gif'
+    ]
+)
+on conflict (id) do update
+set
+    public=excluded.public,
+    file_size_limit=excluded.file_size_limit,
+    allowed_mime_types=excluded.allowed_mime_types;
+
+drop policy if exists "rs_training_storage_staff_insert" on storage.objects;
+create policy "rs_training_storage_staff_insert"
+on storage.objects
+for insert
+to authenticated
+with check (
+    bucket_id='rs-training-media'
+    and (select private.rs_is_staff())
+);
+
+drop policy if exists "rs_training_storage_visible_select" on storage.objects;
+create policy "rs_training_storage_visible_select"
+on storage.objects
+for select
+to authenticated
+using (
+    bucket_id='rs-training-media'
+    and (
+        (select private.rs_is_staff())
+        or exists(
+            select 1
+            from public.rs_training_media m
+            join public.rs_profiles p on p.id=(select auth.uid())
+            where m.media_path=name
+              and m.published=true
+              and p.active=true
+              and p.role='student'
+              and (
+                  m.access_tier='ALL'
+                  or m.access_tier='BASIC'
+                  or (m.access_tier='PRO' and p.plan in ('PRO','ELITE'))
+                  or (m.access_tier='ELITE' and p.plan='ELITE')
+              )
+        )
+    )
+);
+
+drop policy if exists "rs_training_storage_staff_update" on storage.objects;
+create policy "rs_training_storage_staff_update"
+on storage.objects
+for update
+to authenticated
+using (
+    bucket_id='rs-training-media'
+    and (select private.rs_is_staff())
+)
+with check (
+    bucket_id='rs-training-media'
+    and (select private.rs_is_staff())
+);
+
+drop policy if exists "rs_training_storage_staff_delete" on storage.objects;
+create policy "rs_training_storage_staff_delete"
+on storage.objects
+for delete
+to authenticated
+using (
+    bucket_id='rs-training-media'
+    and (select private.rs_is_staff())
+);
+
+create or replace function public.rs_staff_create_training_media(
+    p_title text,
+    p_category text,
+    p_description text,
+    p_media_path text,
+    p_media_kind text,
+    p_access_tier text,
+    p_published boolean
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_id uuid;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    if trim(p_title)='' then
+        raise exception 'title required' using errcode='22023';
+    end if;
+    if p_media_kind not in ('VIDEO','IMAGE','GIF') then
+        raise exception 'invalid media kind' using errcode='22023';
+    end if;
+    if p_access_tier not in ('ALL','BASIC','PRO','ELITE') then
+        raise exception 'invalid access tier' using errcode='22023';
+    end if;
+    if trim(p_media_path)='' then
+        raise exception 'media path required' using errcode='22023';
+    end if;
+
+    insert into public.rs_training_media(
+        title,
+        category,
+        description,
+        media_path,
+        media_kind,
+        access_tier,
+        published,
+        created_by
+    )
+    values(
+        trim(p_title),
+        coalesce(nullif(trim(p_category),''),'TECHNIQUE'),
+        coalesce(p_description,''),
+        trim(p_media_path),
+        p_media_kind,
+        p_access_tier,
+        p_published,
+        (select auth.uid())
+    )
+    returning id into v_id;
+
+    return v_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_create_training_media(text,text,text,text,text,text,boolean) from public;
+revoke execute on function public.rs_staff_create_training_media(text,text,text,text,text,text,boolean) from anon;
+grant execute on function public.rs_staff_create_training_media(text,text,text,text,text,text,boolean) to authenticated;
+
+create or replace function public.rs_staff_set_training_media_published(
+    p_media_id uuid,
+    p_published boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    update public.rs_training_media
+    set published=p_published,
+        updated_at=now()
+    where id=p_media_id;
+
+    if not found then
+        raise exception 'training media not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_set_training_media_published(uuid,boolean) from public;
+revoke execute on function public.rs_staff_set_training_media_published(uuid,boolean) from anon;
+grant execute on function public.rs_staff_set_training_media_published(uuid,boolean) to authenticated;
+
+create or replace function public.rs_staff_delete_training_media(p_media_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_path text;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    delete from public.rs_training_media
+    where id=p_media_id
+    returning media_path into v_path;
+
+    if v_path is null then
+        raise exception 'training media not found' using errcode='P0002';
+    end if;
+
+    return v_path;
+end;
+$$;
+
+revoke execute on function public.rs_staff_delete_training_media(uuid) from public;
+revoke execute on function public.rs_staff_delete_training_media(uuid) from anon;
+grant execute on function public.rs_staff_delete_training_media(uuid) to authenticated;
+
+comment on policy "rs_training_storage_visible_select" on storage.objects is
+'Allows private training-media object reads only to staff or students whose active plan permits the linked published catalog item.';
+
+
+
+-- ============================================================
+-- 0026_cloud_notifications.sql
+-- ============================================================
+
+-- RS KICKBOX backend foundation
+-- Migration 0026: production cloud notification center.
+
+create or replace function public.rs_notification_feed()
+returns table (
+    id uuid,
+    title text,
+    message text,
+    audience text,
+    created_at timestamptz,
+    read boolean
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select
+        n.id,
+        n.title,
+        n.message,
+        n.audience,
+        n.created_at,
+        exists(
+            select 1
+            from public.rs_notification_reads r
+            where r.notification_id=n.id
+              and r.user_id=(select auth.uid())
+        ) as read
+    from public.rs_notifications n
+    left join public.rs_profiles p on p.id=(select auth.uid())
+    where n.active=true
+      and (
+          (select private.rs_is_staff())
+          or n.audience='ALL'
+          or (
+              p.active=true
+              and p.role='student'
+              and n.audience=p.plan
+          )
+      )
+    order by n.created_at desc;
+$$;
+
+revoke execute on function public.rs_notification_feed() from public;
+revoke execute on function public.rs_notification_feed() from anon;
+grant execute on function public.rs_notification_feed() to authenticated;
+
+create or replace function public.rs_unread_notification_count()
+returns integer
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select count(*)::integer
+    from public.rs_notifications n
+    join public.rs_profiles p on p.id=(select auth.uid())
+    where n.active=true
+      and (
+          (select private.rs_is_staff())
+          or n.audience='ALL'
+          or (
+              p.active=true
+              and p.role='student'
+              and n.audience=p.plan
+          )
+      )
+      and not exists(
+          select 1
+          from public.rs_notification_reads r
+          where r.notification_id=n.id
+            and r.user_id=(select auth.uid())
+      );
+$$;
+
+revoke execute on function public.rs_unread_notification_count() from public;
+revoke execute on function public.rs_unread_notification_count() from anon;
+grant execute on function public.rs_unread_notification_count() to authenticated;
+
+create or replace function public.rs_mark_notification_read(p_notification_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if (select auth.uid()) is null then
+        raise exception 'authentication required' using errcode='42501';
+    end if;
+
+    if not exists(
+        select 1
+        from public.rs_notifications n
+        left join public.rs_profiles p on p.id=(select auth.uid())
+        where n.id=p_notification_id
+          and n.active=true
+          and (
+              (select private.rs_is_staff())
+              or n.audience='ALL'
+              or (
+                  p.active=true
+                  and p.role='student'
+                  and n.audience=p.plan
+              )
+          )
+    ) then
+        raise exception 'notification not available' using errcode='P0002';
+    end if;
+
+    insert into public.rs_notification_reads(notification_id,user_id,read_at)
+    values(p_notification_id,(select auth.uid()),now())
+    on conflict (notification_id,user_id) do update
+    set read_at=excluded.read_at;
+end;
+$$;
+
+revoke execute on function public.rs_mark_notification_read(uuid) from public;
+revoke execute on function public.rs_mark_notification_read(uuid) from anon;
+grant execute on function public.rs_mark_notification_read(uuid) to authenticated;
+
+create or replace function public.rs_staff_create_notification(
+    p_title text,
+    p_message text,
+    p_audience text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_id uuid;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    if trim(p_title)='' or trim(p_message)='' then
+        raise exception 'title and message required' using errcode='22023';
+    end if;
+
+    if p_audience not in ('ALL','BASIC','PRO','ELITE') then
+        raise exception 'invalid audience' using errcode='22023';
+    end if;
+
+    insert into public.rs_notifications(
+        title,message,audience,created_by,active
+    )
+    values(
+        trim(p_title),
+        trim(p_message),
+        p_audience,
+        (select auth.uid()),
+        true
+    )
+    returning id into v_id;
+
+    return v_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_create_notification(text,text,text) from public;
+revoke execute on function public.rs_staff_create_notification(text,text,text) from anon;
+grant execute on function public.rs_staff_create_notification(text,text,text) to authenticated;
+
+create or replace function public.rs_staff_delete_notification(p_notification_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    delete from public.rs_notifications
+    where id=p_notification_id;
+
+    if not found then
+        raise exception 'notification not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_delete_notification(uuid) from public;
+revoke execute on function public.rs_staff_delete_notification(uuid) from anon;
+grant execute on function public.rs_staff_delete_notification(uuid) to authenticated;
+
+
+
+-- ============================================================
+-- 0027_cloud_events.sql
+-- ============================================================
+
+-- RS KICKBOX backend foundation
+-- Migration 0027: production cloud events and atomic RSVP actions.
+
+create or replace function public.rs_event_catalog()
+returns table (
+    id uuid,
+    title text,
+    when_label text,
+    location text,
+    capacity integer,
+    active boolean,
+    going_count integer,
+    my_status text
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select
+        e.id,
+        e.title,
+        e.when_label,
+        e.location,
+        e.capacity,
+        e.active,
+        (
+            select count(*)::integer
+            from public.rs_event_rsvps r
+            where r.event_id=e.id
+              and r.status='going'
+        ) as going_count,
+        (
+            select r2.status
+            from public.rs_event_rsvps r2
+            where r2.event_id=e.id
+              and r2.student_id=(select auth.uid())
+            limit 1
+        ) as my_status
+    from public.rs_events e
+    where e.active=true
+       or (select private.rs_is_staff())
+    order by e.starts_at asc nulls last,e.created_at desc;
+$$;
+
+revoke execute on function public.rs_event_catalog() from public;
+revoke execute on function public.rs_event_catalog() from anon;
+grant execute on function public.rs_event_catalog() to authenticated;
+
+create or replace function public.rs_event_rsvp(p_event_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_uid uuid := (select auth.uid());
+    v_event public.rs_events%rowtype;
+    v_count integer;
+    v_role text;
+    v_active boolean;
+begin
+    if v_uid is null then
+        raise exception 'authentication required' using errcode='42501';
+    end if;
+
+    select p.role,p.active
+    into v_role,v_active
+    from public.rs_profiles p
+    where p.id=v_uid;
+
+    if v_role<>'student' or coalesce(v_active,false)=false then
+        raise exception 'active student account required' using errcode='42501';
+    end if;
+
+    select *
+    into v_event
+    from public.rs_events e
+    where e.id=p_event_id
+    for update;
+
+    if v_event.id is null then
+        raise exception 'event not found' using errcode='P0002';
+    end if;
+    if not v_event.active then
+        raise exception 'event inactive' using errcode='P0001';
+    end if;
+
+    select count(*)
+    into v_count
+    from public.rs_event_rsvps r
+    where r.event_id=p_event_id
+      and r.status='going';
+
+    if v_count>=v_event.capacity then
+        raise exception 'event full' using errcode='P0001';
+    end if;
+
+    insert into public.rs_event_rsvps(event_id,student_id,status,created_at,updated_at)
+    values(p_event_id,v_uid,'going',now(),now())
+    on conflict (event_id,student_id) do update
+    set status='going',updated_at=now();
+
+    return 'going';
+end;
+$$;
+
+revoke execute on function public.rs_event_rsvp(uuid) from public;
+revoke execute on function public.rs_event_rsvp(uuid) from anon;
+grant execute on function public.rs_event_rsvp(uuid) to authenticated;
+
+create or replace function public.rs_cancel_event_rsvp(p_event_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    update public.rs_event_rsvps
+    set status='cancelled',
+        updated_at=now()
+    where event_id=p_event_id
+      and student_id=(select auth.uid())
+      and status='going';
+
+    if not found then
+        raise exception 'active RSVP not found' using errcode='P0002';
+    end if;
+
+    return 'cancelled';
+end;
+$$;
+
+revoke execute on function public.rs_cancel_event_rsvp(uuid) from public;
+revoke execute on function public.rs_cancel_event_rsvp(uuid) from anon;
+grant execute on function public.rs_cancel_event_rsvp(uuid) to authenticated;
+
+create or replace function public.rs_staff_create_event(
+    p_title text,
+    p_when_label text,
+    p_location text,
+    p_capacity integer
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_id uuid;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    if trim(p_title)='' or trim(p_when_label)='' or trim(p_location)='' then
+        raise exception 'title, date/time and location required' using errcode='22023';
+    end if;
+    if p_capacity<1 or p_capacity>500 then
+        raise exception 'invalid event capacity' using errcode='22023';
+    end if;
+
+    insert into public.rs_events(
+        title,when_label,location,capacity,active,created_by
+    )
+    values(
+        trim(p_title),trim(p_when_label),trim(p_location),p_capacity,true,(select auth.uid())
+    )
+    returning id into v_id;
+
+    return v_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_create_event(text,text,text,integer) from public;
+revoke execute on function public.rs_staff_create_event(text,text,text,integer) from anon;
+grant execute on function public.rs_staff_create_event(text,text,text,integer) to authenticated;
+
+create or replace function public.rs_staff_set_event_active(
+    p_event_id uuid,
+    p_active boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    update public.rs_events
+    set active=p_active,
+        updated_at=now()
+    where id=p_event_id;
+
+    if not found then
+        raise exception 'event not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_set_event_active(uuid,boolean) from public;
+revoke execute on function public.rs_staff_set_event_active(uuid,boolean) from anon;
+grant execute on function public.rs_staff_set_event_active(uuid,boolean) to authenticated;
+
+create or replace function public.rs_staff_delete_event(p_event_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    delete from public.rs_events where id=p_event_id;
+
+    if not found then
+        raise exception 'event not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_delete_event(uuid) from public;
+revoke execute on function public.rs_staff_delete_event(uuid) from anon;
+grant execute on function public.rs_staff_delete_event(uuid) to authenticated;
+
+
+
+-- ============================================================
+-- 0028_cloud_private_lessons.sql
+-- ============================================================
+
+-- RS KICKBOX backend foundation
+-- Migration 0028: production cloud private lessons.
+
+create or replace function public.rs_private_lesson_catalog()
+returns table (
+    slot_id uuid,
+    day_label text,
+    time_label text,
+    duration_minutes integer,
+    active boolean,
+    my_booking_id uuid,
+    my_status text,
+    my_note text
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select
+        s.id,
+        s.day_label,
+        s.time_label,
+        s.duration_minutes,
+        s.active,
+        (
+            select b.id
+            from public.rs_private_bookings b
+            where b.slot_id=s.id
+              and b.student_id=(select auth.uid())
+              and b.status<>'cancelled'
+            order by b.requested_at desc
+            limit 1
+        ) as my_booking_id,
+        (
+            select b.status
+            from public.rs_private_bookings b
+            where b.slot_id=s.id
+              and b.student_id=(select auth.uid())
+              and b.status<>'cancelled'
+            order by b.requested_at desc
+            limit 1
+        ) as my_status,
+        (
+            select b.note
+            from public.rs_private_bookings b
+            where b.slot_id=s.id
+              and b.student_id=(select auth.uid())
+              and b.status<>'cancelled'
+            order by b.requested_at desc
+            limit 1
+        ) as my_note
+    from public.rs_private_slots s
+    where s.active=true
+       or (select private.rs_is_staff())
+    order by s.starts_at asc nulls last,s.created_at asc;
+$$;
+
+revoke execute on function public.rs_private_lesson_catalog() from public;
+revoke execute on function public.rs_private_lesson_catalog() from anon;
+grant execute on function public.rs_private_lesson_catalog() to authenticated;
+
+create or replace function public.rs_request_private_lesson(
+    p_slot_id uuid,
+    p_note text default ''
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_uid uuid := (select auth.uid());
+    v_role text;
+    v_active boolean;
+    v_id uuid;
+begin
+    if v_uid is null then
+        raise exception 'authentication required' using errcode='42501';
+    end if;
+
+    select p.role,p.active
+    into v_role,v_active
+    from public.rs_profiles p
+    where p.id=v_uid;
+
+    if v_role<>'student' or coalesce(v_active,false)=false then
+        raise exception 'active student account required' using errcode='42501';
+    end if;
+
+    if not exists(
+        select 1 from public.rs_private_slots s
+        where s.id=p_slot_id and s.active=true
+    ) then
+        raise exception 'private lesson slot not available' using errcode='P0002';
+    end if;
+
+    if exists(
+        select 1
+        from public.rs_private_bookings b
+        where b.slot_id=p_slot_id
+          and b.status='confirmed'
+          and b.student_id<>v_uid
+    ) then
+        raise exception 'private lesson slot already confirmed' using errcode='P0001';
+    end if;
+
+    insert into public.rs_private_bookings(
+        slot_id,student_id,note,status,requested_at,updated_at
+    )
+    values(
+        p_slot_id,v_uid,left(coalesce(p_note,''),1000),'requested',now(),now()
+    )
+    on conflict (slot_id,student_id) do update
+    set
+        note=excluded.note,
+        status='requested',
+        requested_at=now(),
+        updated_at=now()
+    returning id into v_id;
+
+    return v_id;
+end;
+$$;
+
+revoke execute on function public.rs_request_private_lesson(uuid,text) from public;
+revoke execute on function public.rs_request_private_lesson(uuid,text) from anon;
+grant execute on function public.rs_request_private_lesson(uuid,text) to authenticated;
+
+create or replace function public.rs_cancel_private_lesson_request(p_booking_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    update public.rs_private_bookings
+    set status='cancelled',
+        updated_at=now()
+    where id=p_booking_id
+      and student_id=(select auth.uid())
+      and status in ('requested','confirmed','declined');
+
+    if not found then
+        raise exception 'private lesson request not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_cancel_private_lesson_request(uuid) from public;
+revoke execute on function public.rs_cancel_private_lesson_request(uuid) from anon;
+grant execute on function public.rs_cancel_private_lesson_request(uuid) to authenticated;
+
+create or replace function public.rs_staff_private_lesson_requests()
+returns table (
+    booking_id uuid,
+    slot_id uuid,
+    student_id uuid,
+    student_email text,
+    student_name text,
+    note text,
+    status text,
+    day_label text,
+    time_label text,
+    duration_minutes integer
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select
+        b.id,
+        b.slot_id,
+        b.student_id,
+        p.email,
+        p.display_name,
+        b.note,
+        b.status,
+        s.day_label,
+        s.time_label,
+        s.duration_minutes
+    from public.rs_private_bookings b
+    join public.rs_profiles p on p.id=b.student_id
+    join public.rs_private_slots s on s.id=b.slot_id
+    where (select private.rs_is_staff())
+      and b.status<>'cancelled'
+    order by b.requested_at desc;
+$$;
+
+revoke execute on function public.rs_staff_private_lesson_requests() from public;
+revoke execute on function public.rs_staff_private_lesson_requests() from anon;
+grant execute on function public.rs_staff_private_lesson_requests() to authenticated;
+
+create or replace function public.rs_staff_create_private_slot(
+    p_day_label text,
+    p_time_label text,
+    p_duration_minutes integer
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_id uuid;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    if trim(p_day_label)='' or trim(p_time_label)='' then
+        raise exception 'day and time required' using errcode='22023';
+    end if;
+
+    if p_duration_minutes<15 or p_duration_minutes>180 then
+        raise exception 'invalid duration' using errcode='22023';
+    end if;
+
+    insert into public.rs_private_slots(
+        trainer_id,day_label,time_label,duration_minutes,active
+    )
+    values(
+        (select auth.uid()),
+        trim(p_day_label),
+        trim(p_time_label),
+        p_duration_minutes,
+        true
+    )
+    returning id into v_id;
+
+    return v_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_create_private_slot(text,text,integer) from public;
+revoke execute on function public.rs_staff_create_private_slot(text,text,integer) from anon;
+grant execute on function public.rs_staff_create_private_slot(text,text,integer) to authenticated;
+
+create or replace function public.rs_staff_set_private_slot_active(
+    p_slot_id uuid,
+    p_active boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    update public.rs_private_slots
+    set active=p_active,
+        updated_at=now()
+    where id=p_slot_id;
+
+    if not found then
+        raise exception 'private lesson slot not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_set_private_slot_active(uuid,boolean) from public;
+revoke execute on function public.rs_staff_set_private_slot_active(uuid,boolean) from anon;
+grant execute on function public.rs_staff_set_private_slot_active(uuid,boolean) to authenticated;
+
+create or replace function public.rs_staff_delete_private_slot(p_slot_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    delete from public.rs_private_slots where id=p_slot_id;
+
+    if not found then
+        raise exception 'private lesson slot not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_delete_private_slot(uuid) from public;
+revoke execute on function public.rs_staff_delete_private_slot(uuid) from anon;
+grant execute on function public.rs_staff_delete_private_slot(uuid) to authenticated;
+
+create or replace function public.rs_staff_set_private_booking_status(
+    p_booking_id uuid,
+    p_status text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_slot_id uuid;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    if p_status not in ('requested','confirmed','declined') then
+        raise exception 'invalid booking status' using errcode='22023';
+    end if;
+
+    select b.slot_id into v_slot_id
+    from public.rs_private_bookings b
+    where b.id=p_booking_id
+    for update;
+
+    if v_slot_id is null then
+        raise exception 'private lesson request not found' using errcode='P0002';
+    end if;
+
+    if p_status='confirmed' then
+        update public.rs_private_bookings
+        set status='declined',
+            updated_at=now()
+        where slot_id=v_slot_id
+          and id<>p_booking_id
+          and status in ('requested','confirmed');
+    end if;
+
+    update public.rs_private_bookings
+    set status=p_status,
+        updated_at=now()
+    where id=p_booking_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_set_private_booking_status(uuid,text) from public;
+revoke execute on function public.rs_staff_set_private_booking_status(uuid,text) from anon;
+grant execute on function public.rs_staff_set_private_booking_status(uuid,text) to authenticated;
+
+
+
+-- ============================================================
+-- 0029_cloud_finance.sql
+-- ============================================================
+
+-- RS KICKBOX backend foundation
+-- Migration 0029: production billing summary and invoice ledger actions.
+
+create or replace function public.rs_my_billing_summary()
+returns table (
+    plan text,
+    active boolean,
+    membership_status text,
+    amount_cents integer,
+    currency text,
+    current_period_end timestamptz
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select
+        p.plan,
+        p.active,
+        coalesce(m.status,'active'),
+        coalesce(m.amount_cents,mp.monthly_cents,0),
+        coalesce(m.currency,mp.currency,'EUR'),
+        m.current_period_end
+    from public.rs_profiles p
+    left join public.rs_memberships m on m.student_id=p.id
+    left join public.rs_membership_plans mp on mp.code=p.plan
+    where p.id=(select auth.uid())
+    limit 1;
+$$;
+
+revoke execute on function public.rs_my_billing_summary() from public;
+revoke execute on function public.rs_my_billing_summary() from anon;
+grant execute on function public.rs_my_billing_summary() to authenticated;
+
+create or replace function public.rs_my_invoices()
+returns table (
+    id uuid,
+    invoice_number text,
+    period_label text,
+    amount_cents integer,
+    currency text,
+    status text,
+    due_at timestamptz,
+    paid_at timestamptz,
+    created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select
+        i.id,
+        i.invoice_number,
+        i.period_label,
+        i.amount_cents,
+        i.currency,
+        i.status,
+        i.due_at,
+        i.paid_at,
+        i.created_at
+    from public.rs_invoices i
+    where i.student_id=(select auth.uid())
+    order by i.created_at desc;
+$$;
+
+revoke execute on function public.rs_my_invoices() from public;
+revoke execute on function public.rs_my_invoices() from anon;
+grant execute on function public.rs_my_invoices() to authenticated;
+
+create or replace function public.rs_staff_invoice_catalog()
+returns table (
+    id uuid,
+    invoice_number text,
+    student_id uuid,
+    student_email text,
+    student_name text,
+    period_label text,
+    amount_cents integer,
+    currency text,
+    status text,
+    due_at timestamptz,
+    paid_at timestamptz,
+    created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select
+        i.id,
+        i.invoice_number,
+        i.student_id,
+        p.email,
+        p.display_name,
+        i.period_label,
+        i.amount_cents,
+        i.currency,
+        i.status,
+        i.due_at,
+        i.paid_at,
+        i.created_at
+    from public.rs_invoices i
+    join public.rs_profiles p on p.id=i.student_id
+    where (select private.rs_is_staff())
+    order by i.created_at desc;
+$$;
+
+revoke execute on function public.rs_staff_invoice_catalog() from public;
+revoke execute on function public.rs_staff_invoice_catalog() from anon;
+grant execute on function public.rs_staff_invoice_catalog() to authenticated;
+
+create or replace function public.rs_staff_create_invoice(
+    p_student_email text,
+    p_period_label text,
+    p_amount_cents integer,
+    p_due_at timestamptz default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_student_id uuid;
+    v_invoice_id uuid;
+    v_number text;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    if trim(p_period_label)='' then
+        raise exception 'period required' using errcode='22023';
+    end if;
+    if p_amount_cents<0 then
+        raise exception 'invalid amount' using errcode='22023';
+    end if;
+
+    select p.id into v_student_id
+    from public.rs_profiles p
+    where lower(p.email)=lower(trim(p_student_email))
+      and p.role='student'
+    limit 1;
+
+    if v_student_id is null then
+        raise exception 'student not found' using errcode='P0002';
+    end if;
+
+    v_number := 'RS-' || to_char(now(),'YYYYMMDDHH24MISS') || '-' || upper(substr(replace(gen_random_uuid()::text,'-',''),1,6));
+
+    insert into public.rs_invoices(
+        invoice_number,
+        student_id,
+        period_label,
+        amount_cents,
+        currency,
+        status,
+        due_at
+    )
+    values(
+        v_number,
+        v_student_id,
+        trim(p_period_label),
+        p_amount_cents,
+        'EUR',
+        'pending',
+        p_due_at
+    )
+    returning id into v_invoice_id;
+
+    return v_invoice_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_create_invoice(text,text,integer,timestamptz) from public;
+revoke execute on function public.rs_staff_create_invoice(text,text,integer,timestamptz) from anon;
+grant execute on function public.rs_staff_create_invoice(text,text,integer,timestamptz) to authenticated;
+
+create or replace function public.rs_staff_set_invoice_status(
+    p_invoice_id uuid,
+    p_status text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_invoice public.rs_invoices%rowtype;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    if p_status not in ('pending','paid','void','overdue') then
+        raise exception 'invalid invoice status' using errcode='22023';
+    end if;
+
+    select * into v_invoice
+    from public.rs_invoices
+    where id=p_invoice_id
+    for update;
+
+    if v_invoice.id is null then
+        raise exception 'invoice not found' using errcode='P0002';
+    end if;
+
+    update public.rs_invoices
+    set
+        status=p_status,
+        paid_at=case when p_status='paid' then coalesce(paid_at,now()) else null end,
+        updated_at=now()
+    where id=p_invoice_id;
+
+    if p_status='paid' and not exists(
+        select 1 from public.rs_payments p
+        where p.invoice_id=p_invoice_id
+          and p.status='succeeded'
+    ) then
+        insert into public.rs_payments(
+            invoice_id,
+            student_id,
+            amount_cents,
+            currency,
+            method,
+            status,
+            provider,
+            paid_at
+        )
+        values(
+            p_invoice_id,
+            v_invoice.student_id,
+            v_invoice.amount_cents,
+            v_invoice.currency,
+            'manual',
+            'succeeded',
+            'RS KICKBOX admin',
+            now()
+        );
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_set_invoice_status(uuid,text) from public;
+revoke execute on function public.rs_staff_set_invoice_status(uuid,text) from anon;
+grant execute on function public.rs_staff_set_invoice_status(uuid,text) to authenticated;
+
+create or replace function public.rs_staff_delete_invoice(p_invoice_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    delete from public.rs_invoices where id=p_invoice_id;
+
+    if not found then
+        raise exception 'invoice not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_delete_invoice(uuid) from public;
+revoke execute on function public.rs_staff_delete_invoice(uuid) from anon;
+grant execute on function public.rs_staff_delete_invoice(uuid) to authenticated;
+
