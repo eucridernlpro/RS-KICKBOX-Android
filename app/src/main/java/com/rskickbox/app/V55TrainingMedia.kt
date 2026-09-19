@@ -122,7 +122,7 @@ private fun rsMediaStorageNoteV109(lang:RsLang):String=when(lang.code){
     "it"->"I file vengono caricati su Supabase Storage protetto. Gli allievi ricevono accesso in base al piano attivo."
     "pl"->"Pliki są przesyłane do chronionego Supabase Storage. Uczniowie otrzymują dostęp zgodnie z aktywnym planem."
     "tr"->"Dosyalar korumalı Supabase Storage alanına yüklenir. Öğrenciler aktif planlarına göre erişim alır."
-    else->rsMediaStorageNoteV109(lang)
+    else->"Files are uploaded to protected Supabase Storage. Students receive access according to their active plan."
 }
 
 private fun rsMediaUiV55(lang:RsLang,key:String):String{
@@ -212,7 +212,7 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
 }
 
 @Composable
-private fun RsTrainingMediaPlayerV55(c:RsPalette,lang:RsLang,item:RsTrainingMediaItemV55,onClose:()->Unit){
+fun RsTrainingMediaPlayerV55(c:RsPalette,lang:RsLang,item:RsTrainingMediaItemV55,onClose:()->Unit){
     val context=LocalContext.current
     val player=if(item.kind=="VIDEO")remember(item.uri){
         ExoPlayer.Builder(context).build().apply{
@@ -504,7 +504,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
             RsPanel(c){
                 Text(rsMediaUiV55(lang,"new"),color=c.bright,fontWeight=FontWeight.Black)
                 Text(
-                    "Files are uploaded to protected Supabase Storage. Students receive access according to their active plan.",
+                    rsMediaStorageNoteV109(lang),
                     color=c.muted,
                     fontSize=10.sp
                 )
