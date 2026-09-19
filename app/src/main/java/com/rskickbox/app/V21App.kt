@@ -1,5 +1,8 @@
 package com.rskickbox.app
 
+import android.app.Activity
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -77,16 +80,28 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                 route="home"
             }else if(RsSupabaseV60.configured){
                 authRestoring=true
+                val lastPasswordAuth=store.s("session_password_auth_ms","0").toLongOrNull()?:0L
+                val now=System.currentTimeMillis()
+                val reauthWindowMs=12L*60L*60L*1000L
                 rsCloudCurrentSessionV67()
                     .onSuccess{session->
                         if(session!=null){
-                            store.ps("session_student_email",session.email)
-        store.ps("last_login_email",session.email)
-                            store.ps("session_student_name",session.displayName)
-                            store.ps("session_plan",session.plan)
-                            store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
-                            role=session.role
-                            route=if(session.role==RsRole.TRAINER)"trainer" else "home"
+                            // Existing installs may not yet have the timestamp. Seed it once
+                            // from a valid persisted cloud session, then enforce 12 hours.
+                            val effectiveAuthAt=if(lastPasswordAuth>0L)lastPasswordAuth else now
+                            if(now-effectiveAuthAt<=reauthWindowMs){
+                                if(lastPasswordAuth<=0L)store.ps("session_password_auth_ms",effectiveAuthAt.toString())
+                                store.ps("session_student_email",session.email)
+                                store.ps("last_login_email",session.email)
+                                store.ps("session_student_name",session.displayName)
+                                store.ps("session_plan",session.plan)
+                                store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
+                                role=session.role
+                                route=if(session.role==RsRole.TRAINER)"trainer" else "home"
+                            }else{
+                                store.ps("session_password_auth_ms","0")
+                                appScope.launch{rsCloudLogoutV63()}
+                            }
                         }
                     }
                 authRestoring=false
@@ -189,6 +204,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                 passwordRecoveryLaunch=false
                                 role=null
                                 route="home"
+                                store.ps("session_password_auth_ms","0")
                                 appScope.launch { rsCloudLogoutV63() }
                             }) {
                                 when(route) {
@@ -327,6 +343,7 @@ private fun LoginV21(
         store.ps("session_student_name",session.displayName)
         store.ps("session_plan",session.plan)
         store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
+        store.ps("session_password_auth_ms",System.currentTimeMillis().toString())
         statusIsError=false
         status="✓ "+rsEnrollMsg(lang,"welcome",name=session.displayName)
         onLogin(session.role)
@@ -762,6 +779,24 @@ private fun ShellV21(
     val home=if(role==RsRole.TRAINER)"trainer" else "home"
     val drawerState=rememberDrawerState(initialValue=DrawerValue.Closed)
     val scope=rememberCoroutineScope()
+    val context=LocalContext.current
+    var lastBackPressMs by remember{mutableLongStateOf(0L)}
+
+    BackHandler {
+        when{
+            drawerState.isOpen -> scope.launch{drawerState.close()}
+            route!=home -> onRoute(home)
+            else -> {
+                val now=System.currentTimeMillis()
+                if(now-lastBackPressMs<2200L){
+                    (context as? Activity)?.moveTaskToBack(true)
+                }else{
+                    lastBackPressMs=now
+                    Toast.makeText(context,"Press back again to leave RS KICKBOXING",Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
     val rawDrawerItems=if(role==RsRole.TRAINER) listOf(
         "trainer" to "Trainer Dashboard",
         "guide" to "App Guide",
