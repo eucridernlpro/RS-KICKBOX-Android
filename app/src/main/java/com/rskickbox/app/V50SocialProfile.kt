@@ -135,6 +135,18 @@ fun rsRemoveSocialDataForStudentV50(store:RsStore,email:String){
     rsSaveJoinedGroupsV50(store,email,emptySet())
 }
 
+private fun rsProfilePrivacyNoteV109(lang:RsLang,cloud:Boolean):String=when(lang.code){
+    "nl"->if(cloud)"Je trainer kan je profielidentiteit zien. Andere leden zien profielgegevens alleen wanneer Openbaar profiel is ingeschakeld." else "Je profielfoto is zichtbaar voor je trainer en in ledenonderdelen waar je profiel mag worden getoond."
+    "pt"->if(cloud)"O treinador pode ver a tua identidade de perfil. Outros membros só veem detalhes quando o Perfil público está ativo." else "A tua foto de perfil é visível ao treinador e nas áreas de membros onde o teu perfil pode ser mostrado."
+    "es"->if(cloud)"Tu entrenador puede ver tu identidad de perfil. Otros miembros solo ven detalles cuando Perfil público está activado." else "Tu foto de perfil es visible para tu entrenador y en las áreas de miembros donde tu perfil puede mostrarse."
+    "fr"->if(cloud)"Ton entraîneur peut voir ton identité de profil. Les autres membres voient les détails uniquement si Profil public est activé." else "Ta photo de profil est visible par ton entraîneur et dans les espaces membres où ton profil peut être affiché."
+    "de"->if(cloud)"Dein Trainer kann deine Profilidentität sehen. Andere Mitglieder sehen Profildetails nur bei aktiviertem öffentlichen Profil." else "Dein Profilfoto ist für deinen Trainer und in freigegebenen Mitgliederbereichen sichtbar."
+    "it"->if(cloud)"Il tuo allenatore può vedere l’identità del profilo. Gli altri membri vedono i dettagli solo se Profilo pubblico è attivo." else "La foto profilo è visibile al tuo allenatore e nelle aree membri in cui il profilo può essere mostrato."
+    "pl"->if(cloud)"Trener widzi tożsamość profilu. Inni członkowie widzą szczegóły tylko po włączeniu profilu publicznego." else "Zdjęcie profilowe jest widoczne dla trenera i w obszarach członkowskich, w których profil może być wyświetlany."
+    "tr"->if(cloud)"Antrenörün profil kimliğini görebilir. Diğer üyeler ayrıntıları yalnızca Herkese açık profil açıkken görür." else "Profil fotoğrafın antrenörün ve profilinin gösterilmesine izin verilen üye alanlarında görünür."
+    else->if(cloud)rsProfilePrivacyNoteV109(lang,true) else rsProfilePrivacyNoteV109(lang,false)
+}
+
 private fun rsSocialUiV50(lang:RsLang,key:String):String{
     val en=mapOf(
         "profile" to "My Profile","profile_sub" to "Your RS KICKBOX identity and privacy controls.",
