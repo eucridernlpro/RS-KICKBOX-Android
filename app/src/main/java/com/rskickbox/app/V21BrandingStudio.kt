@@ -434,10 +434,10 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore,lang:RsLang){
                                 if(RsSupabaseV60.configured){
                                     scope.launch{
                                         rsSaveCloudBrandV100(
-                                            store.s("brand_header_name","RS KICKBOX"),
+                                            store.s("brand_header_name","RS KICKBOXING"),
                                             store.s("brand_login_title","Premium cinematic kickboxing"),
                                             store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"),
-                                            store.s("brand_footer_text","RS KICKBOX · TRAIN · LEARN · CONNECT · GROW"),
+                                            store.s("brand_footer_text","RS KICKBOXING · TRAIN · LEARN · CONNECT · GROW"),
                                             store.s("theme","ELITE_GOLD"),
                                             loginFormOpacity
                                         )
@@ -492,10 +492,10 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore,lang:RsLang){
 fun RsBrandSiteSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
-    var header by remember{mutableStateOf(store.s("brand_header_name","RS KICKBOX"))}
+    var header by remember{mutableStateOf(store.s("brand_header_name","RS KICKBOXING"))}
     var title by remember{mutableStateOf(store.s("brand_login_title","Premium cinematic kickboxing"))}
     var subtitle by remember{mutableStateOf(store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"))}
-    var footer by remember{mutableStateOf(store.s("brand_footer_text","RS KICKBOX · TRAIN · LEARN · CONNECT · GROW"))}
+    var footer by remember{mutableStateOf(store.s("brand_footer_text","RS KICKBOXING · TRAIN · LEARN · CONNECT · GROW"))}
     var loginOpacity by remember{mutableFloatStateOf(store.s("login_form_opacity","0.82").toFloatOrNull()?.coerceIn(.20f,1f)?:.82f)}
     var active by remember{mutableStateOf("")}
     var refresh by remember{mutableIntStateOf(0)}
@@ -697,5 +697,5 @@ fun RsBrandedHeaderV21(c:RsPalette,store:RsStore,content:@Composable ColumnScope
 @Composable
 fun RsBrandedFooterV21(c:RsPalette,store:RsStore){
     val uri=store.s(visualKeyV21("footer"),"")
-    Box(Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(16.dp)).background(c.panel),contentAlignment=Alignment.Center){if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.matchParentSize(),store.s(posKeyV21("footer"),"CENTER"));Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=.55f)));Text(store.s("brand_footer_text","RS KICKBOX · TRAIN · LEARN · CONNECT · GROW"),color=c.muted,fontSize=9.sp,maxLines=1)}
+    Box(Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(16.dp)).background(c.panel),contentAlignment=Alignment.Center){if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.matchParentSize(),store.s(posKeyV21("footer"),"CENTER"));Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=.55f)));Text(store.s("brand_footer_text","RS KICKBOXING · TRAIN · LEARN · CONNECT · GROW"),color=c.muted,fontSize=9.sp,maxLines=1)}
 }
