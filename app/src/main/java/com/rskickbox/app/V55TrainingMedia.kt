@@ -443,7 +443,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
     if(activeSelected!=null){
         LaunchedEffect(activeSelected.id){
             selectedLocalUri=""
-            status="Downloading protected training media…"
+            status=rsCloudT93(lang,"downloading_media")
             rsCloudTrainingMediaLocalUriV73(context,activeSelected)
                 .onSuccess{selectedLocalUri=it;status=""}
                 .onFailure{status=it.message?:"Could not open training media."}
@@ -551,7 +551,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
                     onClick={
                         val source=pickedSource?:return@Button
                         busy=true
-                        status="Uploading protected training media…"
+                        status=rsCloudT93(lang,"uploading_media")
                         scope.launch{
                             rsUploadCloudTrainingMediaV73(
                                 context,
@@ -568,7 +568,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
                                     description=""
                                     tier="ALL"
                                     pickedSource=null
-                                    status="Training media published."
+                                    status=rsCloudT93(lang,"media_published")
                                     revision++
                                 }
                                 .onFailure{status=it.message?:"Could not upload training media."}
@@ -630,7 +630,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
                                     rsDeleteCloudTrainingMediaV73(item.id)
                                         .onSuccess{
                                             pendingDelete=null
-                                            status="Training media deleted."
+                                            status=rsCloudT93(lang,"media_deleted")
                                             revision++
                                         }
                                         .onFailure{status=it.message?:"Could not delete training media."}
