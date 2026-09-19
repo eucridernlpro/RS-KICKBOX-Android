@@ -89,7 +89,7 @@ fun RsMembershipPlansV49(c:RsPalette,store:RsStore,lang:RsLang){
             loading=true
             rsCloudPlansV71()
                 .onSuccess{edited=it}
-                .onFailure{status=it.message?:"Could not load membership plans."}
+                .onFailure{status=rsReleaseT98(lang,"load_failed")}
             loading=false
         }else{
             edited=rsLoadPlansV49(store)
@@ -144,7 +144,7 @@ fun RsMembershipPlansV49(c:RsPalette,store:RsStore,lang:RsLang){
                     scope.launch{
                         var failure:String?=null
                         for(plan in edited){
-                            rsUpdateCloudPlanV71(plan).onFailure{failure=it.message?:"Could not save plans."}
+                            rsUpdateCloudPlanV71(plan).onFailure{failure=rsReleaseT98(lang,"save_failed")}
                             if(failure!=null)break
                         }
                         if(failure==null){
@@ -180,8 +180,8 @@ fun RsAccessControlV49(c:RsPalette,store:RsStore,lang:RsLang){
             loading=true
             val plansResult=rsCloudPlansV71()
             val studentsResult=rsCloudStudentAccessV71()
-            plansResult.onSuccess{cloudPlans=it}.onFailure{status=it.message?:"Could not load plans."}
-            studentsResult.onSuccess{cloudStudents=it}.onFailure{status=it.message?:"Could not load students."}
+            plansResult.onSuccess{cloudPlans=it}.onFailure{status=rsReleaseT98(lang,"load_failed")}
+            studentsResult.onSuccess{cloudStudents=it}.onFailure{status=rsReleaseT98(lang,"load_failed")}
             loading=false
         }
     }
@@ -226,7 +226,7 @@ fun RsAccessControlV49(c:RsPalette,store:RsStore,lang:RsLang){
                                     scope.launch{
                                         rsSetCloudStudentAccessV71(student.id,plan.code,student.active,student.membershipStatus)
                                             .onSuccess{status=rsCloudT93(lang,"plan_updated")+" "+student.displayName;revision++}
-                                            .onFailure{status=it.message?:"Could not change plan."}
+                                            .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                         busyStudentId=null
                                     }
                                 },
@@ -250,7 +250,7 @@ fun RsAccessControlV49(c:RsPalette,store:RsStore,lang:RsLang){
                                         if(v && student.membershipStatus=="cancelled")"active" else student.membershipStatus
                                     )
                                         .onSuccess{status=if(v)"Student access activated." else "Student access deactivated.";revision++}
-                                        .onFailure{status=it.message?:"Could not update student access."}
+                                        .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                     busyStudentId=null
                                 }
                             },
