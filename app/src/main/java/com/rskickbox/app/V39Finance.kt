@@ -11,6 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 data class RsInvoiceV39(
     val id:String,
@@ -112,6 +113,10 @@ private fun rsFinanceUiV39(lang:RsLang,key:String):String{
 
 @Composable
 fun RsStudentFinanceV39(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){
+        RsCloudStudentFinanceV77(c,lang)
+        return
+    }
     val sessionEmail=store.s("session_student_email","alex@rskickbox.nl")
     val sessionName=store.s("session_student_name","Alex de Vries")
     val account=rsLoadStudentsV33(store).firstOrNull{it.email.equals(sessionEmail,true)}
@@ -166,6 +171,10 @@ fun RsTrainerPaymentCenterV39(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsTrainerInvoicesV39(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){
+        RsCloudTrainerInvoicesV77(c,lang)
+        return
+    }
     var revision by remember{mutableIntStateOf(0)}
     var showCreate by remember{mutableStateOf(false)}
     var student by remember{mutableStateOf("")}
@@ -227,6 +236,222 @@ fun RsTrainerInvoicesV39(c:RsPalette,store:RsStore,lang:RsLang){
                             pendingDelete=null
                         }else pendingDelete=inv.id
                     },
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(pendingDelete==inv.id)rsFinanceUiV39(lang,"confirm") else rsFinanceUiV39(lang,"delete"))}
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun RsCloudStudentFinanceV77(c:RsPalette,lang:RsLang){
+    var loading by remember{mutableStateOf(true)}
+    var status by remember{mutableStateOf("")}
+    var summary by remember{mutableStateOf<RsCloudBillingSummaryV77?>(null)}
+    var invoices by remember{mutableStateOf<List<RsCloudInvoiceV77>>(emptyList())}
+
+    LaunchedEffect(Unit){
+        loading=true
+        rsMyBillingSummaryV77()
+            .onSuccess{summary=it}
+            .onFailure{status=it.message?:"Could not load membership billing."}
+        rsMyInvoicesV77()
+            .onSuccess{invoices=it}
+            .onFailure{status=it.message?:"Could not load invoice history."}
+        loading=false
+    }
+
+    RsScroll(c,rsFinanceUiV39(lang,"student_title"),"Your real membership and invoice history from RS KICKBOX."){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing billing…" else "Cloud billing connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        val billing=summary
+        if(billing!=null){
+            RsPanel(c){
+                Text("RS "+billing.plan,color=c.bright,fontSize=26.sp,fontWeight=FontWeight.Black)
+                Text(
+                    rsMoneyV39(billing.amountCents)+" / month · "+
+                        if(billing.active&&billing.membershipStatus=="active")rsFinanceUiV39(lang,"active")
+                        else billing.membershipStatus.uppercase(),
+                    color=c.text
+                )
+                Text(
+                    rsFinanceUiV39(lang,"next_renewal")+" · "+rsCloudDateLabelV77(billing.currentPeriodEnd),
+                    color=c.muted
+                )
+            }
+        }
+
+        RsPanel(c){
+            Text(rsFinanceUiV39(lang,"history"),color=c.bright,fontWeight=FontWeight.Bold)
+            if(invoices.isEmpty()&&!loading)Text("No invoices yet.",color=c.muted)
+            invoices.forEach{i->
+                Text(
+                    i.periodLabel+" · "+rsMoneyV39(i.amountCents)+" · "+
+                        when(i.status){
+                            "paid"->rsFinanceUiV39(lang,"paid")
+                            else->rsFinanceUiV39(lang,"pending")
+                        },
+                    color=c.muted
+                )
+                Text(i.invoiceNumber,color=c.text,fontSize=9.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var invoices by remember{mutableStateOf<List<RsCloudInvoiceV77>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var showCreate by remember{mutableStateOf(false)}
+    var studentEmail by remember{mutableStateOf("")}
+    var period by remember{mutableStateOf("")}
+    var amount by remember{mutableStateOf("49.00")}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsStaffInvoicesV77()
+            .onSuccess{invoices=it}
+            .onFailure{status=it.message?:"Could not load invoices."}
+        loading=false
+    }
+
+    val collected=invoices.filter{it.status=="paid"}.sumOf{it.amountCents}
+    val outstanding=invoices.filter{it.status in listOf("pending","overdue")}.sumOf{it.amountCents}
+
+    RsScroll(c,rsFinanceUiV39(lang,"invoices"),"Live invoice ledger synchronized with Supabase."){
+        RsPanel(c){
+            Text(rsMoneyV39(collected)+" "+rsFinanceUiV39(lang,"collected"),color=c.bright,fontSize=22.sp,fontWeight=FontWeight.Black)
+            Text(rsMoneyV39(outstanding)+" "+rsFinanceUiV39(lang,"outstanding"),color=c.muted)
+            Text(
+                if(loading)"Syncing invoices…" else "Cloud invoice ledger connected",
+                color=if(loading)c.muted else c.bright,
+                fontSize=10.sp,
+                fontWeight=FontWeight.Bold
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        Button(
+            onClick={showCreate=!showCreate},
+            enabled=!busy,
+            modifier=Modifier.fillMaxWidth()
+        ){Text(if(showCreate)rsFinanceUiV39(lang,"close") else rsFinanceUiV39(lang,"create_invoice"))}
+
+        if(showCreate)RsPanel(c){
+            OutlinedTextField(
+                studentEmail,
+                {studentEmail=it.take(180)},
+                label={Text("Student email")},
+                modifier=Modifier.fillMaxWidth(),
+                singleLine=true,
+                enabled=!busy
+            )
+            OutlinedTextField(
+                period,
+                {period=it.take(80)},
+                label={Text(rsFinanceUiV39(lang,"period"))},
+                modifier=Modifier.fillMaxWidth(),
+                singleLine=true,
+                enabled=!busy
+            )
+            OutlinedTextField(
+                amount,
+                {amount=it.filter{ch->ch.isDigit()||ch=='.'||ch==','}.take(12)},
+                label={Text(rsFinanceUiV39(lang,"amount"))},
+                modifier=Modifier.fillMaxWidth(),
+                singleLine=true,
+                enabled=!busy
+            )
+            Button(
+                onClick={
+                    val cents=((amount.replace(',','.').toDoubleOrNull()?:0.0)*100).toInt().coerceAtLeast(0)
+                    busy=true
+                    status=""
+                    scope.launch{
+                        rsCreateCloudInvoiceV77(studentEmail,period,cents)
+                            .onSuccess{
+                                studentEmail=""
+                                period=""
+                                amount="49.00"
+                                showCreate=false
+                                status="Invoice created."
+                                revision++
+                            }
+                            .onFailure{status=it.message?:"Could not create invoice."}
+                        busy=false
+                    }
+                },
+                enabled=!busy&&studentEmail.contains("@")&&period.isNotBlank()&&(amount.replace(',','.').toDoubleOrNull()?:0.0)>0.0,
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Saving…" else rsFinanceUiV39(lang,"save"))}
+        }
+
+        invoices.forEach{inv->
+            RsPanel(c){
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(10.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    RsMemberAvatarV68(c,inv.studentEmail.orEmpty(),inv.studentName.orEmpty(),size=44.dp)
+                    Column(Modifier.weight(1f)){
+                        Text(inv.invoiceNumber+" · "+inv.studentName.orEmpty(),color=c.bright,fontWeight=FontWeight.Bold)
+                        Text(inv.studentEmail.orEmpty(),color=c.muted,fontSize=9.sp)
+                    }
+                }
+                Text(inv.periodLabel+" · "+rsMoneyV39(inv.amountCents),color=c.text)
+                Text(inv.status.uppercase(),color=c.muted)
+                Button(
+                    onClick={
+                        busy=true
+                        val next=if(inv.status=="paid")"pending" else "paid"
+                        scope.launch{
+                            rsSetCloudInvoiceStatusV77(inv.id,next)
+                                .onSuccess{
+                                    status=if(next=="paid")"Invoice marked paid." else "Invoice marked pending."
+                                    revision++
+                                }
+                                .onFailure{status=it.message?:"Could not update invoice."}
+                            busy=false
+                        }
+                    },
+                    enabled=!busy,
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Text(if(inv.status=="paid")rsFinanceUiV39(lang,"mark_pending") else rsFinanceUiV39(lang,"mark_paid"))
+                }
+                OutlinedButton(
+                    onClick={
+                        if(pendingDelete==inv.id){
+                            busy=true
+                            scope.launch{
+                                rsDeleteCloudInvoiceV77(inv.id)
+                                    .onSuccess{
+                                        pendingDelete=null
+                                        status="Invoice deleted."
+                                        revision++
+                                    }
+                                    .onFailure{status=it.message?:"Could not delete invoice."}
+                                busy=false
+                            }
+                        }else pendingDelete=inv.id
+                    },
+                    enabled=!busy,
                     modifier=Modifier.fillMaxWidth()
                 ){Text(if(pendingDelete==inv.id)rsFinanceUiV39(lang,"confirm") else rsFinanceUiV39(lang,"delete"))}
             }
