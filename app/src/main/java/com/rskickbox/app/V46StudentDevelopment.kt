@@ -441,6 +441,7 @@ private fun RsCloudStudentHomeworkV80(c:RsPalette,lang:RsLang){
                 Text(x.details,color=c.text)
                 if(x.dueLabel.isNotBlank())Text(rsDevUiV46(lang,"due")+" · "+x.dueLabel,color=c.muted)
                 Text(if(x.completed)rsDevUiV46(lang,"completed") else rsDevUiV46(lang,"open"),color=c.bright,fontWeight=FontWeight.Bold)
+                RsHomeworkStepsPanelV110(c,lang,x.id)
                 Button(
                     onClick={
                         busyId=x.id
@@ -510,11 +511,15 @@ private fun RsCloudHomeworkManagerV80(c:RsPalette,lang:RsLang){
                 modifier=Modifier.fillMaxWidth()
             ){Text(if(busy)"Saving…" else rsDevUiV46(lang,"assign"))}
         }
+
+        RsTrainingPlanManagerPanelV110(c,lang,selectedId){revision++}
+
         items.forEach{x->
             RsPanel(c){
                 Text(x.studentName.ifBlank{x.studentEmail}+" · "+x.title,color=c.bright,fontWeight=FontWeight.Bold)
                 Text(x.details,color=c.text)
                 Text((if(x.completed)rsDevUiV46(lang,"completed") else rsDevUiV46(lang,"open"))+" · "+x.dueLabel,color=c.muted)
+                RsHomeworkStepsPanelV110(c,lang,x.id)
                 OutlinedButton(
                     onClick={
                         if(pendingDelete==x.id){
@@ -530,6 +535,7 @@ private fun RsCloudHomeworkManagerV80(c:RsPalette,lang:RsLang){
                 ){Text(if(pendingDelete==x.id)rsDevUiV46(lang,"confirm") else rsDevUiV46(lang,"delete"))}
             }
         }
+        RsStudentStoragePanelV110(c,lang)
     }
 }
 
