@@ -192,7 +192,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
         loading=true
         rsMyAccountRequestsV78()
             .onSuccess{requests=it}
-            .onFailure{status=it.message?:"Could not load privacy requests."}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -238,7 +238,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
                                 status="Cloud data-export request submitted."
                                 revision++
                             }
-                            .onFailure{status=it.message?:"Could not submit data-export request."}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -303,7 +303,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
                                     showDelete=false
                                     deleteText=""
                                 }
-                                .onFailure{status=it.message?:"Could not submit deletion request."}
+                                .onFailure{status=rsReleaseT98(lang,"save_failed")}
                             busy=false
                         }
                     },
