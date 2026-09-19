@@ -6,6 +6,16 @@ plugins {
 
 val rsSupabaseUrl = providers.gradleProperty("SUPABASE_URL").orElse("").get()
 val rsSupabasePublishableKey = providers.gradleProperty("SUPABASE_PUBLISHABLE_KEY").orElse("").get()
+val rsReleaseStoreFile = providers.gradleProperty("RS_RELEASE_STORE_FILE").orElse("").get()
+val rsReleaseStorePassword = providers.gradleProperty("RS_RELEASE_STORE_PASSWORD").orElse("").get()
+val rsReleaseKeyAlias = providers.gradleProperty("RS_RELEASE_KEY_ALIAS").orElse("").get()
+val rsReleaseKeyPassword = providers.gradleProperty("RS_RELEASE_KEY_PASSWORD").orElse("").get()
+val rsReleaseSigningReady = listOf(
+    rsReleaseStoreFile,
+    rsReleaseStorePassword,
+    rsReleaseKeyAlias,
+    rsReleaseKeyPassword
+).all { it.isNotBlank() }
 
 android {
     namespace = "com.rskickbox.app"
@@ -19,6 +29,26 @@ android {
         versionName = "0.105.0"
         buildConfigField("String", "SUPABASE_URL", "\""+rsSupabaseUrl.replace("\\","\\\\").replace("\"","\\\"")+"\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\""+rsSupabasePublishableKey.replace("\\","\\\\").replace("\"","\\\"")+"\"")
+    }
+
+    signingConfigs {
+        if (rsReleaseSigningReady) {
+            create("release") {
+                storeFile = file(rsReleaseStoreFile)
+                storePassword = rsReleaseStorePassword
+                keyAlias = rsReleaseKeyAlias
+                keyPassword = rsReleaseKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            if (rsReleaseSigningReady) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
     }
 
     buildFeatures {
