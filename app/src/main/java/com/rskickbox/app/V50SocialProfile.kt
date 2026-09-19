@@ -648,7 +648,7 @@ private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
                                 scope.launch{
                                     rsDeleteCloudCommunityPostV84(x.id)
                                         .onSuccess{pendingDelete=null;status=rsCloudT93(lang,"post_deleted");revision++}
-                                        .onFailure{status=it.message?:"Could not delete post."}
+                                        .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
                                     busyId=null
                                 }
                             }else pendingDelete=x.id
