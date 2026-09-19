@@ -15,6 +15,7 @@ Target SDK: **36**
 - Cloud branding, theme, visual assets, splash/intro, promotions and trainer book.
 - Cloud member services: documents, support and referrals.
 - Account password recovery/logout state repair.
+- Trainer Privacy Requests center for secure review/status handling of member data-export and account-deletion requests.
 - Nine-language UI framework with cloud/error/localization cleanup across active modules.
 - AI Technique Coach:
   - local video import/private storage;
@@ -106,7 +107,7 @@ The final Data Safety answers must match the live production configuration. Revi
 - Profile data: profile photo, role, membership plan.
 - User-generated content: private messages, group messages, support messages, uploaded media.
 - App activity / training data: bookings, attendance, homework, progress, assessments, challenges, badges, Fight Camp, session activity.
-- Financial / membership records: plan, invoices, payment status. Confirm whether any actual payment-card or banking data is ever collected by RS KICKBOX itself.
+- Financial / membership records: plan, invoices and payment status. Current RS KICKBOX source is an invoice/status ledger and does not itself process or store payment-card credentials; re-check this if a real payment provider is added later.
 - Photos/videos: selected training and technique-review media.
 - Optional AI input: sampled frames from a user-selected technique video when the AI Technique Coach is invoked.
 - Device-local preferences: language, theme, player state and settings.
@@ -119,6 +120,7 @@ Before release, verify:
 
 - In-app deletion request path works for authenticated users.
 - External deletion page is publicly reachable without login.
+- Trainer/admin Privacy Requests center can review and track requests.
 - Support process can verify account ownership.
 - Backend deletion procedure removes associated user data where legally permitted.
 - Any retained records have a documented legitimate reason and retention period.
@@ -171,6 +173,7 @@ Run at least:
 4. GitHub Pages not enabled yet.
 5. Final Android signing keystore/secrets not yet configured.
 6. Physical-device matrix QC not yet completed.
-7. Play Console forms/listing/reviewer access not yet completed.
+7. Authorized server-side account-deletion/retention procedure is not yet fully automated/verified.
+8. Play Console forms/listing/reviewer access not yet completed.
 
 Do not call the project production-ready until all blockers above are verified.
