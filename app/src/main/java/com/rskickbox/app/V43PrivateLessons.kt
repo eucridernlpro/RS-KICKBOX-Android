@@ -321,7 +321,7 @@ private fun RsCloudStudentPrivateLessonsV76(c:RsPalette,lang:RsLang){
         loading=true
         rsCloudPrivateSlotsV76()
             .onSuccess{slots=it.filter{s->s.active}}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -375,7 +375,7 @@ private fun RsCloudStudentPrivateLessonsV76(c:RsPalette,lang:RsLang){
                                         status=rsCloudT93(lang,"lesson_request_sent")
                                         revision++
                                     }
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"save_failed")}
                                 busyId=null
                             }
                         },
@@ -392,7 +392,7 @@ private fun RsCloudStudentPrivateLessonsV76(c:RsPalette,lang:RsLang){
                                         status=rsCloudT93(lang,"lesson_request_cancelled")
                                         revision++
                                     }
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                 busyId=null
                             }
                         },
@@ -424,10 +424,10 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
         loading=true
         rsCloudPrivateSlotsV76()
             .onSuccess{slots=it}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         rsCloudPrivateRequestsV76()
             .onSuccess{requests=it}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -465,7 +465,7 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
                                 status=rsCloudT93(lang,"lesson_slot_created")
                                 revision++
                             }
-                            .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -488,7 +488,7 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
                             scope.launch{
                                 rsSetCloudPrivateSlotActiveV76(slot.slotId,v)
                                     .onSuccess{revision++}
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                 busy=false
                             }
                         },
@@ -506,7 +506,7 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
                                         status=rsCloudT93(lang,"lesson_slot_deleted")
                                         revision++
                                     }
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                 busy=false
                             }
                         }else pendingDelete=slot.slotId
@@ -551,7 +551,7 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
                             scope.launch{
                                 rsSetCloudPrivateRequestStatusV76(request.bookingId,"confirmed")
                                     .onSuccess{status=rsCloudT93(lang,"lesson_confirmed");revision++}
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                 busy=false
                             }
                         },
@@ -564,7 +564,7 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
                             scope.launch{
                                 rsSetCloudPrivateRequestStatusV76(request.bookingId,"declined")
                                     .onSuccess{status=rsCloudT93(lang,"lesson_declined");revision++}
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                 busy=false
                             }
                         },
@@ -579,7 +579,7 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
                             scope.launch{
                                 rsSetCloudPrivateRequestStatusV76(request.bookingId,"requested")
                                     .onSuccess{revision++}
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                 busy=false
                             }
                         },
