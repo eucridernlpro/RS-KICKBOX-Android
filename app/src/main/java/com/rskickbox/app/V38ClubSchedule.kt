@@ -149,7 +149,7 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
     RsScroll(c,rsRouteTitle(lang,"classes","Classes & Events"),rsClassUiV38(lang,"student_sub")){
         if(cloudMode)RsPanel(c){
             Text(
-                if(cloudLoading)"Syncing live class schedule…" else "Live club schedule connected",
+                if(cloudLoading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(cloudLoading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -216,7 +216,7 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
                     modifier=Modifier.fillMaxWidth()
                 ){
                     Text(
-                        if(cloudBusyId==clazz.id)"Please wait…"
+                        if(cloudBusyId==clazz.id)rsCloudT93(lang,"please_wait")
                         else if(isBooked)rsClassUiV38(lang,"cancel")
                         else rsClassUiV38(lang,"book")
                     )
@@ -264,7 +264,7 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
     RsScroll(c,rsClassUiV38(lang,"trainer_title"),rsClassUiV38(lang,"trainer_sub")){
         if(cloudMode)RsPanel(c){
             Text(
-                if(cloudLoading)"Syncing live class manager…" else "Supabase class manager connected",
+                if(cloudLoading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(cloudLoading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -447,7 +447,7 @@ fun RsAttendanceV38(c:RsPalette,store:RsStore,lang:RsLang){
         RsScroll(c,rsRouteTitle(lang,"attendance","Attendance"),"Live Supabase attendance and booking roster."){
             RsPanel(c){
                 Text(
-                    if(loading)"Syncing attendance…" else "Live attendance connected",
+                    if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                     color=if(loading)c.muted else c.bright,
                     fontWeight=FontWeight.Bold,
                     fontSize=10.sp
