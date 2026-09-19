@@ -219,6 +219,27 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
     return pack[key]?:en[key]?:key
 }
 
+private fun rsAiMediaUiV110(lang:RsLang,key:String):String{
+    val en=mapOf(
+        "title" to "AI correction example",
+        "help" to "Allow the AI Technique Coach to recommend this trainer-approved example when its technique tags match.",
+        "tags" to "Technique tags · comma separated",
+        "tags_hint" to "Example: roundhouse kick, pivot, guard, recovery",
+        "save" to "Save AI example settings",
+        "saved" to "AI example settings saved"
+    )
+    val nl=en+mapOf("title" to "AI-correctievoorbeeld","help" to "Laat de AI Techniekcoach dit door de trainer goedgekeurde voorbeeld aanbevelen wanneer de techniektags overeenkomen.","tags" to "Techniektags · gescheiden door komma's","tags_hint" to "Voorbeeld: roundhouse kick, pivot, dekking, herstel","save" to "AI-voorbeeld opslaan","saved" to "AI-voorbeeld opgeslagen")
+    val pt=en+mapOf("title" to "Exemplo de correção IA","help" to "Permite ao Coach Técnico IA recomendar este exemplo aprovado pelo treinador quando as etiquetas técnicas correspondem.","tags" to "Etiquetas técnicas · separadas por vírgulas","tags_hint" to "Exemplo: roundhouse kick, pivot, guarda, recuperação","save" to "Guardar exemplo IA","saved" to "Exemplo IA guardado")
+    val es=en+mapOf("title" to "Ejemplo de corrección IA","help" to "Permite que el Coach Técnico IA recomiende este ejemplo aprobado por el entrenador cuando coincidan las etiquetas.","tags" to "Etiquetas técnicas · separadas por comas","tags_hint" to "Ejemplo: roundhouse kick, pivot, guardia, recuperación","save" to "Guardar ejemplo IA","saved" to "Ejemplo IA guardado")
+    val fr=en+mapOf("title" to "Exemple de correction IA","help" to "Autorise le Coach Technique IA à recommander cet exemple approuvé par l'entraîneur lorsque les tags correspondent.","tags" to "Tags techniques · séparés par des virgules","tags_hint" to "Exemple : roundhouse kick, pivot, garde, récupération","save" to "Enregistrer l’exemple IA","saved" to "Exemple IA enregistré")
+    val de=en+mapOf("title" to "KI-Korrekturbeispiel","help" to "Erlaubt dem KI-Technikcoach, dieses vom Trainer freigegebene Beispiel bei passenden Technik-Tags zu empfehlen.","tags" to "Technik-Tags · durch Kommas getrennt","tags_hint" to "Beispiel: roundhouse kick, pivot, guard, recovery","save" to "KI-Beispiel speichern","saved" to "KI-Beispiel gespeichert")
+    val it=en+mapOf("title" to "Esempio di correzione IA","help" to "Consente al Coach Tecnico IA di consigliare questo esempio approvato dal trainer quando i tag corrispondono.","tags" to "Tag tecnici · separati da virgole","tags_hint" to "Esempio: roundhouse kick, pivot, guardia, recupero","save" to "Salva esempio IA","saved" to "Esempio IA salvato")
+    val pl=en+mapOf("title" to "Przykład korekty AI","help" to "Pozwala Trenerowi Techniki AI polecać ten zatwierdzony przez trenera przykład, gdy tagi techniczne pasują.","tags" to "Tagi techniczne · oddzielone przecinkami","tags_hint" to "Przykład: roundhouse kick, pivot, garda, powrót","save" to "Zapisz przykład AI","saved" to "Przykład AI zapisany")
+    val tr=en+mapOf("title" to "AI düzeltme örneği","help" to "Teknik etiketleri eşleştiğinde AI Teknik Koçu'nun antrenör onaylı bu örneği önermesine izin verir.","tags" to "Teknik etiketleri · virgülle ayır","tags_hint" to "Örnek: roundhouse kick, pivot, guard, recovery","save" to "AI örneğini kaydet","saved" to "AI örneği kaydedildi")
+    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
+    return pack[key]?:en[key]?:key
+}
+
 @Composable
 fun RsTrainingMediaPreviewV55(
     c:RsPalette,
@@ -455,6 +476,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
     var tier by remember{mutableStateOf("ALL")}
     var pickedSource by remember{mutableStateOf<Uri?>(null)}
     var pendingDelete by remember{mutableStateOf<String?>(null)}
+    var aiTagsDraft by remember{mutableStateOf<Map<String,String>>(emptyMap())}
 
     LaunchedEffect(revision){
         loading=true
@@ -655,6 +677,57 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
                             enabled=!busy
                         )
                     }
+
+                    Text(rsAiMediaUiV110(lang,"title"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=11.sp)
+                    Text(rsAiMediaUiV110(lang,"help"),color=c.muted,fontSize=9.sp)
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                        Text(if(item.aiReference)"AI · ON" else "AI · OFF",color=c.muted,fontSize=10.sp)
+                        Switch(
+                            item.aiReference,
+                            {value->
+                                val tags=(aiTagsDraft[item.id]?:item.techniqueTags.joinToString(","))
+                                    .split(",").map{it.trim()}.filter{it.isNotBlank()}
+                                busy=true
+                                scope.launch{
+                                    rsSetCloudTrainingMediaAiReferenceV110(item.id,value,tags)
+                                        .onSuccess{status=rsAiMediaUiV110(lang,"saved");revision++}
+                                        .onFailure{status=rsReleaseT98(lang,"update_failed")}
+                                    busy=false
+                                }
+                            },
+                            enabled=!busy
+                        )
+                    }
+                    OutlinedTextField(
+                        value=aiTagsDraft[item.id]?:item.techniqueTags.joinToString(", "),
+                        onValueChange={value->aiTagsDraft=aiTagsDraft+(item.id to value.take(500))},
+                        label={Text(rsAiMediaUiV110(lang,"tags"))},
+                        supportingText={Text(rsAiMediaUiV110(lang,"tags_hint"))},
+                        modifier=Modifier.fillMaxWidth(),
+                        enabled=!busy,
+                        minLines=1,
+                        maxLines=3
+                    )
+                    OutlinedButton(
+                        onClick={
+                            val tags=(aiTagsDraft[item.id]?:item.techniqueTags.joinToString(","))
+                                .split(",").map{it.trim()}.filter{it.isNotBlank()}
+                            busy=true
+                            scope.launch{
+                                rsSetCloudTrainingMediaAiReferenceV110(item.id,item.aiReference,tags)
+                                    .onSuccess{
+                                        aiTagsDraft=aiTagsDraft-item.id
+                                        status=rsAiMediaUiV110(lang,"saved")
+                                        revision++
+                                    }
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
+                                busy=false
+                            }
+                        },
+                        enabled=!busy,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(rsAiMediaUiV110(lang,"save"))}
+
                     OutlinedButton(
                         onClick={
                             if(pendingDelete==item.id){
