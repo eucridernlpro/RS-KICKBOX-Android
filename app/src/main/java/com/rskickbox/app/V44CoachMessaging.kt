@@ -535,7 +535,36 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang){
 
             if(status.isNotBlank())RsPanel(c){Text(status,color=c.muted,fontSize=10.sp)}
             if(messages.isEmpty()&&!loading)RsPanel(c){Text(rsCoachUiV44(lang,"no_messages"),color=c.muted)}
-            messages.forEach{RsCloudCoachBubbleV72(c,lang,it)}
+            messages.forEach{message->
+                RsCloudCoachBubbleV72(c,lang,message)
+                RsTrainerMessageAdminV111(
+                    c=c,
+                    lang=lang,
+                    body=message.body,
+                    canEdit=message.senderRole=="trainer"||message.senderRole=="admin",
+                    busy=loading,
+                    onEdit={body->rsStaffEditCoachMessageV111(message.id,body)},
+                    onDelete={rsStaffDeleteCoachMessageV111(message.id,message.mediaPath)},
+                    onChanged={revision++},
+                    onStatus={status=it}
+                )
+            }
+
+            if(messages.isNotEmpty()){
+                RsTrainerClearConversationV111(
+                    c=c,
+                    lang=lang,
+                    enabled=!loading,
+                    onClear={
+                        rsStaffClearCoachThreadV111(
+                            thread.studentId,
+                            messages.mapNotNull{it.mediaPath}
+                        )
+                    },
+                    onChanged={messages=emptyList();revision++},
+                    onStatus={status=it}
+                )
+            }
 
             RsChatComposerV92(
                 c=c,
