@@ -231,6 +231,10 @@ private fun RsTrainingMediaPlayerV55(c:RsPalette,lang:RsLang,item:RsTrainingMedi
 
 @Composable
 fun RsTrainingMediaV55(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
+    if(RsSupabaseV60.configured){
+        RsCloudTrainingMediaScreenV73(c,lang,role)
+        return
+    }
     val context=LocalContext.current
     var revision by remember{mutableIntStateOf(0)}
     var selected by remember{mutableStateOf<RsTrainingMediaItemV55?>(null)}
@@ -396,6 +400,249 @@ fun RsTrainingMediaV55(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                 onClick={visibleCount=(visibleCount+20).coerceAtMost(visible.size)},
                 modifier=Modifier.fillMaxWidth()
             ){Text(rsMediaUiV55(lang,"show_more")+" · "+visibleCount.coerceAtMost(visible.size)+" / "+visible.size)}
+        }
+    }
+}
+
+
+@Composable
+private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
+    val context=LocalContext.current
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var all by remember{mutableStateOf<List<RsTrainingMediaItemV55>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var selected by remember{mutableStateOf<RsTrainingMediaItemV55?>(null)}
+    var selectedLocalUri by remember{mutableStateOf("")}
+    var title by remember{mutableStateOf("")}
+    var category by remember{mutableStateOf("TECHNIQUE")}
+    var description by remember{mutableStateOf("")}
+    var tier by remember{mutableStateOf("ALL")}
+    var pickedSource by remember{mutableStateOf<Uri?>(null)}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudTrainingMediaV73()
+            .onSuccess{all=it}
+            .onFailure{status=it.message?:"Could not load training media."}
+        loading=false
+    }
+
+    fun pick(uri:Uri?){
+        pickedSource=uri
+        status=if(uri==null)"" else "Media selected and ready to upload."
+    }
+
+    val galleryPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->pick(uri)}
+    val filePicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->pick(uri)}
+
+    val activeSelected=selected
+    if(activeSelected!=null){
+        LaunchedEffect(activeSelected.id){
+            selectedLocalUri=""
+            status="Downloading protected training media…"
+            rsCloudTrainingMediaLocalUriV73(context,activeSelected)
+                .onSuccess{selectedLocalUri=it;status=""}
+                .onFailure{status=it.message?:"Could not open training media."}
+        }
+        if(selectedLocalUri.isBlank()){
+            RsScroll(c,activeSelected.title,activeSelected.category+" · "+activeSelected.accessTier){
+                OutlinedButton(
+                    onClick={selected=null;selectedLocalUri="";status=""},
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(rsMediaUiV55(lang,"close"))}
+                RsPanel(c){
+                    CircularProgressIndicator()
+                    Text(status.ifBlank{"Loading protected media…"},color=c.muted)
+                }
+            }
+        }else{
+            RsTrainingMediaPlayerV55(
+                c,
+                lang,
+                activeSelected.copy(uri=selectedLocalUri)
+            ){
+                selected=null
+                selectedLocalUri=""
+                status=""
+            }
+        }
+        return
+    }
+
+    RsScroll(
+        c,
+        if(role==RsRole.TRAINER)rsMediaUiV55(lang,"trainer_title") else rsMediaUiV55(lang,"student_title"),
+        if(role==RsRole.TRAINER)"Cloud training media shared securely with members." else "Secure coach media available for your membership."
+    ){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing training media…" else "Protected cloud media connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        if(role==RsRole.TRAINER){
+            RsPanel(c){
+                Text(rsMediaUiV55(lang,"new"),color=c.bright,fontWeight=FontWeight.Black)
+                Text(
+                    "Files are uploaded to protected Supabase Storage. Students receive access according to their active plan.",
+                    color=c.muted,
+                    fontSize=10.sp
+                )
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                    Button(
+                        onClick={galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))},
+                        enabled=!busy,
+                        modifier=Modifier.weight(1f)
+                    ){Text(rsMediaUiV55(lang,"gallery"),fontSize=10.sp)}
+                    OutlinedButton(
+                        onClick={filePicker.launch(arrayOf("video/*","image/*"))},
+                        enabled=!busy,
+                        modifier=Modifier.weight(1f)
+                    ){Text(rsMediaUiV55(lang,"files"),fontSize=10.sp)}
+                }
+                Text(
+                    if(pickedSource!=null)"✓ Media selected" else "Choose an image or video up to 100 MB.",
+                    color=if(pickedSource!=null)c.bright else c.muted,
+                    fontSize=10.sp
+                )
+                OutlinedTextField(
+                    title,
+                    {title=it.take(120)},
+                    label={Text(rsMediaUiV55(lang,"title"))},
+                    modifier=Modifier.fillMaxWidth(),
+                    enabled=!busy
+                )
+                OutlinedTextField(
+                    category,
+                    {category=it.take(50)},
+                    label={Text(rsMediaUiV55(lang,"category"))},
+                    modifier=Modifier.fillMaxWidth(),
+                    enabled=!busy
+                )
+                OutlinedTextField(
+                    description,
+                    {description=it.take(1200)},
+                    label={Text(rsMediaUiV55(lang,"description"))},
+                    modifier=Modifier.fillMaxWidth(),
+                    minLines=3,
+                    enabled=!busy
+                )
+                Text(rsMediaUiV55(lang,"tier"),color=c.muted)
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
+                    listOf("ALL","BASIC","PRO","ELITE").forEach{x->
+                        FilterChip(
+                            selected=tier==x,
+                            onClick={tier=x},
+                            enabled=!busy,
+                            label={Text(x,fontSize=9.sp)},
+                            modifier=Modifier.weight(1f)
+                        )
+                    }
+                }
+                Button(
+                    onClick={
+                        val source=pickedSource?:return@Button
+                        busy=true
+                        status="Uploading protected training media…"
+                        scope.launch{
+                            rsUploadCloudTrainingMediaV73(
+                                context,
+                                source,
+                                title,
+                                category,
+                                description,
+                                tier,
+                                true
+                            )
+                                .onSuccess{
+                                    title=""
+                                    category="TECHNIQUE"
+                                    description=""
+                                    tier="ALL"
+                                    pickedSource=null
+                                    status="Training media published."
+                                    revision++
+                                }
+                                .onFailure{status=it.message?:"Could not upload training media."}
+                            busy=false
+                        }
+                    },
+                    enabled=!busy&&title.isNotBlank()&&pickedSource!=null,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(busy)"Uploading…" else rsMediaUiV55(lang,"save"))}
+            }
+        }
+
+        if(all.isEmpty()&&!loading)RsPanel(c){Text(rsMediaUiV55(lang,"none"),color=c.muted)}
+
+        all.forEach{item->
+            RsPanel(c){
+                Surface(
+                    color=c.gold.copy(alpha=.10f),
+                    shape=MaterialTheme.shapes.large,
+                    modifier=Modifier.fillMaxWidth().height(140.dp)
+                ){
+                    Box(Modifier.fillMaxSize(),contentAlignment=androidx.compose.ui.Alignment.Center){
+                        Column(horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
+                            Text(if(item.kind=="VIDEO")"▶" else "▣",color=c.bright,fontSize=34.sp,fontWeight=FontWeight.Black)
+                            Text(item.kind,color=c.muted,fontSize=9.sp)
+                        }
+                    }
+                }
+                Text(item.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                Text(item.category+" · "+item.accessTier+" · "+item.kind,color=c.muted,fontSize=10.sp)
+                if(item.description.isNotBlank())Text(item.description,color=c.text,maxLines=4)
+                Button(
+                    onClick={selected=item;status=""},
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(rsMediaUiV55(lang,"open"))}
+
+                if(role==RsRole.TRAINER){
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                        Text(if(item.published)rsMediaUiV55(lang,"published") else rsMediaUiV55(lang,"draft"),color=c.muted)
+                        Switch(
+                            item.published,
+                            {value->
+                                busy=true
+                                scope.launch{
+                                    rsSetCloudTrainingMediaPublishedV73(item.id,value)
+                                        .onSuccess{revision++}
+                                        .onFailure{status=it.message?:"Could not change publish state."}
+                                    busy=false
+                                }
+                            },
+                            enabled=!busy
+                        )
+                    }
+                    OutlinedButton(
+                        onClick={
+                            if(pendingDelete==item.id){
+                                busy=true
+                                scope.launch{
+                                    rsDeleteCloudTrainingMediaV73(item.id)
+                                        .onSuccess{
+                                            pendingDelete=null
+                                            status="Training media deleted."
+                                            revision++
+                                        }
+                                        .onFailure{status=it.message?:"Could not delete training media."}
+                                    busy=false
+                                }
+                            }else pendingDelete=item.id
+                        },
+                        enabled=!busy,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(if(pendingDelete==item.id)rsMediaUiV55(lang,"confirm") else rsMediaUiV55(lang,"delete"))}
+                }
+            }
         }
     }
 }
