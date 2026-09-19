@@ -219,7 +219,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
         val candidate=uri.toString()
         val duration=introVideoDurationMsV30(context,candidate)
         when{
-            duration==null || duration<=0L->message="Could not read this video's duration. Please choose another file."
+            duration==null || duration<=0L->message=rsIntroT102(lang,"read_error")
             duration>RS_INTRO_VIDEO_MAX_MS->message=rsIntroT102(lang,"too_long")
             else->{
                 val item=PendingSplashV30(candidate,duration)
@@ -255,7 +255,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
         RsPanel(c){
             Text(rsIntroT102(lang,"master"),color=c.bright,fontWeight=FontWeight.Black)
             IntroToggleV23(rsIntroT102(lang,"enable"),rsIntroT102(lang,"enable_sub"),enabled){enabled=it;store.pb("intro_enabled",it);saveCloudBehavior()}
-            IntroToggleV23("Video sound","Play the splash video's own audio",videoSound){videoSound=it;store.pb("intro_video_sound",it)}
+            IntroToggleV23(rsIntroT102(lang,"sound"),rsIntroT102(lang,"sound_sub"),videoSound){videoSound=it;store.pb("intro_video_sound",it)}
             IntroToggleV23(rsIntroT102(lang,"skip_toggle"),rsIntroT102(lang,"skip_sub"),skipEnabled){skipEnabled=it;store.pb("intro_skip_enabled",it);saveCloudBehavior()}
             IntroToggleV23(rsIntroT102(lang,"every"),rsIntroT102(lang,"every_sub"),everyLaunch){everyLaunch=it;store.pb("intro_every_launch",it);saveCloudBehavior()}
         }
@@ -264,7 +264,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
             c=c,
             lang=lang,
             title=rsIntroT102(lang,"phone"),
-            format="Recommended: portrait 9:16 · 1080×1920 or similar · MP4 H.264 · 15 sec max",
+            format=rsIntroT102(lang,"phone_format"),
             saved=savedPhone,
             pending=pendingPhone,
             sound=videoSound,
@@ -310,7 +310,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
             c=c,
             lang=lang,
             title=rsIntroT102(lang,"tablet"),
-            format="Recommended: tablet 16:10 or 4:3 master · minimum 1600px long edge · MP4 H.264 · 15 sec max. Auto-crops to the actual tablet screen.",
+            format=rsIntroT102(lang,"tablet_format"),
             saved=savedTablet,
             pending=pendingTablet,
             sound=videoSound,
