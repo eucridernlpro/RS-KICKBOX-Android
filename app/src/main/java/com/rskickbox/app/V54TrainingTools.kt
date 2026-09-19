@@ -270,7 +270,7 @@ private fun RsCloudAcademyV86(c:RsPalette,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsTrainingUiV54(lang,"academy"),"Your Academy progress is synchronized with your RS KICKBOX account."){
+    RsScroll(c,rsTrainingUiV54(lang,"academy"),rsTrainingUiV54(lang,"academy_sub")){
         RsPanel(c){
             Text(
                 if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
