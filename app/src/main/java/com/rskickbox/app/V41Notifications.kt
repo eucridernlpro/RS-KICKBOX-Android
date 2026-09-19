@@ -214,14 +214,14 @@ private fun RsCloudTrainerNotificationsV74(c:RsPalette,lang:RsLang){
         loading=true
         rsCloudNotificationsV74()
             .onSuccess{items=it}
-            .onFailure{status=it.message?:"Could not load notifications."}
+            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
-    RsScroll(c,rsNotificationUiV41(lang,"trainer_title"),"Cloud notifications shared with members across devices."){
+    RsScroll(c,rsNotificationUiV41(lang,"trainer_title"),rsReleaseT98(lang,"notifications_admin_sub")){
         RsPanel(c){
             Text(
-                if(loading)"Syncing notifications…" else "Cloud notification center connected",
+                if(loading)"Syncing notifications…" else rsReleaseT98(lang,"notification_center_connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -271,7 +271,7 @@ private fun RsCloudTrainerNotificationsV74(c:RsPalette,lang:RsLang){
                                 status=rsCloudT93(lang,"notification_published")
                                 revision++
                             }
-                            .onFailure{status=it.message?:"Could not publish notification."}
+                            .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -302,7 +302,7 @@ private fun RsCloudTrainerNotificationsV74(c:RsPalette,lang:RsLang){
                                         status=rsCloudT93(lang,"notification_deleted")
                                         revision++
                                     }
-                                    .onFailure{status=it.message?:"Could not delete notification."}
+                                    .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
                                 busy=false
                             }
                         }else pendingDelete=item.id
@@ -328,14 +328,14 @@ private fun RsCloudStudentNotificationsV74(c:RsPalette,lang:RsLang){
         loading=true
         rsCloudNotificationsV74()
             .onSuccess{items=it}
-            .onFailure{status=it.message?:"Could not load notifications."}
+            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
-    RsScroll(c,rsNotificationUiV41(lang,"student_title"),"Club updates synchronized with your real membership."){
+    RsScroll(c,rsNotificationUiV41(lang,"student_title"),rsReleaseT98(lang,"notifications_student_sub")){
         RsPanel(c){
             Text(
-                if(loading)"Syncing notifications…" else "Cloud notifications connected",
+                if(loading)"Syncing notifications…" else rsReleaseT98(lang,"notifications_connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -361,13 +361,13 @@ private fun RsCloudStudentNotificationsV74(c:RsPalette,lang:RsLang){
                             scope.launch{
                                 rsMarkCloudNotificationReadV74(item.id)
                                     .onSuccess{revision++}
-                                    .onFailure{status=it.message?:"Could not mark notification read."}
+                                    .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
                                 busyId=null
                             }
                         },
                         enabled=busyId==null,
                         modifier=Modifier.fillMaxWidth()
-                    ){Text(if(busyId==item.id)"Please wait…" else rsNotificationUiV41(lang,"mark_read"))}
+                    ){Text(if(busyId==item.id)rsReleaseT98(lang,"please_wait") else rsNotificationUiV41(lang,"mark_read"))}
                 }
             }
         }
