@@ -273,7 +273,7 @@ private fun RsCloudAcademyV86(c:RsPalette,lang:RsLang){
     RsScroll(c,rsTrainingUiV54(lang,"academy"),"Your Academy progress is synchronized with your RS KICKBOX account."){
         RsPanel(c){
             Text(
-                if(loading)"Syncing Academy progress…" else "Cloud Academy progress connected",
+                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -302,7 +302,7 @@ private fun RsCloudAcademyV86(c:RsPalette,lang:RsLang){
                         },
                         enabled=busyTrack==null,
                         modifier=Modifier.fillMaxWidth()
-                    ){Text(if(busyTrack==track.id)"Saving…" else rsTrainingUiV54(lang,"continue"))}
+                    ){Text(if(busyTrack==track.id)rsCloudT93(lang,"saving") else rsTrainingUiV54(lang,"continue"))}
                 }else{
                     Text(rsTrainingUiV54(lang,"complete"),color=c.bright,fontWeight=FontWeight.Bold)
                 }
