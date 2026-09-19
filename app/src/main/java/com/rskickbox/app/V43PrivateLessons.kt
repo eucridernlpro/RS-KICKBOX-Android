@@ -164,13 +164,13 @@ fun RsStudentPrivateLessonsV43(c:RsPalette,store:RsStore,lang:RsLang){
                 Text(slot.dayLabel+" · "+slot.timeLabel,color=c.bright,fontSize=18.sp,fontWeight=FontWeight.Black)
                 Text(slot.durationMinutes.toString()+" min",color=c.muted)
                 val statusText=when(booking?.status){
-                    rsCloudT93(lang,"confirmed")->rsPrivateUiV43(lang,"confirmed")
-                    rsCloudT93(lang,"declined")->rsPrivateUiV43(lang,"declined")
-                    rsCloudT93(lang,"requested")->rsPrivateUiV43(lang,"requested")
+                    "CONFIRMED"->rsPrivateUiV43(lang,"confirmed")
+                    "DECLINED"->rsPrivateUiV43(lang,"declined")
+                    "REQUESTED"->rsPrivateUiV43(lang,"requested")
                     else->rsPrivateUiV43(lang,"available")
                 }
                 Text(statusText,color=c.text,fontWeight=FontWeight.Bold)
-                if(booking==null || booking.status==rsCloudT93(lang,"declined")){
+                if(booking==null || booking.status=="DECLINED"){
                     if(!requestsAllowed)Text(rsOpsUiV56(lang,"private_disabled"),color=c.muted,fontSize=10.sp)
                     OutlinedTextField(
                         value=noteBySlot[slot.id].orEmpty(),
@@ -183,7 +183,7 @@ fun RsStudentPrivateLessonsV43(c:RsPalette,store:RsStore,lang:RsLang){
                             val updated=rsLoadBookingsV43(store).filterNot{
                                 it.slotId==slot.id && it.studentEmail.equals(email,true)
                             }+RsPrivateBookingV43(
-                                UUID.randomUUID().toString(),slot.id,email,name,noteBySlot[slot.id].orEmpty().trim(),rsCloudT93(lang,"requested")
+                                UUID.randomUUID().toString(),slot.id,email,name,noteBySlot[slot.id].orEmpty().trim(),"REQUESTED"
                             )
                             rsSaveBookingsV43(store,updated)
                             revision++
@@ -274,8 +274,8 @@ fun RsTrainerScheduleV43(c:RsPalette,store:RsStore,lang:RsLang){
                 Text((slot?.dayLabel?:"")+" · "+(slot?.timeLabel?:""),color=c.text)
                 if(booking.note.isNotBlank())Text(booking.note,color=c.muted)
                 val statusText=when(booking.status){
-                    rsCloudT93(lang,"confirmed")->rsPrivateUiV43(lang,"confirmed")
-                    rsCloudT93(lang,"declined")->rsPrivateUiV43(lang,"declined")
+                    "CONFIRMED"->rsPrivateUiV43(lang,"confirmed")
+                    "DECLINED"->rsPrivateUiV43(lang,"declined")
                     else->rsPrivateUiV43(lang,"requested")
                 }
                 Text(statusText,color=c.bright,fontWeight=FontWeight.Bold)
@@ -284,8 +284,8 @@ fun RsTrainerScheduleV43(c:RsPalette,store:RsStore,lang:RsLang){
                         onClick={
                             saveBookings(bookings.map{
                                 when{
-                                    it.id==booking.id->it.copy(status=rsCloudT93(lang,"confirmed"))
-                                    it.slotId==booking.slotId && it.status!="CANCELLED"->it.copy(status=rsCloudT93(lang,"declined"))
+                                    it.id==booking.id->it.copy(status="CONFIRMED")
+                                    it.slotId==booking.slotId && it.status!="CANCELLED"->it.copy(status="DECLINED")
                                     else->it
                                 }
                             })
@@ -293,12 +293,12 @@ fun RsTrainerScheduleV43(c:RsPalette,store:RsStore,lang:RsLang){
                         modifier=Modifier.weight(1f)
                     ){Text(rsPrivateUiV43(lang,"approve"),fontSize=10.sp)}
                     OutlinedButton(
-                        onClick={saveBookings(bookings.map{if(it.id==booking.id)it.copy(status=rsCloudT93(lang,"declined")) else it})},
+                        onClick={saveBookings(bookings.map{if(it.id==booking.id)it.copy(status="DECLINED") else it})},
                         modifier=Modifier.weight(1f)
                     ){Text(rsPrivateUiV43(lang,"decline"),fontSize=10.sp)}
                 }
-                if(booking.status!=rsCloudT93(lang,"requested"))OutlinedButton(
-                    onClick={saveBookings(bookings.map{if(it.id==booking.id)it.copy(status=rsCloudT93(lang,"requested")) else it})},
+                if(booking.status!="REQUESTED")OutlinedButton(
+                    onClick={saveBookings(bookings.map{if(it.id==booking.id)it.copy(status="REQUESTED") else it})},
                     modifier=Modifier.fillMaxWidth()
                 ){Text(rsPrivateUiV43(lang,"reset"),fontSize=10.sp)}
             }
