@@ -157,7 +157,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                 brandAssetsRestoring -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                     Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(10.dp)){
                         CircularProgressIndicator()
-                        Text("RS KICKBOX",color=c.bright,fontWeight=FontWeight.Black)
+                        Text("RS KICKBOXING",color=c.bright,fontWeight=FontWeight.Black)
                     }
                 }
                 !introDone -> RsCinematicIntroV21(c, store, lang) {
@@ -200,10 +200,10 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                         if(RsSupabaseV60.configured){
                                             appScope.launch{
                                                 rsSaveCloudBrandV100(
-                                                    store.s("brand_header_name","RS KICKBOX"),
+                                                    store.s("brand_header_name","RS KICKBOXING"),
                                                     store.s("brand_login_title","Premium cinematic kickboxing"),
                                                     store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"),
-                                                    store.s("brand_footer_text","RS KICKBOX · TRAIN · LEARN · CONNECT · GROW"),
+                                                    store.s("brand_footer_text","RS KICKBOXING · TRAIN · LEARN · CONNECT · GROW"),
                                                     selected.name,
                                                     store.s("login_form_opacity","0.82").toFloatOrNull()?:.82f
                                                 )
@@ -508,7 +508,7 @@ private fun LoginV21(
             verticalAlignment=Alignment.CenterVertically
         ){
             Text(
-                "♛ "+store.s("brand_header_name","RS KICKBOX"),
+                "♛ "+store.s("brand_header_name","RS KICKBOXING"),
                 color=c.bright,
                 fontSize=31.sp,
                 fontWeight=FontWeight.Black,
@@ -857,7 +857,7 @@ private fun ShellV21(
                     verticalArrangement=Arrangement.spacedBy(6.dp)
                 ){
                     RsPanel(c){
-                        Text("♛ ${store.s("brand_header_name","RS KICKBOX")}",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp)
+                        Text("♛ ${store.s("brand_header_name","RS KICKBOXING")}",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp)
                         Text(
                             if(role==RsRole.TRAINER)rsT(lang,"trainer_admin") else rsT(lang,"student"),
                             color=c.muted,
@@ -902,7 +902,7 @@ private fun ShellV21(
             verticalArrangement=Arrangement.spacedBy(7.dp)
         ) {
             RsBrandedHeaderV21(c,store) {
-                Text("♛ ${store.s("brand_header_name","RS KICKBOX")}",color=c.bright,fontSize=20.sp,fontWeight=FontWeight.Black)
+                Text("♛ ${store.s("brand_header_name","RS KICKBOXING")}",color=c.bright,fontSize=20.sp,fontWeight=FontWeight.Black)
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement=Arrangement.spacedBy(6.dp),
