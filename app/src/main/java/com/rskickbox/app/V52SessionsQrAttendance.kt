@@ -347,7 +347,7 @@ private fun RsCloudSessionBuilderV85(c:RsPalette,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsOpsUiV52(lang,"builder"),"Create the live training session shared with students across devices."){
+    RsScroll(c,rsOpsUiV52(lang,"builder"),rsOpsUiV52(lang,"builder_sub")){
         RsPanel(c){
             Text(
                 if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
@@ -487,7 +487,7 @@ private fun RsCloudSessionPlayerV85(c:RsPalette,lang:RsLang){
         else if(running&&remaining<=0)running=false
     }
 
-    RsScroll(c,rsOpsUiV52(lang,"player"),"Follow the current trainer session live from your account."){
+    RsScroll(c,rsOpsUiV52(lang,"player"),rsOpsUiV52(lang,"player_sub")){
         RsPanel(c){
             Text(
                 if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
@@ -563,10 +563,10 @@ private fun RsCloudQrAttendanceTrainerV85(c:RsPalette,lang:RsLang){
         else rsQrBitmapV33(rsAttendancePayloadV52(selectedId,qrToken),720)
     }
 
-    RsScroll(c,rsOpsUiV52(lang,"qr"),"Generate a secure short-lived attendance QR for an active class."){
+    RsScroll(c,rsOpsUiV52(lang,"qr"),rsOpsUiV52(lang,"qr_sub")){
         RsPanel(c){
             Text(
-                if(loading)"Loading active classes…" else "Secure cloud QR attendance connected",
+                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -617,7 +617,7 @@ private fun RsCloudStudentCheckInV85(c:RsPalette,lang:RsLang){
     var busy by remember{mutableStateOf(false)}
     val scanner=remember{GmsBarcodeScanning.getClient(context)}
 
-    RsScroll(c,rsOpsUiV52(lang,"student_qr"),"Scan the secure trainer QR to record your attendance in the cloud."){
+    RsScroll(c,rsOpsUiV52(lang,"student_qr"),rsOpsUiV52(lang,"student_qr_sub")){
         RsPanel(c){
             Text(rsCloudT93(lang,"checkin_identity"),color=c.muted,fontSize=10.sp)
             Button(
