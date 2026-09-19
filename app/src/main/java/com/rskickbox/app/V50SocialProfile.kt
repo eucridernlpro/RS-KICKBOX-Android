@@ -449,10 +449,10 @@ private fun RsCloudProfileV84(c:RsPalette,store:RsStore,lang:RsLang){
         }
     }
 
-    RsScroll(c,rsSocialUiV50(lang,"profile"),"Your synchronized RS KICKBOX identity, photo and privacy controls."){
+    RsScroll(c,rsSocialUiV50(lang,"profile"),rsSocialUiV50(lang,"profile_sub")){
         RsPanel(c){
             Text(
-                if(loading)"Syncing profile…" else "Cloud profile connected",
+                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -563,7 +563,7 @@ private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
     RsScroll(
         c,
         if(role==RsRole.TRAINER)rsSocialUiV50(lang,"manager") else rsSocialUiV50(lang,"community"),
-        if(role==RsRole.TRAINER)"Moderate the live member community." else "Live member updates synchronized across RS KICKBOX devices."
+        if(role==RsRole.TRAINER)rsSocialUiV50(lang,"manager_sub") else rsSocialUiV50(lang,"community_sub")
     ){
         RsPanel(c){
             Text(
