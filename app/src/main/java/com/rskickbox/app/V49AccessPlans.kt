@@ -148,7 +148,7 @@ fun RsMembershipPlansV49(c:RsPalette,store:RsStore,lang:RsLang){
                             if(failure!=null)break
                         }
                         if(failure==null){
-                            status="Membership plans saved to Supabase."
+                            status=rsCloudT93(lang,"plans_saved")
                             revision++
                         }else status=failure!!
                         saving=false
@@ -225,7 +225,7 @@ fun RsAccessControlV49(c:RsPalette,store:RsStore,lang:RsLang){
                                     busyStudentId=student.id
                                     scope.launch{
                                         rsSetCloudStudentAccessV71(student.id,plan.code,student.active,student.membershipStatus)
-                                            .onSuccess{status="Plan updated for "+student.displayName;revision++}
+                                            .onSuccess{status=rsCloudT93(lang,"plan_updated")+" "+student.displayName;revision++}
                                             .onFailure{status=it.message?:"Could not change plan."}
                                         busyStudentId=null
                                     }
