@@ -167,6 +167,111 @@ private fun coachUiV36(lang:RsLang,key:String):String{
     return pack[key]?:en[key]?:key
 }
 
+
+private fun coachStudentUiV105(lang:RsLang,key:String):String{
+    val en=mapOf(
+        "title" to "AI TECHNIQUE COACH",
+        "sub" to "Upload a short kickboxing move or combination. Get text, visual and spoken coaching in your app language.",
+        "trainer" to "YOUR AI TRAINER","male" to "Male trainer","female" to "Female trainer",
+        "trainer_desc" to "The selected trainer demonstrates correction focus visually and speaks in the active app language.",
+        "step1" to "1 · VIDEO & TECHNIQUE","files" to "Files","gallery" to "Gallery","replace" to "Replace","importing" to "Importing…",
+        "picker_note" to "Gallery opens first for phone videos · Files is a fallback · maximum 20 seconds",
+        "read_fail" to "Could not read this video file.","too_long" to "Video is too long. Technique uploads are limited to 20 seconds.",
+        "import_private" to "Importing video into private RS KICKBOX storage…","import_fail" to "Could not import this video into private app storage.",
+        "ready" to "Video ready for local preview.","preview_generated" to "Structured coaching preview generated.",
+        "analyze" to "Analyze technique","remove" to "Remove video","step2" to "2 · COACHING RESULT",
+        "preview_mode" to "PREVIEW MODE · Frame-by-frame AI vision is not connected yet.",
+        "speak" to "🔊 Speak coaching","saving_cloud" to "Saving technique review to secure cloud history…",
+        "saved_cloud" to "✓ Analysis saved to cloud technique history.","saved_local" to "Analysis saved to technique history.",
+        "save_history" to "Save to history","step3" to "3 · ASK THE COACH",
+        "voice_desc" to "Voice is an extra input/output layer for the technique coach.",
+        "ask_label" to "Ask about this movement","ask_voice" to "🎙 Ask by voice","auto_speak" to "Speak replies automatically","ask_ai" to "Ask AI Coach",
+        "focus" to "Demonstrating focus",
+        "history_cloud_sub" to "Cloud student technique uploads, trainer notes and favorites.",
+        "syncing" to "Syncing technique submissions…","history_connected" to "Secure cloud technique history connected",
+        "back_history" to "Back to technique history","loading_video" to "Loading video…","student_summary" to "Student coaching summary",
+        "open_video" to "Open technique video","trainer_note" to "Trainer note"
+    )
+    val nl=en+mapOf(
+        "title" to "AI TECHNIEKCOACH","sub" to "Upload een korte kickboksbeweging of combinatie. Ontvang tekstuele, visuele en gesproken coaching in je app-taal.",
+        "trainer" to "JOUW AI-TRAINER","male" to "Mannelijke trainer","female" to "Vrouwelijke trainer","trainer_desc" to "De gekozen trainer laat visueel zien waar de correctiefocus ligt en spreekt in de actieve app-taal.",
+        "step1" to "1 · VIDEO & TECHNIEK","files" to "Bestanden","gallery" to "Galerij","replace" to "Vervangen","importing" to "Importeren…",
+        "picker_note" to "Galerij opent eerst voor telefoonvideo’s · Bestanden is de reserveoptie · maximaal 20 seconden",
+        "read_fail" to "Dit videobestand kon niet worden gelezen.","too_long" to "De video is te lang. Techniekuploads zijn beperkt tot 20 seconden.",
+        "import_private" to "Video importeren naar privéopslag van RS KICKBOX…","import_fail" to "De video kon niet naar de privéopslag van de app worden geïmporteerd.",
+        "ready" to "Video klaar voor lokale preview.","preview_generated" to "Gestructureerde coachingpreview aangemaakt.","analyze" to "Techniek analyseren","remove" to "Video verwijderen",
+        "step2" to "2 · COACHINGRESULTAAT","preview_mode" to "PREVIEWMODUS · Frame-voor-frame AI-visie is nog niet verbonden.","speak" to "🔊 Coaching uitspreken",
+        "saving_cloud" to "Techniekreview opslaan in beveiligde cloudgeschiedenis…","saved_cloud" to "✓ Analyse opgeslagen in cloudgeschiedenis.","saved_local" to "Analyse opgeslagen in techniekgeschiedenis.","save_history" to "Opslaan in geschiedenis",
+        "step3" to "3 · VRAAG DE COACH","voice_desc" to "Spraak is een extra invoer- en uitvoerlaag voor de techniekcoach.","ask_label" to "Vraag iets over deze beweging","ask_voice" to "🎙 Vraag met stem","auto_speak" to "Antwoorden automatisch uitspreken","ask_ai" to "Vraag AI Coach",
+        "focus" to "Correctiefocus","history_cloud_sub" to "Clouduploads van leerlingtechniek, trainernotities en favorieten.","syncing" to "Techniekinzendingen synchroniseren…","history_connected" to "Beveiligde cloudgeschiedenis verbonden","back_history" to "Terug naar techniekgeschiedenis","loading_video" to "Video laden…","student_summary" to "Coachingoverzicht leerling","open_video" to "Techniekvideo openen","trainer_note" to "Trainernotitie"
+    )
+    val pt=en+mapOf(
+        "title" to "COACH TÉCNICO IA","sub" to "Envia um movimento ou combinação curta de kickboxing. Recebe coaching em texto, visual e voz no idioma da app.",
+        "trainer" to "O TEU TREINADOR IA","male" to "Treinador masculino","female" to "Treinadora feminina","trainer_desc" to "O treinador selecionado mostra visualmente o foco da correção e fala no idioma ativo da app.",
+        "step1" to "1 · VÍDEO & TÉCNICA","files" to "Ficheiros","gallery" to "Galeria","replace" to "Substituir","importing" to "A importar…","picker_note" to "A Galeria abre primeiro · Ficheiros é alternativa · máximo 20 segundos",
+        "read_fail" to "Não foi possível ler este vídeo.","too_long" to "O vídeo é demasiado longo. O limite é 20 segundos.","import_private" to "A importar vídeo para armazenamento privado RS KICKBOX…","import_fail" to "Não foi possível importar o vídeo para o armazenamento privado.","ready" to "Vídeo pronto para pré-visualização.","preview_generated" to "Pré-visualização de coaching criada.","analyze" to "Analisar técnica","remove" to "Remover vídeo",
+        "step2" to "2 · RESULTADO DO COACHING","preview_mode" to "MODO PREVIEW · A visão IA frame a frame ainda não está ligada.","speak" to "🔊 Ouvir coaching","saving_cloud" to "A guardar revisão técnica no histórico cloud seguro…","saved_cloud" to "✓ Análise guardada no histórico cloud.","saved_local" to "Análise guardada no histórico técnico.","save_history" to "Guardar no histórico",
+        "step3" to "3 · PERGUNTAR AO COACH","voice_desc" to "A voz é uma camada extra de entrada e saída do coach técnico.","ask_label" to "Pergunta sobre este movimento","ask_voice" to "🎙 Perguntar por voz","auto_speak" to "Ler respostas automaticamente","ask_ai" to "Perguntar ao Coach IA",
+        "focus" to "Foco da correção","history_cloud_sub" to "Uploads técnicos dos alunos, notas do treinador e favoritos na cloud.","syncing" to "A sincronizar submissões técnicas…","history_connected" to "Histórico técnico cloud seguro ligado","back_history" to "Voltar ao histórico técnico","loading_video" to "A carregar vídeo…","student_summary" to "Resumo de coaching do aluno","open_video" to "Abrir vídeo técnico","trainer_note" to "Nota do treinador"
+    )
+    val es=en+mapOf(
+        "title" to "COACH TÉCNICO IA","sub" to "Sube un movimiento o combinación corta de kickboxing. Recibe coaching de texto, visual y voz en el idioma de la app.",
+        "trainer" to "TU ENTRENADOR IA","male" to "Entrenador masculino","female" to "Entrenadora femenina","trainer_desc" to "El entrenador seleccionado muestra visualmente el foco de corrección y habla en el idioma activo de la app.",
+        "step1" to "1 · VÍDEO Y TÉCNICA","files" to "Archivos","gallery" to "Galería","replace" to "Reemplazar","importing" to "Importando…","picker_note" to "La Galería se abre primero · Archivos es alternativa · máximo 20 segundos",
+        "read_fail" to "No se pudo leer este vídeo.","too_long" to "El vídeo es demasiado largo. El límite es 20 segundos.","import_private" to "Importando vídeo al almacenamiento privado de RS KICKBOX…","import_fail" to "No se pudo importar el vídeo al almacenamiento privado.","ready" to "Vídeo listo para vista previa.","preview_generated" to "Vista previa de coaching generada.","analyze" to "Analizar técnica","remove" to "Eliminar vídeo",
+        "step2" to "2 · RESULTADO DEL COACHING","preview_mode" to "MODO PREVIEW · La visión IA fotograma a fotograma aún no está conectada.","speak" to "🔊 Escuchar coaching","saving_cloud" to "Guardando revisión técnica en historial cloud seguro…","saved_cloud" to "✓ Análisis guardado en historial cloud.","saved_local" to "Análisis guardado en historial técnico.","save_history" to "Guardar en historial",
+        "step3" to "3 · PREGUNTAR AL COACH","voice_desc" to "La voz es una capa adicional de entrada y salida para el coach técnico.","ask_label" to "Pregunta sobre este movimiento","ask_voice" to "🎙 Preguntar por voz","auto_speak" to "Leer respuestas automáticamente","ask_ai" to "Preguntar al Coach IA",
+        "focus" to "Foco de corrección","history_cloud_sub" to "Vídeos técnicos de alumnos, notas del entrenador y favoritos en cloud.","syncing" to "Sincronizando entregas técnicas…","history_connected" to "Historial técnico cloud seguro conectado","back_history" to "Volver al historial técnico","loading_video" to "Cargando vídeo…","student_summary" to "Resumen de coaching del alumno","open_video" to "Abrir vídeo técnico","trainer_note" to "Nota del entrenador"
+    )
+    val fr=en+mapOf(
+        "title" to "COACH TECHNIQUE IA","sub" to "Envoie un mouvement ou une combinaison courte de kickboxing. Reçois un coaching texte, visuel et vocal dans la langue de l’app.",
+        "trainer" to "TON ENTRAÎNEUR IA","male" to "Entraîneur homme","female" to "Entraîneuse","trainer_desc" to "L’entraîneur choisi montre visuellement le point de correction et parle dans la langue active de l’app.",
+        "step1" to "1 · VIDÉO & TECHNIQUE","files" to "Fichiers","gallery" to "Galerie","replace" to "Remplacer","importing" to "Importation…","picker_note" to "La Galerie s’ouvre d’abord · Fichiers en alternative · maximum 20 secondes",
+        "read_fail" to "Impossible de lire cette vidéo.","too_long" to "La vidéo est trop longue. Limite : 20 secondes.","import_private" to "Importation vers le stockage privé RS KICKBOX…","import_fail" to "Impossible d’importer la vidéo dans le stockage privé.","ready" to "Vidéo prête pour l’aperçu.","preview_generated" to "Aperçu de coaching généré.","analyze" to "Analyser la technique","remove" to "Supprimer la vidéo",
+        "step2" to "2 · RÉSULTAT DU COACHING","preview_mode" to "MODE APERÇU · La vision IA image par image n’est pas encore connectée.","speak" to "🔊 Écouter le coaching","saving_cloud" to "Enregistrement de la revue technique dans l’historique cloud sécurisé…","saved_cloud" to "✓ Analyse enregistrée dans l’historique cloud.","saved_local" to "Analyse enregistrée dans l’historique technique.","save_history" to "Enregistrer dans l’historique",
+        "step3" to "3 · DEMANDER AU COACH","voice_desc" to "La voix est une couche d’entrée/sortie supplémentaire du coach technique.","ask_label" to "Pose une question sur ce mouvement","ask_voice" to "🎙 Demander par la voix","auto_speak" to "Lire les réponses automatiquement","ask_ai" to "Demander au Coach IA",
+        "focus" to "Point de correction","history_cloud_sub" to "Vidéos techniques élèves, notes entraîneur et favoris cloud.","syncing" to "Synchronisation des vidéos techniques…","history_connected" to "Historique technique cloud sécurisé connecté","back_history" to "Retour à l’historique technique","loading_video" to "Chargement vidéo…","student_summary" to "Résumé coaching élève","open_video" to "Ouvrir la vidéo technique","trainer_note" to "Note entraîneur"
+    )
+    val de=en+mapOf(
+        "title" to "KI-TECHNIKCOACH","sub" to "Lade eine kurze Kickbox-Bewegung oder Kombination hoch. Erhalte Text-, visuelles und gesprochenes Coaching in deiner App-Sprache.",
+        "trainer" to "DEIN KI-TRAINER","male" to "Männlicher Trainer","female" to "Weibliche Trainerin","trainer_desc" to "Der ausgewählte Trainer zeigt den Korrekturfokus visuell und spricht in der aktiven App-Sprache.",
+        "step1" to "1 · VIDEO & TECHNIK","files" to "Dateien","gallery" to "Galerie","replace" to "Ersetzen","importing" to "Importieren…","picker_note" to "Galerie öffnet zuerst · Dateien als Alternative · maximal 20 Sekunden",
+        "read_fail" to "Diese Videodatei konnte nicht gelesen werden.","too_long" to "Das Video ist zu lang. Maximal 20 Sekunden.","import_private" to "Video wird in privaten RS KICKBOX-Speicher importiert…","import_fail" to "Video konnte nicht in den privaten App-Speicher importiert werden.","ready" to "Video bereit zur Vorschau.","preview_generated" to "Strukturierte Coaching-Vorschau erstellt.","analyze" to "Technik analysieren","remove" to "Video entfernen",
+        "step2" to "2 · COACHING-ERGEBNIS","preview_mode" to "VORSCHAUMODUS · Frame-für-Frame-KI-Vision ist noch nicht verbunden.","speak" to "🔊 Coaching vorlesen","saving_cloud" to "Technikreview wird sicher in der Cloud gespeichert…","saved_cloud" to "✓ Analyse in Cloud-Verlauf gespeichert.","saved_local" to "Analyse im Technikverlauf gespeichert.","save_history" to "Im Verlauf speichern",
+        "step3" to "3 · COACH FRAGEN","voice_desc" to "Sprache ist eine zusätzliche Ein-/Ausgabeschicht für den Technikcoach.","ask_label" to "Frage zu dieser Bewegung","ask_voice" to "🎙 Per Sprache fragen","auto_speak" to "Antworten automatisch vorlesen","ask_ai" to "KI-Coach fragen",
+        "focus" to "Korrekturfokus","history_cloud_sub" to "Cloud-Technikvideos der Schüler, Trainernotizen und Favoriten.","syncing" to "Technikeinsendungen werden synchronisiert…","history_connected" to "Sicherer Cloud-Technikverlauf verbunden","back_history" to "Zurück zum Technikverlauf","loading_video" to "Video wird geladen…","student_summary" to "Coaching-Zusammenfassung","open_video" to "Technikvideo öffnen","trainer_note" to "Trainernotiz"
+    )
+    val it=en+mapOf(
+        "title" to "COACH TECNICO IA","sub" to "Carica un breve movimento o combinazione di kickboxing. Ricevi coaching testuale, visivo e vocale nella lingua dell’app.",
+        "trainer" to "IL TUO TRAINER IA","male" to "Trainer uomo","female" to "Trainer donna","trainer_desc" to "Il trainer selezionato mostra visivamente il focus della correzione e parla nella lingua attiva dell’app.",
+        "step1" to "1 · VIDEO & TECNICA","files" to "File","gallery" to "Galleria","replace" to "Sostituisci","importing" to "Importazione…","picker_note" to "Si apre prima la Galleria · File come alternativa · massimo 20 secondi",
+        "read_fail" to "Impossibile leggere questo video.","too_long" to "Il video è troppo lungo. Limite: 20 secondi.","import_private" to "Importazione nel deposito privato RS KICKBOX…","import_fail" to "Impossibile importare il video nel deposito privato.","ready" to "Video pronto per l’anteprima.","preview_generated" to "Anteprima coaching generata.","analyze" to "Analizza tecnica","remove" to "Rimuovi video",
+        "step2" to "2 · RISULTATO COACHING","preview_mode" to "MODALITÀ PREVIEW · La visione IA frame per frame non è ancora collegata.","speak" to "🔊 Ascolta coaching","saving_cloud" to "Salvataggio revisione tecnica nello storico cloud sicuro…","saved_cloud" to "✓ Analisi salvata nello storico cloud.","saved_local" to "Analisi salvata nello storico tecnico.","save_history" to "Salva nello storico",
+        "step3" to "3 · CHIEDI AL COACH","voice_desc" to "La voce è un livello aggiuntivo di input/output del coach tecnico.","ask_label" to "Chiedi di questo movimento","ask_voice" to "🎙 Chiedi a voce","auto_speak" to "Leggi automaticamente le risposte","ask_ai" to "Chiedi al Coach IA",
+        "focus" to "Focus correzione","history_cloud_sub" to "Video tecnici allievi, note trainer e preferiti in cloud.","syncing" to "Sincronizzazione invii tecnici…","history_connected" to "Storico tecnico cloud sicuro collegato","back_history" to "Torna allo storico tecnico","loading_video" to "Caricamento video…","student_summary" to "Riepilogo coaching allievo","open_video" to "Apri video tecnico","trainer_note" to "Nota trainer"
+    )
+    val pl=en+mapOf(
+        "title" to "TRENER TECHNIKI AI","sub" to "Prześlij krótki ruch lub kombinację kickboxingu. Otrzymaj coaching tekstowy, wizualny i głosowy w języku aplikacji.",
+        "trainer" to "TWÓJ TRENER AI","male" to "Trener","female" to "Trenerka","trainer_desc" to "Wybrany trener pokazuje wizualnie obszar korekty i mówi w aktywnym języku aplikacji.",
+        "step1" to "1 · WIDEO I TECHNIKA","files" to "Pliki","gallery" to "Galeria","replace" to "Zastąp","importing" to "Importowanie…","picker_note" to "Najpierw otwiera się Galeria · Pliki jako alternatywa · maksymalnie 20 sekund",
+        "read_fail" to "Nie udało się odczytać filmu.","too_long" to "Film jest za długi. Maksymalnie 20 sekund.","import_private" to "Importowanie filmu do prywatnej pamięci RS KICKBOX…","import_fail" to "Nie udało się zaimportować filmu do prywatnej pamięci.","ready" to "Film gotowy do podglądu.","preview_generated" to "Utworzono podgląd coachingu.","analyze" to "Analizuj technikę","remove" to "Usuń film",
+        "step2" to "2 · WYNIK COACHINGU","preview_mode" to "TRYB PODGLĄDU · Analiza AI klatka po klatce nie jest jeszcze połączona.","speak" to "🔊 Odtwórz coaching","saving_cloud" to "Zapisywanie oceny techniki w bezpiecznej chmurze…","saved_cloud" to "✓ Analiza zapisana w chmurze.","saved_local" to "Analiza zapisana w historii techniki.","save_history" to "Zapisz w historii",
+        "step3" to "3 · ZAPYTAJ TRENERA","voice_desc" to "Głos jest dodatkową warstwą wejścia/wyjścia trenera techniki.","ask_label" to "Zapytaj o ten ruch","ask_voice" to "🎙 Zapytaj głosowo","auto_speak" to "Czytaj odpowiedzi automatycznie","ask_ai" to "Zapytaj Trenera AI",
+        "focus" to "Obszar korekty","history_cloud_sub" to "Filmy techniczne uczniów, notatki trenera i ulubione w chmurze.","syncing" to "Synchronizacja zgłoszeń technicznych…","history_connected" to "Bezpieczna historia techniki w chmurze połączona","back_history" to "Wróć do historii techniki","loading_video" to "Ładowanie filmu…","student_summary" to "Podsumowanie coachingu ucznia","open_video" to "Otwórz film techniczny","trainer_note" to "Notatka trenera"
+    )
+    val tr=en+mapOf(
+        "title" to "YAPAY ZEKA TEKNİK KOÇU","sub" to "Kısa bir kickboks hareketi veya kombinasyonu yükle. Uygulama dilinde metin, görsel ve sesli koçluk al.",
+        "trainer" to "YAPAY ZEKA ANTRENÖRÜN","male" to "Erkek antrenör","female" to "Kadın antrenör","trainer_desc" to "Seçilen antrenör düzeltme odağını görsel olarak gösterir ve aktif uygulama dilinde konuşur.",
+        "step1" to "1 · VİDEO & TEKNİK","files" to "Dosyalar","gallery" to "Galeri","replace" to "Değiştir","importing" to "İçe aktarılıyor…","picker_note" to "Önce Galeri açılır · Dosyalar alternatif · en fazla 20 saniye",
+        "read_fail" to "Bu video okunamadı.","too_long" to "Video çok uzun. En fazla 20 saniye.","import_private" to "Video özel RS KICKBOX depolamasına aktarılıyor…","import_fail" to "Video özel uygulama depolamasına aktarılamadı.","ready" to "Video önizlemeye hazır.","preview_generated" to "Yapılandırılmış koçluk önizlemesi oluşturuldu.","analyze" to "Tekniği analiz et","remove" to "Videoyu kaldır",
+        "step2" to "2 · KOÇLUK SONUCU","preview_mode" to "ÖNİZLEME MODU · Kare kare yapay zeka görüntü analizi henüz bağlı değil.","speak" to "🔊 Koçluğu seslendir","saving_cloud" to "Teknik inceleme güvenli bulut geçmişine kaydediliyor…","saved_cloud" to "✓ Analiz bulut geçmişine kaydedildi.","saved_local" to "Analiz teknik geçmişine kaydedildi.","save_history" to "Geçmişe kaydet",
+        "step3" to "3 · KOÇA SOR","voice_desc" to "Ses, teknik koçu için ek bir giriş/çıkış katmanıdır.","ask_label" to "Bu hareket hakkında sor","ask_voice" to "🎙 Sesle sor","auto_speak" to "Yanıtları otomatik seslendir","ask_ai" to "Yapay Zeka Koçuna Sor",
+        "focus" to "Düzeltme odağı","history_cloud_sub" to "Öğrenci teknik videoları, antrenör notları ve bulut favorileri.","syncing" to "Teknik gönderimler eşitleniyor…","history_connected" to "Güvenli bulut teknik geçmişi bağlı","back_history" to "Teknik geçmişine dön","loading_video" to "Video yükleniyor…","student_summary" to "Öğrenci koçluk özeti","open_video" to "Teknik videoyu aç","trainer_note" to "Antrenör notu"
+    )
+    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
+    return pack[key]?:en[key]?:key
+}
+
 @Composable
 fun RsTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore,role:RsRole){
     if(role==RsRole.TRAINER){
@@ -211,20 +316,20 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
 
     fun acceptVideo(uri:Uri,persist:Boolean){
         val d=videoDurationV27(context,uri)
-        if(d<=0L)feedback="Could not read this video file."
-        else if(d>RS_TECH_VIDEO_MAX_MS)feedback="Video is too long. Technique uploads are limited to 20 seconds."
+        if(d<=0L)feedback=coachStudentUiV105(lang,"read_fail")
+        else if(d>RS_TECH_VIDEO_MAX_MS)feedback=coachStudentUiV105(lang,"too_long")
         else{
             if(persist)runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
             val pickedName=displayNameV27(context,uri)
             importingVideo=true
-            feedback="Importing video into private RS KICKBOX storage…"
+            feedback=coachStudentUiV105(lang,"import_private")
             scope.launch{
                 val local=withContext(Dispatchers.IO){
                     runCatching{rsCopyTechniqueVideoV36(context,uri)}.getOrNull()
                 }
                 importingVideo=false
                 if(local==null){
-                    feedback="Could not import this video into private app storage."
+                    feedback=coachStudentUiV105(lang,"import_fail")
                 }else{
                     val previous=videoUri
                     videoUri=local
@@ -234,7 +339,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                     if(previous.isNotBlank() && previous!=local){
                         rsDeleteTechniqueVideoIfUnusedV36(context,store,previous)
                     }
-                    feedback="Video ready for local preview."
+                    feedback=coachStudentUiV105(lang,"ready")
                 }
             }
         }
@@ -254,21 +359,21 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
 
     val summary=coachSummaryV27(lang)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(9.dp)){
-        Text("AI TECHNIQUE COACH",color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
-        Text("Upload a short kickboxing move or combination. Get text, visual and spoken coaching in ${lang.name}.",color=c.muted)
+        Text(coachStudentUiV105(lang,"title"),color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
+        Text(coachStudentUiV105(lang,"sub"),color=c.muted)
 
         RsPanel(c){
-            Text("YOUR AI TRAINER",color=c.bright,fontWeight=FontWeight.Bold)
+            Text(coachStudentUiV105(lang,"trainer"),color=c.bright,fontWeight=FontWeight.Bold)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                FilterChip(selected=coachGender=="male",onClick={coachGender="male";store.ps("ai_coach_gender","male")},label={Text("Male trainer")},modifier=Modifier.weight(1f))
-                FilterChip(selected=coachGender=="female",onClick={coachGender="female";store.ps("ai_coach_gender","female")},label={Text("Female trainer")},modifier=Modifier.weight(1f))
+                FilterChip(selected=coachGender=="male",onClick={coachGender="male";store.ps("ai_coach_gender","male")},label={Text(coachStudentUiV105(lang,"male"))},modifier=Modifier.weight(1f))
+                FilterChip(selected=coachGender=="female",onClick={coachGender="female";store.ps("ai_coach_gender","female")},label={Text(coachStudentUiV105(lang,"female"))},modifier=Modifier.weight(1f))
             }
             CoachAvatarV28(c,store,coachGender,speaking,selectedTechnique)
-            Text("The selected trainer demonstrates correction focus visually and speaks in the active app language. Production lip-synced dubbing can replace the preview voice layer later.",color=c.muted,fontSize=10.sp)
+            Text(coachStudentUiV105(lang,"trainer_desc"),color=c.muted,fontSize=10.sp)
         }
 
         RsPanel(c){
-            Text("1 · VIDEO & TECHNIQUE",color=c.bright,fontWeight=FontWeight.Bold)
+            Text(coachStudentUiV105(lang,"step1"),color=c.bright,fontWeight=FontWeight.Bold)
             Box{
                 OutlinedButton(onClick={techniqueMenu=true},modifier=Modifier.fillMaxWidth()){Text(selectedTechnique)}
                 DropdownMenu(expanded=techniqueMenu,onDismissRequest={techniqueMenu=false}){
@@ -282,27 +387,27 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                     onClick={galleryVideoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))},
                     modifier=Modifier.weight(1f),
                     enabled=!importingVideo
-                ){Text(if(importingVideo)"Importing…" else if(videoUri.isBlank())"Gallery" else "Replace")}
+                 ){Text(if(importingVideo)coachStudentUiV105(lang,"importing") else if(videoUri.isBlank())coachStudentUiV105(lang,"gallery") else coachStudentUiV105(lang,"replace"))}
                 OutlinedButton(
                     onClick={fileVideoPicker.launch(arrayOf("video/*"))},
                     modifier=Modifier.weight(1f),
                     enabled=!importingVideo
-                ){Text("Files")}
+                 ){Text(coachStudentUiV105(lang,"files"))}
             }
-            Text("Gallery opens first for phone videos · Files is a fallback · maximum 20 seconds",color=c.muted,fontSize=10.sp)
+            Text(coachStudentUiV105(lang,"picker_note"),color=c.muted,fontSize=10.sp)
             if(videoUri.isNotBlank()){
                 RsTechniqueVideoPreviewV27(videoUri)
                 Text("$videoName · ${"%.1f".format(durationMs/1000.0)} s",color=c.muted,fontSize=10.sp)
-                Button(onClick={analysisReady=true;feedback="Structured coaching preview generated."},modifier=Modifier.fillMaxWidth()){Text("Analyze technique")}
-                OutlinedButton(onClick={val previous=videoUri;videoUri="";videoName="";durationMs=0L;analysisReady=false;rsDeleteTechniqueVideoIfUnusedV36(context,store,previous)},modifier=Modifier.fillMaxWidth()){Text("Remove video")}
+                Button(onClick={analysisReady=true;feedback=coachStudentUiV105(lang,"preview_generated")},modifier=Modifier.fillMaxWidth()){Text(coachStudentUiV105(lang,"analyze"))}
+                OutlinedButton(onClick={val previous=videoUri;videoUri="";videoName="";durationMs=0L;analysisReady=false;rsDeleteTechniqueVideoIfUnusedV36(context,store,previous)},modifier=Modifier.fillMaxWidth()){Text(coachStudentUiV105(lang,"remove"))}
             }
             if(feedback.isNotBlank())Text(feedback,color=c.muted,fontSize=10.sp)
         }
 
         if(analysisReady)RsPanel(c){
-            Text("2 · COACHING RESULT",color=c.bright,fontWeight=FontWeight.Black)
+            Text(coachStudentUiV105(lang,"step2"),color=c.bright,fontWeight=FontWeight.Black)
             Surface(shape=RoundedCornerShape(14.dp),color=c.gold.copy(alpha=.12f)){
-                Text("PREVIEW MODE · Production frame-by-frame AI vision is not connected yet.",color=c.bright,fontSize=10.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(10.dp))
+                Text(coachStudentUiV105(lang,"preview_mode"),color=c.bright,fontSize=10.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(10.dp))
             }
             Text(summary,color=c.text)
             techniquePointsV27(lang).forEachIndexed{i,(title,body)->
@@ -321,12 +426,12 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                     tts?.language=lang.locale
                     tts?.speak(summary,TextToSpeech.QUEUE_FLUSH,null,"technique-coach")
                 }
-            },enabled=ready,modifier=Modifier.fillMaxWidth()){Text("🔊 Speak coaching")}
+            },enabled=ready,modifier=Modifier.fillMaxWidth()){Text(coachStudentUiV105(lang,"speak"))}
             Button(
                 onClick={
                     if(RsSupabaseV60.configured){
                         cloudSaving=true
-                        feedback="Saving technique review to secure cloud history…"
+                        feedback=coachStudentUiV105(lang,"saving_cloud")
                         scope.launch{
                             rsUploadTechniqueSubmissionV78(
                                 context,
@@ -335,8 +440,8 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                                 selectedTechnique,
                                 summary
                             )
-                                .onSuccess{feedback="✓ Analysis saved to cloud technique history."}
-                                .onFailure{feedback=it.message?:"Could not save technique review."}
+                                .onSuccess{feedback=coachStudentUiV105(lang,"saved_cloud")}
+                                .onFailure{feedback=rsReleaseT98(lang,"save_failed")}
                             cloudSaving=false
                         }
                     }else{
@@ -345,27 +450,27 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                         val created=SimpleDateFormat("dd MMM yyyy · HH:mm",Locale.getDefault()).format(Date())
                         items.add(0,TechniqueSubmissionV27(id,videoUri,videoName,selectedTechnique,created,false,summary,store.s("session_student_email","alex@rskickbox.nl")))
                         store.ps("technique_submissions_v27",encodeTechniqueSubsV27(items.take(40)))
-                        feedback="Analysis saved to technique history."
+                        feedback=coachStudentUiV105(lang,"saved_local")
                     }
                 },
                 enabled=!cloudSaving,
                 modifier=Modifier.fillMaxWidth()
-            ){Text(if(cloudSaving)"Saving…" else "Save to history")}
+             ){Text(if(cloudSaving)rsReleaseT98(lang,"saving") else coachStudentUiV105(lang,"save_history"))}
         }
 
         RsPanel(c){
-            Text("3 · ASK THE COACH",color=c.bright,fontWeight=FontWeight.Bold)
-            Text("Voice is an extra input/output layer for the technique coach.",color=c.muted,fontSize=10.sp)
-            OutlinedTextField(question,{question=it},label={Text("Ask about this movement")},modifier=Modifier.fillMaxWidth(),minLines=2)
+            Text(coachStudentUiV105(lang,"step3"),color=c.bright,fontWeight=FontWeight.Bold)
+            Text(coachStudentUiV105(lang,"voice_desc"),color=c.muted,fontSize=10.sp)
+            OutlinedTextField(question,{question=it},label={Text(coachStudentUiV105(lang,"ask_label"))},modifier=Modifier.fillMaxWidth(),minLines=2)
             OutlinedButton(onClick={
                 val intent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE,lang.locale.toLanguageTag())
                 }
                 speechLauncher.launch(intent)
-            },modifier=Modifier.fillMaxWidth()){Text("🎙 Ask by voice")}
+            },modifier=Modifier.fillMaxWidth()){Text(coachStudentUiV105(lang,"ask_voice"))}
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                Text("Speak replies automatically",color=c.text,modifier=Modifier.weight(1f))
+                Text(coachStudentUiV105(lang,"auto_speak"),color=c.text,modifier=Modifier.weight(1f))
                 Switch(autoSpeak,{v->autoSpeak=v;store.pb("voice_auto",v)})
             }
             Button(onClick={
@@ -375,7 +480,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                     tts?.language=lang.locale
                     tts?.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"technique-answer")
                 }
-            },enabled=question.isNotBlank(),modifier=Modifier.fillMaxWidth()){Text("Ask AI Coach")}
+            },enabled=question.isNotBlank(),modifier=Modifier.fillMaxWidth()){Text(coachStudentUiV105(lang,"ask_ai"))}
             if(answer.isNotBlank())Text(answer,color=c.text)
         }
         Spacer(Modifier.height(18.dp))
@@ -410,7 +515,7 @@ private fun CoachAvatarV28(c:RsPalette,store:RsStore,gender:String,speaking:Bool
         Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=if(custom.isNotBlank()).32f else .08f)))
         Column(Modifier.align(Alignment.BottomStart).padding(14.dp)){
             Text(if(gender=="female")"RS AI FEMALE TRAINER" else "RS AI MALE TRAINER",color=c.bright,fontWeight=FontWeight.Black,fontSize=14.sp)
-            Text("Demonstrating focus · $technique",color=Color.White.copy(alpha=.76f),fontSize=10.sp)
+            Text(coachStudentUiV105(lang,"focus")+" · "+technique,color=Color.White.copy(alpha=.76f),fontSize=10.sp)
         }
     }
 }
@@ -523,7 +628,7 @@ private fun RsCloudTrainerTechniqueHistoryV78(c:RsPalette,lang:RsLang){
                 items=rows
                 notes=rows.associate{it.id to it.trainerNote}
             }
-            .onFailure{status=it.message?:"Could not load cloud technique history."}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -534,7 +639,7 @@ private fun RsCloudTrainerTechniqueHistoryV78(c:RsPalette,lang:RsLang){
             status="Loading protected technique video…"
             rsTechniqueLocalUriV78(context,active)
                 .onSuccess{playingUri=it;status=""}
-                .onFailure{status=it.message?:"Could not open technique video."}
+                .onFailure{status=rsReleaseT98(lang,"load_failed")}
         }
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
@@ -545,17 +650,17 @@ private fun RsCloudTrainerTechniqueHistoryV78(c:RsPalette,lang:RsLang){
             OutlinedButton(
                 onClick={playing=null;playingUri="";status=""},
                 modifier=Modifier.fillMaxWidth()
-            ){Text("Back to technique history")}
+             ){Text(coachStudentUiV105(lang,"back_history"))}
             if(playingUri.isBlank()){
                 RsPanel(c){
                     CircularProgressIndicator()
-                    Text(status.ifBlank{"Loading video…"},color=c.muted)
+                    Text(status.ifBlank{coachStudentUiV105(lang,"loading_video")},color=c.muted)
                 }
             }else{
                 RsTechniqueVideoPreviewV27(playingUri)
             }
             RsPanel(c){
-                Text("Student coaching summary",color=c.bright,fontWeight=FontWeight.Bold)
+                Text(coachStudentUiV105(lang,"student_summary"),color=c.bright,fontWeight=FontWeight.Bold)
                 Text(active.studentSummary,color=c.text)
             }
         }
@@ -567,10 +672,10 @@ private fun RsCloudTrainerTechniqueHistoryV78(c:RsPalette,lang:RsLang){
         verticalArrangement=Arrangement.spacedBy(9.dp)
     ){
         Text(coachUiV36(lang,"history_title"),color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
-        Text("Cloud student technique uploads, trainer notes and favorites.",color=c.muted)
+        Text(coachStudentUiV105(lang,"history_cloud_sub"),color=c.muted)
         RsPanel(c){
             Text(
-                if(loading)"Syncing technique submissions…" else "Secure cloud technique history connected",
+                if(loading)coachStudentUiV105(lang,"syncing") else coachStudentUiV105(lang,"history_connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -600,11 +705,11 @@ private fun RsCloudTrainerTechniqueHistoryV78(c:RsPalette,lang:RsLang){
                 Button(
                     onClick={playing=item;status=""},
                     modifier=Modifier.fillMaxWidth()
-                ){Text("Open technique video")}
+                 ){Text(coachStudentUiV105(lang,"open_video"))}
                 OutlinedTextField(
                     value=notes[item.id]?:item.trainerNote,
                     onValueChange={v->notes=notes+(item.id to v.take(2000))},
-                    label={Text("Trainer note")},
+                    label={Text(coachStudentUiV105(lang,"trainer_note"))},
                     modifier=Modifier.fillMaxWidth(),
                     enabled=busyId==null
                 )
@@ -622,7 +727,7 @@ private fun RsCloudTrainerTechniqueHistoryV78(c:RsPalette,lang:RsLang){
                                         status=if(item.trainerFavorite)coachUiV36(lang,"fav_removed") else coachUiV36(lang,"fav_saved")
                                         revision++
                                     }
-                                    .onFailure{status=it.message?:"Could not save trainer review."}
+                                    .onFailure{status=rsReleaseT98(lang,"save_failed")}
                                 busyId=null
                             }
                         },
@@ -640,7 +745,7 @@ private fun RsCloudTrainerTechniqueHistoryV78(c:RsPalette,lang:RsLang){
                                             status=coachUiV36(lang,"deleted")
                                             revision++
                                         }
-                                        .onFailure{status=it.message?:"Could not delete technique submission."}
+                                        .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                     busyId=null
                                 }
                             }else pendingDeleteId=item.id
