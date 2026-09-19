@@ -196,7 +196,8 @@ returns table(
     preview_path text,
     full_path text,
     access_tier text,
-    can_read_full boolean
+    can_read_full boolean,
+    gifted_emails text[]
 )
 language sql
 stable
@@ -248,7 +249,19 @@ as $$
                     )
                   )
             )
-        ) as can_read_full
+        ) as can_read_full,
+        case
+            when (select private.rs_is_staff()) then coalesce(
+                (
+                    select array_agg(p.email order by lower(p.email))
+                    from public.rs_book_grants g
+                    join public.rs_profiles p on p.id=g.student_id
+                    where g.book_id=b.id
+                ),
+                array[]::text[]
+            )
+            else array[]::text[]
+        end as gifted_emails
     from public.rs_books b
     where b.active=true or (select private.rs_is_staff())
     order by b.updated_at desc
