@@ -5,6 +5,7 @@ import org.json.JSONObject
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -138,12 +139,31 @@ private fun RsMessageBubbleV44(c:RsPalette,lang:RsLang,message:RsCoachMessageV44
         modifier=Modifier.fillMaxWidth()
     ){
         Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(4.dp)){
-            Text(
-                if(trainer)rsCoachUiV44(lang,"trainer") else rsCoachUiV44(lang,"student"),
-                color=c.bright,
-                fontWeight=FontWeight.Black,
-                fontSize=10.sp
-            )
+            if(trainer){
+                Text(
+                    rsCoachUiV44(lang,"trainer"),
+                    color=c.bright,
+                    fontWeight=FontWeight.Black,
+                    fontSize=10.sp
+                )
+            }else{
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(8.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    RsMemberAvatarV68(c,message.studentEmail,message.studentName,size=32.dp)
+                    Column{
+                        Text(
+                            message.studentName.ifBlank{rsCoachUiV44(lang,"student")},
+                            color=c.bright,
+                            fontWeight=FontWeight.Black,
+                            fontSize=11.sp
+                        )
+                        Text(rsCoachUiV44(lang,"student"),color=c.muted,fontSize=8.sp)
+                    }
+                }
+            }
             Text(message.body,color=c.text)
             Text(rsCoachTimeV44(message.createdAt),color=c.muted,fontSize=9.sp)
         }
@@ -227,8 +247,17 @@ private fun RsTrainerCoachInboxV44(c:RsPalette,store:RsStore,lang:RsLang){
                 val trainerRead=store.s(rsTrainerReadKeyV44(email),"0").toLongOrNull()?:0L
                 val unread=thread.count{it.sender=="student" && it.createdAt>trainerRead}
                 RsPanel(c){
-                    Text(name,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
-                    Text(email,color=c.muted,fontSize=10.sp)
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement=Arrangement.spacedBy(10.dp),
+                        verticalAlignment=Alignment.CenterVertically
+                    ){
+                        RsMemberAvatarV68(c,email,name,size=46.dp)
+                        Column(Modifier.weight(1f)){
+                            Text(name,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                            Text(email,color=c.muted,fontSize=10.sp)
+                        }
+                    }
                     Text(
                         if(unread>0)unread.toString()+" "+rsCoachUiV44(lang,"unread")
                         else thread.lastOrNull()?.body?.take(80)?:rsCoachUiV44(lang,"no_messages"),
@@ -251,6 +280,19 @@ private fun RsTrainerCoachInboxV44(c:RsPalette,store:RsStore,lang:RsLang){
             if(latestStudent>0L)store.ps(rsTrainerReadKeyV44(email),latestStudent.toString())
         }
         RsScroll(c,name,email){
+            RsPanel(c){
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(10.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    RsMemberAvatarV68(c,email,name,size=54.dp)
+                    Column(Modifier.weight(1f)){
+                        Text(name,color=c.bright,fontWeight=FontWeight.Black,fontSize=19.sp)
+                        Text(email,color=c.muted,fontSize=10.sp)
+                    }
+                }
+            }
             OutlinedButton(onClick={selectedEmail=null;draft="";pendingDelete=null},modifier=Modifier.fillMaxWidth()){
                 Text(rsCoachUiV44(lang,"back"))
             }
