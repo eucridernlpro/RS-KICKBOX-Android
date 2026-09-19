@@ -209,14 +209,14 @@ language sql
 stable
 security definer
 set search_path = ''
-as $
+as $$
     select p.id
     from public.rs_profiles p
     where p.id=(select auth.uid())
       and p.role='student'
       and p.active=true
     limit 1;
-$;
+$$;
 
 revoke execute on function public.rs_my_student_id() from public;
 revoke execute on function public.rs_my_student_id() from anon;
