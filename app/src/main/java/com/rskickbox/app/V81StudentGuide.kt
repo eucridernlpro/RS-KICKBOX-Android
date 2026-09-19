@@ -283,17 +283,8 @@ private fun rsStudentGuideCategoryV81(lang:RsLang,cat:String):String=when(cat){
     else->cat
 }
 
-fun rsStudentFeatureEnabledV81(store:RsStore,route:String):Boolean{
-    // General per-route switch: future/advanced trainer access controls can write this key.
-    if(!store.b("student_feature_"+route+"_enabled_v81",true))return false
-
-    // Existing live trainer operational blocks.
-    return when(route){
-        "private_lessons"->rsOpsEnabledV56(store,RsOpsKeysV56.PRIVATE_LESSONS,true)
-        "referrals"->rsOpsEnabledV56(store,RsOpsKeysV56.REFERRALS,true)
-        else->true
-    }
-}
+fun rsStudentFeatureEnabledV81(store:RsStore,route:String):Boolean =
+    rsStudentRouteEnabledV82(store,route)
 
 private fun rsPlanRankV81(plan:String)=when(plan.uppercase()){
     "BASIC"->1
