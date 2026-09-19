@@ -21,7 +21,8 @@ Target SDK: **36**
   - 20-second input limit;
   - sampled-frame AI path through authenticated Supabase Edge Function;
   - OpenAI secret remains server-side;
-  - automatic structured-coaching fallback if AI is unavailable.
+  - automatic structured-coaching fallback if AI is unavailable;
+  - server-side daily AI quota to control external AI cost/abuse.
 - Adaptive RS crown launcher icon fallback.
 - Android network hardening: cleartext HTTP disabled.
 - Android app backup disabled for sensitive private/session data.
@@ -41,7 +42,7 @@ Run once in Supabase SQL Editor:
 
 `supabase/RS_KICKBOX_V105_BACKEND_UPDATE.sql`
 
-This contains migrations 0040–0043 only and assumes the successful v0.98 update is already applied.
+This contains migrations 0040–0044 only and assumes the successful v0.98 update is already applied.
 
 ### 2. Deploy Technique Coach Edge Function
 
