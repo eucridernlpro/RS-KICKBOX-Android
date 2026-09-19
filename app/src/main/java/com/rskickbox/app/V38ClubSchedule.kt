@@ -407,20 +407,149 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
 }
 @Composable
 fun RsAttendanceV38(c:RsPalette,store:RsStore,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    val cloudMode=RsSupabaseV60.configured
+    var revision by remember{mutableIntStateOf(0)}
+    var cloudClasses by remember{mutableStateOf<List<RsCloudClassStateV69>>(emptyList())}
+    var selectedClassId by remember{mutableStateOf("")}
+    var roster by remember{mutableStateOf<List<RsAttendanceRosterRowV70>>(emptyList())}
+    var loading by remember{mutableStateOf(cloudMode)}
+    var busyStudentId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(cloudMode,revision){
+        if(cloudMode){
+            loading=true
+            rsCloudClassesV69()
+                .onSuccess{items->
+                    cloudClasses=items.filter{it.clazz.active}
+                    if(selectedClassId.isBlank() || cloudClasses.none{it.clazz.id==selectedClassId}){
+                        selectedClassId=cloudClasses.firstOrNull()?.clazz?.id.orEmpty()
+                    }
+                }
+                .onFailure{status=it.message?:"Could not load classes."}
+            loading=false
+        }
+    }
+
+    LaunchedEffect(cloudMode,selectedClassId,revision){
+        if(cloudMode && selectedClassId.isNotBlank()){
+            loading=true
+            rsCloudAttendanceRosterV70(selectedClassId)
+                .onSuccess{roster=it}
+                .onFailure{status=it.message?:"Could not load attendance roster."}
+            loading=false
+        }
+    }
+
+    if(cloudMode){
+        val classes=cloudClasses.map{it.clazz}
+        RsScroll(c,rsRouteTitle(lang,"attendance","Attendance"),"Live Supabase attendance and booking roster."){
+            RsPanel(c){
+                Text(
+                    if(loading)"Syncing attendance…" else "Live attendance connected",
+                    color=if(loading)c.muted else c.bright,
+                    fontWeight=FontWeight.Bold,
+                    fontSize=10.sp
+                )
+                if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+            }
+
+            classes.forEach{clazz->
+                FilterChip(
+                    selected=selectedClassId==clazz.id,
+                    onClick={selectedClassId=clazz.id;status=""},
+                    label={Text(clazz.dayLabel+" "+clazz.timeLabel+" · "+clazz.title,maxLines=1)},
+                    modifier=Modifier.fillMaxWidth()
+                )
+            }
+
+            val selected=classes.firstOrNull{it.id==selectedClassId}
+            if(selected!=null){
+                val presentCount=roster.count{it.present}
+                val bookedCount=roster.count{it.booked}
+                RsPanel(c){
+                    Text(selected.title,color=c.bright,fontWeight=FontWeight.Black)
+                    Text(selected.dayLabel+" · "+selected.timeLabel,color=c.text)
+                    Text(
+                        bookedCount.toString()+" booked · "+presentCount.toString()+" present · capacity "+selected.capacity,
+                        color=c.muted,
+                        fontSize=10.sp
+                    )
+                }
+
+                if(roster.isEmpty()&&!loading){
+                    RsPanel(c){Text("No active students found.",color=c.muted)}
+                }
+
+                roster.forEach{student->
+                    RsPanel(c){
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement=Arrangement.spacedBy(10.dp),
+                            verticalAlignment=Alignment.CenterVertically
+                        ){
+                            RsMemberAvatarV68(c,student.email,student.displayName,size=44.dp)
+                            Column(Modifier.weight(1f)){
+                                Text(
+                                    student.displayName.ifBlank{student.email},
+                                    color=c.bright,
+                                    fontWeight=FontWeight.Bold
+                                )
+                                Text(student.email,color=c.muted,fontSize=9.sp)
+                                Text(
+                                    if(student.booked)"BOOKED" else "NOT BOOKED",
+                                    color=if(student.booked)c.bright else c.muted,
+                                    fontSize=9.sp,
+                                    fontWeight=FontWeight.Bold
+                                )
+                            }
+                            Checkbox(
+                                checked=student.present,
+                                onCheckedChange={present->
+                                    busyStudentId=student.studentId
+                                    status=""
+                                    scope.launch{
+                                        rsCloudSetAttendanceV70(
+                                            selectedClassId,
+                                            student.studentId,
+                                            present
+                                        )
+                                            .onSuccess{
+                                                status=if(present)"Marked present." else "Attendance removed."
+                                                revision++
+                                            }
+                                            .onFailure{status=it.message?:"Could not update attendance."}
+                                        busyStudentId=null
+                                    }
+                                },
+                                enabled=busyStudentId==null
+                            )
+                        }
+                        if(busyStudentId==student.studentId){
+                            LinearProgressIndicator(modifier=Modifier.fillMaxWidth())
+                        }
+                    }
+                }
+            }
+        }
+        return
+    }
+
     val classes=rsLoadClassesV38(store).filter{it.active}
-    var selectedClassId by remember(classes){mutableStateOf(classes.firstOrNull()?.id.orEmpty())}
+    var localSelectedClassId by remember(classes){mutableStateOf(classes.firstOrNull()?.id.orEmpty())}
     val createdStudents=rsLoadStudentsV33(store).filter{it.active}.map{it.name.ifBlank{it.email}}
     val students=(listOf("Alex de Vries")+createdStudents).distinct()
     RsScroll(c,rsRouteTitle(lang,"attendance","Attendance"),rsClassUiV38(lang,"attendance_sub")){
         classes.forEach{clazz->
             FilterChip(
-                selected=selectedClassId==clazz.id,
-                onClick={selectedClassId=clazz.id},
+                selected=localSelectedClassId==clazz.id,
+                onClick={localSelectedClassId=clazz.id},
                 label={Text(clazz.dayLabel+" "+clazz.timeLabel+" · "+clazz.title,maxLines=1)},
                 modifier=Modifier.fillMaxWidth()
             )
         }
-        val selected=classes.firstOrNull{it.id==selectedClassId}
+        val selected=classes.firstOrNull{it.id==localSelectedClassId}
         if(selected!=null){
             RsPanel(c){
                 Text(selected.title,color=c.bright,fontWeight=FontWeight.Black)
