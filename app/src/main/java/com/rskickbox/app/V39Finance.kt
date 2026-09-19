@@ -255,10 +255,10 @@ private fun RsCloudStudentFinanceV77(c:RsPalette,lang:RsLang){
         loading=true
         rsMyBillingSummaryV77()
             .onSuccess{summary=it}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         rsMyInvoicesV77()
             .onSuccess{invoices=it}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -326,7 +326,7 @@ private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
         loading=true
         rsStaffInvoicesV77()
             .onSuccess{invoices=it}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -392,7 +392,7 @@ private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
                                 status=rsCloudT93(lang,"invoice_created")
                                 revision++
                             }
-                            .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -426,7 +426,7 @@ private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
                                     status=if(next=="paid")rsReleaseT98(lang,"invoice_paid") else rsReleaseT98(lang,"invoice_pending")
                                     revision++
                                 }
-                                .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                .onFailure{status=rsReleaseT98(lang,"update_failed")}
                             busy=false
                         }
                     },
@@ -446,7 +446,7 @@ private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
                                         status=rsCloudT93(lang,"invoice_deleted")
                                         revision++
                                     }
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                 busy=false
                             }
                         }else pendingDelete=inv.id
