@@ -49,7 +49,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
         loading=true
         rsCloudPromotionsV103()
             .onSuccess{promos=it}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         rsCloudBookV103()
             .onSuccess{row->
                 bookRow=row
@@ -60,10 +60,10 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
                     giftedText=row.giftedEmails.joinToString(",")
                 }
             }
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         rsCloudBookConfigLocalV103(context)
             .onSuccess{bookLocal=it.first}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -129,9 +129,9 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
                                             status=rsPromoUiV45(lang,"thumb_ready")
                                             revision++
                                         }
-                                        .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                                        .onFailure{status=rsReleaseT98(lang,"save_failed")}
                                 },
-                                onFailure={status=it.message?:rsReleaseT98(lang,"save_failed")}
+                                onFailure={status=rsReleaseT98(lang,"save_failed")}
                             )
                         busy=false
                     }
@@ -159,7 +159,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
                             scope.launch{
                                 rsSetCloudPromotionActiveV103(item.id,on)
                                     .onSuccess{revision++}
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                 busy=false
                             }
                         },
@@ -173,7 +173,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
                             scope.launch{
                                 rsDeleteCloudPromotionV103(item.id,item.imagePath)
                                     .onSuccess{pendingDelete=null;revision++}
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                 busy=false
                             }
                         }else pendingDelete=item.id
@@ -237,7 +237,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
 
                         val coverResult=if(pendingCover.isNotBlank())rsUploadBookAssetV103(context,pendingCover,"cover") else Result.success(coverPath.orEmpty())
                         if(coverResult.isFailure){
-                            status=coverResult.exceptionOrNull()?.message?:rsReleaseT98(lang,"save_failed")
+                            status=rsReleaseT98(lang,"save_failed")
                             busy=false
                             return@launch
                         }
@@ -245,7 +245,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
 
                         val previewResult=if(pendingPreview.isNotBlank())rsUploadBookAssetV103(context,pendingPreview,"preview") else Result.success(previewPath.orEmpty())
                         if(previewResult.isFailure){
-                            status=previewResult.exceptionOrNull()?.message?:rsReleaseT98(lang,"save_failed")
+                            status=rsReleaseT98(lang,"save_failed")
                             busy=false
                             return@launch
                         }
@@ -253,7 +253,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
 
                         val fullResult=if(pendingFull.isNotBlank())rsUploadBookAssetV103(context,pendingFull,"full") else Result.success(fullPath.orEmpty())
                         if(fullResult.isFailure){
-                            status=fullResult.exceptionOrNull()?.message?:rsReleaseT98(lang,"save_failed")
+                            status=rsReleaseT98(lang,"save_failed")
                             busy=false
                             return@launch
                         }
@@ -281,7 +281,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
                                 status=rsPromoUiV45(lang,"book_saved")
                                 revision++
                             }
-                            .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -310,10 +310,10 @@ fun RsCloudPromotionPageV104(
         loading=true
         rsCloudPromotionsV103()
             .onSuccess{promos=it.filter{x->x.active}.map(::rsCloudPromotionAsLocalV103)}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         rsCloudBookConfigLocalV103(context)
             .onSuccess{book=it.first}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -387,7 +387,7 @@ fun RsCloudBookLibraryV104(c:RsPalette,store:RsStore,lang:RsLang){
         loading=true
         rsCloudBookConfigLocalV103(context)
             .onSuccess{book=it.first}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
