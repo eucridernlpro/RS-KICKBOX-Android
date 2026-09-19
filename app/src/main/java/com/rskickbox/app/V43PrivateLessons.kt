@@ -10,6 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 data class RsPrivateSlotV43(
     val id:String,
@@ -143,6 +144,10 @@ private fun rsPrivateUiV43(lang:RsLang,key:String):String{
 
 @Composable
 fun RsStudentPrivateLessonsV43(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){
+        RsCloudStudentPrivateLessonsV76(c,lang)
+        return
+    }
     var revision by remember{mutableIntStateOf(0)}
     var noteBySlot by remember{mutableStateOf<Map<String,String>>(emptyMap())}
     val email=store.s("session_student_email","alex@rskickbox.nl")
@@ -202,6 +207,10 @@ fun RsStudentPrivateLessonsV43(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsTrainerScheduleV43(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){
+        RsCloudTrainerScheduleV76(c,lang)
+        return
+    }
     var revision by remember{mutableIntStateOf(0)}
     var showCreate by remember{mutableStateOf(false)}
     var day by remember{mutableStateOf("")}
@@ -292,6 +301,292 @@ fun RsTrainerScheduleV43(c:RsPalette,store:RsStore,lang:RsLang){
                     onClick={saveBookings(bookings.map{if(it.id==booking.id)it.copy(status="REQUESTED") else it})},
                     modifier=Modifier.fillMaxWidth()
                 ){Text(rsPrivateUiV43(lang,"reset"),fontSize=10.sp)}
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun RsCloudStudentPrivateLessonsV76(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var slots by remember{mutableStateOf<List<RsCloudPrivateSlotV76>>(emptyList())}
+    var notes by remember{mutableStateOf<Map<String,String>>(emptyMap())}
+    var loading by remember{mutableStateOf(true)}
+    var busyId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudPrivateSlotsV76()
+            .onSuccess{slots=it.filter{s->s.active}}
+            .onFailure{status=it.message?:"Could not load private lesson slots."}
+        loading=false
+    }
+
+    RsScroll(c,rsPrivateUiV43(lang,"student_title"),"Request private coaching from the shared trainer schedule."){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing private lessons…" else "Cloud private lessons connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        if(slots.isEmpty()&&!loading)RsPanel(c){Text("No private lesson availability yet.",color=c.muted)}
+
+        slots.forEach{slot->
+            val activeBookingId=slot.myBookingId
+            val bookingStatus=slot.myStatus
+            RsPanel(c){
+                Text(slot.dayLabel+" · "+slot.timeLabel,color=c.bright,fontSize=18.sp,fontWeight=FontWeight.Black)
+                Text(slot.durationMinutes.toString()+" min",color=c.muted)
+                Text(
+                    when(bookingStatus){
+                        "confirmed"->rsPrivateUiV43(lang,"confirmed")
+                        "declined"->rsPrivateUiV43(lang,"declined")
+                        "requested"->rsPrivateUiV43(lang,"requested")
+                        else->rsPrivateUiV43(lang,"available")
+                    },
+                    color=c.text,
+                    fontWeight=FontWeight.Bold
+                )
+
+                if(activeBookingId==null || bookingStatus=="declined"){
+                    OutlinedTextField(
+                        value=notes[slot.slotId]?:slot.myNote.orEmpty(),
+                        onValueChange={v->notes=notes+(slot.slotId to v.take(1000))},
+                        label={Text(rsPrivateUiV43(lang,"note"))},
+                        modifier=Modifier.fillMaxWidth(),
+                        enabled=busyId==null
+                    )
+                    Button(
+                        onClick={
+                            busyId=slot.slotId
+                            scope.launch{
+                                rsRequestCloudPrivateLessonV76(
+                                    slot.slotId,
+                                    notes[slot.slotId]?:slot.myNote.orEmpty()
+                                )
+                                    .onSuccess{
+                                        status="Private lesson request sent."
+                                        revision++
+                                    }
+                                    .onFailure{status=it.message?:"Could not request private lesson."}
+                                busyId=null
+                            }
+                        },
+                        enabled=busyId==null,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(if(busyId==slot.slotId)"Please wait…" else rsPrivateUiV43(lang,"request"))}
+                }else{
+                    OutlinedButton(
+                        onClick={
+                            busyId=slot.slotId
+                            scope.launch{
+                                rsCancelCloudPrivateLessonV76(activeBookingId)
+                                    .onSuccess{
+                                        status="Private lesson request cancelled."
+                                        revision++
+                                    }
+                                    .onFailure{status=it.message?:"Could not cancel request."}
+                                busyId=null
+                            }
+                        },
+                        enabled=busyId==null,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(if(busyId==slot.slotId)"Please wait…" else rsPrivateUiV43(lang,"cancel"))}
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var slots by remember{mutableStateOf<List<RsCloudPrivateSlotV76>>(emptyList())}
+    var requests by remember{mutableStateOf<List<RsCloudPrivateRequestV76>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var showCreate by remember{mutableStateOf(false)}
+    var day by remember{mutableStateOf("")}
+    var time by remember{mutableStateOf("")}
+    var duration by remember{mutableStateOf("60")}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudPrivateSlotsV76()
+            .onSuccess{slots=it}
+            .onFailure{status=it.message?:"Could not load private lesson slots."}
+        rsCloudPrivateRequestsV76()
+            .onSuccess{requests=it}
+            .onFailure{status=it.message?:"Could not load private lesson requests."}
+        loading=false
+    }
+
+    RsScroll(c,rsPrivateUiV43(lang,"trainer_title"),"Manage shared private lesson availability and student requests."){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing private lessons…" else "Cloud trainer schedule connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        Button(
+            onClick={showCreate=!showCreate},
+            enabled=!busy,
+            modifier=Modifier.fillMaxWidth()
+        ){Text(if(showCreate)rsPrivateUiV43(lang,"close") else rsPrivateUiV43(lang,"new_slot"))}
+
+        if(showCreate)RsPanel(c){
+            OutlinedTextField(day,{day=it.take(80)},label={Text(rsPrivateUiV43(lang,"day"))},modifier=Modifier.fillMaxWidth(),singleLine=true,enabled=!busy)
+            OutlinedTextField(time,{time=it.take(20)},label={Text(rsPrivateUiV43(lang,"time"))},modifier=Modifier.fillMaxWidth(),singleLine=true,enabled=!busy)
+            OutlinedTextField(duration,{duration=it.filter(Char::isDigit).take(3)},label={Text(rsPrivateUiV43(lang,"duration"))},modifier=Modifier.fillMaxWidth(),singleLine=true,enabled=!busy)
+            Button(
+                onClick={
+                    busy=true
+                    scope.launch{
+                        rsCreateCloudPrivateSlotV76(day,time,duration.toIntOrNull()?.coerceIn(15,180)?:60)
+                            .onSuccess{
+                                day=""
+                                time=""
+                                duration="60"
+                                showCreate=false
+                                status="Private lesson slot created."
+                                revision++
+                            }
+                            .onFailure{status=it.message?:"Could not create private lesson slot."}
+                        busy=false
+                    }
+                },
+                enabled=!busy&&day.isNotBlank()&&time.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Saving…" else rsPrivateUiV43(lang,"save"))}
+        }
+
+        slots.forEach{slot->
+            val requestCount=requests.count{it.slotId==slot.slotId}
+            RsPanel(c){
+                Text(slot.dayLabel+" · "+slot.timeLabel,color=c.bright,fontWeight=FontWeight.Black)
+                Text(slot.durationMinutes.toString()+" min · "+requestCount+" request(s)",color=c.muted)
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                    Text(if(slot.active)rsPrivateUiV43(lang,"active") else rsPrivateUiV43(lang,"inactive"),color=c.muted)
+                    Switch(
+                        slot.active,
+                        {v->
+                            busy=true
+                            scope.launch{
+                                rsSetCloudPrivateSlotActiveV76(slot.slotId,v)
+                                    .onSuccess{revision++}
+                                    .onFailure{status=it.message?:"Could not update slot."}
+                                busy=false
+                            }
+                        },
+                        enabled=!busy
+                    )
+                }
+                OutlinedButton(
+                    onClick={
+                        if(pendingDelete==slot.slotId){
+                            busy=true
+                            scope.launch{
+                                rsDeleteCloudPrivateSlotV76(slot.slotId)
+                                    .onSuccess{
+                                        pendingDelete=null
+                                        status="Private lesson slot deleted."
+                                        revision++
+                                    }
+                                    .onFailure{status=it.message?:"Could not delete slot."}
+                                busy=false
+                            }
+                        }else pendingDelete=slot.slotId
+                    },
+                    enabled=!busy,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(pendingDelete==slot.slotId)rsPrivateUiV43(lang,"confirm") else rsPrivateUiV43(lang,"delete"))}
+            }
+        }
+
+        Text(rsPrivateUiV43(lang,"requests"),color=c.bright,fontWeight=FontWeight.Black)
+        if(requests.isEmpty()&&!loading)RsPanel(c){Text(rsPrivateUiV43(lang,"none"),color=c.muted)}
+
+        requests.forEach{request->
+            RsPanel(c){
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(10.dp),
+                    verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+                ){
+                    RsMemberAvatarV68(c,request.studentEmail,request.studentName,size=46.dp)
+                    Column(Modifier.weight(1f)){
+                        Text(request.studentName.ifBlank{request.studentEmail},color=c.bright,fontWeight=FontWeight.Black)
+                        Text(request.studentEmail,color=c.muted,fontSize=9.sp)
+                    }
+                }
+                Text(request.dayLabel+" · "+request.timeLabel+" · "+request.durationMinutes+" min",color=c.text)
+                if(request.note.isNotBlank())Text(request.note,color=c.muted)
+                Text(
+                    when(request.status){
+                        "confirmed"->rsPrivateUiV43(lang,"confirmed")
+                        "declined"->rsPrivateUiV43(lang,"declined")
+                        else->rsPrivateUiV43(lang,"requested")
+                    },
+                    color=c.bright,
+                    fontWeight=FontWeight.Bold
+                )
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                    Button(
+                        onClick={
+                            busy=true
+                            scope.launch{
+                                rsSetCloudPrivateRequestStatusV76(request.bookingId,"confirmed")
+                                    .onSuccess{status="Private lesson confirmed.";revision++}
+                                    .onFailure{status=it.message?:"Could not confirm lesson."}
+                                busy=false
+                            }
+                        },
+                        enabled=!busy,
+                        modifier=Modifier.weight(1f)
+                    ){Text(rsPrivateUiV43(lang,"approve"),fontSize=10.sp)}
+                    OutlinedButton(
+                        onClick={
+                            busy=true
+                            scope.launch{
+                                rsSetCloudPrivateRequestStatusV76(request.bookingId,"declined")
+                                    .onSuccess{status="Private lesson declined.";revision++}
+                                    .onFailure{status=it.message?:"Could not decline lesson."}
+                                busy=false
+                            }
+                        },
+                        enabled=!busy,
+                        modifier=Modifier.weight(1f)
+                    ){Text(rsPrivateUiV43(lang,"decline"),fontSize=10.sp)}
+                }
+                if(request.status!="requested"){
+                    OutlinedButton(
+                        onClick={
+                            busy=true
+                            scope.launch{
+                                rsSetCloudPrivateRequestStatusV76(request.bookingId,"requested")
+                                    .onSuccess{revision++}
+                                    .onFailure{status=it.message?:"Could not reset request."}
+                                busy=false
+                            }
+                        },
+                        enabled=!busy,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(rsPrivateUiV43(lang,"reset"),fontSize=10.sp)}
+                }
             }
         }
     }
