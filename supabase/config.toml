@@ -3,3 +3,6 @@ verify_jwt = true
 
 [functions.redeem-student-invite]
 verify_jwt = false
+
+[functions.analyze-technique]
+verify_jwt = true
