@@ -28,7 +28,7 @@ The repository now contains the ordered migration set through `0043_cloud_promot
 For the currently confirmed project state (v0.98 backend update already applied), use **only**:
 - `supabase/RS_KICKBOX_V105_BACKEND_UPDATE.sql`
 
-That v0.105 delta contains migrations 0040–0043 only, so it does not unnecessarily rerun the already-applied chat/member-service migrations.
+That v0.105 delta contains migrations 0040–0044 only, so it does not unnecessarily rerun the already-applied chat/member-service migrations.
 
 ## Planned backend order
 
