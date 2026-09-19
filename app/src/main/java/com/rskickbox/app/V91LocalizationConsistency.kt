@@ -133,22 +133,78 @@ fun rsUiV91(lang:RsLang,key:String):String{
         "attendance_roster" to "Anwesenheitsliste","qr_checkin" to "QR Check-In","browse" to "Durchsuchen","search" to "Suche","favorites" to "Favoriten","history" to "Verlauf",
         "home_training" to "Heimtraining","workout_generator" to "Workout-Generator","background_player" to "HINTERGRUND-PLAYER","add_music" to "Musik vom Gerät hinzufügen","no_music" to "Noch keine Musik hinzugefügt.","now_playing" to "LÄUFT","playlist" to "PLAYLIST","pause" to "Pause","play" to "Abspielen","remove" to "Entfernen","stop_close" to "Stoppen & schließen","open" to "ÖFFNEN",
         "forgot_password" to "Passwort vergessen? Neues anfordern","back_signin" to "Zurück zur Anmeldung","reset_login" to "Anmeldung zurücksetzen","choose_new_password" to "Neues Passwort wählen","forgot_title" to "Passwort vergessen?","new_password" to "Neues Passwort (10+ Zeichen)","confirm_password" to "Neues Passwort bestätigen","save_new_password" to "Neues Passwort speichern","send_reset_email" to "Reset-E-Mail senden","please_wait" to "Bitte warten…","sign_in" to "Anmelden","activate_account" to "Konto aktivieren","cloud_connected" to "Cloud-Anmeldung verbunden",
-        "classes_training" to "Kurse & Training","club_events" to "Club-Events & Seminare","workout_home" to "Workout & Heimtraining","attendance_center" to "Anwesenheitszentrum","knowledge_vault" to "Wissensarchiv","session_builder" to "Session Builder","content_manager" to "Content Manager","private_coach_chat" to "Privater Coach-Chat","groups" to "Gruppen","student" to "Schüler","trainer" to "Trainer","image" to "Bild","short_video" to "Kurzvideo","send" to "Senden","uploading" to "Hochladen…","message" to "Nachricht","group_chat" to "Gruppenchat"
+        "classes_training" to "Kurse & Training","club_events" to "Club-Events & Seminare","workout_home" to "Workout & Heimtraining","attendance_center" to "Anwesenheitszentrum","knowledge_vault" to "Wissensarchiv","session_builder" to "Session Builder","content_manager" to "Content Manager","private_coach_chat" to "Privater Coach-Chat","groups" to "Gruppen","student" to "Schüler","trainer" to "Trainer","image" to "Bild","short_video" to "Kurzvideo","send" to "Senden","uploading" to "Hochladen…","message" to "Nachricht","group_chat" to "Gruppenchat",
+        "music_sub" to "Musik läuft in der App und im Hintergrund weiter, bis du sie stoppst.",
+        "music_help" to "Die Musik läuft weiter, wenn du andere RS KICKBOX-Seiten öffnest oder die App minimierst. Android-Mediensteuerungen erscheinen in der Benachrichtigungsleiste.",
+        "no_music_sub" to "Füge Audio vom Gerät hinzu, um deine RS-Trainingsplaylist zu erstellen.",
+        "reset_email_help" to "Gib die E-Mail-Adresse deines RS KICKBOX-Kontos ein. Wir senden einen sicheren Link zum Erstellen eines neuen Passworts.",
+        "recovery_help" to "Der Wiederherstellungslink hat dich zurück zu RS KICKBOX gebracht. Wähle unten dein neues Passwort.",
+        "checking_login" to "E-Mail und Passwort werden geprüft…",
+        "enter_email" to "Gib deine E-Mail-Adresse ein.",
+        "enter_password" to "Gib dein Passwort ein.",
+        "login_failed" to "Anmeldung fehlgeschlagen. Prüfe E-Mail/Passwort oder nutze Passwort vergessen.",
+        "reset_sent" to "Wenn diese E-Mail zu einem RS KICKBOX-Konto gehört, wurde eine Wiederherstellungs-E-Mail gesendet.",
+        "password_updated" to "Passwort aktualisiert. Du kannst dich jetzt mit dem neuen Passwort anmelden.",
+        "password_mismatch" to "Die beiden Passwörter stimmen nicht überein.",
+        "min_password" to "Wähle ein Passwort mit mindestens 10 Zeichen.",
+        "wrong_login_clears" to "Falsche Anmeldedaten werden automatisch gelöscht, damit du es sofort erneut versuchen kannst."
     )
     val it=en+mapOf(
         "attendance_roster" to "Presenze","qr_checkin" to "Check-In QR","browse" to "Sfoglia","search" to "Cerca","favorites" to "Preferiti","history" to "Storico","home_training" to "Allenamento a Casa","workout_generator" to "Generatore Allenamento","background_player" to "PLAYER IN BACKGROUND","add_music" to "Aggiungi musica dal dispositivo","no_music" to "Nessuna musica aggiunta.","now_playing" to "IN RIPRODUZIONE","playlist" to "PLAYLIST","pause" to "Pausa","play" to "Riproduci","remove" to "Rimuovi","stop_close" to "Ferma e chiudi","open" to "APRI",
         "forgot_password" to "Password dimenticata? Richiedine una nuova","back_signin" to "Torna al login","reset_login" to "Reimposta schermata login","choose_new_password" to "Scegli una nuova password","forgot_title" to "Password dimenticata?","new_password" to "Nuova password (10+ caratteri)","confirm_password" to "Conferma nuova password","save_new_password" to "Salva nuova password","send_reset_email" to "Invia e-mail di recupero","please_wait" to "Attendi…","sign_in" to "Accedi","activate_account" to "Attiva account","cloud_connected" to "Login cloud connesso",
-        "classes_training" to "Lezioni & Allenamento","club_events" to "Eventi & Seminari","workout_home" to "Workout & Casa","attendance_center" to "Centro Presenze","knowledge_vault" to "Archivio Conoscenza","session_builder" to "Session Builder","content_manager" to "Gestione Contenuti","private_coach_chat" to "Chat Coach Privato","groups" to "Gruppi","student" to "Allievo","trainer" to "Allenatore","image" to "Immagine","short_video" to "Video breve","send" to "Invia","uploading" to "Caricamento…","message" to "Messaggio","group_chat" to "Chat gruppo"
+        "classes_training" to "Lezioni & Allenamento","club_events" to "Eventi & Seminari","workout_home" to "Workout & Casa","attendance_center" to "Centro Presenze","knowledge_vault" to "Archivio Conoscenza","session_builder" to "Session Builder","content_manager" to "Gestione Contenuti","private_coach_chat" to "Chat Coach Privato","groups" to "Gruppi","student" to "Allievo","trainer" to "Allenatore","image" to "Immagine","short_video" to "Video breve","send" to "Invia","uploading" to "Caricamento…","message" to "Messaggio","group_chat" to "Chat gruppo",
+        "music_sub" to "La musica continua nell'app e in background finché non la fermi.",
+        "music_help" to "La musica continua mentre apri altre pagine RS KICKBOX o riduci l'app. I controlli multimediali Android appaiono nella barra delle notifiche.",
+        "no_music_sub" to "Aggiungi audio dal dispositivo per creare la tua playlist di allenamento RS.",
+        "reset_email_help" to "Inserisci l'e-mail usata per il tuo account RS KICKBOX. Invieremo un link sicuro per creare una nuova password.",
+        "recovery_help" to "Il link di recupero ti ha riportato in RS KICKBOX. Scegli qui sotto la nuova password.",
+        "checking_login" to "Verifica di e-mail e password…",
+        "enter_email" to "Inserisci il tuo indirizzo e-mail.",
+        "enter_password" to "Inserisci la tua password.",
+        "login_failed" to "Accesso non riuscito. Controlla e-mail/password oppure usa Password dimenticata.",
+        "reset_sent" to "Se questa e-mail appartiene a un account RS KICKBOX, è stata inviata un'e-mail di recupero.",
+        "password_updated" to "Password aggiornata. Ora puoi accedere con la nuova password.",
+        "password_mismatch" to "Le due password non corrispondono.",
+        "min_password" to "Scegli una password di almeno 10 caratteri.",
+        "wrong_login_clears" to "I dati di accesso errati vengono cancellati automaticamente per permetterti di riprovare subito."
     )
     val pl=en+mapOf(
         "attendance_roster" to "Lista Obecności","qr_checkin" to "Check-In QR","browse" to "Przeglądaj","search" to "Szukaj","favorites" to "Ulubione","history" to "Historia","home_training" to "Trening Domowy","workout_generator" to "Generator Treningu","background_player" to "ODTWARZACZ W TLE","add_music" to "Dodaj muzykę z urządzenia","no_music" to "Nie dodano muzyki.","now_playing" to "ODTWARZANIE","playlist" to "PLAYLISTA","pause" to "Pauza","play" to "Odtwórz","remove" to "Usuń","stop_close" to "Zatrzymaj i zamknij","open" to "OTWÓRZ",
         "forgot_password" to "Nie pamiętasz hasła? Poproś o nowe","back_signin" to "Powrót do logowania","reset_login" to "Resetuj ekran logowania","choose_new_password" to "Wybierz nowe hasło","forgot_title" to "Nie pamiętasz hasła?","new_password" to "Nowe hasło (10+ znaków)","confirm_password" to "Potwierdź nowe hasło","save_new_password" to "Zapisz nowe hasło","send_reset_email" to "Wyślij e-mail resetujący","please_wait" to "Proszę czekać…","sign_in" to "Zaloguj","activate_account" to "Aktywuj konto","cloud_connected" to "Logowanie cloud połączone",
-        "classes_training" to "Zajęcia & Trening","club_events" to "Wydarzenia & Seminaria","workout_home" to "Workout & Trening Domowy","attendance_center" to "Centrum Obecności","knowledge_vault" to "Baza Wiedzy","session_builder" to "Kreator Sesji","content_manager" to "Menedżer Treści","private_coach_chat" to "Prywatny Chat Trenera","groups" to "Grupy","student" to "Uczeń","trainer" to "Trener","image" to "Obraz","short_video" to "Krótki film","send" to "Wyślij","uploading" to "Wysyłanie…","message" to "Wiadomość","group_chat" to "Czat grupowy"
+        "classes_training" to "Zajęcia & Trening","club_events" to "Wydarzenia & Seminaria","workout_home" to "Workout & Trening Domowy","attendance_center" to "Centrum Obecności","knowledge_vault" to "Baza Wiedzy","session_builder" to "Kreator Sesji","content_manager" to "Menedżer Treści","private_coach_chat" to "Prywatny Chat Trenera","groups" to "Grupy","student" to "Uczeń","trainer" to "Trener","image" to "Obraz","short_video" to "Krótki film","send" to "Wyślij","uploading" to "Wysyłanie…","message" to "Wiadomość","group_chat" to "Czat grupowy",
+        "music_sub" to "Muzyka działa w aplikacji i w tle, dopóki jej nie zatrzymasz.",
+        "music_help" to "Muzyka gra dalej podczas otwierania innych stron RS KICKBOX lub minimalizacji aplikacji. Sterowanie multimediów Android pojawia się w pasku powiadomień.",
+        "no_music_sub" to "Dodaj audio z urządzenia, aby utworzyć swoją playlistę treningową RS.",
+        "reset_email_help" to "Wpisz adres e-mail używany w koncie RS KICKBOX. Wyślemy bezpieczny link do utworzenia nowego hasła.",
+        "recovery_help" to "Link odzyskiwania przeniósł Cię z powrotem do RS KICKBOX. Wybierz poniżej nowe hasło.",
+        "checking_login" to "Sprawdzanie adresu e-mail i hasła…",
+        "enter_email" to "Wpisz swój adres e-mail.",
+        "enter_password" to "Wpisz swoje hasło.",
+        "login_failed" to "Logowanie nie powiodło się. Sprawdź e-mail/hasło lub użyj opcji Nie pamiętasz hasła.",
+        "reset_sent" to "Jeśli ten e-mail należy do konta RS KICKBOX, wysłano wiadomość do odzyskiwania hasła.",
+        "password_updated" to "Hasło zaktualizowane. Możesz teraz zalogować się nowym hasłem.",
+        "password_mismatch" to "Hasła nie są takie same.",
+        "min_password" to "Wybierz hasło składające się z co najmniej 10 znaków.",
+        "wrong_login_clears" to "Błędne dane logowania są automatycznie czyszczone, aby można było od razu spróbować ponownie."
     )
     val tr=en+mapOf(
         "attendance_roster" to "Yoklama Listesi","qr_checkin" to "QR Check-In","browse" to "Gözat","search" to "Ara","favorites" to "Favoriler","history" to "Geçmiş","home_training" to "Ev Antrenmanı","workout_generator" to "Antrenman Oluşturucu","background_player" to "ARKA PLAN OYNATICI","add_music" to "Cihazdan müzik ekle","no_music" to "Henüz müzik eklenmedi.","now_playing" to "ÇALIYOR","playlist" to "ÇALMA LİSTESİ","pause" to "Duraklat","play" to "Oynat","remove" to "Kaldır","stop_close" to "Durdur ve kapat","open" to "AÇ",
         "forgot_password" to "Şifreni mi unuttun? Yenisini iste","back_signin" to "Girişe dön","reset_login" to "Giriş ekranını sıfırla","choose_new_password" to "Yeni şifre seç","forgot_title" to "Şifreni mi unuttun?","new_password" to "Yeni şifre (10+ karakter)","confirm_password" to "Yeni şifreyi doğrula","save_new_password" to "Yeni şifreyi kaydet","send_reset_email" to "Şifre sıfırlama e-postası gönder","please_wait" to "Bekleyin…","sign_in" to "Giriş yap","activate_account" to "Hesabı etkinleştir","cloud_connected" to "Cloud giriş bağlı",
-        "classes_training" to "Dersler & Antrenman","club_events" to "Kulüp Etkinlikleri & Seminerler","workout_home" to "Workout & Ev Antrenmanı","attendance_center" to "Yoklama Merkezi","knowledge_vault" to "Bilgi Kasası","session_builder" to "Seans Oluşturucu","content_manager" to "İçerik Yöneticisi","private_coach_chat" to "Özel Koç Sohbeti","groups" to "Gruplar","student" to "Öğrenci","trainer" to "Antrenör","image" to "Görsel","short_video" to "Kısa video","send" to "Gönder","uploading" to "Yükleniyor…","message" to "Mesaj","group_chat" to "Grup sohbeti"
+        "classes_training" to "Dersler & Antrenman","club_events" to "Kulüp Etkinlikleri & Seminerler","workout_home" to "Workout & Ev Antrenmanı","attendance_center" to "Yoklama Merkezi","knowledge_vault" to "Bilgi Kasası","session_builder" to "Seans Oluşturucu","content_manager" to "İçerik Yöneticisi","private_coach_chat" to "Özel Koç Sohbeti","groups" to "Gruplar","student" to "Öğrenci","trainer" to "Antrenör","image" to "Görsel","short_video" to "Kısa video","send" to "Gönder","uploading" to "Yükleniyor…","message" to "Mesaj","group_chat" to "Grup sohbeti",
+        "music_sub" to "Müzik siz durdurana kadar uygulamada ve arka planda çalmaya devam eder.",
+        "music_help" to "Diğer RS KICKBOX sayfalarını açarken veya uygulamayı küçültürken müzik devam eder. Android medya kontrolleri bildirim çubuğunda görünür.",
+        "no_music_sub" to "RS antrenman çalma listenizi oluşturmak için cihazdan ses ekleyin.",
+        "reset_email_help" to "RS KICKBOX hesabınızda kullandığınız e-posta adresini girin. Yeni parola oluşturmanız için güvenli bir bağlantı göndereceğiz.",
+        "recovery_help" to "Kurtarma bağlantısı sizi RS KICKBOX'a geri getirdi. Aşağıdan yeni parolanızı seçin.",
+        "checking_login" to "E-posta ve parola kontrol ediliyor…",
+        "enter_email" to "E-posta adresinizi girin.",
+        "enter_password" to "Parolanızı girin.",
+        "login_failed" to "Giriş başarısız. E-posta/parolayı kontrol edin veya Parolamı unuttum seçeneğini kullanın.",
+        "reset_sent" to "Bu e-posta bir RS KICKBOX hesabına aitse parola sıfırlama e-postası gönderildi.",
+        "password_updated" to "Parola güncellendi. Artık yeni parolanızla giriş yapabilirsiniz.",
+        "password_mismatch" to "İki parola eşleşmiyor.",
+        "min_password" to "En az 10 karakterli bir parola seçin.",
+        "wrong_login_clears" to "Yanlış giriş bilgileri otomatik olarak temizlenir, böylece hemen tekrar deneyebilirsiniz."
     )
     val pack=when(lang.code){
         "nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en
