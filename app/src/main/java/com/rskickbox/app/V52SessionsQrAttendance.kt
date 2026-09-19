@@ -343,7 +343,7 @@ private fun RsCloudSessionBuilderV85(c:RsPalette,lang:RsLang){
         loading=true
         rsCloudTrainingSessionsV85()
             .onSuccess{sessions=it}
-            .onFailure{status=it.message?:"Could not load training sessions."}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -406,7 +406,7 @@ private fun RsCloudSessionBuilderV85(c:RsPalette,lang:RsLang){
                                 status=rsCloudT93(lang,"session_published")
                                 revision++
                             }
-                            .onFailure{status=it.message?:"Could not create training session."}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -428,7 +428,7 @@ private fun RsCloudSessionBuilderV85(c:RsPalette,lang:RsLang){
                             scope.launch{
                                 rsSetCloudTrainingSessionActiveV85(s.id,on)
                                     .onSuccess{revision++}
-                                    .onFailure{status=it.message?:"Could not change active session."}
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                 busy=false
                             }
                         },
@@ -450,7 +450,7 @@ private fun RsCloudSessionBuilderV85(c:RsPalette,lang:RsLang){
                                         status=rsCloudT93(lang,"session_deleted")
                                         revision++
                                     }
-                                    .onFailure{status=it.message?:"Could not delete session."}
+                                    .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                 busy=false
                             }
                         }else pendingDelete=s.id
@@ -473,7 +473,7 @@ private fun RsCloudSessionPlayerV85(c:RsPalette,lang:RsLang){
         loading=true
         rsCloudTrainingSessionsV85()
             .onSuccess{session=it.firstOrNull{x->x.active}}
-            .onFailure{status=it.message?:"Could not load active session."}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -553,7 +553,7 @@ private fun RsCloudQrAttendanceTrainerV85(c:RsPalette,lang:RsLang){
                 classes=rows.map{it.clazz}.filter{it.active}
                 if(selectedId.isBlank())selectedId=classes.firstOrNull()?.id.orEmpty()
             }
-            .onFailure{status=it.message?:"Could not load classes."}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -594,7 +594,7 @@ private fun RsCloudQrAttendanceTrainerV85(c:RsPalette,lang:RsLang){
                                 expiry=it.expiresAt
                                 status=rsCloudT93(lang,"qr_ready")
                             }
-                            .onFailure{status=it.message?:"Could not create attendance QR."}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -634,7 +634,7 @@ private fun RsCloudStudentCheckInV85(c:RsPalette,lang:RsLang){
                                 scope.launch{
                                     rsCloudAttendanceCheckInV85(pair.first,pair.second)
                                         .onSuccess{status="✓ "+rsOpsUiV52(lang,"checked")}
-                                        .onFailure{status=it.message?:rsOpsUiV52(lang,"invalid")}
+                                        .onFailure{status=rsOpsUiV52(lang,"invalid")}
                                     busy=false
                                 }
                             }
