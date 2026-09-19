@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.sp
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -113,6 +114,7 @@ private fun rsOpsUiV52(lang:RsLang,key:String):String{
 
 @Composable
 fun RsSessionBuilderV52(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudSessionBuilderV85(c,lang);return}
     var revision by remember{mutableIntStateOf(0)}
     var showCreate by remember{mutableStateOf(false)}
     var sessionTitle by remember{mutableStateOf("")}
@@ -185,6 +187,7 @@ fun RsSessionBuilderV52(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsSessionPlayerV52(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudSessionPlayerV85(c,lang);return}
     val session=rsLoadSessionsV52(store).firstOrNull{it.active}
     var index by remember(session?.id){mutableIntStateOf(0)}
     var remaining by remember(session?.id,index){mutableIntStateOf(session?.blocks?.getOrNull(index)?.seconds?:0)}
@@ -246,6 +249,7 @@ private fun rsParseAttendanceV52(raw:String):Pair<String,String>? = runCatching{
 
 @Composable
 fun RsQrAttendanceTrainerV52(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudQrAttendanceTrainerV85(c,lang);return}
     val classes=rsLoadClassesV38(store).filter{it.active}
     var selectedId by remember(classes){mutableStateOf(classes.firstOrNull()?.id.orEmpty())}
     var revision by remember{mutableIntStateOf(0)}
@@ -280,6 +284,7 @@ fun RsQrAttendanceTrainerV52(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsStudentCheckInV52(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudStudentCheckInV85(c,lang);return}
     val context=androidx.compose.ui.platform.LocalContext.current
     var status by remember{mutableStateOf("")}
     val scanner=remember{GmsBarcodeScanning.getClient(context)}
@@ -313,6 +318,339 @@ fun RsStudentCheckInV52(c:RsPalette,store:RsStore,lang:RsLang){
                 modifier=Modifier.fillMaxWidth()
             ){Text(rsOpsUiV52(lang,"scan"))}
             if(status.isNotBlank())Text(status,color=if(status==rsOpsUiV52(lang,"checked"))c.bright else c.muted,fontWeight=FontWeight.Bold)
+        }
+    }
+}
+
+
+@Composable
+private fun RsCloudSessionBuilderV85(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var sessions by remember{mutableStateOf<List<RsTrainingSessionV52>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var showCreate by remember{mutableStateOf(false)}
+    var sessionTitle by remember{mutableStateOf("")}
+    var blockTitle by remember{mutableStateOf("")}
+    var blockSeconds by remember{mutableStateOf("180")}
+    var blockInstructions by remember{mutableStateOf("")}
+    var draftBlocks by remember{mutableStateOf<List<RsSessionBlockV52>>(emptyList())}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudTrainingSessionsV85()
+            .onSuccess{sessions=it}
+            .onFailure{status=it.message?:"Could not load training sessions."}
+        loading=false
+    }
+
+    RsScroll(c,rsOpsUiV52(lang,"builder"),"Create the live training session shared with students across devices."){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing trainer sessions…" else "Cloud Session Builder connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        Button(
+            onClick={showCreate=!showCreate},
+            enabled=!busy,
+            modifier=Modifier.fillMaxWidth()
+        ){Text(if(showCreate)rsOpsUiV52(lang,"close") else rsOpsUiV52(lang,"new_session"))}
+
+        if(showCreate)RsPanel(c){
+            OutlinedTextField(
+                sessionTitle,
+                {sessionTitle=it.take(100)},
+                label={Text(rsOpsUiV52(lang,"title"))},
+                modifier=Modifier.fillMaxWidth(),
+                enabled=!busy
+            )
+            draftBlocks.forEachIndexed{i,b->
+                Text((i+1).toString()+". "+b.title+" · "+b.seconds+"s",color=c.text)
+            }
+            OutlinedTextField(blockTitle,{blockTitle=it.take(80)},label={Text(rsOpsUiV52(lang,"block"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            OutlinedTextField(blockSeconds,{blockSeconds=it.filter(Char::isDigit).take(4)},label={Text(rsOpsUiV52(lang,"seconds"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            OutlinedTextField(blockInstructions,{blockInstructions=it.take(1000)},label={Text(rsOpsUiV52(lang,"instructions"))},modifier=Modifier.fillMaxWidth(),minLines=2,enabled=!busy)
+            OutlinedButton(
+                onClick={
+                    draftBlocks=draftBlocks+RsSessionBlockV52(
+                        UUID.randomUUID().toString(),
+                        blockTitle.trim(),
+                        blockSeconds.toIntOrNull()?.coerceIn(10,3600)?:180,
+                        blockInstructions.trim()
+                    )
+                    blockTitle=""
+                    blockSeconds="180"
+                    blockInstructions=""
+                },
+                enabled=!busy&&blockTitle.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(rsOpsUiV52(lang,"add_block"))}
+            Button(
+                onClick={
+                    busy=true
+                    status="Publishing session…"
+                    scope.launch{
+                        rsCreateCloudTrainingSessionV85(sessionTitle,draftBlocks)
+                            .onSuccess{
+                                sessionTitle=""
+                                draftBlocks=emptyList()
+                                showCreate=false
+                                status="✓ Session published and set active."
+                                revision++
+                            }
+                            .onFailure{status=it.message?:"Could not create training session."}
+                        busy=false
+                    }
+                },
+                enabled=!busy&&sessionTitle.isNotBlank()&&draftBlocks.isNotEmpty(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Publishing…" else rsOpsUiV52(lang,"save"))}
+        }
+
+        sessions.forEach{s->
+            RsPanel(c){
+                Text(s.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                Text(s.blocks.size.toString()+" blocks · "+s.blocks.sumOf{it.seconds}/60+" min",color=c.muted)
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                    Text(if(s.active)rsOpsUiV52(lang,"active") else rsOpsUiV52(lang,"inactive"),color=c.muted)
+                    Switch(
+                        checked=s.active,
+                        onCheckedChange={on->
+                            busy=true
+                            scope.launch{
+                                rsSetCloudTrainingSessionActiveV85(s.id,on)
+                                    .onSuccess{revision++}
+                                    .onFailure{status=it.message?:"Could not change active session."}
+                                busy=false
+                            }
+                        },
+                        enabled=!busy
+                    )
+                }
+                s.blocks.forEachIndexed{i,b->
+                    Text((i+1).toString()+". "+b.title+" · "+b.seconds+"s",color=c.text,fontSize=11.sp)
+                    if(b.instructions.isNotBlank())Text(b.instructions,color=c.muted,fontSize=9.sp)
+                }
+                OutlinedButton(
+                    onClick={
+                        if(pendingDelete==s.id){
+                            busy=true
+                            scope.launch{
+                                rsDeleteCloudTrainingSessionV85(s.id)
+                                    .onSuccess{
+                                        pendingDelete=null
+                                        status="Session deleted."
+                                        revision++
+                                    }
+                                    .onFailure{status=it.message?:"Could not delete session."}
+                                busy=false
+                            }
+                        }else pendingDelete=s.id
+                    },
+                    enabled=!busy,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(pendingDelete==s.id)rsOpsUiV52(lang,"confirm") else rsOpsUiV52(lang,"delete"))}
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudSessionPlayerV85(c:RsPalette,lang:RsLang){
+    var session by remember{mutableStateOf<RsTrainingSessionV52?>(null)}
+    var loading by remember{mutableStateOf(true)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(Unit){
+        loading=true
+        rsCloudTrainingSessionsV85()
+            .onSuccess{session=it.firstOrNull{x->x.active}}
+            .onFailure{status=it.message?:"Could not load active session."}
+        loading=false
+    }
+
+    val active=session
+    var index by remember(active?.id){mutableIntStateOf(0)}
+    var remaining by remember(active?.id,index){mutableIntStateOf(active?.blocks?.getOrNull(index)?.seconds?:0)}
+    var running by remember(active?.id,index){mutableStateOf(false)}
+
+    LaunchedEffect(running,remaining,index,active?.id){
+        if(running&&remaining>0){delay(1000);remaining--}
+        else if(running&&remaining<=0)running=false
+    }
+
+    RsScroll(c,rsOpsUiV52(lang,"player"),"Follow the current trainer session live from your account."){
+        RsPanel(c){
+            Text(
+                if(loading)"Loading active trainer session…" else "Cloud session connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        if(active==null&&!loading){
+            RsPanel(c){Text(rsOpsUiV52(lang,"no_active_session"),color=c.muted)}
+        }else if(active!=null){
+            val block=active.blocks.getOrNull(index)
+            RsPanel(c){
+                Text(active.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
+                Text((index+1).coerceAtMost(active.blocks.size).toString()+" / "+active.blocks.size,color=c.muted)
+            }
+            if(block!=null){
+                RsPanel(c){
+                    Text(block.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=24.sp)
+                    Text(block.instructions,color=c.text)
+                    Text(
+                        (remaining/60).toString().padStart(2,'0')+":"+(remaining%60).toString().padStart(2,'0'),
+                        color=c.bright,
+                        fontWeight=FontWeight.Black,
+                        fontSize=36.sp
+                    )
+                    Button(onClick={running=!running},modifier=Modifier.fillMaxWidth()){
+                        Text(if(running)rsOpsUiV52(lang,"pause") else rsOpsUiV52(lang,"start"))
+                    }
+                    OutlinedButton(
+                        onClick={
+                            if(index<active.blocks.lastIndex){index++;running=false}
+                            else{index=active.blocks.size;running=false}
+                        },
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(rsOpsUiV52(lang,"next"))}
+                    OutlinedButton(
+                        onClick={remaining=block.seconds;running=false},
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(rsOpsUiV52(lang,"restart"))}
+                }
+            }else RsPanel(c){Text(rsOpsUiV52(lang,"complete"),color=c.bright,fontWeight=FontWeight.Black)}
+        }
+    }
+}
+
+@Composable
+private fun RsCloudQrAttendanceTrainerV85(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var classes by remember{mutableStateOf<List<RsClubClassV38>>(emptyList())}
+    var selectedId by remember{mutableStateOf("")}
+    var qrToken by remember{mutableStateOf("")}
+    var expiry by remember{mutableStateOf("")}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(Unit){
+        loading=true
+        rsCloudClassesV69()
+            .onSuccess{rows->
+                classes=rows.map{it.clazz}.filter{it.active}
+                if(selectedId.isBlank())selectedId=classes.firstOrNull()?.id.orEmpty()
+            }
+            .onFailure{status=it.message?:"Could not load classes."}
+        loading=false
+    }
+
+    val selected=classes.firstOrNull{it.id==selectedId}
+    val qr=remember(selectedId,qrToken){
+        if(selectedId.isBlank()||qrToken.isBlank())null
+        else rsQrBitmapV33(rsAttendancePayloadV52(selectedId,qrToken),720)
+    }
+
+    RsScroll(c,rsOpsUiV52(lang,"qr"),"Generate a secure short-lived attendance QR for an active class."){
+        RsPanel(c){
+            Text(
+                if(loading)"Loading active classes…" else "Secure cloud QR attendance connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        classes.forEach{clazz->
+            FilterChip(
+                selected=selectedId==clazz.id,
+                onClick={selectedId=clazz.id;qrToken="";expiry=""},
+                label={Text(clazz.dayLabel+" "+clazz.timeLabel+" · "+clazz.title,maxLines=1)},
+                modifier=Modifier.fillMaxWidth()
+            )
+        }
+        if(selected!=null)RsPanel(c){
+            Text(selected.title,color=c.bright,fontWeight=FontWeight.Black)
+            Button(
+                onClick={
+                    busy=true
+                    status="Creating secure attendance QR…"
+                    scope.launch{
+                        rsCreateAttendanceQrV85(selected.id,15)
+                            .onSuccess{
+                                qrToken=it.token
+                                expiry=it.expiresAt
+                                status="✓ QR ready. It expires automatically."
+                            }
+                            .onFailure{status=it.message?:"Could not create attendance QR."}
+                        busy=false
+                    }
+                },
+                enabled=!busy,
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Generating…" else rsOpsUiV52(lang,"generate"))}
+            if(qr!=null){
+                Image(qr.asImageBitmap(),"Attendance QR",modifier=Modifier.fillMaxWidth().aspectRatio(1f))
+                Text("Valid for about 15 minutes · "+expiry,color=c.muted,fontSize=9.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudStudentCheckInV85(c:RsPalette,lang:RsLang){
+    val context=androidx.compose.ui.platform.LocalContext.current
+    val scope=rememberCoroutineScope()
+    var status by remember{mutableStateOf("")}
+    var busy by remember{mutableStateOf(false)}
+    val scanner=remember{GmsBarcodeScanning.getClient(context)}
+
+    RsScroll(c,rsOpsUiV52(lang,"student_qr"),"Scan the secure trainer QR to record your attendance in the cloud."){
+        RsPanel(c){
+            Text("Your check-in is tied to your signed-in student account.",color=c.muted,fontSize=10.sp)
+            Button(
+                onClick={
+                    if(busy)return@Button
+                    scanner.startScan()
+                        .addOnSuccessListener{barcode->
+                            val pair=barcode.rawValue?.let(::rsParseAttendanceV52)
+                            if(pair==null){
+                                status=rsOpsUiV52(lang,"invalid")
+                            }else{
+                                busy=true
+                                status="Checking in…"
+                                scope.launch{
+                                    rsCloudAttendanceCheckInV85(pair.first,pair.second)
+                                        .onSuccess{status="✓ "+rsOpsUiV52(lang,"checked")}
+                                        .onFailure{status=it.message?:rsOpsUiV52(lang,"invalid")}
+                                    busy=false
+                                }
+                            }
+                        }
+                        .addOnFailureListener{status=rsOpsUiV52(lang,"invalid")}
+                },
+                enabled=!busy,
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Checking in…" else rsOpsUiV52(lang,"scan"))}
+            if(status.isNotBlank()){
+                Text(
+                    status,
+                    color=if(status.startsWith("✓"))c.bright else c.muted,
+                    fontWeight=FontWeight.Bold
+                )
+            }
         }
     }
 }
