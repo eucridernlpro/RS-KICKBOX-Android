@@ -33,6 +33,7 @@ fun RsKickboxV21App() {
     var route by remember { mutableStateOf("home") }
     var authRestoreAttempted by remember { mutableStateOf(false) }
     var authRestoring by remember { mutableStateOf(false) }
+    var cloudControlsRevision by remember { mutableIntStateOf(0) }
     var lang by remember { mutableStateOf(rsLangs.firstOrNull { it.code == store.s("lang", "en") } ?: rsLangs.first()) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
     var introDone by remember { mutableStateOf(!store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
@@ -56,6 +57,22 @@ fun RsKickboxV21App() {
                     }
                 authRestoring=false
             }
+        }
+    }
+
+    LaunchedEffect(role){
+        if(role!=null && RsSupabaseV60.configured){
+            rsSyncCloudControlsV82(store)
+                .onSuccess{
+                    cloudControlsRevision++
+                    if(role==RsRole.STUDENT && !rsStudentRouteEnabledV82(store,route))route="home"
+                }
+        }
+    }
+
+    LaunchedEffect(role,route,cloudControlsRevision){
+        if(role==RsRole.STUDENT && !rsStudentRouteEnabledV82(store,route)){
+            route="home"
         }
     }
 
@@ -450,7 +467,7 @@ private fun ShellV21(
     val home=if(role==RsRole.TRAINER)"trainer" else "home"
     val drawerState=rememberDrawerState(initialValue=DrawerValue.Closed)
     val scope=rememberCoroutineScope()
-    val drawerItems=if(role==RsRole.TRAINER) listOf(
+    val rawDrawerItems=if(role==RsRole.TRAINER) listOf(
         "trainer" to "Trainer Dashboard",
         "guide" to "App Guide",
         "members" to "Student Manager",
@@ -522,6 +539,7 @@ private fun ShellV21(
         "profile" to "My Profile",
         "settings" to "Settings & Privacy"
     )
+    val drawerItems=if(role==RsRole.STUDENT)rawDrawerItems.filter{(target,_)->rsStudentRouteEnabledV82(store,target)} else rawDrawerItems
 
     ModalNavigationDrawer(
         drawerState=drawerState,
