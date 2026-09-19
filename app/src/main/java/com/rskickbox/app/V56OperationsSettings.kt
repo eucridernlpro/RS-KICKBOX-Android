@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
 object RsOpsKeysV56{
     const val MAINTENANCE="ops_maintenance_enabled_v56"
@@ -301,6 +302,8 @@ private fun RsOpsToggleV56(
 
 @Composable
 fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    val cloudMode=RsSupabaseV60.configured
     var maintenance by remember{mutableStateOf(rsOpsEnabledV56(store,RsOpsKeysV56.MAINTENANCE,false))}
     var maintenanceMessage by remember{
         mutableStateOf(store.s(RsOpsKeysV56.MAINTENANCE_MESSAGE,"RS KICKBOX maintenance notice: some services may be temporarily limited."))
@@ -311,10 +314,80 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
     var referrals by remember{mutableStateOf(rsOpsEnabledV56(store,RsOpsKeysV56.REFERRALS,true))}
     var reminders by remember{mutableStateOf(rsOpsEnabledV56(store,RsOpsKeysV56.REMINDERS,true))}
     var retention by remember{mutableStateOf(store.s(RsOpsKeysV56.RETENTION,"24 months"))}
+    var disabledRoutes by remember{mutableStateOf(rsDisabledStudentRoutesV82(store))}
+    var cloudLoading by remember{mutableStateOf(cloudMode)}
+    var cloudSaving by remember{mutableStateOf(false)}
+    var cloudStatus by remember{mutableStateOf("")}
+
+    LaunchedEffect(cloudMode){
+        if(cloudMode){
+            cloudLoading=true
+            rsSyncCloudControlsV82(store)
+                .onSuccess{controls->
+                    maintenance=controls.maintenanceEnabled
+                    maintenanceMessage=controls.maintenanceMessage
+                    community=controls.communityPostsEnabled
+                    booking=controls.classBookingEnabled
+                    privateLessons=controls.privateLessonsEnabled
+                    referrals=controls.referralsEnabled
+                    reminders=controls.inAppRemindersEnabled
+                    retention=controls.retentionMonths.toString()+" months"
+                    disabledRoutes=controls.disabledStudentRoutes.toSet()
+                    cloudStatus="Live controls loaded from Supabase."
+                }
+                .onFailure{cloudStatus=it.message?:"Could not load cloud controls."}
+            cloudLoading=false
+        }
+    }
 
     fun setBool(key:String,value:Boolean){store.pb(key,value)}
 
+    fun featureLabel(route:String):String=when(route){
+        "voice"->"AI Technique Coach"
+        "session"->"Session Player"
+        "academy"->"RS Academy"
+        "techniques"->"Technique Library"
+        "home_training"->"Home Training"
+        "workout"->"Workout Generator"
+        "classes"->"Classes & Bookings"
+        "events"->"RS Events"
+        "coachchat"->"Private Coach Chat"
+        "community"->"Community"
+        "groups"->"Groups"
+        "private_lessons"->"Private Lessons"
+        "notifications"->"Notifications"
+        "promotions"->"Promotions"
+        "checkin"->"Class Check-In"
+        "documents"->"Club Documents"
+        "referrals"->"Referrals"
+        "progress"->"Progress"
+        "challenges"->"Challenges"
+        "badges"->"Badges"
+        "fightcamp"->"Fight Camp"
+        "compare"->"Technique Comparison"
+        "history"->"Training History"
+        "vault"->"Knowledge Vault"
+        "homework"->"Homework"
+        "favorites"->"Saved & Favorites"
+        "media"->"Training Media"
+        "music"->"My RS Music"
+        "finance"->"Membership & Payments"
+        "book"->"Trainer Book"
+        "search"->"Search"
+        else->route.replace('_',' ').replaceFirstChar{it.uppercase()}
+    }
+
     RsScroll(c,rsOpsUiV56(lang,"title"),rsOpsUiV56(lang,"sub")){
+        if(cloudMode)RsPanel(c){
+            Text(
+                if(cloudLoading)"Syncing live student controls…" else "Supabase student access controls connected",
+                color=if(cloudLoading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(cloudStatus.isNotBlank())Text(cloudStatus,color=c.muted,fontSize=10.sp)
+        }
+
         Text(rsOpsUiV56(lang,"live"),color=c.bright,fontWeight=FontWeight.Black)
 
         RsOpsToggleV56(
@@ -350,6 +423,42 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
             reminders=it;setBool(RsOpsKeysV56.REMINDERS,it)
         }
 
+        Text("STUDENT FEATURE ACCESS",color=c.bright,fontWeight=FontWeight.Black)
+        RsPanel(c){
+            Text(
+                "Switch a student section OFF to remove it from the Student Dashboard, navigation and Student App Guide. Switch it ON to make it appear again.",
+                color=c.muted,
+                fontSize=10.sp
+            )
+        }
+
+        RsStudentLockableRoutesV82.forEach{route->
+            val enabled=route !in disabledRoutes
+            RsPanel(c){
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.SpaceBetween
+                ){
+                    Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)){
+                        Text(featureLabel(route),color=c.text,fontWeight=FontWeight.Bold)
+                        Text(
+                            if(enabled)"VISIBLE TO STUDENTS" else "HIDDEN / LOCKED",
+                            color=if(enabled)c.bright else c.muted,
+                            fontSize=9.sp,
+                            fontWeight=FontWeight.Bold
+                        )
+                    }
+                    Switch(
+                        checked=enabled,
+                        onCheckedChange={on->
+                            disabledRoutes=if(on)disabledRoutes-route else disabledRoutes+route
+                        },
+                        enabled=!cloudLoading&&!cloudSaving
+                    )
+                }
+            }
+        }
+
         Text(rsOpsUiV56(lang,"data"),color=c.bright,fontWeight=FontWeight.Black)
         RsPanel(c){
             Text(rsOpsUiV56(lang,"retention"),color=c.text,fontWeight=FontWeight.Bold)
@@ -366,6 +475,35 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
             Text(rsOpsUiV56(lang,"retention_hint"),color=c.muted,fontSize=10.sp)
         }
 
+        if(cloudMode){
+            Button(
+                onClick={
+                    cloudSaving=true
+                    cloudStatus="Saving live controls…"
+                    val retentionMonths=retention.substringBefore(' ').toIntOrNull()?:24
+                    scope.launch{
+                        rsSaveCloudControlsV82(
+                            store,
+                            maintenance,
+                            maintenanceMessage,
+                            community,
+                            booking,
+                            privateLessons,
+                            referrals,
+                            reminders,
+                            retentionMonths,
+                            disabledRoutes
+                        )
+                            .onSuccess{cloudStatus="✓ Student controls saved. They apply to the next student sync/login."}
+                            .onFailure{cloudStatus=it.message?:"Could not save live controls."}
+                        cloudSaving=false
+                    }
+                },
+                enabled=!cloudLoading&&!cloudSaving,
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(cloudSaving)"Saving…" else "Save live student controls")}
+        }
+
         Text(rsOpsUiV56(lang,"status"),color=c.bright,fontWeight=FontWeight.Black)
         RsPanel(c){
             listOf(
@@ -380,7 +518,12 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
                     Text(if(on)rsOpsUiV56(lang,"enabled") else rsOpsUiV56(lang,"disabled"),color=if(on)c.bright else c.muted,fontSize=9.sp,fontWeight=FontWeight.Bold)
                 }
             }
-            Text(rsOpsUiV56(lang,"saved"),color=c.muted,fontSize=9.sp)
+            Text(
+                (RsStudentLockableRoutesV82.size-disabledRoutes.size).toString()+" / "+RsStudentLockableRoutesV82.size+" student sections enabled",
+                color=c.bright,
+                fontSize=10.sp,
+                fontWeight=FontWeight.Bold
+            )
         }
     }
 }
