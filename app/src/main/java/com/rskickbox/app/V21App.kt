@@ -130,6 +130,7 @@ fun RsKickboxV21App() {
                                     "notifications" -> RsNotificationsV41(c,store,lang,active)
                                     "analytics" -> RsAnalyticsV53(c,store,lang)
                                     "guide" -> RsTrainerGuideV54(c,store,lang){route=it}
+                                    "student_guide" -> RsStudentGuideV81(c,store,lang){route=it}
                                     "documents" -> RsDocumentsV51(c,store,lang,active)
                                     "support" -> RsSupportV51(c,store,lang,active)
                                     "referrals" -> RsReferralsV51(c,store,lang)
