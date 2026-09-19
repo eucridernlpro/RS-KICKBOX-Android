@@ -444,7 +444,7 @@ fun RsAttendanceV38(c:RsPalette,store:RsStore,lang:RsLang){
 
     if(cloudMode){
         val classes=cloudClasses.map{it.clazz}
-        RsScroll(c,rsRouteTitle(lang,"attendance","Attendance"),"Live Supabase attendance and booking roster."){
+        RsScroll(c,rsRouteTitle(lang,"attendance","Attendance"),rsClassUiV38(lang,"attendance_sub")){
             RsPanel(c){
                 Text(
                     if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
