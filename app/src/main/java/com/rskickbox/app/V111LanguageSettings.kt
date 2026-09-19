@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import java.util.Locale
 
 private val RS_SUPPORTED_LANGUAGE_CODES_V111=setOf("en","nl","pt","es","fr","de","it","pl","tr")
@@ -69,7 +70,7 @@ fun RsLanguageSettingsPanelV111(
             },
             modifier=Modifier.fillMaxWidth()
         ){Text(rsLanguageSettingsT111(current,"phone"))}
-        Text(rsLanguageSettingsT111(current,"manual"),color=c.muted,fontSize=10.dp.value.toInt().sp)
+        Text(rsLanguageSettingsT111(current,"manual"),color=c.muted,fontSize=10.sp)
         FlowRow(
             modifier=Modifier.fillMaxWidth(),
             horizontalArrangement=Arrangement.spacedBy(6.dp),
