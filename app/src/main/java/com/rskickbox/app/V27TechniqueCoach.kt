@@ -272,6 +272,22 @@ private fun coachStudentUiV105(lang:RsLang,key:String):String{
     return pack[key]?:en[key]?:key
 }
 
+private fun coachAiStatusV106(lang:RsLang,key:String):String{
+    val packs=mapOf(
+        "en" to mapOf("analyzing" to "Analyzing sampled video frames with AI…","active" to "AI VISION ACTIVE · Review generated from sampled video frames.","fallback" to "AI vision is unavailable right now. Using the safe structured coaching preview."),
+        "nl" to mapOf("analyzing" to "Geselecteerde videoframes analyseren met AI…","active" to "AI-VISIE ACTIEF · Review gemaakt uit geselecteerde videoframes.","fallback" to "AI-visie is nu niet beschikbaar. De veilige gestructureerde coachingpreview wordt gebruikt."),
+        "pt" to mapOf("analyzing" to "A analisar frames do vídeo com IA…","active" to "VISÃO IA ATIVA · Revisão criada a partir de frames do vídeo.","fallback" to "A visão IA não está disponível agora. Será usada a pré-visualização segura de coaching."),
+        "es" to mapOf("analyzing" to "Analizando fotogramas del vídeo con IA…","active" to "VISIÓN IA ACTIVA · Revisión generada a partir de fotogramas del vídeo.","fallback" to "La visión IA no está disponible ahora. Se usará la vista previa segura de coaching."),
+        "fr" to mapOf("analyzing" to "Analyse d’images vidéo avec l’IA…","active" to "VISION IA ACTIVE · Revue générée à partir d’images vidéo échantillonnées.","fallback" to "La vision IA est indisponible pour le moment. L’aperçu de coaching sécurisé sera utilisé."),
+        "de" to mapOf("analyzing" to "Video-Frames werden mit KI analysiert…","active" to "KI-VISION AKTIV · Review aus ausgewählten Video-Frames erstellt.","fallback" to "KI-Vision ist momentan nicht verfügbar. Die sichere strukturierte Coaching-Vorschau wird verwendet."),
+        "it" to mapOf("analyzing" to "Analisi dei frame video con IA…","active" to "VISIONE IA ATTIVA · Revisione generata da frame video campionati.","fallback" to "La visione IA non è disponibile ora. Verrà usata l’anteprima sicura di coaching."),
+        "pl" to mapOf("analyzing" to "Analiza klatek wideo przez AI…","active" to "WIZJA AI AKTYWNA · Ocena utworzona z próbkowanych klatek wideo.","fallback" to "Wizja AI jest teraz niedostępna. Zostanie użyty bezpieczny podgląd coachingu."),
+        "tr" to mapOf("analyzing" to "Video kareleri yapay zeka ile analiz ediliyor…","active" to "YAPAY ZEKA GÖRÜŞÜ AKTİF · İnceleme örnek video karelerinden oluşturuldu.","fallback" to "Yapay zeka görüntü analizi şu anda kullanılamıyor. Güvenli yapılandırılmış koçluk önizlemesi kullanılacak.")
+    )
+    val pack=packs[lang.code]?:packs["en"]!!
+    return pack[key]?:packs["en"]!![key]?:key
+}
+
 @Composable
 fun RsTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore,role:RsRole){
     if(role==RsRole.TRAINER){
@@ -299,6 +315,8 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
     var speaking by remember{mutableStateOf(false)}
     var importingVideo by remember{mutableStateOf(false)}
     var cloudSaving by remember{mutableStateOf(false)}
+    var analyzingAi by remember{mutableStateOf(false)}
+    var aiSummary by remember{mutableStateOf("")}
     val scope=rememberCoroutineScope()
 
     DisposableEffect(Unit){
@@ -357,7 +375,8 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
         if(!spoken.isNullOrBlank())question=spoken
     }
 
-    val summary=coachSummaryV27(lang)
+    val baseSummary=coachSummaryV27(lang)
+    val summary=if(aiSummary.isNotBlank())aiSummary else baseSummary
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(9.dp)){
         Text(coachStudentUiV105(lang,"title"),color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
         Text(coachStudentUiV105(lang,"sub"),color=c.muted)
@@ -378,7 +397,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                 OutlinedButton(onClick={techniqueMenu=true},modifier=Modifier.fillMaxWidth()){Text(selectedTechnique)}
                 DropdownMenu(expanded=techniqueMenu,onDismissRequest={techniqueMenu=false}){
                     listOf("Jab","Cross","Jab · Cross","Roundhouse Kick","Low Kick","Front Kick","Knee","Defense & Counter","Custom Combination").forEach{t->
-                        DropdownMenuItem(text={Text(t)},onClick={selectedTechnique=t;techniqueMenu=false;analysisReady=false})
+                        DropdownMenuItem(text={Text(t)},onClick={selectedTechnique=t;techniqueMenu=false;analysisReady=false;aiSummary=""})
                     }
                 }
             }
@@ -398,8 +417,36 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
             if(videoUri.isNotBlank()){
                 RsTechniqueVideoPreviewV27(videoUri)
                 Text("$videoName · ${"%.1f".format(durationMs/1000.0)} s",color=c.muted,fontSize=10.sp)
-                Button(onClick={analysisReady=true;feedback=coachStudentUiV105(lang,"preview_generated")},modifier=Modifier.fillMaxWidth()){Text(coachStudentUiV105(lang,"analyze"))}
-                OutlinedButton(onClick={val previous=videoUri;videoUri="";videoName="";durationMs=0L;analysisReady=false;rsDeleteTechniqueVideoIfUnusedV36(context,store,previous)},modifier=Modifier.fillMaxWidth()){Text(coachStudentUiV105(lang,"remove"))}
+                Button(
+                    onClick={
+                        if(analyzingAi)return@Button
+                        if(RsSupabaseV60.configured){
+                            analyzingAi=true
+                            feedback=coachAiStatusV106(lang,"analyzing")
+                            scope.launch{
+                                rsAnalyzeTechniqueVisionV106(context,videoUri,selectedTechnique,lang)
+                                    .onSuccess{
+                                        aiSummary=it
+                                        analysisReady=true
+                                        feedback=coachAiStatusV106(lang,"active")
+                                    }
+                                    .onFailure{
+                                        aiSummary=""
+                                        analysisReady=true
+                                        feedback=coachAiStatusV106(lang,"fallback")
+                                    }
+                                analyzingAi=false
+                            }
+                        }else{
+                            aiSummary=""
+                            analysisReady=true
+                            feedback=coachStudentUiV105(lang,"preview_generated")
+                        }
+                    },
+                    enabled=!analyzingAi,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(analyzingAi)rsReleaseT98(lang,"please_wait") else coachStudentUiV105(lang,"analyze"))}
+                OutlinedButton(onClick={val previous=videoUri;videoUri="";videoName="";durationMs=0L;analysisReady=false;aiSummary="";rsDeleteTechniqueVideoIfUnusedV36(context,store,previous)},modifier=Modifier.fillMaxWidth()){Text(coachStudentUiV105(lang,"remove"))}
             }
             if(feedback.isNotBlank())Text(feedback,color=c.muted,fontSize=10.sp)
         }
@@ -407,7 +454,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
         if(analysisReady)RsPanel(c){
             Text(coachStudentUiV105(lang,"step2"),color=c.bright,fontWeight=FontWeight.Black)
             Surface(shape=RoundedCornerShape(14.dp),color=c.gold.copy(alpha=.12f)){
-                Text(coachStudentUiV105(lang,"preview_mode"),color=c.bright,fontSize=10.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(10.dp))
+                Text(if(aiSummary.isNotBlank())coachAiStatusV106(lang,"active") else coachStudentUiV105(lang,"preview_mode"),color=c.bright,fontSize=10.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(10.dp))
             }
             Text(summary,color=c.text)
             techniquePointsV27(lang).forEachIndexed{i,(title,body)->
