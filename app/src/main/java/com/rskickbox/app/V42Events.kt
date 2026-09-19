@@ -22,9 +22,9 @@ data class RsEventV42(
 )
 
 private val rsSeedEventsV42=listOf(
-    RsEventV42("open_mat","Open Mat","Sun · 11:00","RS KICKBOX",30,18,true),
-    RsEventV42("sparring_night","Sparring Night","Fri · 20:30","RS KICKBOX",20,11,true),
-    RsEventV42("seminar","Technique Seminar","Sat · 13:00","RS KICKBOX",40,24,true)
+    RsEventV42("open_mat","Open Mat","Sun · 11:00","RS KICKBOXING",30,18,true),
+    RsEventV42("sparring_night","Sparring Night","Fri · 20:30","RS KICKBOXING",20,11,true),
+    RsEventV42("seminar","Technique Seminar","Sat · 13:00","RS KICKBOXING",40,24,true)
 )
 
 private fun rsEncodeEventsV42(items:List<RsEventV42>):String{
