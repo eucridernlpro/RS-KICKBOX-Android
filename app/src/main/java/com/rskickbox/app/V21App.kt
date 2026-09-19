@@ -147,7 +147,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                         }
                                     }
                                     "backgrounds" -> RsVisualAssetStudioV21(c, store)
-                                    "branding" -> RsBrandSiteSettingsV21(c, store)
+                                    "branding" -> RsBrandSiteSettingsV21(c, store, lang)
                                     "intro_settings" -> RsIntroSettingsV21(c, store)
                                     "voice" -> RsTechniqueCoachV27(c, lang, store, active)
                                     "session" -> if(active==RsRole.TRAINER) RsSessionBuilderV52(c,store,lang) else RsSessionPlayerV52(c,store,lang)
