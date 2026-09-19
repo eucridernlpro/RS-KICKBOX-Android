@@ -160,6 +160,7 @@ private fun rsSocialUiV50(lang:RsLang,key:String):String{
 
 @Composable
 fun RsProfileV50(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudProfileV84(c,store,lang);return}
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     val email=store.s("session_student_email","alex@rskickbox.nl")
@@ -279,6 +280,7 @@ fun RsProfileV50(c:RsPalette,store:RsStore,lang:RsLang){
 }
 @Composable
 fun RsCommunityV50(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
+    if(RsSupabaseV60.configured){RsCloudCommunityV84(c,store,lang,role);return}
     var revision by remember{mutableIntStateOf(0)}
     var draft by remember{mutableStateOf("")}
     var pendingDelete by remember{mutableStateOf<String?>(null)}
@@ -345,6 +347,7 @@ fun RsCommunityV50(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
 
 @Composable
 fun RsGroupsV50(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
+    if(RsSupabaseV60.configured){RsCloudGroupsScreenV84(c,lang,role);return}
     var revision by remember{mutableIntStateOf(0)}
     var name by remember{mutableStateOf("")}
     var description by remember{mutableStateOf("")}
@@ -393,6 +396,373 @@ fun RsGroupsV50(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                             if(pendingDelete==g.id){save(groups.filterNot{it.id==g.id});pendingDelete=null}
                             else pendingDelete=g.id
                         },modifier=Modifier.fillMaxWidth()
+                    ){Text(if(pendingDelete==g.id)rsSocialUiV50(lang,"confirm") else rsSocialUiV50(lang,"delete"))}
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun RsCloudProfileV84(c:RsPalette,store:RsStore,lang:RsLang){
+    val context=LocalContext.current
+    val scope=rememberCoroutineScope()
+    val email=store.s("session_student_email","")
+    var displayName by remember{mutableStateOf(store.s("session_student_name",""))}
+    var bio by remember{mutableStateOf("")}
+    var goal by remember{mutableStateOf("")}
+    var publicProfile by remember{mutableStateOf(false)}
+    var loading by remember{mutableStateOf(true)}
+    var saving by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var avatarBusy by remember{mutableStateOf(false)}
+    var avatarRefresh by remember{mutableIntStateOf(0)}
+
+    LaunchedEffect(Unit){
+        loading=true
+        rsCloudMySocialProfileV84()
+            .onSuccess{
+                displayName=it.displayName
+                bio=it.bio
+                goal=it.trainingGoal
+                publicProfile=it.publicProfile
+                store.ps("session_student_name",it.displayName)
+            }
+            .onFailure{status=it.message?:"Could not load profile."}
+        loading=false
+    }
+
+    val photoPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
+        if(uri!=null && !avatarBusy){
+            avatarBusy=true
+            status="Uploading profile photo…"
+            scope.launch{
+                rsUploadMyAvatarV68(context,uri)
+                    .onSuccess{
+                        avatarRefresh++
+                        status="✓ Profile photo updated."
+                    }
+                    .onFailure{status=it.message?:"Could not upload profile photo."}
+                avatarBusy=false
+            }
+        }
+    }
+
+    RsScroll(c,rsSocialUiV50(lang,"profile"),"Your synchronized RS KICKBOX identity, photo and privacy controls."){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing profile…" else "Cloud profile connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        RsPanel(c){
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement=Arrangement.spacedBy(14.dp),
+                verticalAlignment=Alignment.CenterVertically
+            ){
+                RsMemberAvatarV68(c,email,displayName,size=88.dp,refreshKey=avatarRefresh)
+                Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(6.dp)){
+                    Text(displayName.ifBlank{email},color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp)
+                    Text(email,color=c.muted,fontSize=10.sp)
+                    OutlinedButton(
+                        onClick={
+                            photoPicker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        enabled=!avatarBusy&&!loading,
+                        modifier=Modifier.fillMaxWidth()
+                    ){
+                        Text(if(avatarBusy)"Uploading…" else "Upload / change profile photo",fontSize=10.sp)
+                    }
+                }
+            }
+            OutlinedTextField(
+                displayName,
+                {displayName=it.take(80)},
+                label={Text(rsSocialUiV50(lang,"display"))},
+                modifier=Modifier.fillMaxWidth(),
+                enabled=!saving&&!loading
+            )
+            OutlinedTextField(
+                bio,
+                {bio=it.take(500)},
+                label={Text(rsSocialUiV50(lang,"bio"))},
+                modifier=Modifier.fillMaxWidth(),
+                minLines=3,
+                enabled=!saving&&!loading
+            )
+            OutlinedTextField(
+                goal,
+                {goal=it.take(300)},
+                label={Text(rsSocialUiV50(lang,"goal"))},
+                modifier=Modifier.fillMaxWidth(),
+                minLines=2,
+                enabled=!saving&&!loading
+            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement=Arrangement.SpaceBetween,
+                verticalAlignment=Alignment.CenterVertically
+            ){
+                Text(rsSocialUiV50(lang,"public"),color=c.text)
+                Switch(publicProfile,{publicProfile=it},enabled=!saving&&!loading)
+            }
+            Text(
+                "Your trainer can see your profile identity. Other members only see profile details when Public profile is enabled.",
+                color=c.muted,
+                fontSize=9.sp
+            )
+            Button(
+                onClick={
+                    saving=true
+                    status="Saving profile…"
+                    scope.launch{
+                        rsSaveCloudSocialProfileV84(displayName,bio,goal,publicProfile)
+                            .onSuccess{
+                                store.ps("session_student_name",displayName)
+                                status="✓ Profile saved to cloud."
+                            }
+                            .onFailure{status=it.message?:"Could not save profile."}
+                        saving=false
+                    }
+                },
+                enabled=!saving&&!loading&&displayName.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(saving)"Saving…" else rsSocialUiV50(lang,"save"))}
+        }
+    }
+}
+
+@Composable
+private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var posts by remember{mutableStateOf<List<RsCloudCommunityPostV84>>(emptyList())}
+    var draft by remember{mutableStateOf("")}
+    var loading by remember{mutableStateOf(true)}
+    var busyId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+    val ownEmail=store.s("session_student_email","")
+    val postingAllowed=rsOpsEnabledV56(store,RsOpsKeysV56.COMMUNITY_POSTS,true)
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudCommunityV84()
+            .onSuccess{posts=it}
+            .onFailure{status=it.message?:"Could not load community."}
+        loading=false
+    }
+
+    RsScroll(
+        c,
+        if(role==RsRole.TRAINER)rsSocialUiV50(lang,"manager") else rsSocialUiV50(lang,"community"),
+        if(role==RsRole.TRAINER)"Moderate the live member community." else "Live member updates synchronized across RS KICKBOX devices."
+    ){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing community…" else "Cloud community connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        if(role==RsRole.STUDENT)RsPanel(c){
+            if(!postingAllowed)Text(rsOpsUiV56(lang,"community_disabled"),color=c.muted,fontSize=10.sp)
+            OutlinedTextField(
+                draft,
+                {draft=it.take(1000)},
+                label={Text(rsSocialUiV50(lang,"write"))},
+                modifier=Modifier.fillMaxWidth(),
+                minLines=3,
+                enabled=busyId==null&&postingAllowed
+            )
+            Button(
+                onClick={
+                    busyId="new"
+                    scope.launch{
+                        rsCreateCloudCommunityPostV84(draft.trim())
+                            .onSuccess{draft="";status="Post published.";revision++}
+                            .onFailure{status=it.message?:"Could not publish post."}
+                        busyId=null
+                    }
+                },
+                enabled=draft.isNotBlank()&&postingAllowed&&busyId==null,
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busyId=="new")"Posting…" else rsSocialUiV50(lang,"post"))}
+        }
+
+        if(posts.isEmpty()&&!loading)RsPanel(c){Text(rsSocialUiV50(lang,"none"),color=c.muted)}
+
+        posts.forEach{x->
+            RsPanel(c){
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(10.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    RsMemberAvatarV68(c,x.authorEmail,x.authorName,size=40.dp)
+                    Column(Modifier.weight(1f)){
+                        Text(x.authorName.ifBlank{x.authorEmail},color=c.bright,fontWeight=FontWeight.Black)
+                        Text(
+                            SimpleDateFormat("dd MMM · HH:mm",Locale.getDefault()).format(Date(x.createdMillis())),
+                            color=c.muted,
+                            fontSize=9.sp
+                        )
+                    }
+                }
+                Text(x.body,color=c.text)
+
+                if(role==RsRole.TRAINER){
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                        Text(if(x.active)rsSocialUiV50(lang,"active") else rsSocialUiV50(lang,"inactive"),color=c.muted)
+                        Switch(
+                            x.active,
+                            {value->
+                                busyId=x.id
+                                scope.launch{
+                                    rsSetCloudCommunityPostActiveV84(x.id,value)
+                                        .onSuccess{revision++}
+                                        .onFailure{status=it.message?:"Could not moderate post."}
+                                    busyId=null
+                                }
+                            },
+                            enabled=busyId==null
+                        )
+                    }
+                }
+
+                if(role==RsRole.TRAINER || x.authorEmail.equals(ownEmail,true)){
+                    OutlinedButton(
+                        onClick={
+                            if(pendingDelete==x.id){
+                                busyId=x.id
+                                scope.launch{
+                                    rsDeleteCloudCommunityPostV84(x.id)
+                                        .onSuccess{pendingDelete=null;status="Post deleted.";revision++}
+                                        .onFailure{status=it.message?:"Could not delete post."}
+                                    busyId=null
+                                }
+                            }else pendingDelete=x.id
+                        },
+                        enabled=busyId==null,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(if(pendingDelete==x.id)rsSocialUiV50(lang,"confirm") else rsSocialUiV50(lang,"delete"))}
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var groups by remember{mutableStateOf<List<RsCloudGroupV84>>(emptyList())}
+    var name by remember{mutableStateOf("")}
+    var description by remember{mutableStateOf("")}
+    var loading by remember{mutableStateOf(true)}
+    var busyId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudGroupsV84()
+            .onSuccess{groups=it}
+            .onFailure{status=it.message?:"Could not load groups."}
+        loading=false
+    }
+
+    RsScroll(c,rsSocialUiV50(lang,"groups"),if(role==RsRole.TRAINER)"Manage live training groups." else "Join live training groups that match your goals."){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing groups…" else "Cloud groups connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        if(role==RsRole.TRAINER)RsPanel(c){
+            Text(rsSocialUiV50(lang,"new_group"),color=c.bright,fontWeight=FontWeight.Black)
+            OutlinedTextField(name,{name=it.take(80)},label={Text(rsSocialUiV50(lang,"name"))},modifier=Modifier.fillMaxWidth(),enabled=busyId==null)
+            OutlinedTextField(description,{description=it.take(500)},label={Text(rsSocialUiV50(lang,"description"))},modifier=Modifier.fillMaxWidth(),minLines=2,enabled=busyId==null)
+            Button(
+                onClick={
+                    busyId="new"
+                    scope.launch{
+                        rsCreateCloudGroupV84(name,description)
+                            .onSuccess{name="";description="";status="Group created.";revision++}
+                            .onFailure{status=it.message?:"Could not create group."}
+                        busyId=null
+                    }
+                },
+                enabled=name.isNotBlank()&&busyId==null,
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busyId=="new")"Creating…" else rsSocialUiV50(lang,"create"))}
+        }
+
+        groups.forEach{g->
+            RsPanel(c){
+                Text(g.name,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                Text(g.description,color=c.text)
+                Text(g.memberCount.toString()+" members",color=c.muted,fontSize=10.sp)
+
+                if(role==RsRole.STUDENT){
+                    Button(
+                        onClick={
+                            busyId=g.id
+                            scope.launch{
+                                rsSetMyCloudGroupMembershipV84(g.id,!g.joined)
+                                    .onSuccess{status=if(g.joined)"Left group." else "Joined group.";revision++}
+                                    .onFailure{status=it.message?:"Could not update group membership."}
+                                busyId=null
+                            }
+                        },
+                        enabled=busyId==null,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(if(busyId==g.id)"Please wait…" else if(g.joined)rsSocialUiV50(lang,"leave") else rsSocialUiV50(lang,"join"))}
+                }else{
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                        Text(if(g.active)rsSocialUiV50(lang,"active") else rsSocialUiV50(lang,"inactive"),color=c.muted)
+                        Switch(
+                            g.active,
+                            {value->
+                                busyId=g.id
+                                scope.launch{
+                                    rsSetCloudGroupActiveV84(g.id,value)
+                                        .onSuccess{revision++}
+                                        .onFailure{status=it.message?:"Could not update group."}
+                                    busyId=null
+                                }
+                            },
+                            enabled=busyId==null
+                        )
+                    }
+                    OutlinedButton(
+                        onClick={
+                            if(pendingDelete==g.id){
+                                busyId=g.id
+                                scope.launch{
+                                    rsDeleteCloudGroupV84(g.id)
+                                        .onSuccess{pendingDelete=null;status="Group deleted.";revision++}
+                                        .onFailure{status=it.message?:"Could not delete group."}
+                                    busyId=null
+                                }
+                            }else pendingDelete=g.id
+                        },
+                        enabled=busyId==null,
+                        modifier=Modifier.fillMaxWidth()
                     ){Text(if(pendingDelete==g.id)rsSocialUiV50(lang,"confirm") else rsSocialUiV50(lang,"delete"))}
                 }
             }
