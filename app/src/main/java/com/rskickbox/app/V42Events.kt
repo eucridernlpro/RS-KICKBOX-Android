@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 data class RsEventV42(
     val id:String,
@@ -95,22 +96,22 @@ private fun rsEventUiV42(lang:RsLang,key:String):String{
 
 @Composable
 fun RsStudentEventsV42(c:RsPalette,store:RsStore,lang:RsLang){
-    var revision by remember{mutableIntStateOf(0)}
-    val items=remember(revision){rsLoadEventsV42(store).filter{it.active}}
-    val rsvps=remember(revision){rsEventRsvpsV42(store)}
-    RsScroll(c,rsEventUiV42(lang,"student_title"),rsEventUiV42(lang,"student_sub")){
-        items.forEach{event->
-            val joined=event.id in rsvps
-            val going=event.going.coerceAtMost(event.capacity)
-            val full=going>=event.capacity
-            RsPanel(c){
-                Text(event.title,color=c.bright,fontSize=18.sp,fontWeight=FontWeight.Black)
-                Text(event.whenLabel+" · "+event.location,color=c.text)
-                Text(going.toString()+" / "+event.capacity,color=c.muted)
-                LinearProgressIndicator(progress={going.toFloat()/event.capacity},modifier=Modifier.fillMaxWidth())
-                Text(if(joined)rsEventUiV42(lang,"going") else if(full)rsEventUiV42(lang,"full") else rsEventUiV42(lang,"available"),color=c.muted)
-                Button(
-                    onClick={
+    if(!RsSupabaseV60.configured){
+        var revision by remember{mutableIntStateOf(0)}
+        val items=remember(revision){rsLoadEventsV42(store).filter{it.active}}
+        val rsvps=remember(revision){rsEventRsvpsV42(store)}
+        RsScroll(c,rsEventUiV42(lang,"student_title"),rsEventUiV42(lang,"student_sub")){
+            items.forEach{event->
+                val joined=event.id in rsvps
+                val going=event.going.coerceAtMost(event.capacity)
+                val full=going>=event.capacity
+                RsPanel(c){
+                    Text(event.title,color=c.bright,fontSize=18.sp,fontWeight=FontWeight.Black)
+                    Text(event.whenLabel+" · "+event.location,color=c.text)
+                    Text(going.toString()+" / "+event.capacity,color=c.muted)
+                    LinearProgressIndicator(progress={going.toFloat()/event.capacity},modifier=Modifier.fillMaxWidth())
+                    Text(if(joined)rsEventUiV42(lang,"going") else if(full)rsEventUiV42(lang,"full") else rsEventUiV42(lang,"available"),color=c.muted)
+                    Button(onClick={
                         val next=rsvps.toMutableSet()
                         val all=rsLoadEventsV42(store)
                         if(joined){
@@ -122,10 +123,56 @@ fun RsStudentEventsV42(c:RsPalette,store:RsStore,lang:RsLang){
                         }
                         rsSaveEventRsvpsV42(store,next)
                         revision++
+                    },enabled=joined||!full,modifier=Modifier.fillMaxWidth()){
+                        Text(if(joined)rsEventUiV42(lang,"cancel") else rsEventUiV42(lang,"join"))
+                    }
+                }
+            }
+        }
+        return
+    }
+
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var items by remember{mutableStateOf<List<RsCloudEventV75>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busyId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudEventsV75()
+            .onSuccess{items=it.filter{e->e.active}}
+            .onFailure{status=it.message?:"Could not load events."}
+        loading=false
+    }
+
+    RsScroll(c,rsEventUiV42(lang,"student_title"),"Live club events synchronized across devices."){
+        RsPanel(c){
+            Text(if(loading)"Syncing events…" else "Cloud events connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        items.forEach{event->
+            val joined=event.myStatus=="going"
+            val full=event.goingCount>=event.capacity
+            RsPanel(c){
+                Text(event.title,color=c.bright,fontSize=18.sp,fontWeight=FontWeight.Black)
+                Text(event.whenLabel+" · "+event.location,color=c.text)
+                Text(event.goingCount.toString()+" / "+event.capacity,color=c.muted)
+                LinearProgressIndicator(progress={(event.goingCount.toFloat()/event.capacity).coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth())
+                Text(if(joined)rsEventUiV42(lang,"going") else if(full)rsEventUiV42(lang,"full") else rsEventUiV42(lang,"available"),color=c.muted)
+                Button(
+                    onClick={
+                        busyId=event.id
+                        scope.launch{
+                            val result=if(joined)rsCloudCancelEventRsvpV75(event.id) else rsCloudEventRsvpV75(event.id)
+                            result.onSuccess{revision++}.onFailure{status=it.message?:"Could not update RSVP."}
+                            busyId=null
+                        }
                     },
-                    enabled=joined||!full,
+                    enabled=busyId==null&&(joined||!full),
                     modifier=Modifier.fillMaxWidth()
-                ){Text(if(joined)rsEventUiV42(lang,"cancel") else rsEventUiV42(lang,"join"))}
+                ){Text(if(busyId==event.id)"Please wait…" else if(joined)rsEventUiV42(lang,"cancel") else rsEventUiV42(lang,"join"))}
             }
         }
     }
@@ -133,53 +180,119 @@ fun RsStudentEventsV42(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsEventManagerV42(c:RsPalette,store:RsStore,lang:RsLang){
+    if(!RsSupabaseV60.configured){
+        var revision by remember{mutableIntStateOf(0)}
+        var showCreate by remember{mutableStateOf(false)}
+        var title by remember{mutableStateOf("")}
+        var whenLabel by remember{mutableStateOf("")}
+        var location by remember{mutableStateOf("")}
+        var capacity by remember{mutableStateOf("20")}
+        var pendingDelete by remember{mutableStateOf<String?>(null)}
+        val items=remember(revision){rsLoadEventsV42(store)}
+        fun save(updated:List<RsEventV42>){rsSaveEventsV42(store,updated);revision++}
+        RsScroll(c,rsEventUiV42(lang,"trainer_title"),rsEventUiV42(lang,"trainer_sub")){
+            Button(onClick={showCreate=!showCreate},modifier=Modifier.fillMaxWidth()){Text(if(showCreate)rsEventUiV42(lang,"close") else rsEventUiV42(lang,"new"))}
+            if(showCreate)RsPanel(c){
+                OutlinedTextField(title,{title=it},label={Text(rsEventUiV42(lang,"title"))},modifier=Modifier.fillMaxWidth())
+                OutlinedTextField(whenLabel,{whenLabel=it},label={Text(rsEventUiV42(lang,"when"))},modifier=Modifier.fillMaxWidth())
+                OutlinedTextField(location,{location=it},label={Text(rsEventUiV42(lang,"location"))},modifier=Modifier.fillMaxWidth())
+                OutlinedTextField(capacity,{capacity=it.filter(Char::isDigit)},label={Text(rsEventUiV42(lang,"capacity"))},modifier=Modifier.fillMaxWidth())
+                Button(onClick={
+                    val cap=capacity.toIntOrNull()?.coerceIn(1,200)?:20
+                    save(listOf(RsEventV42(UUID.randomUUID().toString(),title.trim(),whenLabel.trim(),location.trim(),cap,0,true))+items)
+                    title="";whenLabel="";location="";capacity="20";showCreate=false
+                },enabled=title.isNotBlank()&&whenLabel.isNotBlank()&&location.isNotBlank(),modifier=Modifier.fillMaxWidth()){Text(rsEventUiV42(lang,"save"))}
+            }
+            items.forEach{event->
+                RsPanel(c){
+                    Text(event.title,color=c.bright,fontWeight=FontWeight.Black)
+                    Text(event.whenLabel+" · "+event.location,color=c.text)
+                    Text(event.going.toString()+" / "+event.capacity,color=c.muted)
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                        Text(if(event.active)rsEventUiV42(lang,"active") else rsEventUiV42(lang,"inactive"),color=c.muted)
+                        Switch(event.active,{v->save(items.map{if(it.id==event.id)it.copy(active=v) else it})})
+                    }
+                    OutlinedButton(onClick={
+                        if(pendingDelete==event.id){save(items.filterNot{it.id==event.id});pendingDelete=null}else pendingDelete=event.id
+                    },modifier=Modifier.fillMaxWidth()){Text(if(pendingDelete==event.id)rsEventUiV42(lang,"confirm") else rsEventUiV42(lang,"delete"))}
+                }
+            }
+        }
+        return
+    }
+
+    val scope=rememberCoroutineScope()
     var revision by remember{mutableIntStateOf(0)}
+    var items by remember{mutableStateOf<List<RsCloudEventV75>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
     var showCreate by remember{mutableStateOf(false)}
     var title by remember{mutableStateOf("")}
     var whenLabel by remember{mutableStateOf("")}
     var location by remember{mutableStateOf("")}
     var capacity by remember{mutableStateOf("20")}
     var pendingDelete by remember{mutableStateOf<String?>(null)}
-    val items=remember(revision){rsLoadEventsV42(store)}
-    fun save(updated:List<RsEventV42>){rsSaveEventsV42(store,updated);revision++}
 
-    RsScroll(c,rsEventUiV42(lang,"trainer_title"),rsEventUiV42(lang,"trainer_sub")){
-        Button(onClick={showCreate=!showCreate},modifier=Modifier.fillMaxWidth()){
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudEventsV75().onSuccess{items=it}.onFailure{status=it.message?:"Could not load events."}
+        loading=false
+    }
+
+    RsScroll(c,rsEventUiV42(lang,"trainer_title"),"Create and manage shared club events with live RSVP capacity."){
+        RsPanel(c){
+            Text(if(loading)"Syncing events…" else "Cloud event manager connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        Button(onClick={showCreate=!showCreate},enabled=!busy,modifier=Modifier.fillMaxWidth()){
             Text(if(showCreate)rsEventUiV42(lang,"close") else rsEventUiV42(lang,"new"))
         }
         if(showCreate)RsPanel(c){
-            OutlinedTextField(title,{title=it},label={Text(rsEventUiV42(lang,"title"))},modifier=Modifier.fillMaxWidth())
-            OutlinedTextField(whenLabel,{whenLabel=it},label={Text(rsEventUiV42(lang,"when"))},modifier=Modifier.fillMaxWidth())
-            OutlinedTextField(location,{location=it},label={Text(rsEventUiV42(lang,"location"))},modifier=Modifier.fillMaxWidth())
-            OutlinedTextField(capacity,{capacity=it.filter(Char::isDigit)},label={Text(rsEventUiV42(lang,"capacity"))},modifier=Modifier.fillMaxWidth())
-            Button(
-                onClick={
-                    val cap=capacity.toIntOrNull()?.coerceIn(1,200)?:20
-                    save(listOf(RsEventV42(UUID.randomUUID().toString(),title.trim(),whenLabel.trim(),location.trim(),cap,0,true))+items)
-                    title="";whenLabel="";location="";capacity="20";showCreate=false
-                },
-                enabled=title.isNotBlank()&&whenLabel.isNotBlank()&&location.isNotBlank(),
-                modifier=Modifier.fillMaxWidth()
-            ){Text(rsEventUiV42(lang,"save"))}
+            OutlinedTextField(title,{title=it.take(120)},label={Text(rsEventUiV42(lang,"title"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            OutlinedTextField(whenLabel,{whenLabel=it.take(120)},label={Text(rsEventUiV42(lang,"when"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            OutlinedTextField(location,{location=it.take(120)},label={Text(rsEventUiV42(lang,"location"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            OutlinedTextField(capacity,{capacity=it.filter(Char::isDigit).take(3)},label={Text(rsEventUiV42(lang,"capacity"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            Button(onClick={
+                busy=true
+                scope.launch{
+                    rsCloudCreateEventV75(title,whenLabel,location,capacity.toIntOrNull()?.coerceIn(1,500)?:20)
+                        .onSuccess{
+                            title="";whenLabel="";location="";capacity="20";showCreate=false;status="Event created.";revision++
+                        }
+                        .onFailure{status=it.message?:"Could not create event."}
+                    busy=false
+                }
+            },enabled=!busy&&title.isNotBlank()&&whenLabel.isNotBlank()&&location.isNotBlank(),modifier=Modifier.fillMaxWidth()){
+                Text(if(busy)"Saving…" else rsEventUiV42(lang,"save"))
+            }
         }
         items.forEach{event->
             RsPanel(c){
                 Text(event.title,color=c.bright,fontWeight=FontWeight.Black)
                 Text(event.whenLabel+" · "+event.location,color=c.text)
-                Text(event.going.toString()+" / "+event.capacity,color=c.muted)
+                Text(event.goingCount.toString()+" / "+event.capacity,color=c.muted)
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
                     Text(if(event.active)rsEventUiV42(lang,"active") else rsEventUiV42(lang,"inactive"),color=c.muted)
-                    Switch(event.active,{v->save(items.map{if(it.id==event.id)it.copy(active=v) else it})})
+                    Switch(event.active,{v->
+                        busy=true
+                        scope.launch{
+                            rsCloudSetEventActiveV75(event.id,v).onSuccess{revision++}.onFailure{status=it.message?:"Could not update event."}
+                            busy=false
+                        }
+                    },enabled=!busy)
                 }
-                OutlinedButton(
-                    onClick={
-                        if(pendingDelete==event.id){
-                            save(items.filterNot{it.id==event.id})
-                            pendingDelete=null
-                        }else pendingDelete=event.id
-                    },
-                    modifier=Modifier.fillMaxWidth()
-                ){Text(if(pendingDelete==event.id)rsEventUiV42(lang,"confirm") else rsEventUiV42(lang,"delete"))}
+                OutlinedButton(onClick={
+                    if(pendingDelete==event.id){
+                        busy=true
+                        scope.launch{
+                            rsCloudDeleteEventV75(event.id).onSuccess{pendingDelete=null;revision++}.onFailure{status=it.message?:"Could not delete event."}
+                            busy=false
+                        }
+                    }else pendingDelete=event.id
+                },enabled=!busy,modifier=Modifier.fillMaxWidth()){
+                    Text(if(pendingDelete==event.id)rsEventUiV42(lang,"confirm") else rsEventUiV42(lang,"delete"))
+                }
             }
         }
     }
