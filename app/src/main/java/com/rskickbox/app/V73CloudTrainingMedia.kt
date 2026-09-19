@@ -24,7 +24,9 @@ data class RsCloudTrainingMediaRowV73(
     @SerialName("media_path") val mediaPath:String,
     @SerialName("media_kind") val mediaKind:String,
     @SerialName("access_tier") val accessTier:String,
-    val published:Boolean
+    val published:Boolean,
+    @SerialName("technique_tags") val techniqueTags:List<String> = emptyList(),
+    @SerialName("ai_reference") val aiReference:Boolean = false
 )
 
 private fun rsCloudMediaMimeV73(context:Context,uri:Uri):String =
@@ -67,7 +69,9 @@ suspend fun rsCloudTrainingMediaV73():Result<List<RsTrainingMediaItemV55>> = run
                 uri=it.mediaPath,
                 kind=it.mediaKind,
                 accessTier=it.accessTier,
-                published=it.published
+                published=it.published,
+                techniqueTags=it.techniqueTags,
+                aiReference=it.aiReference
             )
         }
 }
@@ -159,5 +163,30 @@ suspend fun rsDeleteCloudTrainingMediaV73(id:String):Result<Unit> = runCatching{
         buildJsonObject{put("p_media_id",id)}
     )
     runCatching{client.storage.from(RS_TRAINING_MEDIA_BUCKET_V73).delete(row.mediaPath)}
+    Unit
+}
+
+
+suspend fun rsSetCloudTrainingMediaAiReferenceV110(
+    id:String,
+    aiReference:Boolean,
+    techniqueTags:List<String>
+):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc(
+        "rs_staff_mark_training_media_ai_reference",
+        buildJsonObject{
+            put("p_media_id",id)
+            put("p_ai_reference",aiReference)
+            put("p_technique_tags",kotlinx.serialization.json.buildJsonArray{
+                techniqueTags
+                    .map{it.trim().lowercase()}
+                    .filter{it.isNotBlank()}
+                    .distinct()
+                    .take(20)
+                    .forEach{add(kotlinx.serialization.json.JsonPrimitive(it))}
+            })
+        }
+    )
     Unit
 }
