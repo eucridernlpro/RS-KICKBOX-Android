@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.put
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -71,7 +72,7 @@ suspend fun rsAnalyzeTechniqueVisionV106(
         body=buildJsonObject{
             put("technique",technique)
             put("language",lang.name)
-            put("frames",buildJsonArray{frames.forEach{add(it)}})
+            put("frames",buildJsonArray{frames.forEach{add(JsonPrimitive(it))}})
         }
     )
     val raw=response.bodyAsText()
