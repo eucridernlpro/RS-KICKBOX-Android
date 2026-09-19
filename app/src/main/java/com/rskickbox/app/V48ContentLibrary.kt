@@ -294,7 +294,7 @@ private fun RsCloudContentReaderV79(
                             status=if(next)"Saved to favorites." else "Removed from favorites."
                             onChanged()
                         }
-                        .onFailure{status=it.message?:"Could not update favorite."}
+                        .onFailure{status=rsReleaseT98(lang,"update_failed")}
                     busy=false
                 }
             },
@@ -318,7 +318,7 @@ private fun RsCloudContentBrowserV79(c:RsPalette,lang:RsLang,mode:String){
         loading=true
         rsCloudContentV79()
             .onSuccess{rows=it}
-            .onFailure{status=it.message?:"Could not load training content."}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -408,7 +408,7 @@ private fun RsCloudContentManagerV79(c:RsPalette,lang:RsLang){
         loading=true
         rsCloudContentV79()
             .onSuccess{items=it}
-            .onFailure{status=it.message?:"Could not load content manager."}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -457,7 +457,7 @@ private fun RsCloudContentManagerV79(c:RsPalette,lang:RsLang){
                                 status=rsCloudT93(lang,"content_saved")
                                 revision++
                             }
-                            .onFailure{status=it.message?:"Could not save training content."}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -480,7 +480,7 @@ private fun RsCloudContentManagerV79(c:RsPalette,lang:RsLang){
                             scope.launch{
                                 rsSetCloudContentPublishedV79(item.id,value)
                                     .onSuccess{revision++}
-                                    .onFailure{status=it.message?:"Could not change publish state."}
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                 busy=false
                             }
                         },
@@ -498,7 +498,7 @@ private fun RsCloudContentManagerV79(c:RsPalette,lang:RsLang){
                                         status=rsCloudT93(lang,"content_deleted")
                                         revision++
                                     }
-                                    .onFailure{status=it.message?:"Could not delete content."}
+                                    .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                 busy=false
                             }
                         }else pendingDelete=item.id
