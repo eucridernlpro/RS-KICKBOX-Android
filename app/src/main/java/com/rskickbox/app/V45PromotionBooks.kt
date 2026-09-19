@@ -152,9 +152,9 @@ private fun rsLoadBookV45(store:RsStore):RsBookConfigV45{
 
 private fun rsSaveBookV45(store:RsStore,book:RsBookConfigV45)=store.ps("book_config_v45",rsEncodeBookV45(book))
 
-private fun rsValidExternalV45(url:String)=url.startsWith("https://")||url.startsWith("http://")
+fun rsValidExternalV45(url:String)=url.startsWith("https://")||url.startsWith("http://")
 
-private fun rsOpenExternalV45(context:android.content.Context,url:String){
+fun rsOpenExternalV45(context:android.content.Context,url:String){
     if(!rsValidExternalV45(url))return
     runCatching{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url)))}
 }
@@ -180,7 +180,7 @@ private fun rsCanReadFullV45(store:RsStore,book:RsBookConfigV45):Boolean{
     return rsTierRankV45(rsStudentTierV45(store))>=required
 }
 
-private fun rsPromoUiV45(lang:RsLang,key:String):String{
+fun rsPromoUiV45(lang:RsLang,key:String):String{
     val en=mapOf(
         "promo_page" to "Promotions","promo_sub" to "Offers, products and featured RS KICKBOX content.",
         "featured" to "FEATURED PROMOTIONS","book" to "FEATURED BOOK","buy" to "Buy on Amazon",
@@ -323,6 +323,7 @@ private fun rsPromoUiV45(lang:RsLang,key:String):String{
 
 @Composable
 fun RsPromotionManagerV45(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudPromotionManagerV104(c,store,lang);return}
     val context=LocalContext.current
     var revision by remember{mutableIntStateOf(0)}
     var promoTitle by remember{mutableStateOf("")}
@@ -482,6 +483,7 @@ fun RsPromotionManagerV45(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsPromotionPageV45(c:RsPalette,store:RsStore,lang:RsLang,onOpenBook:()->Unit){
+    if(RsSupabaseV60.configured){RsCloudPromotionPageV104(c,store,lang,onOpenBook);return}
     val context=LocalContext.current
     val promos=rsLoadPromosV45(store).filter{it.active&&it.imageUri.isNotBlank()}
     val book=rsLoadBookV45(store)
@@ -542,6 +544,7 @@ fun RsPromotionPageV45(c:RsPalette,store:RsStore,lang:RsLang,onOpenBook:()->Unit
 
 @Composable
 fun RsBookLibraryV45(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudBookLibraryV104(c,store,lang);return}
     val context=LocalContext.current
     val book=rsLoadBookV45(store)
     var readerUri by remember{mutableStateOf("")}
@@ -587,7 +590,7 @@ fun RsBookManagerV45(c:RsPalette,store:RsStore,lang:RsLang){
 }
 
 @Composable
-private fun RsPdfBookReaderV45(c:RsPalette,store:RsStore,lang:RsLang,title:String,uriString:String,onBack:()->Unit){
+fun RsPdfBookReaderV45(c:RsPalette,store:RsStore,lang:RsLang,title:String,uriString:String,onBack:()->Unit){
     val context=LocalContext.current
     val file=remember(uriString){Uri.parse(uriString).path?.let(::File)}
     var renderer by remember(uriString){mutableStateOf<PdfRenderer?>(null)}
