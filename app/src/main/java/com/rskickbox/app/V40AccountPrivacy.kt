@@ -125,9 +125,9 @@ private fun rsShareLocalExportV40(context:android.content.Context,store:RsStore)
 }
 
 @Composable
-fun RsStudentPrivacyV40(c:RsPalette,store:RsStore,lang:RsLang,onLocalAccountDisabled:()->Unit){
+fun RsStudentPrivacyV40(c:RsPalette,store:RsStore,lang:RsLang,onLanguageChanged:(RsLang)->Unit={},onLocalAccountDisabled:()->Unit){
     if(RsSupabaseV60.configured){
-        RsCloudStudentPrivacyV78(c,store,lang)
+        RsCloudStudentPrivacyV78(c,store,lang,onLanguageChanged)
         return
     }
     val context=androidx.compose.ui.platform.LocalContext.current
@@ -136,6 +136,7 @@ fun RsStudentPrivacyV40(c:RsPalette,store:RsStore,lang:RsLang,onLocalAccountDisa
     var deleteText by remember{mutableStateOf("")}
 
     RsScroll(c,rsAccountUiV40(lang,"title"),rsAccountUiV40(lang,"sub")){
+        RsLanguageSettingsPanelV111(c,store,lang,onLanguageChanged)
         RsPanel(c){
             Text(rsAccountUiV40(lang,"prefs"),color=c.bright,fontWeight=FontWeight.Bold)
             listOf(
@@ -214,7 +215,7 @@ fun RsStudentPrivacyV40(c:RsPalette,store:RsStore,lang:RsLang,onLocalAccountDisa
 
 
 @Composable
-private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
+private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang,onLanguageChanged:(RsLang)->Unit){
     val context=androidx.compose.ui.platform.LocalContext.current
     val scope=rememberCoroutineScope()
     var revision by remember{mutableIntStateOf(0)}
@@ -234,6 +235,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
     }
 
     RsScroll(c,rsAccountUiV40(lang,"title"),rsAccountUiV40(lang,"sub")){
+        RsLanguageSettingsPanelV111(c,store,lang,onLanguageChanged)
         RsPanel(c){
             Text(rsAccountUiV40(lang,"prefs"),color=c.bright,fontWeight=FontWeight.Bold)
             listOf(
