@@ -170,6 +170,9 @@ fun RsStudentPrivateLessonsV43(c:RsPalette,store:RsStore,lang:RsLang){
                     else->rsPrivateUiV43(lang,"available")
                 }
                 Text(statusText,color=c.text,fontWeight=FontWeight.Bold)
+                if(booking!=null && booking.status=="CONFIRMED"){
+                    RsPrivateLessonPlanBadgeV111(c,lang,booking.id)
+                }
                 if(booking==null || booking.status=="DECLINED"){
                     if(!requestsAllowed)Text(rsOpsUiV56(lang,"private_disabled"),color=c.muted,fontSize=10.sp)
                     OutlinedTextField(
@@ -571,6 +574,9 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
                         enabled=!busy,
                         modifier=Modifier.weight(1f)
                     ){Text(rsPrivateUiV43(lang,"decline"),fontSize=10.sp)}
+                }
+                if(request.status=="confirmed"){
+                    RsPrivateLessonPlanAssignmentV111(c,lang,request.bookingId){revision++}
                 }
                 if(request.status!="requested"){
                     OutlinedButton(
