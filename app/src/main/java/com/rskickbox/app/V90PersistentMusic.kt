@@ -213,17 +213,17 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
         }
     }
 
+    val visibleTracks=if(activePlaylist=="ALL")tracks else {
+        val allowed=playlists.firstOrNull{it.name==activePlaylist}?.uris.orEmpty()
+        tracks.filter{it.uri in allowed}
+    }
+
     fun playTrack(i:Int){
         val p=controller?:return
         if(visibleTracks.isEmpty())return
         p.setMediaItems(rsMediaItemsV90(visibleTracks),i.coerceIn(0,visibleTracks.lastIndex),0L)
         p.prepare()
         p.play()
-    }
-
-    val visibleTracks=if(activePlaylist=="ALL")tracks else {
-        val allowed=playlists.firstOrNull{it.name==activePlaylist}?.uris.orEmpty()
-        tracks.filter{it.uri in allowed}
     }
 
     RsScroll(
