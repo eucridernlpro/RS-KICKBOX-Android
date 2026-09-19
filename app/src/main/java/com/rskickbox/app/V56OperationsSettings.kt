@@ -423,7 +423,7 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
             reminders=it;setBool(RsOpsKeysV56.REMINDERS,it)
         }
 
-        Text("STUDENT FEATURE ACCESS",color=c.bright,fontWeight=FontWeight.Black)
+        Text(rsCloudT93(lang,"student_feature_access"),color=c.bright,fontWeight=FontWeight.Black)
         RsPanel(c){
             Text(
                 "Switch a student section OFF to remove it from the Student Dashboard, navigation and Student App Guide. Switch it ON to make it appear again.",
