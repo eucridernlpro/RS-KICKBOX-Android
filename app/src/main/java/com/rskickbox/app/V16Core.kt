@@ -103,7 +103,7 @@ fun RsKickboxV16App() {
                         "challenge_admin" -> RsChallengeManagerV14(c)
                         "fightcamp_admin" -> RsFightCampManagerV14(c)
                         "landing_admin" -> RsLandingManagerV14(c)
-                        "release" -> RsReleaseCenterV16(c, store)
+                        "release" -> RsReleaseCenterV16(c, store, lang)
                         else -> RsGenericV16(c, route, lang)
                     }
                 }
