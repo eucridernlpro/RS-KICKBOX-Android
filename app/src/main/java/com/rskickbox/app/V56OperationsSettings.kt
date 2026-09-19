@@ -300,20 +300,42 @@ private fun RsOpsToggleV56(
     }
 }
 
+private fun rsOpsCloudT105(lang:RsLang,key:String):String{
+    val en=mapOf(
+        "loaded" to "Live controls loaded from Supabase.","load_failed" to "Could not load cloud controls.",
+        "syncing" to "Syncing live student controls…","connected" to "Supabase student access controls connected",
+        "feature_help" to rsOpsCloudT105(lang,"feature_help"),
+        "visible" to "VISIBLE TO STUDENTS","hidden" to "HIDDEN / LOCKED","saving" to "Saving live controls…",
+        "saved" to "✓ Student controls saved. They apply to the next student sync/login.","save_failed" to "Could not save live controls.",
+        "save_button" to "Save live student controls","sections_enabled" to "student sections enabled","months" to "months"
+    )
+    val nl=en+mapOf("loaded" to "Live instellingen geladen uit Supabase.","load_failed" to "Cloudinstellingen konden niet worden geladen.","syncing" to "Live leerlinginstellingen synchroniseren…","connected" to "Supabase leerlingtoegang verbonden","feature_help" to "Zet een leerlingsectie UIT om deze te verwijderen uit het Leerlingdashboard, de navigatie en de App Gids. Zet deze AAN om hem opnieuw zichtbaar te maken.","visible" to "ZICHTBAAR VOOR LEERLINGEN","hidden" to "VERBORGEN / GEBLOKKEERD","saving" to "Live instellingen opslaan…","saved" to "✓ Leerlinginstellingen opgeslagen. Ze gelden bij de volgende synchronisatie/login.","save_failed" to "Live instellingen konden niet worden opgeslagen.","save_button" to "Live leerlinginstellingen opslaan","sections_enabled" to "leerlingsecties ingeschakeld","months" to "maanden")
+    val pt=en+mapOf("loaded" to "Controlos live carregados do Supabase.","load_failed" to "Não foi possível carregar os controlos cloud.","syncing" to "A sincronizar controlos live dos alunos…","connected" to "Controlos de acesso dos alunos ligados ao Supabase","feature_help" to "Desativa uma secção do aluno para a remover do Painel do Aluno, navegação e Guia da App. Ativa-a para voltar a aparecer.","visible" to "VISÍVEL PARA ALUNOS","hidden" to "OCULTO / BLOQUEADO","saving" to "A guardar controlos live…","saved" to "✓ Controlos dos alunos guardados. Aplicam-se na próxima sincronização/login.","save_failed" to "Não foi possível guardar os controlos live.","save_button" to "Guardar controlos live dos alunos","sections_enabled" to "secções de aluno ativas","months" to "meses")
+    val es=en+mapOf("loaded" to "Controles activos cargados desde Supabase.","load_failed" to "No se pudieron cargar los controles cloud.","syncing" to "Sincronizando controles activos del alumno…","connected" to "Controles de acceso del alumno conectados a Supabase","feature_help" to "Desactiva una sección para quitarla del Panel del Alumno, navegación y Guía de la App. Actívala para que vuelva a aparecer.","visible" to "VISIBLE PARA ALUMNOS","hidden" to "OCULTO / BLOQUEADO","saving" to "Guardando controles activos…","saved" to "✓ Controles del alumno guardados. Se aplican en la próxima sincronización/inicio de sesión.","save_failed" to "No se pudieron guardar los controles activos.","save_button" to "Guardar controles activos del alumno","sections_enabled" to "secciones de alumno activadas","months" to "meses")
+    val fr=en+mapOf("loaded" to "Contrôles actifs chargés depuis Supabase.","load_failed" to "Impossible de charger les contrôles cloud.","syncing" to "Synchronisation des contrôles élève…","connected" to "Contrôles d’accès élève connectés à Supabase","feature_help" to "Désactive une section élève pour la retirer du tableau de bord, de la navigation et du Guide App. Réactive-la pour la faire réapparaître.","visible" to "VISIBLE POUR LES ÉLÈVES","hidden" to "MASQUÉ / BLOQUÉ","saving" to "Enregistrement des contrôles…","saved" to "✓ Contrôles élève enregistrés. Ils s’appliquent à la prochaine synchronisation/connexion.","save_failed" to "Impossible d’enregistrer les contrôles.","save_button" to "Enregistrer les contrôles élève","sections_enabled" to "sections élève activées","months" to "mois")
+    val de=en+mapOf("loaded" to "Live-Steuerungen aus Supabase geladen.","load_failed" to "Cloud-Steuerungen konnten nicht geladen werden.","syncing" to "Live-Schülersteuerungen werden synchronisiert…","connected" to "Supabase-Schülerzugriff verbunden","feature_help" to "Schalte einen Schülerbereich AUS, um ihn aus Schüler-Dashboard, Navigation und App-Anleitung zu entfernen. Schalte ihn EIN, damit er wieder erscheint.","visible" to "FÜR SCHÜLER SICHTBAR","hidden" to "AUSGEBLENDET / GESPERRT","saving" to "Live-Steuerungen werden gespeichert…","saved" to "✓ Schülersteuerungen gespeichert. Sie gelten bei der nächsten Synchronisierung/Anmeldung.","save_failed" to "Live-Steuerungen konnten nicht gespeichert werden.","save_button" to "Live-Schülersteuerungen speichern","sections_enabled" to "Schülerbereiche aktiviert","months" to "Monate")
+    val it=en+mapOf("loaded" to "Controlli live caricati da Supabase.","load_failed" to "Impossibile caricare i controlli cloud.","syncing" to "Sincronizzazione controlli allievi…","connected" to "Controlli accesso allievi collegati a Supabase","feature_help" to "Disattiva una sezione allievo per rimuoverla da Dashboard, navigazione e Guida App. Riattivala per farla apparire di nuovo.","visible" to "VISIBILE AGLI ALLIEVI","hidden" to "NASCOSTO / BLOCCATO","saving" to "Salvataggio controlli live…","saved" to "✓ Controlli allievi salvati. Si applicano alla prossima sincronizzazione/accesso.","save_failed" to "Impossibile salvare i controlli live.","save_button" to "Salva controlli live allievi","sections_enabled" to "sezioni allievo attive","months" to "mesi")
+    val pl=en+mapOf("loaded" to "Sterowanie na żywo wczytane z Supabase.","load_failed" to "Nie udało się wczytać sterowania z chmury.","syncing" to "Synchronizacja sterowania uczniów…","connected" to "Dostęp uczniów połączony z Supabase","feature_help" to "Wyłącz sekcję ucznia, aby usunąć ją z Panelu Ucznia, nawigacji i Przewodnika Aplikacji. Włącz ją, aby pojawiła się ponownie.","visible" to "WIDOCZNE DLA UCZNIÓW","hidden" to "UKRYTE / ZABLOKOWANE","saving" to "Zapisywanie sterowania…","saved" to "✓ Sterowanie uczniów zapisane. Zadziała przy następnej synchronizacji/logowaniu.","save_failed" to "Nie udało się zapisać sterowania.","save_button" to "Zapisz sterowanie uczniów","sections_enabled" to "sekcji ucznia aktywnych","months" to "miesiące")
+    val tr=en+mapOf("loaded" to "Canlı kontroller Supabase’den yüklendi.","load_failed" to "Bulut kontrolleri yüklenemedi.","syncing" to "Canlı öğrenci kontrolleri eşitleniyor…","connected" to "Supabase öğrenci erişim kontrolleri bağlı","feature_help" to "Bir öğrenci bölümünü Öğrenci Paneli, gezinme ve Uygulama Rehberinden kaldırmak için KAPAT. Yeniden görünmesi için AÇ.","visible" to "ÖĞRENCİLERE GÖRÜNÜR","hidden" to "GİZLİ / KİLİTLİ","saving" to "Canlı kontroller kaydediliyor…","saved" to "✓ Öğrenci kontrolleri kaydedildi. Sonraki eşitleme/girişte uygulanır.","save_failed" to "Canlı kontroller kaydedilemedi.","save_button" to "Canlı öğrenci kontrollerini kaydet","sections_enabled" to "öğrenci bölümü etkin","months" to "ay")
+    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
+    return pack[key]?:en[key]?:key
+}
+
+
 @Composable
 fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
     val scope=rememberCoroutineScope()
     val cloudMode=RsSupabaseV60.configured
     var maintenance by remember{mutableStateOf(rsOpsEnabledV56(store,RsOpsKeysV56.MAINTENANCE,false))}
     var maintenanceMessage by remember{
-        mutableStateOf(store.s(RsOpsKeysV56.MAINTENANCE_MESSAGE,"RS KICKBOX maintenance notice: some services may be temporarily limited."))
+        mutableStateOf(store.s(RsOpsKeysV56.MAINTENANCE_MESSAGE,rsCommonT95(lang,"maintenance_default")))
     }
     var community by remember{mutableStateOf(rsOpsEnabledV56(store,RsOpsKeysV56.COMMUNITY_POSTS,true))}
     var booking by remember{mutableStateOf(rsOpsEnabledV56(store,RsOpsKeysV56.CLASS_BOOKING,true))}
     var privateLessons by remember{mutableStateOf(rsOpsEnabledV56(store,RsOpsKeysV56.PRIVATE_LESSONS,true))}
     var referrals by remember{mutableStateOf(rsOpsEnabledV56(store,RsOpsKeysV56.REFERRALS,true))}
     var reminders by remember{mutableStateOf(rsOpsEnabledV56(store,RsOpsKeysV56.REMINDERS,true))}
-    var retention by remember{mutableStateOf(store.s(RsOpsKeysV56.RETENTION,"24 months"))}
+    var retention by remember{mutableStateOf(store.s(RsOpsKeysV56.RETENTION,"24 months").substringBefore(' '))}
     var disabledRoutes by remember{mutableStateOf(rsDisabledStudentRoutesV82(store))}
     var cloudLoading by remember{mutableStateOf(cloudMode)}
     var cloudSaving by remember{mutableStateOf(false)}
@@ -331,11 +353,11 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
                     privateLessons=controls.privateLessonsEnabled
                     referrals=controls.referralsEnabled
                     reminders=controls.inAppRemindersEnabled
-                    retention=controls.retentionMonths.toString()+" months"
+                    retention=controls.retentionMonths.toString()
                     disabledRoutes=controls.disabledStudentRoutes.toSet()
-                    cloudStatus="Live controls loaded from Supabase."
+                    cloudStatus=rsOpsCloudT105(lang,"loaded")
                 }
-                .onFailure{cloudStatus=it.message?:"Could not load cloud controls."}
+                .onFailure{cloudStatus=rsOpsCloudT105(lang,"load_failed")}
             cloudLoading=false
         }
     }
@@ -380,7 +402,7 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
     RsScroll(c,rsOpsUiV56(lang,"title"),rsOpsUiV56(lang,"sub")){
         if(cloudMode)RsPanel(c){
             Text(
-                if(cloudLoading)"Syncing live student controls…" else "Supabase student access controls connected",
+                if(cloudLoading)rsOpsCloudT105(lang,"syncing") else rsOpsCloudT105(lang,"connected"),
                 color=if(cloudLoading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -440,9 +462,9 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
                     horizontalArrangement=Arrangement.SpaceBetween
                 ){
                     Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)){
-                        Text(featureLabel(route),color=c.text,fontWeight=FontWeight.Bold)
+                        Text(rsRouteTitle(lang,route,featureLabel(route)),color=c.text,fontWeight=FontWeight.Bold)
                         Text(
-                            if(enabled)"VISIBLE TO STUDENTS" else "HIDDEN / LOCKED",
+                            if(enabled)rsOpsCloudT105(lang,"visible") else rsOpsCloudT105(lang,"hidden"),
                             color=if(enabled)c.bright else c.muted,
                             fontSize=9.sp,
                             fontWeight=FontWeight.Bold
@@ -463,11 +485,11 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
         RsPanel(c){
             Text(rsOpsUiV56(lang,"retention"),color=c.text,fontWeight=FontWeight.Bold)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                listOf("12 months","24 months","36 months").forEach{x->
+                listOf("12","24","36").forEach{x->
                     FilterChip(
                         selected=retention==x,
-                        onClick={retention=x;store.ps(RsOpsKeysV56.RETENTION,x)},
-                        label={Text(x,fontSize=9.sp)},
+                        onClick={retention=x;store.ps(RsOpsKeysV56.RETENTION,x+" months")},
+                        label={Text(x+" "+rsOpsCloudT105(lang,"months"),fontSize=9.sp)},
                         modifier=Modifier.weight(1f)
                     )
                 }
@@ -479,7 +501,7 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
             Button(
                 onClick={
                     cloudSaving=true
-                    cloudStatus="Saving live controls…"
+                    cloudStatus=rsOpsCloudT105(lang,"saving")
                     val retentionMonths=retention.substringBefore(' ').toIntOrNull()?:24
                     scope.launch{
                         rsSaveCloudControlsV82(
@@ -494,14 +516,14 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
                             retentionMonths,
                             disabledRoutes
                         )
-                            .onSuccess{cloudStatus="✓ Student controls saved. They apply to the next student sync/login."}
-                            .onFailure{cloudStatus=it.message?:"Could not save live controls."}
+                            .onSuccess{cloudStatus=rsOpsCloudT105(lang,"saved")}
+                            .onFailure{cloudStatus=rsOpsCloudT105(lang,"save_failed")}
                         cloudSaving=false
                     }
                 },
                 enabled=!cloudLoading&&!cloudSaving,
                 modifier=Modifier.fillMaxWidth()
-            ){Text(if(cloudSaving)"Saving…" else "Save live student controls")}
+             ){Text(if(cloudSaving)rsReleaseT98(lang,"saving") else rsOpsCloudT105(lang,"save_button"))}
         }
 
         Text(rsOpsUiV56(lang,"status"),color=c.bright,fontWeight=FontWeight.Black)
@@ -519,7 +541,7 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
                 }
             }
             Text(
-                (RsStudentLockableRoutesV82.size-disabledRoutes.size).toString()+" / "+RsStudentLockableRoutesV82.size+" student sections enabled",
+                (RsStudentLockableRoutesV82.size-disabledRoutes.size).toString()+" / "+RsStudentLockableRoutesV82.size+" "+rsOpsCloudT105(lang,"sections_enabled"),
                 color=c.bright,
                 fontSize=10.sp,
                 fontWeight=FontWeight.Bold
