@@ -215,8 +215,21 @@ private fun studentV21()=listOf(
     SectionV21("Student Help",listOf(
         DashV21("student_guide","App Guide","Learn every available feature step by step","brand")
     )),
-    SectionV21("Core Training",listOf(DashV21("voice","AI Technique Coach","Video · text · visuals · voice","ai"),DashV21("session","Session Player","Rounds · timer · cues","training"),DashV21("academy","RS Academy","Structured premium lessons","training"),DashV21("techniques","Technique Library","Moves · drills · details","technique"),DashV21("home_training","Home Training","Train anywhere","training"),DashV21("workout","Workout Generator","Build your session","training"))),
-    SectionV21("Club & Coaching",listOf(DashV21("classes","Classes & Events","Book club training","training"),DashV21("events","RS Events","Seminars · club days","brand"),DashV21("coachchat","Private Coach Chat","Direct coach support","ai"),DashV21("community","Community","Club feed · connection","brand"),DashV21("groups","Groups","Team spaces","brand"),DashV21("private_lessons","Private Lessons","1-to-1 coaching","training"))),
+    SectionV21("Core Training",listOf(
+        DashV21("voice","AI Technique Coach","Video review · feedback · history","ai"),
+        DashV21("session","Session Player","Rounds · timer · trainer cues","training"),
+        DashV21("academy","RS Academy","Structured premium lessons","training"),
+        DashV21("techniques","Technique Library","Moves · drills · details","technique"),
+        DashV21("home_training","Workout & Home Training","Ready workouts · generator","training")
+    )),
+    SectionV21("Club & Coaching",listOf(
+        DashV21("classes","Classes & Training","Book club training","training"),
+        DashV21("events","Club Events & Seminars","Special events · seminars","brand"),
+        DashV21("coachchat","Private Coach Chat","Text · images · short videos","ai"),
+        DashV21("community","Community","Club feed · connection","brand"),
+        DashV21("groups","Groups","Team spaces · group chat","brand"),
+        DashV21("private_lessons","Private Lessons","1-to-1 coaching","training")
+    )),
     SectionV21("Member Services",listOf(
         DashV21("notifications","Notifications","Club updates · unread messages","ai"),
         DashV21("promotions","Promotions","Offers · book · external links","brand"),
@@ -225,17 +238,70 @@ private fun studentV21()=listOf(
         DashV21("support","Support","Private member requests","settings"),
         DashV21("referrals","Referrals","Invite · share · grow","brand")
     )),
-    SectionV21("Performance",listOf(DashV21("progress","Progress","XP · technique · streak","progress"),DashV21("challenges","Challenges","Goals · XP · consistency","progress"),DashV21("badges","Badges","Achievements","progress"),DashV21("fightcamp","Fight Camp","Structured preparation","fight"),DashV21("compare","Technique Compare","Compare movement","technique"),DashV21("history","Training History","Sessions · attendance","progress"))),
-    SectionV21("Library, Music & Account",listOf(DashV21("vault","Knowledge Vault","Premium learning library","brand"),DashV21("homework","Homework","Coach assignments","training"),DashV21("favorites","Saved & Favorites","Your saved content","brand"),DashV21("media","Training Media","Videos · uploads","training"),DashV21("music","My RS Music","Local playlists · live player","music"),DashV21("finance","Membership & Payments","Plan · payments · history","payment"),DashV21("book","Trainer Book","Van Stilte Naar Strijd","brand"),DashV21("profile","My Profile","Goals · identity","settings"),DashV21("search","Search","Find anything in RS","brand"),DashV21("settings","Settings & Privacy","Preferences · account","settings")))
+    SectionV21("Performance",listOf(
+        DashV21("progress","Progress","Assessments · development","progress"),
+        DashV21("challenges","Challenges","Goals · consistency","progress"),
+        DashV21("badges","Badges","Achievements","progress"),
+        DashV21("fightcamp","Fight Camp","Structured preparation","fight"),
+        DashV21("compare","Technique Compare","Compare movement","technique")
+    )),
+    SectionV21("Library, Music & Account",listOf(
+        DashV21("vault","Knowledge Vault","Browse · Search · Favorites · History","brand"),
+        DashV21("homework","Homework","Coach assignments","training"),
+        DashV21("media","Training Media","Videos · images","training"),
+        DashV21("music","My RS Music","Persistent background player","music"),
+        DashV21("finance","Membership & Payments","Plan · payments · history","payment"),
+        DashV21("book","Trainer Book","Van Stilte Naar Strijd","brand"),
+        DashV21("profile","My Profile","Photo · goals · identity","settings"),
+        DashV21("settings","Settings & Privacy","Preferences · account","settings")
+    ))
 )
 
 private fun trainerV21()=listOf(
     SectionV21("Trainer Help",listOf(
         DashV21("guide","App Guide","Examples · workflows · how every section works","brand")
     )),
-    SectionV21("Brand & Experience",listOf(DashV21("themes","Visual Theme Studio","Complete app identity","brand"),DashV21("backgrounds","Visual Asset Studio","Pages · cards · banners","brand"),DashV21("branding","Branding & Site Settings","Logo · name · favicon","brand"),DashV21("intro_settings","Intro & Splash","Cinematic opening sequence","fight"),DashV21("landing_admin","Promotion Manager","Public app promotions","brand"),DashV21("book","Book Manager","Trainer book experience","brand"))),
-    SectionV21("Coaching, Content & Music",listOf(DashV21("voice","AI Technique Coach","Video review · voice coach","ai"),DashV21("session","Trainer Session","Round control","training"),DashV21("lesson_editor","Lesson Editor","Academy content","training"),DashV21("content","Content Manager","Lessons · cards · media","brand"),DashV21("media","Training Media Manager","Videos · images · access tiers","training"),DashV21("homework_admin","Homework Manager","Assign · review","training"),DashV21("session_builder","Session Builder","Reusable training plans","training"),DashV21("music_admin","RS Music Manager","Device music · internal player","music"),DashV21("notes","Coach Notes","Private observations","brand"))),
-    SectionV21("Members & Access",listOf(DashV21("members","Student Manager","Profiles · status","brand"),DashV21("access","Access & Subscriptions","Features · overrides","settings"),DashV21("plans_admin","Membership Plans","Basic · Pro · Elite","payment"),DashV21("progress_admin","Progress Manager","Student development","progress"),DashV21("assessments","Coach Assessments","Reviews · priorities","progress"),DashV21("challenge_admin","Challenge Manager","Safe club goals","progress"),DashV21("fightcamp_admin","Fight Camp Manager","Camp planning","fight"))),
-    SectionV21("Club Operations",listOf(DashV21("classes","Class Manager","Schedule · capacity","training"),DashV21("attendance","Attendance","Check-in control","brand"),DashV21("qr_attendance","QR Attendance","Fast member check-in","brand"),DashV21("events_admin","Event Manager","Events · capacity","brand"),DashV21("schedule","Trainer Schedule","Daily coaching plan","training"),DashV21("notifications","Notifications","Messages · audiences","ai"),DashV21("documents","Documents & Waivers","Agreements · status","brand"),DashV21("referrals","Referrals","Invites · conversion","brand"))),
-    SectionV21("Business & Release",listOf(DashV21("payments","Payment Center","Methods · instructions","payment"),DashV21("invoices","Invoices","Revenue · status","payment"),DashV21("analytics","Analytics","Club performance","progress"),DashV21("support","Support & Final QC","Operations · QA","settings"),DashV21("release","Release & Legal Center","Policies · Play Store","settings"),DashV21("settings","App Settings","Privacy · maintenance","settings")))
+    SectionV21("Brand & Experience",listOf(
+        DashV21("themes","Visual Theme Studio","Complete app identity","brand"),
+        DashV21("backgrounds","Visual Asset Studio","Pages · cards · banners","brand"),
+        DashV21("branding","Branding & Site Settings","Logo · name · favicon","brand"),
+        DashV21("intro_settings","Intro & Splash","Cinematic opening sequence","fight"),
+        DashV21("landing_admin","Promotion Manager","Public app promotions","brand"),
+        DashV21("book","Book Manager","Trainer book experience","brand")
+    )),
+    SectionV21("Coaching, Content & Music",listOf(
+        DashV21("voice","AI Technique Coach","Video review · voice coach","ai"),
+        DashV21("content","Content Manager","Lessons · articles · Academy content","brand"),
+        DashV21("media","Training Media Manager","Videos · images · access tiers","training"),
+        DashV21("homework_admin","Homework Manager","Assign · review","training"),
+        DashV21("session_builder","Session Builder","Create active training sessions","training"),
+        DashV21("music_admin","RS Music Manager","Persistent background player","music"),
+        DashV21("notes","Coach Notes","Private observations","brand")
+    )),
+    SectionV21("Members & Access",listOf(
+        DashV21("members","Student Manager","Profiles · status","brand"),
+        DashV21("access","Access & Subscriptions","Features · overrides","settings"),
+        DashV21("plans_admin","Membership Plans","Basic · Pro · Elite","payment"),
+        DashV21("progress_admin","Progress Manager","Student development","progress"),
+        DashV21("assessments","Coach Assessments","Reviews · priorities","progress"),
+        DashV21("challenge_admin","Challenge Manager","Safe club goals","progress"),
+        DashV21("fightcamp_admin","Fight Camp Manager","Camp planning","fight")
+    )),
+    SectionV21("Club Operations",listOf(
+        DashV21("attendance","Attendance Center","Roster · QR check-in","brand"),
+        DashV21("classes","Class Manager","Schedule · capacity","training"),
+        DashV21("events_admin","Event Manager","Events · capacity","brand"),
+        DashV21("schedule","Trainer Schedule","Daily coaching plan","training"),
+        DashV21("notifications","Notifications","Messages · audiences","ai"),
+        DashV21("documents","Documents & Waivers","Agreements · status","brand"),
+        DashV21("referrals","Referrals","Invites · conversion","brand")
+    )),
+    SectionV21("Business & Release",listOf(
+        DashV21("payments","Payment Center","Methods · instructions","payment"),
+        DashV21("invoices","Invoices","Revenue · status","payment"),
+        DashV21("analytics","Analytics","Club performance","progress"),
+        DashV21("support","Support & Final QC","Operations · QA","settings"),
+        DashV21("release","Release & Legal Center","Policies · Play Store","settings"),
+        DashV21("settings","App Settings","Privacy · maintenance","settings")
+    ))
 )
