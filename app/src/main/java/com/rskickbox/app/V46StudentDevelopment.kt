@@ -429,7 +429,7 @@ private fun RsCloudStudentHomeworkV80(c:RsPalette,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsDevUiV46(lang,"homework"),"Your live trainer assignments and completion state."){
+    RsScroll(c,rsDevUiV46(lang,"homework"),rsDevUiV46(lang,"homework_sub")){
         RsPanel(c){
             Text(if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
@@ -484,7 +484,7 @@ private fun RsCloudHomeworkManagerV80(c:RsPalette,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsDevUiV46(lang,"manager"),"Assign synchronized homework to individual students."){
+    RsScroll(c,rsDevUiV46(lang,"manager"),rsDevUiV46(lang,"manager_sub")){
         RsPanel(c){
             Text(if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
@@ -553,7 +553,7 @@ private fun RsCloudCoachNotesV80(c:RsPalette,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsDevUiV46(lang,"notes"),"Private staff-only cloud notes linked to student development."){
+    RsScroll(c,rsDevUiV46(lang,"notes"),rsDevUiV46(lang,"notes_sub")){
         RsPanel(c){
             Text(if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             students.forEach{s->FilterChip(selected=selectedId==s.id,onClick={selectedId=s.id},label={Text(s.displayName.ifBlank{s.email})},modifier=Modifier.fillMaxWidth())}
@@ -623,7 +623,7 @@ private fun RsCloudAssessmentsV80(c:RsPalette,lang:RsLang){
         Slider(value,onValueChange=onChange,valueRange=0f..100f,enabled=!busy)
     }
 
-    RsScroll(c,rsDevUiV46(lang,"assess"),"Record synchronized skill assessments for each student."){
+    RsScroll(c,rsDevUiV46(lang,"assess"),rsDevUiV46(lang,"assess_sub")){
         RsPanel(c){
             Text(if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             students.forEach{s->FilterChip(selected=selectedId==s.id,onClick={selectedId=s.id},label={Text(s.displayName.ifBlank{s.email})},modifier=Modifier.fillMaxWidth())}
@@ -661,7 +661,7 @@ private fun RsCloudStudentProgressV80(c:RsPalette,lang:RsLang){
     }
 
     val latest=assessments.firstOrNull()
-    RsScroll(c,rsDevUiV46(lang,"progress"),"Your live assessed skill profile and development history."){
+    RsScroll(c,rsDevUiV46(lang,"progress"),rsDevUiV46(lang,"progress_sub")){
         RsPanel(c){
             Text(if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
