@@ -241,26 +241,25 @@ private fun LoginV21(
         if(busy)return
         if(email.isBlank()){
             statusIsError=true
-            status="Enter your email address."
+            status=rsLoginT94(lang,"enter_email")
             return
         }
         if(pass.isBlank()){
             statusIsError=true
-            status="Enter your password."
+            status=rsLoginT94(lang,"enter_password")
             return
         }
         val attemptEmail=email
         val attemptPass=pass
         busy=true
         statusIsError=false
-        status="Checking your email and password…"
+        status=rsLoginT94(lang,"checking")
         scope.launch{
             rsCloudLoginV63(attemptEmail,attemptPass)
                 .onSuccess{finishCloudLogin(it)}
                 .onFailure{
                     statusIsError=true
-                    status="Login failed: "+(it.message?.takeIf{msg->msg.isNotBlank()}?:"Email or password was not accepted.")+
-                        " You can try again or use Forgot password."
+                    status=rsLoginT94(lang,"login_failed")
                     clearLoginFields(clearEmail=true)
                 }
             busy=false
@@ -271,22 +270,22 @@ private fun LoginV21(
         if(busy)return
         if(email.isBlank()){
             statusIsError=true
-            status="Enter the email address for your RS KICKBOX account first."
+            status=rsLoginT94(lang,"reset_email_first")
             return
         }
         val resetEmail=email.trim()
         busy=true
         statusIsError=false
-        status="Sending password reset email…"
+        status=rsLoginT94(lang,"sending_reset")
         scope.launch{
             rsCloudRequestPasswordResetV87(resetEmail)
                 .onSuccess{
-                    status="✓ If this email belongs to an RS KICKBOX account, a password-reset email has been sent. Open the link in that email to return to the app and choose a new password."
+                    status=rsLoginT94(lang,"reset_sent")
                     pass=""
                 }
                 .onFailure{
                     statusIsError=true
-                    status=it.message?:"Could not request a password reset."
+                    status=it.message?:rsLoginT94(lang,"reset_failed")
                 }
             busy=false
         }
@@ -296,19 +295,19 @@ private fun LoginV21(
         if(busy)return
         if(pass.length<10){
             statusIsError=true
-            status="Choose a new password with at least 10 characters."
+            status=rsLoginT94(lang,"new_password_min")
             return
         }
         if(pass!=confirmPass){
             statusIsError=true
-            status="The two passwords do not match."
+            status=rsLoginT94(lang,"passwords_no_match")
             confirmPass=""
             return
         }
         val next=pass
         busy=true
         statusIsError=false
-        status="Updating your password…"
+        status=rsLoginT94(lang,"updating_password")
         scope.launch{
             rsCloudUpdatePasswordV87(next)
                 .onSuccess{
@@ -316,11 +315,11 @@ private fun LoginV21(
                     forgotMode=false
                     clearLoginFields(clearEmail=true)
                     statusIsError=false
-                    status="✓ Password updated. You can now sign in with your new password."
+                    status=rsLoginT94(lang,"password_updated")
                 }
                 .onFailure{
                     statusIsError=true
-                    status=(it.message?:"Could not update password.")+" If you have not opened the reset link from your email yet, open that link first."
+                    status=it.message?:rsLoginT94(lang,"password_update_failed")
                     pass=""
                     confirmPass=""
                 }
@@ -337,7 +336,7 @@ private fun LoginV21(
         }
         busy=true
         statusIsError=false
-        status="Activating your RS KICKBOX account…"
+        status=rsLoginT94(lang,"activating")
         scope.launch{
             rsRedeemStudentInviteV63(email,pendingInviteToken,pass)
                 .onSuccess{
@@ -348,13 +347,13 @@ private fun LoginV21(
                         }
                         .onFailure{
                             statusIsError=true
-                            status=it.message?:"Account created, but sign-in failed."
+                            status=it.message?:rsLoginT94(lang,"account_signin_failed")
                             clearLoginFields(clearEmail=true)
                         }
                 }
                 .onFailure{
                     statusIsError=true
-                    status=it.message?:"Could not activate invitation."
+                    status=it.message?:rsLoginT94(lang,"activate_failed")
                     pass=""
                 }
             busy=false
@@ -437,8 +436,8 @@ private fun LoginV21(
             Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
                 Text(
                     when{
-                        recoveryMode->"Choose a new password"
-                        forgotMode->"Forgot your password?"
+                        recoveryMode->rsLoginT94(lang,"recovery_title")
+                        forgotMode->rsLoginT94(lang,"forgot_title")
                         else->rsT(lang,"member_access")
                     },
                     color=Color.White,
@@ -472,13 +471,13 @@ private fun LoginV21(
                     }
                 }else if(forgotMode){
                     Text(
-                        "Enter the email address used for your RS KICKBOX account. We will send a secure link to create a new password.",
+                        rsLoginT94(lang,"forgot_desc"),
                         color=Color.White.copy(alpha=.78f),
                         fontSize=11.sp
                     )
                 }else{
                     Text(
-                        "The recovery link has returned you to RS KICKBOX. Choose your new password below.",
+                        rsLoginT94(lang,"recovery_desc"),
                         color=Color.White.copy(alpha=.78f),
                         fontSize=11.sp
                     )
@@ -509,8 +508,8 @@ private fun LoginV21(
                         },
                         label={Text(
                             when{
-                                recoveryMode->"New password (10+ characters)"
-                                pendingInviteToken.isNotBlank()->"Create password (10+ characters)"
+                                recoveryMode->rsLoginT94(lang,"new_password")
+                                pendingInviteToken.isNotBlank()->rsLoginT94(lang,"create_password")
                                 else->"Password"
                             }
                         )},
@@ -538,7 +537,7 @@ private fun LoginV21(
                             confirmPass=it
                             if(statusIsError)status=""
                         },
-                        label={Text("Confirm new password")},
+                        label={Text(rsLoginT94(lang,"confirm_password"))},
                         colors=fieldColors,
                         singleLine=true,
                         enabled=!busy,
@@ -565,11 +564,11 @@ private fun LoginV21(
                 ){
                     Text(
                         when{
-                            busy->"Please wait…"
-                            recoveryMode->"Save new password"
-                            forgotMode->"Send password reset email"
-                            pendingInviteToken.isNotBlank()->"Activate account"
-                            else->"Sign in"
+                            busy->rsLoginT94(lang,"wait")
+                            recoveryMode->rsLoginT94(lang,"save_new_password")
+                            forgotMode->rsLoginT94(lang,"send_reset")
+                            pendingInviteToken.isNotBlank()->rsLoginT94(lang,"activate_account")
+                            else->rsLoginT94(lang,"sign_in")
                         },
                         fontSize=12.sp,
                         maxLines=1
@@ -588,7 +587,7 @@ private fun LoginV21(
                         enabled=!busy,
                         modifier=Modifier.fillMaxWidth()
                     ){
-                        Text(if(forgotMode)"Back to sign in" else "Forgot password? Ask for a new one")
+                        Text(if(forgotMode)rsLoginT94(lang,"back_signin") else rsLoginT94(lang,"forgot_button"))
                     }
                 }
 
@@ -609,7 +608,7 @@ private fun LoginV21(
                     },
                     enabled=!busy,
                     modifier=Modifier.fillMaxWidth()
-                ){Text("Reset login screen")}
+                 ){Text(rsLoginT94(lang,"reset_screen"))}
 
                 if(status.isNotBlank()){
                     Surface(
@@ -639,13 +638,13 @@ private fun LoginV21(
                 }
 
                 Text(
-                    if(RsSupabaseV60.configured)"● Cloud login connected" else "● Cloud backend is not configured in this build",
+                    if(RsSupabaseV60.configured)rsLoginT94(lang,"cloud_connected") else rsLoginT94(lang,"cloud_missing"),
                     color=if(RsSupabaseV60.configured)c.bright else Color(0xFFFF8A80),
                     fontSize=10.sp,
                     fontWeight=FontWeight.Bold
                 )
                 Text(
-                    "Wrong login details clear automatically so the form is ready for another attempt. Password recovery uses a secure email link.",
+                    rsLoginT94(lang,"login_tip"),
                     color=c.muted,
                     fontSize=10.sp
                 )
@@ -659,7 +658,7 @@ private fun LoginV21(
         ){
             Column(Modifier.padding(14.dp)){
                 Text(rsEnrollmentT(lang,"build_label"),color=c.bright,fontWeight=FontWeight.Bold)
-                Text("Trainer-created accounts · secure QR invitations · password recovery · authenticated cloud sessions.",color=Color.White.copy(alpha=.72f))
+                Text(rsLoginT94(lang,"build_desc"),color=Color.White.copy(alpha=.72f))
             }
         }
     }
