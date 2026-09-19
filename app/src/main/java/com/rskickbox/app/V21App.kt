@@ -45,7 +45,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     var cloudControlsRevision by remember { mutableIntStateOf(0) }
     var brandRevision by remember { mutableIntStateOf(0) }
     var brandAssetsRestoring by remember { mutableStateOf(RsSupabaseV60.configured) }
-    var lang by remember { mutableStateOf(rsLangs.firstOrNull { it.code == store.s("lang", "en") } ?: rsLangs.first()) }
+    var lang by remember { mutableStateOf(rsInitialLanguageV111(store)) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
     var introDone by remember { mutableStateOf(RsRuntimeV108.introShownThisProcess || !store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
     var passwordRecoveryLaunch by remember(initialAuthDeepLink){
@@ -151,7 +151,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     }
 
     MaterialTheme(colorScheme = darkColorScheme(primary=c.bright,secondary=c.gold,background=c.bg,surface=c.panel,onBackground=c.text,onSurface=c.text)) {
-        key(brandRevision){
+        val currentBrandRevision=brandRevision
         Box(Modifier.fillMaxSize()) {
             when {
                 brandAssetsRestoring -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
@@ -173,7 +173,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                 }
                 role == null -> RsLiveBackground(c, store, BgScope.LOGIN) {
                     RsPerPageBackgroundV21(store, "login") {
-                        LoginV21(c, store, lang, passwordRecoveryLaunch, { selected -> lang=selected;store.ps("lang",selected.code) }) { selected ->
+                        LoginV21(c, store, lang, passwordRecoveryLaunch, { selected -> store.pb("lang_manual_override_v111",true);lang=selected;store.ps("lang",selected.code) }) { selected ->
                             passwordRecoveryLaunch=false
                             role = selected
                             route = if(selected==RsRole.TRAINER) "trainer" else "home"
@@ -185,7 +185,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                     val scope = if(active==RsRole.TRAINER) BgScope.TRAINER_TRAINING else BgScope.STUDENT_TRAINING
                     RsLiveBackground(c, store, scope) {
                         RsPerPageBackgroundV21(store, route) {
-                            ShellV21(c, store, active, lang, route, { selected -> lang=selected;store.ps("lang",selected.code) }, { route=it }, {
+                            ShellV21(c, store, active, lang, route, { selected -> store.pb("lang_manual_override_v111",true);lang=selected;store.ps("lang",selected.code) }, { route=it }, {
                                 passwordRecoveryLaunch=false
                                 role=null
                                 route="home"
@@ -223,7 +223,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                     "checkin" -> RsStudentCheckInV52(c,store,lang)
                                     "invoices" -> RsTrainerInvoicesV39(c,store,lang)
                                     "book" -> if(active==RsRole.TRAINER) RsBookManagerV45(c,store,lang) else RsBookLibraryV45(c,store,lang)
-                                    "settings" -> if(active==RsRole.TRAINER) RsAdminSettingsV56(c,store,lang) else RsStudentPrivacyV40(c,store,lang){
+                                    "settings" -> if(active==RsRole.TRAINER) RsAdminSettingsV56(c,store,lang){ selected -> lang=selected } else RsStudentPrivacyV40(c,store,lang,{ selected -> lang=selected }){
                                         role=null
                                         route="home"
                                     }
@@ -287,7 +287,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                 }
             }
         }
-        }
+        @Suppress("UNUSED_VARIABLE") val keepBrandRevisionObserved=currentBrandRevision
     }
 }
 
@@ -323,6 +323,7 @@ private fun LoginV21(
 
     fun finishCloudLogin(session:RsCloudSessionV63){
         store.ps("session_student_email",session.email)
+        store.ps("last_login_email",session.email)
         store.ps("session_student_name",session.displayName)
         store.ps("session_plan",session.plan)
         store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
@@ -502,22 +503,7 @@ private fun LoginV21(
     ) {
         val mainLogo=store.s("brand_asset_main_logo","")
         if(mainLogo.isNotBlank())RsUriPreviewV21(mainLogo,Modifier.fillMaxWidth().height(120.dp),"CENTER")
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement=Arrangement.spacedBy(10.dp),
-            verticalAlignment=Alignment.CenterVertically
-        ){
-            Text(
-                "♛ "+store.s("brand_header_name","RS KICKBOXING"),
-                color=c.bright,
-                fontSize=31.sp,
-                fontWeight=FontWeight.Black,
-                maxLines=1,
-                overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                modifier=Modifier.weight(1f)
-            )
-            LanguageV21(lang,onLang)
-        }
+        RsLettersLogoV111(c,store,Modifier.fillMaxWidth())
         Text(store.s("brand_login_title","Premium cinematic kickboxing"),color=Color.White,style=MaterialTheme.typography.headlineMedium)
         Text(store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"),color=Color.White.copy(alpha=.78f),fontSize=11.sp)
 
@@ -857,7 +843,7 @@ private fun ShellV21(
                     verticalArrangement=Arrangement.spacedBy(6.dp)
                 ){
                     RsPanel(c){
-                        Text("♛ ${store.s("brand_header_name","RS KICKBOXING")}",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp)
+                        RsLettersLogoV111(c,store,Modifier.fillMaxWidth())
                         Text(
                             if(role==RsRole.TRAINER)rsT(lang,"trainer_admin") else rsT(lang,"student"),
                             color=c.muted,
@@ -902,7 +888,7 @@ private fun ShellV21(
             verticalArrangement=Arrangement.spacedBy(7.dp)
         ) {
             RsBrandedHeaderV21(c,store) {
-                Text("♛ ${store.s("brand_header_name","RS KICKBOXING")}",color=c.bright,fontSize=20.sp,fontWeight=FontWeight.Black)
+                RsLettersLogoV111(c,store,Modifier.fillMaxWidth())
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement=Arrangement.spacedBy(6.dp),
@@ -913,7 +899,7 @@ private fun ShellV21(
                         modifier=Modifier.widthIn(min=42.dp,max=50.dp).heightIn(min=40.dp),
                         contentPadding=PaddingValues(horizontal=8.dp)
                     ){Text("☰")}
-                    LanguageV21(lang,onLang)
+                    Spacer(Modifier.weight(1f))
                     if(route!=home) OutlinedButton(
                         onClick={onRoute(home)},
                         modifier=Modifier.widthIn(min=42.dp,max=50.dp).heightIn(min=40.dp),
