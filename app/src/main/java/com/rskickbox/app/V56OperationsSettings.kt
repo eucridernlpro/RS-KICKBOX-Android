@@ -304,7 +304,7 @@ private fun rsOpsCloudT105(lang:RsLang,key:String):String{
     val en=mapOf(
         "loaded" to "Live controls loaded from Supabase.","load_failed" to "Could not load cloud controls.",
         "syncing" to "Syncing live student controls…","connected" to "Supabase student access controls connected",
-        "feature_help" to rsOpsCloudT105(lang,"feature_help"),
+        "feature_help" to "Switch a student section OFF to remove it from the Student Dashboard, navigation and App Guide. Switch it ON to make it appear again.",
         "visible" to "VISIBLE TO STUDENTS","hidden" to "HIDDEN / LOCKED","saving" to "Saving live controls…",
         "saved" to "✓ Student controls saved. They apply to the next student sync/login.","save_failed" to "Could not save live controls.",
         "save_button" to "Save live student controls","sections_enabled" to "student sections enabled","months" to "months"
