@@ -204,19 +204,19 @@ revoke execute on function public.rs_mark_coach_thread_read(uuid) from anon;
 grant execute on function public.rs_mark_coach_thread_read(uuid) to authenticated;
 
 create or replace function public.rs_my_student_id()
-returns uuid
+returns table (student_id uuid)
 language sql
 stable
 security definer
 set search_path = ''
-as $$
+as $
     select p.id
     from public.rs_profiles p
     where p.id=(select auth.uid())
       and p.role='student'
       and p.active=true
     limit 1;
-$$;
+$;
 
 revoke execute on function public.rs_my_student_id() from public;
 revoke execute on function public.rs_my_student_id() from anon;
