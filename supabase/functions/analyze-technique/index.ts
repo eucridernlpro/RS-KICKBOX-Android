@@ -49,6 +49,19 @@ Deno.serve(async(req)=>{
 
   if(frames.length<2) return json({error:"At least two valid technique frames are required"},400)
 
+  const {error:quotaError}=await client.rpc("rs_consume_ai_quota",{
+    p_feature:"technique_vision",
+    p_limit:20
+  })
+  if(quotaError){
+    const message=String(quotaError.message || "")
+    if(message.toLowerCase().includes("daily ai limit reached")){
+      return json({error:"Daily Technique Coach AI limit reached"},429)
+    }
+    console.error("analyze-technique quota check failed",quotaError)
+    return json({error:"Technique AI quota could not be verified"},503)
+  }
+
   const content:any[]=[
     {
       type:"input_text",
