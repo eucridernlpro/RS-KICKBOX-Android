@@ -43,11 +43,11 @@ private fun rsGuideItemsV54():List<RsGuideItemV54> = listOf(
     ),
     RsGuideItemV54(
         "COACHING","AI Technique Coach","voice",
-        "Review short technique videos and keep a coaching history.",
-        "Review submitted technique history and use the trainer AI persona/voice tools during coaching.",
-        "Students can import a short technique video, select a technique, receive structured feedback, hear coaching and save it to history.",
-        "Example: a student uploads a roundhouse kick video; the coach feedback highlights guard, pivot, balance and recovery.",
-        listOf("Student opens AI Technique Coach","Upload up to 20 seconds","Choose technique","Analyze","Listen to coaching","Save result","Trainer reviews history"),
+        "Review short technique videos, keep coaching history and support corrections with trainer-approved visual examples.",
+        "In Training Media, mark suitable images/videos as AI correction examples and add clear technique tags such as roundhouse kick, pivot, guard or recovery. The AI reference system only uses media the trainer has approved.",
+        "Students can import a short technique video, select a technique, receive structured feedback, hear coaching and, when a matching approved example exists, use that visual reference to understand the correction.",
+        "Example: a student uploads a roundhouse kick video; feedback about pivot and guard can be paired with a trainer-approved roundhouse/pivot reference clip instead of an invented demonstration.",
+        listOf("Upload or open Training Media","Mark a suitable item as AI correction example","Add technique tags","Save AI example settings","Student uploads up to 20 seconds","Choose technique","Analyze","Use matching approved reference when available","Save result","Trainer reviews history"),
         "AI_COACH"
     ),
     RsGuideItemV54(
