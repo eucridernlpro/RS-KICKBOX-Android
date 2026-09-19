@@ -174,12 +174,12 @@ fun RsProfileV50(c:RsPalette,store:RsStore,lang:RsLang){
     val photoPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
         if(uri!=null && !avatarBusy){
             avatarBusy=true
-            avatarStatus="Uploading profile photo…"
+            avatarStatus=rsCloudT93(lang,"uploading_photo")
             scope.launch{
                 rsUploadMyAvatarV68(context,uri)
                     .onSuccess{
                         avatarRefresh++
-                        avatarStatus="✓ Profile photo updated"
+                        avatarStatus=rsCloudT93(lang,"photo_updated")
                     }
                     .onFailure{
                         avatarStatus=it.message?:"Could not upload profile photo."
@@ -521,12 +521,12 @@ private fun RsCloudProfileV84(c:RsPalette,store:RsStore,lang:RsLang){
             Button(
                 onClick={
                     saving=true
-                    status="Saving profile…"
+                    status=rsCloudT93(lang,"saving_profile")
                     scope.launch{
                         rsSaveCloudSocialProfileV84(displayName,bio,goal,publicProfile)
                             .onSuccess{
                                 store.ps("session_student_name",displayName)
-                                status="✓ Profile saved to cloud."
+                                status=rsCloudT93(lang,"profile_saved")
                             }
                             .onFailure{status=it.message?:"Could not save profile."}
                         saving=false
@@ -590,7 +590,7 @@ private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
                     busyId="new"
                     scope.launch{
                         rsCreateCloudCommunityPostV84(draft.trim())
-                            .onSuccess{draft="";status="Post published.";revision++}
+                            .onSuccess{draft="";status=rsCloudT93(lang,"post_published");revision++}
                             .onFailure{status=it.message?:"Could not publish post."}
                         busyId=null
                     }
@@ -647,7 +647,7 @@ private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
                                 busyId=x.id
                                 scope.launch{
                                     rsDeleteCloudCommunityPostV84(x.id)
-                                        .onSuccess{pendingDelete=null;status="Post deleted.";revision++}
+                                        .onSuccess{pendingDelete=null;status=rsCloudT93(lang,"post_deleted");revision++}
                                         .onFailure{status=it.message?:"Could not delete post."}
                                     busyId=null
                                 }
