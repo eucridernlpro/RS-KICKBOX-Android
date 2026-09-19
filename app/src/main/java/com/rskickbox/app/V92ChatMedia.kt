@@ -339,7 +339,7 @@ fun RsChatComposerV92(
                         onStatus(rsChatMediaT(lang,"uploading"))
                         val result=rsUploadChatMediaV92(context,source,scopeType,scopeId)
                         if(result.isFailure){
-                            onStatus(result.exceptionOrNull()?.message?:rsChatMediaT(lang,"download_error"))
+                            onStatus(rsChatMediaT(lang,"download_error"))
                             busy=false
                             return@launch
                         }
