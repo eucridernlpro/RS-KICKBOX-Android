@@ -29,6 +29,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import kotlinx.coroutines.launch
 
 private data class VisualSlotV21(val key:String,val title:String,val group:String,val size:String,val hint:String)
 private fun visualKeyV21(slot:String)="visual_v21_$slot"
@@ -387,27 +388,119 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
 }
 
 @Composable
-fun RsBrandSiteSettingsV21(c:RsPalette,store:RsStore){
+fun RsBrandSiteSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
     val context=LocalContext.current
+    val scope=rememberCoroutineScope()
     var header by remember{mutableStateOf(store.s("brand_header_name","RS KICKBOX"))}
     var title by remember{mutableStateOf(store.s("brand_login_title","Premium cinematic kickboxing"))}
     var subtitle by remember{mutableStateOf(store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"))}
     var footer by remember{mutableStateOf(store.s("brand_footer_text","RS KICKBOX · TRAIN · LEARN · CONNECT · GROW"))}
-    var active by remember{mutableStateOf("")};var refresh by remember{mutableIntStateOf(0)};var message by remember{mutableStateOf("")}
+    var loginOpacity by remember{mutableFloatStateOf(store.s("login_form_opacity","0.82").toFloatOrNull()?.coerceIn(.20f,1f)?:.82f)}
+    var active by remember{mutableStateOf("")}
+    var refresh by remember{mutableIntStateOf(0)}
+    var message by remember{mutableStateOf("")}
+    var saving by remember{mutableStateOf(false)}
+
     fun saveBrandAsset(uri:Uri,persist:Boolean){
         if(active.isBlank())return
         if(persist)runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
-        store.ps("brand_asset_$active",uri.toString());refresh++;message="$active updated."
+        store.ps("brand_asset_$active",uri.toString())
+        refresh++
+        message=active+" updated."
     }
-    val galleryPickerBrand=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->if(uri!=null)saveBrandAsset(uri,false)}
-    val filePickerBrand=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null)saveBrandAsset(uri,true)}
-    RsScroll(c,"Branding & Site Settings","Trainer-controlled RS identity, logos and app presentation."){
-        RsPanel(c){Text("APP IDENTITY",color=c.bright,fontWeight=FontWeight.Black);OutlinedTextField(header,{header=it},label={Text("Header / app name")},modifier=Modifier.fillMaxWidth());OutlinedTextField(title,{title=it},label={Text("Login title")},modifier=Modifier.fillMaxWidth());OutlinedTextField(subtitle,{subtitle=it},label={Text("Login subtitle")},modifier=Modifier.fillMaxWidth());OutlinedTextField(footer,{footer=it},label={Text("Footer text")},modifier=Modifier.fillMaxWidth());Button(onClick={store.ps("brand_header_name",header.trim());store.ps("brand_login_title",title.trim());store.ps("brand_login_subtitle",subtitle.trim());store.ps("brand_footer_text",footer.trim());message="Brand text saved."},modifier=Modifier.fillMaxWidth()){Text("Save brand text")};if(message.isNotBlank())Text(message,color=c.muted)}
-        listOf("main_logo" to "Main RS logo","compact_logo" to "Compact header logo","royal_crown" to "Royal crown artwork","favicon" to "Favicon / release icon preview").forEach{(keyName,label)->
-            val uri=store.s("brand_asset_$keyName","")
-            RsPanel(c){Text(label,color=c.bright,fontWeight=FontWeight.Bold);if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.fillMaxWidth().height(110.dp),"CENTER") else Box(Modifier.fillMaxWidth().height(70.dp).background(c.panel2),contentAlignment=Alignment.Center){Text("♛ RS",color=c.bright,fontSize=24.sp,fontWeight=FontWeight.Black)};Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){Button(onClick={active=keyName;galleryPickerBrand.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},modifier=Modifier.weight(1f)){Text(if(uri.isBlank())"Upload" else "Replace")};OutlinedButton(onClick={store.ps("brand_asset_$keyName","");refresh++},enabled=uri.isNotBlank(),modifier=Modifier.weight(1f)){Text("Reset")}}}
+
+    val galleryPickerBrand=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
+        if(uri!=null)saveBrandAsset(uri,false)
+    }
+    val filePickerBrand=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null)saveBrandAsset(uri,true)
+    }
+
+    RsScroll(c,rsBrandUiV100(lang,"title"),rsBrandUiV100(lang,"sub")){
+        RsPanel(c){
+            Text(rsBrandUiV100(lang,"identity"),color=c.bright,fontWeight=FontWeight.Black)
+            OutlinedTextField(header,{header=it.take(80)},label={Text(rsBrandUiV100(lang,"header"))},modifier=Modifier.fillMaxWidth(),enabled=!saving)
+            OutlinedTextField(title,{title=it.take(140)},label={Text(rsBrandUiV100(lang,"login_title"))},modifier=Modifier.fillMaxWidth(),enabled=!saving)
+            OutlinedTextField(subtitle,{subtitle=it.take(180)},label={Text(rsBrandUiV100(lang,"login_subtitle"))},modifier=Modifier.fillMaxWidth(),enabled=!saving)
+            OutlinedTextField(footer,{footer=it.take(180)},label={Text(rsBrandUiV100(lang,"footer"))},modifier=Modifier.fillMaxWidth(),enabled=!saving)
+            Text(rsBrandUiV100(lang,"opacity")+" · "+(loginOpacity*100).toInt()+"%",color=c.muted,fontSize=10.sp)
+            Slider(
+                value=loginOpacity,
+                onValueChange={loginOpacity=it},
+                valueRange=.20f..1f,
+                enabled=!saving,
+                modifier=Modifier.fillMaxWidth()
+            )
+            Button(
+                onClick={
+                    store.ps("brand_header_name",header.trim())
+                    store.ps("brand_login_title",title.trim())
+                    store.ps("brand_login_subtitle",subtitle.trim())
+                    store.ps("brand_footer_text",footer.trim())
+                    store.ps("login_form_opacity",loginOpacity.toString())
+                    if(RsSupabaseV60.configured){
+                        saving=true
+                        message=""
+                        scope.launch{
+                            rsSaveCloudBrandV100(
+                                header,
+                                title,
+                                subtitle,
+                                footer,
+                                store.s("theme","ELITE_GOLD"),
+                                loginOpacity
+                            )
+                                .onSuccess{message=rsBrandUiV100(lang,"saved")}
+                                .onFailure{message=it.message?:rsBrandUiV100(lang,"save_failed")}
+                            saving=false
+                        }
+                    }else{
+                        message=rsBrandUiV100(lang,"saved")
+                    }
+                },
+                enabled=!saving&&header.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(saving)rsBrandUiV100(lang,"saving") else rsBrandUiV100(lang,"save"))}
+            if(message.isNotBlank())Text(message,color=c.muted,fontSize=10.sp)
         }
-        RsPanel(c){Text("RELEASE NOTE",color=c.bright,fontWeight=FontWeight.Bold);Text("The favicon / icon upload is a release artwork reference. Android launcher icons remain build-time resources and will be packaged for the signed Play Store release.",color=c.muted)}
+
+        Text(rsBrandUiV100(lang,"assets"),color=c.bright,fontWeight=FontWeight.Black)
+        Text(rsBrandUiV100(lang,"asset_note"),color=c.muted,fontSize=10.sp)
+
+        listOf(
+            "main_logo" to "Main RS logo",
+            "compact_logo" to "Compact header logo",
+            "royal_crown" to "Royal crown artwork",
+            "favicon" to "Favicon / release icon preview"
+        ).forEach{(keyName,label)->
+            val uri=store.s("brand_asset_$keyName","")
+            RsPanel(c){
+                Text(label,color=c.bright,fontWeight=FontWeight.Bold)
+                if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.fillMaxWidth().height(110.dp),"CENTER")
+                else Box(Modifier.fillMaxWidth().height(70.dp).background(c.panel2),contentAlignment=Alignment.Center){
+                    Text("♛ RS",color=c.bright,fontSize=24.sp,fontWeight=FontWeight.Black)
+                }
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                    Button(
+                        onClick={
+                            active=keyName
+                            galleryPickerBrand.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                        modifier=Modifier.weight(1f)
+                    ){Text(if(uri.isBlank())rsBrandUiV100(lang,"upload") else rsBrandUiV100(lang,"replace"))}
+                    OutlinedButton(
+                        onClick={store.ps("brand_asset_$keyName","");refresh++},
+                        enabled=uri.isNotBlank(),
+                        modifier=Modifier.weight(1f)
+                    ){Text(rsBrandUiV100(lang,"reset"))}
+                }
+            }
+        }
+
+        RsPanel(c){
+            Text(rsBrandUiV100(lang,"release"),color=c.bright,fontWeight=FontWeight.Bold)
+            Text(rsBrandUiV100(lang,"release_note"),color=c.muted)
+        }
         key(refresh){Spacer(Modifier.height(1.dp))}
     }
 }
