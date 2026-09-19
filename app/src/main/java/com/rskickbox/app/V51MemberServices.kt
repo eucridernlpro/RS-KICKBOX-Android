@@ -310,7 +310,7 @@ private fun RsCloudDocumentsV99(c:RsPalette,lang:RsLang,role:RsRole){
         loading=true
         rsCloudDocumentsV99()
             .onSuccess{items=it}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -347,7 +347,7 @@ private fun RsCloudDocumentsV99(c:RsPalette,lang:RsLang,role:RsRole){
                                 status=rsCloudT93(lang,"content_saved")
                                 revision++
                             }
-                            .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -372,7 +372,7 @@ private fun RsCloudDocumentsV99(c:RsPalette,lang:RsLang,role:RsRole){
                                 scope.launch{
                                     rsSetCloudDocumentActiveV99(x.id,value)
                                         .onSuccess{revision++}
-                                        .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                        .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                     busy=false
                                 }
                             },
@@ -386,7 +386,7 @@ private fun RsCloudDocumentsV99(c:RsPalette,lang:RsLang,role:RsRole){
                                 scope.launch{
                                     rsDeleteCloudDocumentV99(x.id)
                                         .onSuccess{pendingDelete=null;revision++}
-                                        .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
+                                        .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                     busy=false
                                 }
                             }else pendingDelete=x.id
@@ -420,7 +420,7 @@ private fun RsCloudSupportV99(c:RsPalette,lang:RsLang,role:RsRole){
                 items=it
                 drafts=it.associate{x->x.id to x.trainerReply}
             }
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -452,7 +452,7 @@ private fun RsCloudSupportV99(c:RsPalette,lang:RsLang,role:RsRole){
                                 status=rsReleaseT98(lang,"connected")
                                 revision++
                             }
-                            .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busyId=null
                     }
                 },
@@ -489,7 +489,7 @@ private fun RsCloudSupportV99(c:RsPalette,lang:RsLang,role:RsRole){
                             scope.launch{
                                 rsUpdateCloudSupportTicketV99(x.id,drafts[x.id].orEmpty(),x.status)
                                     .onSuccess{revision++}
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"save_failed")}
                                 busyId=null
                             }
                         },
@@ -504,7 +504,7 @@ private fun RsCloudSupportV99(c:RsPalette,lang:RsLang,role:RsRole){
                             scope.launch{
                                 rsUpdateCloudSupportTicketV99(x.id,drafts[x.id].orEmpty(),next)
                                     .onSuccess{revision++}
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                 busyId=null
                             }
                         },
@@ -519,7 +519,7 @@ private fun RsCloudSupportV99(c:RsPalette,lang:RsLang,role:RsRole){
                                 scope.launch{
                                     rsDeleteCloudSupportTicketV99(x.id)
                                         .onSuccess{pendingDelete=null;revision++}
-                                        .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
+                                        .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                     busyId=null
                                 }
                             }else pendingDelete=x.id
@@ -547,7 +547,7 @@ private fun RsCloudReferralsV99(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
         loading=true
         rsCloudReferralsV99()
             .onSuccess{items=it}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -609,7 +609,7 @@ private fun RsCloudReferralsV99(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
                                 scope.launch{
                                     rsSetCloudReferralActiveV99(referral.id,value)
                                         .onSuccess{revision++}
-                                        .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                        .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                     busyId=null
                                 }
                             },
