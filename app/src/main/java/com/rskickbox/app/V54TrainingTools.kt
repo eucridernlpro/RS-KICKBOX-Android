@@ -43,7 +43,7 @@ private fun rsSetAcademyDoneV54(store:RsStore,id:String,value:Int)=store.ps("aca
 private fun rsTrainingUiV54(lang:RsLang,key:String):String{
     val en=mapOf(
         "academy" to "RS Academy","academy_sub" to "Structured skill tracks with saved lesson progress.",
-        "techniques" to "Technique Library","techniques_sub" to "Search and study core RS KICKBOX techniques.",
+        "techniques" to "Technique Library","techniques_sub" to "Search and study core RS KICKBOXING techniques.",
         "home" to "Home Training","home_sub" to "Build a focused home session from your available time.",
         "workout" to "Workout Generator","workout_sub" to "Generate a structured kickboxing workout.",
         "compare" to "Technique Compare","compare_sub" to "Compare two techniques side by side.",
@@ -56,7 +56,7 @@ private fun rsTrainingUiV54(lang:RsLang,key:String):String{
     )
     val nl=en+mapOf(
         "academy" to "RS Academy","academy_sub" to "Gestructureerde vaardigheidstrajecten met opgeslagen lesvoortgang.",
-        "techniques" to "Techniekbibliotheek","techniques_sub" to "Zoek en bestudeer belangrijke RS KICKBOX-technieken.",
+        "techniques" to "Techniekbibliotheek","techniques_sub" to "Zoek en bestudeer belangrijke RS KICKBOXING-technieken.",
         "home" to "Thuis Training","home_sub" to "Bouw een gerichte thuissessie met de tijd die je hebt.",
         "workout" to "Workout Generator","workout_sub" to "Genereer een gestructureerde kickbokstraining.",
         "compare" to "Techniek Vergelijken","compare_sub" to "Vergelijk twee technieken naast elkaar.",
