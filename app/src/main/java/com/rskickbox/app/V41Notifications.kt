@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 data class RsNotificationV41(
     val id:String,
@@ -103,8 +104,13 @@ private fun rsNotificationUiV41(lang:RsLang,key:String):String{
 
 @Composable
 fun RsNotificationsV41(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
-    if(role==RsRole.TRAINER)RsTrainerNotificationsV41(c,store,lang)
-    else RsStudentNotificationsV41(c,store,lang)
+    if(RsSupabaseV60.configured){
+        if(role==RsRole.TRAINER)RsCloudTrainerNotificationsV74(c,lang)
+        else RsCloudStudentNotificationsV74(c,lang)
+    }else{
+        if(role==RsRole.TRAINER)RsTrainerNotificationsV41(c,store,lang)
+        else RsStudentNotificationsV41(c,store,lang)
+    }
 }
 
 @Composable
@@ -185,6 +191,184 @@ private fun RsStudentNotificationsV41(c:RsPalette,store:RsStore,lang:RsLang){
                     },
                     modifier=Modifier.fillMaxWidth()
                 ){Text(rsNotificationUiV41(lang,"mark_read"))}
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun RsCloudTrainerNotificationsV74(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var items by remember{mutableStateOf<List<RsCloudNotificationV74>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var title by remember{mutableStateOf("")}
+    var message by remember{mutableStateOf("")}
+    var audience by remember{mutableStateOf("ALL")}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudNotificationsV74()
+            .onSuccess{items=it}
+            .onFailure{status=it.message?:"Could not load notifications."}
+        loading=false
+    }
+
+    RsScroll(c,rsNotificationUiV41(lang,"trainer_title"),"Cloud notifications shared with members across devices."){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing notifications…" else "Cloud notification center connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        RsPanel(c){
+            Text(rsNotificationUiV41(lang,"new"),color=c.bright,fontWeight=FontWeight.Bold)
+            OutlinedTextField(
+                title,
+                {title=it.take(120)},
+                label={Text(rsNotificationUiV41(lang,"title"))},
+                modifier=Modifier.fillMaxWidth(),
+                singleLine=true,
+                enabled=!busy
+            )
+            OutlinedTextField(
+                message,
+                {message=it.take(2000)},
+                label={Text(rsNotificationUiV41(lang,"message"))},
+                modifier=Modifier.fillMaxWidth(),
+                minLines=3,
+                enabled=!busy
+            )
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
+                listOf("ALL","BASIC","PRO","ELITE").forEach{plan->
+                    FilterChip(
+                        selected=audience==plan,
+                        onClick={audience=plan},
+                        enabled=!busy,
+                        label={Text(plan,fontSize=9.sp)},
+                        modifier=Modifier.weight(1f)
+                    )
+                }
+            }
+            Button(
+                onClick={
+                    busy=true
+                    status=""
+                    scope.launch{
+                        rsCreateCloudNotificationV74(title,message,audience)
+                            .onSuccess{
+                                title=""
+                                message=""
+                                audience="ALL"
+                                status="Notification published."
+                                revision++
+                            }
+                            .onFailure{status=it.message?:"Could not publish notification."}
+                        busy=false
+                    }
+                },
+                enabled=!busy&&title.isNotBlank()&&message.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Publishing…" else rsNotificationUiV41(lang,"send"))}
+        }
+
+        if(items.isEmpty()&&!loading)RsPanel(c){Text(rsNotificationUiV41(lang,"empty"),color=c.muted)}
+
+        items.forEach{item->
+            RsPanel(c){
+                Text(item.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                Text(item.message,color=c.text)
+                Text(
+                    item.createdLabel()+" · "+rsNotificationUiV41(lang,"audience")+" "+item.audience,
+                    color=c.muted,
+                    fontSize=10.sp
+                )
+                OutlinedButton(
+                    onClick={
+                        if(pendingDelete==item.id){
+                            busy=true
+                            scope.launch{
+                                rsDeleteCloudNotificationV74(item.id)
+                                    .onSuccess{
+                                        pendingDelete=null
+                                        status="Notification deleted."
+                                        revision++
+                                    }
+                                    .onFailure{status=it.message?:"Could not delete notification."}
+                                busy=false
+                            }
+                        }else pendingDelete=item.id
+                    },
+                    enabled=!busy,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(pendingDelete==item.id)rsNotificationUiV41(lang,"confirm") else rsNotificationUiV41(lang,"delete"))}
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudStudentNotificationsV74(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var items by remember{mutableStateOf<List<RsCloudNotificationV74>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busyId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudNotificationsV74()
+            .onSuccess{items=it}
+            .onFailure{status=it.message?:"Could not load notifications."}
+        loading=false
+    }
+
+    RsScroll(c,rsNotificationUiV41(lang,"student_title"),"Club updates synchronized with your real membership."){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing notifications…" else "Cloud notifications connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        if(items.isEmpty()&&!loading)RsPanel(c){Text(rsNotificationUiV41(lang,"empty"),color=c.muted)}
+
+        items.forEach{item->
+            RsPanel(c){
+                Text(item.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                Text(item.message,color=c.text)
+                Text(
+                    item.createdLabel()+" · "+if(item.read)rsNotificationUiV41(lang,"read") else rsNotificationUiV41(lang,"unread"),
+                    color=c.muted,
+                    fontSize=10.sp
+                )
+                if(!item.read){
+                    Button(
+                        onClick={
+                            busyId=item.id
+                            scope.launch{
+                                rsMarkCloudNotificationReadV74(item.id)
+                                    .onSuccess{revision++}
+                                    .onFailure{status=it.message?:"Could not mark notification read."}
+                                busyId=null
+                            }
+                        },
+                        enabled=busyId==null,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(if(busyId==item.id)"Please wait…" else rsNotificationUiV41(lang,"mark_read"))}
+                }
             }
         }
     }
