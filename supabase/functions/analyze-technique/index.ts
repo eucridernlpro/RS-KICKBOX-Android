@@ -95,7 +95,8 @@ Deno.serve(async(req)=>{
       body:JSON.stringify({
         model:MODEL,
         input:[{role:"user",content}],
-        max_output_tokens:650
+        max_output_tokens:650,
+        store:false
       })
     })
   }catch(error){
