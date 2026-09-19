@@ -16,6 +16,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -38,7 +47,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     var brandAssetsRestoring by remember { mutableStateOf(RsSupabaseV60.configured) }
     var lang by remember { mutableStateOf(rsLangs.firstOrNull { it.code == store.s("lang", "en") } ?: rsLangs.first()) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
-    var introDone by remember { mutableStateOf(!store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
+    var introDone by remember { mutableStateOf(RsRuntimeV108.introShownThisProcess || !store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
     var passwordRecoveryLaunch by remember(initialAuthDeepLink){
         mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
     }
@@ -49,7 +58,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
             rsSyncCloudBrandV100(store)
                 .onSuccess{settings->
                     theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
-                    introDone=!settings.introEnabled || (!settings.introEveryLaunch && store.b("intro_seen",false))
+                    introDone=RsRuntimeV108.introShownThisProcess || !settings.introEnabled || (!settings.introEveryLaunch && store.b("intro_seen",false))
                     brandRevision++
                 }
             rsSyncCloudVisualAssetsV101(context,store)
@@ -72,6 +81,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                     .onSuccess{session->
                         if(session!=null){
                             store.ps("session_student_email",session.email)
+        store.ps("last_login_email",session.email)
                             store.ps("session_student_name",session.displayName)
                             store.ps("session_plan",session.plan)
                             store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
@@ -100,6 +110,33 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         }
     }
 
+    LaunchedEffect(role){
+        if(role==null && RsSupabaseV60.configured){
+            rsSyncCloudBrandV100(store).onSuccess{settings->
+                theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
+                brandRevision++
+            }
+            rsSyncCloudVisualAssetsV101(context,store).onSuccess{brandRevision++}
+        }
+    }
+
+    val lifecycleOwner=LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner){
+        val observer=LifecycleEventObserver{_,event->
+            if(event==Lifecycle.Event.ON_RESUME && RsSupabaseV60.configured){
+                appScope.launch{
+                    rsSyncCloudBrandV100(store).onSuccess{settings->
+                        theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
+                        brandRevision++
+                    }
+                    rsSyncCloudVisualAssetsV101(context,store).onSuccess{brandRevision++}
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose{lifecycleOwner.lifecycle.removeObserver(observer)}
+    }
+
     MaterialTheme(colorScheme = darkColorScheme(primary=c.bright,secondary=c.gold,background=c.bg,surface=c.panel,onBackground=c.text,onSurface=c.text)) {
         key(brandRevision){
         Box(Modifier.fillMaxSize()) {
@@ -111,6 +148,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                     }
                 }
                 !introDone -> RsCinematicIntroV21(c, store, lang) {
+                    RsRuntimeV108.introShownThisProcess=true
                     store.pb("intro_seen", true)
                     introDone = true
                 }
@@ -251,7 +289,7 @@ private fun LoginV21(
 ) {
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
-    var email by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf(store.s("last_login_email","")) }
     var pass by remember { mutableStateOf("") }
     var confirmPass by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
@@ -303,7 +341,7 @@ private fun LoginV21(
                 .onFailure{
                     statusIsError=true
                     status=rsLoginT94(lang,"login_failed")
-                    clearLoginFields(clearEmail=true)
+                    clearLoginFields(clearEmail=false)
                 }
             busy=false
         }
@@ -538,7 +576,8 @@ private fun LoginV21(
                         colors=fieldColors,
                         singleLine=true,
                         enabled=!busy,
-                        modifier=Modifier.fillMaxWidth()
+                        keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Email,imeAction=ImeAction.Next),
+                        modifier=Modifier.fillMaxWidth().semantics{contentType=ContentType.Username}
                     )
                 }
 
@@ -560,6 +599,7 @@ private fun LoginV21(
                         singleLine=true,
                         enabled=!busy,
                         visualTransformation=if(showPassword)VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Password,imeAction=ImeAction.Done),
                         trailingIcon={
                             TextButton(
                                 onClick={showPassword=!showPassword},
@@ -569,7 +609,7 @@ private fun LoginV21(
                                 Text(if(showPassword)rsCommonT95(lang,"hide") else "👁",color=Color.White,fontSize=13.sp)
                             }
                         },
-                        modifier=Modifier.fillMaxWidth()
+                        modifier=Modifier.fillMaxWidth().semantics{contentType=ContentType.Password}
                     )
                 }
 
@@ -585,7 +625,8 @@ private fun LoginV21(
                         singleLine=true,
                         enabled=!busy,
                         visualTransformation=if(showPassword)VisualTransformation.None else PasswordVisualTransformation(),
-                        modifier=Modifier.fillMaxWidth()
+                        keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Password,imeAction=ImeAction.Done),
+                        modifier=Modifier.fillMaxWidth().semantics{contentType=ContentType.NewPassword}
                     )
                 }
 
