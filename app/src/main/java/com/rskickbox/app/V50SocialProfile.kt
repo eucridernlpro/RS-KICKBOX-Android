@@ -724,6 +724,7 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                 RsPanel(c){Text(rsGroupChatT(lang,"no_messages"),color=c.muted)}
             }
 
+            val currentUserId=rsCurrentCloudUserIdV111()
             messages.forEach{m->
                 RsPanel(c){
                     Row(
@@ -736,7 +737,36 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                     }
                     if(m.body.isNotBlank())Text(m.body,color=c.text)
                     RsChatAttachmentPreviewV92(c,lang,m.mediaPath,m.mediaKind,m.mediaName)
+                    if(role==RsRole.TRAINER){
+                        RsTrainerMessageAdminV111(
+                            c=c,
+                            lang=lang,
+                            body=m.body,
+                            canEdit=m.senderId==currentUserId,
+                            busy=loading,
+                            onEdit={body->rsStaffEditGroupMessageV111(m.id,body)},
+                            onDelete={rsStaffDeleteGroupMessageV111(m.id,m.mediaPath)},
+                            onChanged={revision++},
+                            onStatus={status=it}
+                        )
+                    }
                 }
+            }
+
+            if(role==RsRole.TRAINER && messages.isNotEmpty()){
+                RsTrainerClearConversationV111(
+                    c=c,
+                    lang=lang,
+                    enabled=!loading,
+                    onClear={
+                        rsStaffClearGroupChatV111(
+                            activeGroup.id,
+                            messages.mapNotNull{it.mediaPath}
+                        )
+                    },
+                    onChanged={messages=emptyList();revision++},
+                    onStatus={status=it}
+                )
             }
 
             RsChatComposerV92(
