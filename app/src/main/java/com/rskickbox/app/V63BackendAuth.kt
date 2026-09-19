@@ -2,10 +2,13 @@ package com.rskickbox.app
 
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.from
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
@@ -79,6 +82,14 @@ suspend fun rsCloudLoginV63(email:String,password:String):Result<RsCloudSessionV
 
 suspend fun rsCloudCurrentSessionV67():Result<RsCloudSessionV63?> = runCatching {
     val client=rsSupabaseClientV60() ?: return@runCatching null
+
+    // Auth restores persisted Android sessions asynchronously. Do not read
+    // currentUserOrNull() while the plugin is still Initializing or a valid
+    // stored session can be mistaken for a logged-out user.
+    withTimeoutOrNull(12_000){
+        client.auth.sessionStatus.first{it !is SessionStatus.Initializing}
+    }
+
     val user=client.auth.currentUserOrNull() ?: return@runCatching null
     val profile=client.from("rs_profiles").select{
         filter{eq("id",user.id)}
