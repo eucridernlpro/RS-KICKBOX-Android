@@ -67,7 +67,7 @@ private fun introVideoDurationMsV30(context:android.content.Context,uri:String):
 }
 
 @Composable
-fun RsCinematicIntroV21(c:RsPalette,store:RsStore,onFinished:()->Unit){
+fun RsCinematicIntroV21(c:RsPalette,store:RsStore,lang:RsLang,onFinished:()->Unit){
     val enabled=store.b("intro_enabled",true)
     if(!enabled){LaunchedEffect(Unit){onFinished()};return}
 
@@ -93,7 +93,7 @@ fun RsCinematicIntroV21(c:RsPalette,store:RsStore,onFinished:()->Unit){
             TextButton(
                 onClick=onFinished,
                 modifier=Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
-            ){Text("Skip",color=Color.White.copy(alpha=.82f))}
+            ){Text(rsIntroT102(lang,"skip"),color=Color.White.copy(alpha=.82f))}
         }
     }
 }
@@ -186,7 +186,7 @@ private fun RsIntroVideoPreviewV30(uri:String,sound:Boolean,height:Int){
 private data class PendingSplashV30(val uri:String="",val duration:Long=0L)
 
 @Composable
-fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
+fun RsIntroSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var enabled by remember{mutableStateOf(store.b("intro_enabled",true))}
@@ -204,18 +204,27 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
     var previewUri by remember{mutableStateOf("")}
     var message by remember{mutableStateOf("")}
 
+    fun saveCloudBehavior(){
+        if(RsSupabaseV60.configured){
+            scope.launch{
+                rsSaveCloudIntroSettingsV102(enabled,everyLaunch,videoSound,skipEnabled)
+                    .onSuccess{message=rsIntroT102(lang,"cloud_saved")}
+                    .onFailure{message=it.message?:rsIntroT102(lang,"cloud_failed")}
+            }
+        }
+    }
+
     fun validate(uri:Uri,target:String,persist:Boolean){
         if(persist)runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
         val candidate=uri.toString()
         val duration=introVideoDurationMsV30(context,candidate)
         when{
             duration==null || duration<=0L->message="Could not read this video's duration. Please choose another file."
-            duration>RS_INTRO_VIDEO_MAX_MS->message="Video rejected: "+String.format("%.1f",duration/1000f)+" sec. Maximum splash length is 15.0 sec."
+            duration>RS_INTRO_VIDEO_MAX_MS->message=rsIntroT102(lang,"too_long")
             else->{
                 val item=PendingSplashV30(candidate,duration)
                 if(target=="tablet")pendingTablet=item else pendingPhone=item
-                val label=if(target=="tablet")"Tablet" else "Phone"
-                message=label+" splash preview ready: "+String.format("%.2f",duration/1000f)+" sec. Not saved yet."
+                message=if(target=="tablet")rsIntroT102(lang,"tablet_ready") else rsIntroT102(lang,"phone_ready")
             }
         }
     }
@@ -242,18 +251,19 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
         if(uri!=null)validate(uri,activeTarget,true)
     }
 
-    RsScroll(c,"Splash Video Studio","Two dedicated splash videos: one for phones and one for tablets. The app selects the correct version automatically."){
+    RsScroll(c,rsIntroT102(lang,"studio"),rsIntroT102(lang,"studio_sub")){
         RsPanel(c){
-            Text("SPLASH MASTER CONTROLS",color=c.bright,fontWeight=FontWeight.Black)
-            IntroToggleV23("Enable splash video","Master on/off switch",enabled){enabled=it;store.pb("intro_enabled",it)}
+            Text(rsIntroT102(lang,"master"),color=c.bright,fontWeight=FontWeight.Black)
+            IntroToggleV23(rsIntroT102(lang,"enable"),rsIntroT102(lang,"enable_sub"),enabled){enabled=it;store.pb("intro_enabled",it);saveCloudBehavior()}
             IntroToggleV23("Video sound","Play the splash video's own audio",videoSound){videoSound=it;store.pb("intro_video_sound",it)}
-            IntroToggleV23("Show Skip button","Lets members bypass the splash",skipEnabled){skipEnabled=it;store.pb("intro_skip_enabled",it)}
-            IntroToggleV23("Show every fresh app launch","Keep the current launch behavior configurable",everyLaunch){everyLaunch=it;store.pb("intro_every_launch",it)}
+            IntroToggleV23(rsIntroT102(lang,"skip_toggle"),rsIntroT102(lang,"skip_sub"),skipEnabled){skipEnabled=it;store.pb("intro_skip_enabled",it);saveCloudBehavior()}
+            IntroToggleV23(rsIntroT102(lang,"every"),rsIntroT102(lang,"every_sub"),everyLaunch){everyLaunch=it;store.pb("intro_every_launch",it);saveCloudBehavior()}
         }
 
         SplashEditorV30(
             c=c,
-            title="PHONE SPLASH VIDEO",
+            lang=lang,
+            title=rsIntroT102(lang,"phone"),
             format="Recommended: portrait 9:16 · 1080×1920 or similar · MP4 H.264 · 15 sec max",
             saved=savedPhone,
             pending=pendingPhone,
@@ -272,12 +282,12 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                         savedPhone=local
                         store.ps("intro_phone_video_uri",local)
                         pendingPhone=PendingSplashV30()
-                        message="Phone splash converted to H.264/AAC and saved."
+                        message=rsIntroT102(lang,"phone_synced")
                         if(RsSupabaseV60.configured){
                             scope.launch{
                                 rsUploadCloudVisualAssetV101(context,"intro:phone",local,"VIDEO","CENTER",0f)
-                                    .onSuccess{message="Phone splash saved · cloud synced."}
-                                    .onFailure{message=it.message?:"Phone splash saved locally but cloud sync failed."}
+                                    .onSuccess{message=rsIntroT102(lang,"phone_synced")}
+                                    .onFailure{message=it.message?:rsIntroT102(lang,"local_cloud_fail")}
                                 savingTarget=""
                             }
                         }else savingTarget=""
@@ -286,19 +296,20 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                 )
             },
             onPreview={candidate->previewUri=candidate},
-            onCancel={pendingPhone=PendingSplashV30();message="Pending phone splash discarded."},
+            onCancel={pendingPhone=PendingSplashV30();message=rsIntroT102(lang,"discarded")},
             onDelete={
                 store.ps("intro_phone_video_uri","")
                 savedPhone=""
                 pendingPhone=PendingSplashV30()
-                message="Phone splash deleted."
+                message=rsIntroT102(lang,"deleted")
                 if(RsSupabaseV60.configured)scope.launch{rsDeleteCloudVisualAssetV101("intro:phone")}
             }
         )
 
         SplashEditorV30(
             c=c,
-            title="TABLET SPLASH VIDEO",
+            lang=lang,
+            title=rsIntroT102(lang,"tablet"),
             format="Recommended: tablet 16:10 or 4:3 master · minimum 1600px long edge · MP4 H.264 · 15 sec max. Auto-crops to the actual tablet screen.",
             saved=savedTablet,
             pending=pendingTablet,
@@ -317,12 +328,12 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                         savedTablet=local
                         store.ps("intro_tablet_video_uri",local)
                         pendingTablet=PendingSplashV30()
-                        message="Tablet splash converted to H.264/AAC and saved."
+                        message=rsIntroT102(lang,"tablet_synced")
                         if(RsSupabaseV60.configured){
                             scope.launch{
                                 rsUploadCloudVisualAssetV101(context,"intro:tablet",local,"VIDEO","CENTER",0f)
-                                    .onSuccess{message="Tablet splash saved · cloud synced."}
-                                    .onFailure{message=it.message?:"Tablet splash saved locally but cloud sync failed."}
+                                    .onSuccess{message=rsIntroT102(lang,"tablet_synced")}
+                                    .onFailure{message=it.message?:rsIntroT102(lang,"local_cloud_fail")}
                                 savingTarget=""
                             }
                         }else savingTarget=""
@@ -331,20 +342,20 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                 )
             },
             onPreview={candidate->previewUri=candidate},
-            onCancel={pendingTablet=PendingSplashV30();message="Pending tablet splash discarded."},
+            onCancel={pendingTablet=PendingSplashV30();message=rsIntroT102(lang,"discarded")},
             onDelete={
                 store.ps("intro_tablet_video_uri","")
                 savedTablet=""
                 pendingTablet=PendingSplashV30()
-                message="Tablet splash deleted."
+                message=rsIntroT102(lang,"deleted")
                 if(RsSupabaseV60.configured)scope.launch{rsDeleteCloudVisualAssetV101("intro:tablet")}
             }
         )
 
         RsPanel(c){
-            Text("AUTO DEVICE SELECTION",color=c.bright,fontWeight=FontWeight.Black)
-            Text("Phones use the Phone Splash. Devices with a smallest screen width of 600dp or more use the Tablet Splash. If no tablet splash is saved, the phone splash is used as fallback.",color=c.text)
-            Text("Both videos are center-cropped automatically to fill the real device screen without stretching.",color=c.muted,fontSize=10.sp)
+            Text(rsIntroT102(lang,"auto"),color=c.bright,fontWeight=FontWeight.Black)
+            Text(rsIntroT102(lang,"auto_desc"),color=c.text)
+            Text(rsIntroT102(lang,"crop_desc"),color=c.muted,fontSize=10.sp)
             if(message.isNotBlank())Text(message,color=c.bright,fontSize=10.sp)
         }
     }
@@ -366,9 +377,9 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                     TextButton(
                         onClick={previewUri=""},
                         modifier=Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
-                    ){Text("Close preview",color=Color.White)}
+                    ){Text(rsIntroT102(lang,"close_preview"),color=Color.White)}
                     Text(
-                        "FULL-SCREEN SPLASH TEST",
+                        rsIntroT102(lang,"full_test"),
                         color=Color.White.copy(alpha=.76f),
                         fontSize=9.sp,
                         fontWeight=FontWeight.Bold,
@@ -383,6 +394,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
 @Composable
 private fun SplashEditorV30(
     c:RsPalette,
+    lang:RsLang,
     title:String,
     format:String,
     saved:String,
@@ -400,31 +412,31 @@ private fun SplashEditorV30(
         Text(title,color=c.bright,fontWeight=FontWeight.Black)
         Text(format,color=Color.White.copy(alpha=.72f),fontSize=10.sp)
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
-            Button(onClick=onGallery,enabled=!saving,modifier=Modifier.weight(1f)){Text(if(saved.isBlank()&&pending.uri.isBlank())"Gallery" else "Replace")}
-            OutlinedButton(onClick=onFiles,enabled=!saving,modifier=Modifier.weight(1f)){Text("Files")}
+            Button(onClick=onGallery,enabled=!saving,modifier=Modifier.weight(1f)){Text(if(saved.isBlank()&&pending.uri.isBlank())rsIntroT102(lang,"gallery") else rsIntroT102(lang,"replace"))}
+            OutlinedButton(onClick=onFiles,enabled=!saving,modifier=Modifier.weight(1f)){Text(rsIntroT102(lang,"files"))}
         }
         val preview=if(pending.uri.isNotBlank())pending.uri else saved
         if(preview.isNotBlank()){
-            Text(if(pending.uri.isNotBlank())"PENDING PREVIEW — NOT SAVED" else "SAVED SPLASH VIDEO",color=c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            Text(if(pending.uri.isNotBlank())rsIntroT102(lang,"pending") else rsIntroT102(lang,"saved"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             val d=if(pending.uri.isNotBlank())pending.duration else 0L
-            if(d>0L)Text("Duration: "+String.format("%.2f",d/1000f)+" sec / 15.00 sec max",color=c.muted,fontSize=10.sp)
+            if(d>0L)Text(rsIntroT102(lang,"duration")+": "+String.format("%.2f",d/1000f)+" sec / "+rsIntroT102(lang,"max"),color=c.muted,fontSize=10.sp)
             RsIntroVideoPreviewV30(preview,sound,190)
             Button(
                 onClick={onPreview(preview)},
                 enabled=!saving,
                 modifier=Modifier.fillMaxWidth()
-            ){Text("▶ Test full-screen splash")}
+            ){Text(rsIntroT102(lang,"test"))}
         }
         if(saving){
             LinearProgressIndicator(Modifier.fillMaxWidth())
-            Text("Optimizing video for reliable playback…",color=c.bright,fontSize=10.sp)
+            Text(rsIntroT102(lang,"optimizing"),color=c.bright,fontSize=10.sp)
         }
         if(pending.uri.isNotBlank()){
-            Button(onClick=onSave,enabled=!saving,modifier=Modifier.fillMaxWidth()){Text("✓ Save / Accept splash")}
-            OutlinedButton(onClick=onCancel,enabled=!saving,modifier=Modifier.fillMaxWidth()){Text("Cancel edit")}
+            Button(onClick=onSave,enabled=!saving,modifier=Modifier.fillMaxWidth()){Text(rsIntroT102(lang,"save"))}
+            OutlinedButton(onClick=onCancel,enabled=!saving,modifier=Modifier.fillMaxWidth()){Text(rsIntroT102(lang,"cancel"))}
         }
         if(saved.isNotBlank()){
-            OutlinedButton(onClick=onDelete,enabled=!saving,modifier=Modifier.fillMaxWidth()){Text("Delete saved splash")}
+            OutlinedButton(onClick=onDelete,enabled=!saving,modifier=Modifier.fillMaxWidth()){Text(rsIntroT102(lang,"delete"))}
         }
     }
 }
