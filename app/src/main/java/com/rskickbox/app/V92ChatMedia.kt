@@ -136,6 +136,12 @@ suspend fun rsUploadChatMediaV92(
     RsChatAttachmentV92(path,kind,name)
 }
 
+suspend fun rsDeleteChatMediaV108(path:String):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.storage.from(RS_CHAT_MEDIA_BUCKET_V92).delete(path)
+    Unit
+}
+
 suspend fun rsChatMediaLocalUriV92(context:Context,path:String):Result<String> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     val ext=path.substringAfterLast('.',"bin")
@@ -187,17 +193,17 @@ fun rsChatMediaT(lang:RsLang,key:String):String{
         "image" to "Image","video" to "Short video","remove" to "Remove attachment",
         "send" to "Send","sending" to "Sending…","uploading" to "Uploading attachment…",
         "attachment_ready" to "Attachment ready","open_video" to "Play short video",
-        "download_error" to "Could not load attachment.","message_or_media" to "Write a message or add an image/video.",
+        "download_error" to "Could not load attachment.","upload_error" to "Could not upload attachment.","message_or_media" to "Write a message or add an image/video.",
         "max_video" to "Short videos: maximum 30 seconds / 30 MB."
     )
-    val nl=en+mapOf("image" to "Afbeelding","video" to "Korte video","remove" to "Bijlage verwijderen","send" to "Versturen","sending" to "Versturen…","uploading" to "Bijlage uploaden…","attachment_ready" to "Bijlage klaar","open_video" to "Korte video afspelen","download_error" to "Bijlage kon niet worden geladen.","message_or_media" to "Schrijf een bericht of voeg een afbeelding/video toe.","max_video" to "Korte video's: maximaal 30 seconden / 30 MB.")
-    val pt=en+mapOf("image" to "Imagem","video" to "Vídeo curto","remove" to "Remover anexo","send" to "Enviar","sending" to "A enviar…","uploading" to "A carregar anexo…","attachment_ready" to "Anexo pronto","open_video" to "Reproduzir vídeo curto","download_error" to "Não foi possível carregar o anexo.","message_or_media" to "Escreve uma mensagem ou adiciona imagem/vídeo.","max_video" to "Vídeos curtos: máximo 30 segundos / 30 MB.")
-    val es=en+mapOf("image" to "Imagen","video" to "Vídeo corto","remove" to "Quitar adjunto","send" to "Enviar","sending" to "Enviando…","uploading" to "Subiendo adjunto…","attachment_ready" to "Adjunto listo","open_video" to "Reproducir vídeo corto","download_error" to "No se pudo cargar el adjunto.","message_or_media" to "Escribe un mensaje o añade imagen/vídeo.","max_video" to "Vídeos cortos: máximo 30 segundos / 30 MB.")
-    val fr=en+mapOf("image" to "Image","video" to "Vidéo courte","remove" to "Supprimer la pièce jointe","send" to "Envoyer","sending" to "Envoi…","uploading" to "Import de la pièce jointe…","attachment_ready" to "Pièce jointe prête","open_video" to "Lire la vidéo courte","download_error" to "Impossible de charger la pièce jointe.","message_or_media" to "Écris un message ou ajoute une image/vidéo.","max_video" to "Vidéos courtes : maximum 30 secondes / 30 Mo.")
-    val de=en+mapOf("image" to "Bild","video" to "Kurzvideo","remove" to "Anhang entfernen","send" to "Senden","sending" to "Senden…","uploading" to "Anhang wird hochgeladen…","attachment_ready" to "Anhang bereit","open_video" to "Kurzvideo abspielen","download_error" to "Anhang konnte nicht geladen werden.","message_or_media" to "Nachricht schreiben oder Bild/Video hinzufügen.","max_video" to "Kurzvideos: maximal 30 Sekunden / 30 MB.")
-    val it=en+mapOf("image" to "Immagine","video" to "Video breve","remove" to "Rimuovi allegato","send" to "Invia","sending" to "Invio…","uploading" to "Caricamento allegato…","attachment_ready" to "Allegato pronto","open_video" to "Riproduci video breve","download_error" to "Impossibile caricare l'allegato.","message_or_media" to "Scrivi un messaggio o aggiungi immagine/video.","max_video" to "Video brevi: massimo 30 secondi / 30 MB.")
-    val pl=en+mapOf("image" to "Obraz","video" to "Krótki film","remove" to "Usuń załącznik","send" to "Wyślij","sending" to "Wysyłanie…","uploading" to "Przesyłanie załącznika…","attachment_ready" to "Załącznik gotowy","open_video" to "Odtwórz krótki film","download_error" to "Nie udało się wczytać załącznika.","message_or_media" to "Napisz wiadomość lub dodaj obraz/film.","max_video" to "Krótkie filmy: maks. 30 sekund / 30 MB.")
-    val tr=en+mapOf("image" to "Görsel","video" to "Kısa video","remove" to "Eki kaldır","send" to "Gönder","sending" to "Gönderiliyor…","uploading" to "Ek yükleniyor…","attachment_ready" to "Ek hazır","open_video" to "Kısa videoyu oynat","download_error" to "Ek yüklenemedi.","message_or_media" to "Mesaj yaz veya görsel/video ekle.","max_video" to "Kısa videolar: en fazla 30 saniye / 30 MB.")
+    val nl=en+mapOf("image" to "Afbeelding","video" to "Korte video","remove" to "Bijlage verwijderen","send" to "Versturen","sending" to "Versturen…","uploading" to "Bijlage uploaden…","attachment_ready" to "Bijlage klaar","open_video" to "Korte video afspelen","download_error" to "Bijlage kon niet worden geladen.","upload_error" to "Bijlage kon niet worden geüpload.","message_or_media" to "Schrijf een bericht of voeg een afbeelding/video toe.","max_video" to "Korte video's: maximaal 30 seconden / 30 MB.")
+    val pt=en+mapOf("image" to "Imagem","video" to "Vídeo curto","remove" to "Remover anexo","send" to "Enviar","sending" to "A enviar…","uploading" to "A carregar anexo…","attachment_ready" to "Anexo pronto","open_video" to "Reproduzir vídeo curto","download_error" to "Não foi possível carregar o anexo.","upload_error" to "Não foi possível enviar o anexo.","message_or_media" to "Escreve uma mensagem ou adiciona imagem/vídeo.","max_video" to "Vídeos curtos: máximo 30 segundos / 30 MB.")
+    val es=en+mapOf("image" to "Imagen","video" to "Vídeo corto","remove" to "Quitar adjunto","send" to "Enviar","sending" to "Enviando…","uploading" to "Subiendo adjunto…","attachment_ready" to "Adjunto listo","open_video" to "Reproducir vídeo corto","download_error" to "No se pudo cargar el adjunto.","upload_error" to "No se pudo subir el adjunto.","message_or_media" to "Escribe un mensaje o añade imagen/vídeo.","max_video" to "Vídeos cortos: máximo 30 segundos / 30 MB.")
+    val fr=en+mapOf("image" to "Image","video" to "Vidéo courte","remove" to "Supprimer la pièce jointe","send" to "Envoyer","sending" to "Envoi…","uploading" to "Import de la pièce jointe…","attachment_ready" to "Pièce jointe prête","open_video" to "Lire la vidéo courte","download_error" to "Impossible de charger la pièce jointe.","upload_error" to "Impossible d’envoyer la pièce jointe.","message_or_media" to "Écris un message ou ajoute une image/vidéo.","max_video" to "Vidéos courtes : maximum 30 secondes / 30 Mo.")
+    val de=en+mapOf("image" to "Bild","video" to "Kurzvideo","remove" to "Anhang entfernen","send" to "Senden","sending" to "Senden…","uploading" to "Anhang wird hochgeladen…","attachment_ready" to "Anhang bereit","open_video" to "Kurzvideo abspielen","download_error" to "Anhang konnte nicht geladen werden.","upload_error" to "Anhang konnte nicht hochgeladen werden.","message_or_media" to "Nachricht schreiben oder Bild/Video hinzufügen.","max_video" to "Kurzvideos: maximal 30 Sekunden / 30 MB.")
+    val it=en+mapOf("image" to "Immagine","video" to "Video breve","remove" to "Rimuovi allegato","send" to "Invia","sending" to "Invio…","uploading" to "Caricamento allegato…","attachment_ready" to "Allegato pronto","open_video" to "Riproduci video breve","download_error" to "Impossibile caricare l'allegato.","upload_error" to "Impossibile inviare l'allegato.","message_or_media" to "Scrivi un messaggio o aggiungi immagine/video.","max_video" to "Video brevi: massimo 30 secondi / 30 MB.")
+    val pl=en+mapOf("image" to "Obraz","video" to "Krótki film","remove" to "Usuń załącznik","send" to "Wyślij","sending" to "Wysyłanie…","uploading" to "Przesyłanie załącznika…","attachment_ready" to "Załącznik gotowy","open_video" to "Odtwórz krótki film","download_error" to "Nie udało się wczytać załącznika.","upload_error" to "Nie udało się przesłać załącznika.","message_or_media" to "Napisz wiadomość lub dodaj obraz/film.","max_video" to "Krótkie filmy: maks. 30 sekund / 30 MB.")
+    val tr=en+mapOf("image" to "Görsel","video" to "Kısa video","remove" to "Eki kaldır","send" to "Gönder","sending" to "Gönderiliyor…","uploading" to "Ek yükleniyor…","attachment_ready" to "Ek hazır","open_video" to "Kısa videoyu oynat","download_error" to "Ek yüklenemedi.","upload_error" to "Ek gönderilemedi.","message_or_media" to "Mesaj yaz veya görsel/video ekle.","max_video" to "Kısa videolar: en fazla 30 saniye / 30 MB.")
     val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
 }
@@ -281,13 +287,21 @@ fun RsChatComposerV92(
     var pickedKind by remember(scopeId){mutableStateOf("")}
     var busy by remember{mutableStateOf(false)}
 
-    val imagePicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
-        picked=uri
-        pickedKind=if(uri==null)"" else "IMAGE"
+    val imagePicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null){
+            runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+            picked=uri
+            pickedKind="IMAGE"
+            onStatus("")
+        }
     }
-    val videoPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
-        picked=uri
-        pickedKind=if(uri==null)"" else "VIDEO"
+    val videoPicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null){
+            runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+            picked=uri
+            pickedKind="VIDEO"
+            onStatus("")
+        }
     }
 
     RsPanel(c){
@@ -302,12 +316,12 @@ fun RsChatComposerV92(
         )
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
             OutlinedButton(
-                onClick={imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
+                onClick={imagePicker.launch(arrayOf("image/*"))},
                 enabled=enabled&&!busy,
                 modifier=Modifier.weight(1f)
             ){Text("▣ "+rsChatMediaT(lang,"image"),fontSize=10.sp)}
             OutlinedButton(
-                onClick={videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))},
+                onClick={videoPicker.launch(arrayOf("video/*"))},
                 enabled=enabled&&!busy,
                 modifier=Modifier.weight(1f)
             ){Text("▶ "+rsChatMediaT(lang,"video"),fontSize=10.sp)}
@@ -339,7 +353,8 @@ fun RsChatComposerV92(
                         onStatus(rsChatMediaT(lang,"uploading"))
                         val result=rsUploadChatMediaV92(context,source,scopeType,scopeId)
                         if(result.isFailure){
-                            onStatus(rsChatMediaT(lang,"download_error"))
+                            val detail=result.exceptionOrNull()?.message.orEmpty().take(140)
+                            onStatus(rsChatMediaT(lang,"upload_error")+(if(detail.isBlank())"" else " · "+detail))
                             busy=false
                             return@launch
                         }
@@ -353,7 +368,10 @@ fun RsChatComposerV92(
                             onStatus("")
                             onSent()
                         }
-                        .onFailure{onStatus(rsReleaseT98(lang,"save_failed"))}
+                        .onFailure{
+                            if(uploaded!=null)rsDeleteChatMediaV108(uploaded.path)
+                            onStatus(rsReleaseT98(lang,"save_failed"))
+                        }
                     busy=false
                 }
             },
