@@ -84,10 +84,10 @@ private fun rsStudentGuideItemsV81()=listOf(
         "Use Support for administrative problems; use Coach Chat for training/coaching questions."
     ),
     RsStudentGuideItemV81("COACHING","Homework","homework",
-        "See training assignments created specifically for you and track completion.",
-        "Your trainer assigns five rounds of jab-only shadowboxing due Friday.",
-        listOf("Open Homework","Read the assignment","Check the due label","Complete the work","Mark completed","Reopen if you marked it too early"),
-        "Your trainer can see the completion state."
+        "See personal training assignments with ordered exercises, written instructions, sets/reps/time and trainer-selected demonstration images or videos.",
+        "Your trainer assigns a defense plan with three steps: footwork drill, guard recovery drill and a short reference video.",
+        listOf("Open Homework","Read the plan and due label","Open each exercise step","Study the trainer's image/video example when included","Complete the prescribed sets, reps or time","Mark each step done","Mark the overall homework complete when finished"),
+        "Instruction media is reused from the trainer library, so the same safe example can support multiple assignments without duplicate uploads."
     ),
     RsStudentGuideItemV81("COACHING","Private Lessons","private_lessons",
         "Request one-to-one coaching from available trainer time slots.",
