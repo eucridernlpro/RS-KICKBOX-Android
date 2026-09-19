@@ -1,0 +1,1 @@
+Temporary compiler QC for current RS KICKBOX v0.105.0 AI Technique Coach through be1b09121cc6c31fc7b8f9163eb282941190bf5b. Do not merge.
