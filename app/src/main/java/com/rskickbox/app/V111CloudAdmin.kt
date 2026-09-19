@@ -1,11 +1,15 @@
 package com.rskickbox.app
 
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.storage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+
+fun rsCurrentCloudUserIdV111():String =
+    rsSupabaseClientV60()?.auth?.currentUserOrNull()?.id.orEmpty()
 
 @Serializable
 data class RsStudentMediaAssetV111(
