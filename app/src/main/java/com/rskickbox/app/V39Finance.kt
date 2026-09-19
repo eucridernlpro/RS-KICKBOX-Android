@@ -198,7 +198,7 @@ fun RsTrainerInvoicesV39(c:RsPalette,store:RsStore,lang:RsLang){
         }
         if(showCreate)RsPanel(c){
             OutlinedTextField(student,{student=it},label={Text(rsFinanceUiV39(lang,"student"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
-            OutlinedTextField(studentEmail,{studentEmail=it},label={Text("Email")},modifier=Modifier.fillMaxWidth(),singleLine=true)
+            OutlinedTextField(studentEmail,{studentEmail=it},label={Text(rsCloudT93(lang,"email"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
             OutlinedTextField(period,{period=it},label={Text(rsFinanceUiV39(lang,"period"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
             OutlinedTextField(amount,{amount=it.filter{ch->ch.isDigit()||ch=='.'||ch==','}},label={Text(rsFinanceUiV39(lang,"amount"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
             Button(
@@ -292,7 +292,7 @@ private fun RsCloudStudentFinanceV77(c:RsPalette,lang:RsLang){
 
         RsPanel(c){
             Text(rsFinanceUiV39(lang,"history"),color=c.bright,fontWeight=FontWeight.Bold)
-            if(invoices.isEmpty()&&!loading)Text("No invoices yet.",color=c.muted)
+            if(invoices.isEmpty()&&!loading)Text(rsCloudT93(lang,"no_invoices"),color=c.muted)
             invoices.forEach{i->
                 Text(
                     i.periodLabel+" · "+rsMoneyV39(i.amountCents)+" · "+
@@ -356,7 +356,7 @@ private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
             OutlinedTextField(
                 studentEmail,
                 {studentEmail=it.take(180)},
-                label={Text("Student email")},
+                label={Text(rsCloudT93(lang,"student_email"))},
                 modifier=Modifier.fillMaxWidth(),
                 singleLine=true,
                 enabled=!busy
@@ -389,7 +389,7 @@ private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
                                 period=""
                                 amount="49.00"
                                 showCreate=false
-                                status="Invoice created."
+                                status=rsCloudT93(lang,"invoice_created")
                                 revision++
                             }
                             .onFailure{status=it.message?:"Could not create invoice."}
@@ -443,7 +443,7 @@ private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
                                 rsDeleteCloudInvoiceV77(inv.id)
                                     .onSuccess{
                                         pendingDelete=null
-                                        status="Invoice deleted."
+                                        status=rsCloudT93(lang,"invoice_deleted")
                                         revision++
                                     }
                                     .onFailure{status=it.message?:"Could not delete invoice."}
