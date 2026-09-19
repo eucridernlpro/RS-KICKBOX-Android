@@ -1,5 +1,7 @@
 package com.rskickbox.app
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,7 +27,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 
 @Composable
-fun RsKickboxV21App() {
+fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     val context = LocalContext.current
     val store = remember { RsStore(context) }
     val appScope = rememberCoroutineScope()
@@ -37,12 +39,18 @@ fun RsKickboxV21App() {
     var lang by remember { mutableStateOf(rsLangs.firstOrNull { it.code == store.s("lang", "en") } ?: rsLangs.first()) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
     var introDone by remember { mutableStateOf(!store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
+    val passwordRecoveryLaunch=remember(initialAuthDeepLink){
+        initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true
+    }
     val c = paletteFor(theme)
 
     LaunchedEffect(introDone,authRestoreAttempted){
         if(introDone && !authRestoreAttempted){
             authRestoreAttempted=true
-            if(RsSupabaseV60.configured){
+            if(passwordRecoveryLaunch){
+                role=null
+                route="home"
+            }else if(RsSupabaseV60.configured){
                 authRestoring=true
                 rsCloudCurrentSessionV67()
                     .onSuccess{session->
@@ -91,7 +99,7 @@ fun RsKickboxV21App() {
                 }
                 role == null -> RsLiveBackground(c, store, BgScope.LOGIN) {
                     RsPerPageBackgroundV21(store, "login") {
-                        LoginV21(c, store, lang, { selected -> lang=selected;store.ps("lang",selected.code) }) { selected ->
+                        LoginV21(c, store, lang, passwordRecoveryLaunch, { selected -> lang=selected;store.ps("lang",selected.code) }) { selected ->
                             role = selected
                             route = if(selected==RsRole.TRAINER) "trainer" else "home"
                         }
@@ -190,17 +198,34 @@ fun RsKickboxV21App() {
 }
 
 @Composable
-private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit,onLogin:(RsRole)->Unit) {
+private fun LoginV21(
+    c:RsPalette,
+    store:RsStore,
+    lang:RsLang,
+    forcePasswordRecovery:Boolean=false,
+    onLang:(RsLang)->Unit,
+    onLogin:(RsRole)->Unit
+) {
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
+    var confirmPass by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
     var statusIsError by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var showPassword by remember { mutableStateOf(false) }
     var pendingInviteToken by remember { mutableStateOf("") }
+    var forgotMode by remember { mutableStateOf(false) }
+    var recoveryMode by remember(forcePasswordRecovery) { mutableStateOf(forcePasswordRecovery) }
     val formOpacity=store.s("login_form_opacity","0.82").toFloatOrNull()?.coerceIn(.20f,1f)?:.82f
+
+    fun clearLoginFields(clearEmail:Boolean=true){
+        if(clearEmail)email=""
+        pass=""
+        confirmPass=""
+        showPassword=false
+    }
 
     fun finishCloudLogin(session:RsCloudSessionV63){
         store.ps("session_student_email",session.email)
@@ -224,15 +249,80 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
             status="Enter your password."
             return
         }
+        val attemptEmail=email
+        val attemptPass=pass
         busy=true
         statusIsError=false
         status="Checking your email and password…"
         scope.launch{
-            rsCloudLoginV63(email,pass)
+            rsCloudLoginV63(attemptEmail,attemptPass)
                 .onSuccess{finishCloudLogin(it)}
                 .onFailure{
                     statusIsError=true
-                    status="Login failed: "+(it.message?.takeIf{msg->msg.isNotBlank()}?:"Email or password was not accepted.")
+                    status="Login failed: "+(it.message?.takeIf{msg->msg.isNotBlank()}?:"Email or password was not accepted.")+
+                        " You can try again or use Forgot password."
+                    clearLoginFields(clearEmail=true)
+                }
+            busy=false
+        }
+    }
+
+    fun requestPasswordReset(){
+        if(busy)return
+        if(email.isBlank()){
+            statusIsError=true
+            status="Enter the email address for your RS KICKBOX account first."
+            return
+        }
+        val resetEmail=email.trim()
+        busy=true
+        statusIsError=false
+        status="Sending password reset email…"
+        scope.launch{
+            rsCloudRequestPasswordResetV87(resetEmail)
+                .onSuccess{
+                    status="✓ If this email belongs to an RS KICKBOX account, a password-reset email has been sent. Open the link in that email to return to the app and choose a new password."
+                    pass=""
+                }
+                .onFailure{
+                    statusIsError=true
+                    status=it.message?:"Could not request a password reset."
+                }
+            busy=false
+        }
+    }
+
+    fun updateRecoveredPassword(){
+        if(busy)return
+        if(pass.length<10){
+            statusIsError=true
+            status="Choose a new password with at least 10 characters."
+            return
+        }
+        if(pass!=confirmPass){
+            statusIsError=true
+            status="The two passwords do not match."
+            confirmPass=""
+            return
+        }
+        val next=pass
+        busy=true
+        statusIsError=false
+        status="Updating your password…"
+        scope.launch{
+            rsCloudUpdatePasswordV87(next)
+                .onSuccess{
+                    recoveryMode=false
+                    forgotMode=false
+                    clearLoginFields(clearEmail=true)
+                    statusIsError=false
+                    status="✓ Password updated. You can now sign in with your new password."
+                }
+                .onFailure{
+                    statusIsError=true
+                    status=(it.message?:"Could not update password.")+" If you have not opened the reset link from your email yet, open that link first."
+                    pass=""
+                    confirmPass=""
                 }
             busy=false
         }
@@ -256,9 +346,17 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                             pendingInviteToken=""
                             finishCloudLogin(it)
                         }
-                        .onFailure{statusIsError=true;status=it.message?:"Account created, but sign-in failed."}
+                        .onFailure{
+                            statusIsError=true
+                            status=it.message?:"Account created, but sign-in failed."
+                            clearLoginFields(clearEmail=true)
+                        }
                 }
-                .onFailure{statusIsError=true;status=it.message?:"Could not activate invitation."}
+                .onFailure{
+                    statusIsError=true
+                    status=it.message?:"Could not activate invitation."
+                    pass=""
+                }
             busy=false
         }
     }
@@ -269,12 +367,30 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
             statusIsError=true
             status=rsEnrollMsg(lang,"invalid_qr")
         }else{
+            forgotMode=false
+            recoveryMode=false
             email=invite.email
             pendingInviteToken=invite.activationCode
             pass=""
             statusIsError=false
             status="Invitation loaded for "+invite.name.ifBlank{rsT(lang,"student")}+". Choose a password with at least 10 characters."
         }
+    }
+
+    fun openAppUpdate(){
+        val marketIntent=Intent(Intent.ACTION_VIEW,Uri.parse("market://details?id="+context.packageName)).apply{
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        val webIntent=Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse("https://play.google.com/store/apps/details?id="+context.packageName)
+        ).apply{addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)}
+        runCatching{context.startActivity(marketIntent)}
+            .recoverCatching{context.startActivity(webIntent)}
+            .onFailure{
+                statusIsError=true
+                status="The Play Store page is not available yet for this test build."
+            }
     }
 
     val galleryQrPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
@@ -335,68 +451,139 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
             modifier=Modifier.fillMaxWidth()
         ){
             Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
-                Text(rsT(lang,"member_access"),color=Color.White,fontWeight=FontWeight.Bold)
-                Text(rsEnrollmentT(lang,"invite_title"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=12.sp)
-                Text(rsEnrollmentT(lang,"invite_desc"),color=Color.White.copy(alpha=.74f),fontSize=10.sp)
+                Text(
+                    when{
+                        recoveryMode->"Choose a new password"
+                        forgotMode->"Forgot your password?"
+                        else->rsT(lang,"member_access")
+                    },
+                    color=Color.White,
+                    fontWeight=FontWeight.Bold
+                )
 
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
-                    Button(
-                        onClick={
-                            scanner.startScan()
-                                .addOnSuccessListener{barcode->
-                                    val raw=barcode.rawValue
-                                    if(raw.isNullOrBlank())status=rsEnrollMsg(lang,"scan_empty")
-                                    else applyInvite(raw)
-                                }
-                                .addOnCanceledListener{status=rsEnrollMsg(lang,"scan_cancelled")}
-                                .addOnFailureListener{status=rsEnrollMsg(lang,"scanner_error",detail=it.message?:"unknown error")}
-                        },
-                        enabled=!busy,
-                        modifier=Modifier.weight(1f)
-                    ){Text(rsEnrollmentT(lang,"scan_qr"),fontSize=11.sp)}
-                    OutlinedButton(
-                        onClick={galleryQrPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
-                        enabled=!busy,
-                        modifier=Modifier.weight(1f)
-                    ){Text(rsEnrollmentT(lang,"upload_qr"),fontSize=11.sp)}
+                if(!forgotMode&&!recoveryMode){
+                    Text(rsEnrollmentT(lang,"invite_title"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=12.sp)
+                    Text(rsEnrollmentT(lang,"invite_desc"),color=Color.White.copy(alpha=.74f),fontSize=10.sp)
+
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                        Button(
+                            onClick={
+                                scanner.startScan()
+                                    .addOnSuccessListener{barcode->
+                                        val raw=barcode.rawValue
+                                        if(raw.isNullOrBlank())status=rsEnrollMsg(lang,"scan_empty")
+                                        else applyInvite(raw)
+                                    }
+                                    .addOnCanceledListener{status=rsEnrollMsg(lang,"scan_cancelled")}
+                                    .addOnFailureListener{status=rsEnrollMsg(lang,"scanner_error",detail=it.message?:"unknown error")}
+                            },
+                            enabled=!busy,
+                            modifier=Modifier.weight(1f)
+                        ){Text(rsEnrollmentT(lang,"scan_qr"),fontSize=11.sp)}
+                        OutlinedButton(
+                            onClick={galleryQrPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
+                            enabled=!busy,
+                            modifier=Modifier.weight(1f)
+                        ){Text(rsEnrollmentT(lang,"upload_qr"),fontSize=11.sp)}
+                    }
+                }else if(forgotMode){
+                    Text(
+                        "Enter the email address used for your RS KICKBOX account. We will send a secure link to create a new password.",
+                        color=Color.White.copy(alpha=.78f),
+                        fontSize=11.sp
+                    )
+                }else{
+                    Text(
+                        "The recovery link has returned you to RS KICKBOX. Choose your new password below.",
+                        color=Color.White.copy(alpha=.78f),
+                        fontSize=11.sp
+                    )
                 }
 
-                OutlinedTextField(
-                    email,
-                    {email=it; if(pendingInviteToken.isNotBlank() && !it.equals(email,true))pendingInviteToken=""},
-                    label={Text(rsT(lang,"email"))},
-                    colors=fieldColors,
-                    singleLine=true,
-                    enabled=!busy,
-                    modifier=Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    pass,
-                    {pass=it},
-                    label={Text(if(pendingInviteToken.isNotBlank())"Create password (10+ characters)" else "Password")},
-                    colors=fieldColors,
-                    singleLine=true,
-                    enabled=!busy,
-                    visualTransformation=if(showPassword)VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon={
-                        TextButton(
-                            onClick={showPassword=!showPassword},
-                            enabled=!busy,
-                            contentPadding=PaddingValues(horizontal=8.dp,vertical=0.dp)
-                        ){
-                            Text(if(showPassword)"HIDE" else "👁",color=Color.White,fontSize=13.sp)
+                if(!recoveryMode){
+                    OutlinedTextField(
+                        email,
+                        {
+                            email=it
+                            if(pendingInviteToken.isNotBlank())pendingInviteToken=""
+                            if(statusIsError)status=""
+                        },
+                        label={Text(rsT(lang,"email"))},
+                        colors=fieldColors,
+                        singleLine=true,
+                        enabled=!busy,
+                        modifier=Modifier.fillMaxWidth()
+                    )
+                }
+
+                if(!forgotMode){
+                    OutlinedTextField(
+                        pass,
+                        {
+                            pass=it
+                            if(statusIsError)status=""
+                        },
+                        label={Text(
+                            when{
+                                recoveryMode->"New password (10+ characters)"
+                                pendingInviteToken.isNotBlank()->"Create password (10+ characters)"
+                                else->"Password"
+                            }
+                        )},
+                        colors=fieldColors,
+                        singleLine=true,
+                        enabled=!busy,
+                        visualTransformation=if(showPassword)VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon={
+                            TextButton(
+                                onClick={showPassword=!showPassword},
+                                enabled=!busy,
+                                contentPadding=PaddingValues(horizontal=8.dp,vertical=0.dp)
+                            ){
+                                Text(if(showPassword)"HIDE" else "👁",color=Color.White,fontSize=13.sp)
+                            }
+                        },
+                        modifier=Modifier.fillMaxWidth()
+                    )
+                }
+
+                if(recoveryMode){
+                    OutlinedTextField(
+                        confirmPass,
+                        {
+                            confirmPass=it
+                            if(statusIsError)status=""
+                        },
+                        label={Text("Confirm new password")},
+                        colors=fieldColors,
+                        singleLine=true,
+                        enabled=!busy,
+                        visualTransformation=if(showPassword)VisualTransformation.None else PasswordVisualTransformation(),
+                        modifier=Modifier.fillMaxWidth()
+                    )
+                }
+
+                Button(
+                    onClick={
+                        when{
+                            recoveryMode->updateRecoveredPassword()
+                            forgotMode->requestPasswordReset()
+                            pendingInviteToken.isNotBlank()->activateInvite()
+                            else->signInCloud()
                         }
                     },
-                    modifier=Modifier.fillMaxWidth()
-                )
-                Button(
-                    onClick={if(pendingInviteToken.isNotBlank()) activateInvite() else signInCloud()},
-                    enabled=!busy && email.isNotBlank() && pass.isNotBlank(),
+                    enabled=!busy && when{
+                        recoveryMode->pass.isNotBlank()&&confirmPass.isNotBlank()
+                        forgotMode->email.isNotBlank()
+                        else->email.isNotBlank()&&pass.isNotBlank()
+                    },
                     modifier=Modifier.fillMaxWidth()
                 ){
                     Text(
                         when{
                             busy->"Please wait…"
+                            recoveryMode->"Save new password"
+                            forgotMode->"Send password reset email"
                             pendingInviteToken.isNotBlank()->"Activate account"
                             else->"Sign in"
                         },
@@ -404,6 +591,48 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                         maxLines=1
                     )
                 }
+
+                if(!recoveryMode){
+                    OutlinedButton(
+                        onClick={
+                            forgotMode=!forgotMode
+                            pendingInviteToken=""
+                            pass=""
+                            status=""
+                            statusIsError=false
+                        },
+                        enabled=!busy,
+                        modifier=Modifier.fillMaxWidth()
+                    ){
+                        Text(if(forgotMode)"Back to sign in" else "Forgot password? Ask for a new one")
+                    }
+                }
+
+                OutlinedButton(
+                    onClick={
+                        if(forgotMode||recoveryMode){
+                            forgotMode=false
+                            recoveryMode=false
+                            clearLoginFields(clearEmail=true)
+                            status=""
+                            statusIsError=false
+                        }else{
+                            clearLoginFields(clearEmail=true)
+                            pendingInviteToken=""
+                            status=""
+                            statusIsError=false
+                        }
+                    },
+                    enabled=!busy,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text("Reset login screen")}
+
+                OutlinedButton(
+                    onClick={::openAppUpdate},
+                    enabled=!busy,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text("Update app")}
+
                 if(status.isNotBlank()){
                     Surface(
                         shape=RoundedCornerShape(12.dp),
@@ -430,13 +659,18 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
                         }
                     }
                 }
+
                 Text(
                     if(RsSupabaseV60.configured)"● Cloud login connected" else "● Cloud backend is not configured in this build",
                     color=if(RsSupabaseV60.configured)c.bright else Color(0xFFFF8A80),
                     fontSize=10.sp,
                     fontWeight=FontWeight.Bold
                 )
-                Text("Your account role and access are verified securely from Supabase.",color=c.muted,fontSize=10.sp)
+                Text(
+                    "Wrong login details clear automatically so the form is ready for another attempt. Password recovery uses a secure email link.",
+                    color=c.muted,
+                    fontSize=10.sp
+                )
             }
         }
 
@@ -447,11 +681,12 @@ private fun LoginV21(c:RsPalette,store:RsStore,lang:RsLang,onLang:(RsLang)->Unit
         ){
             Column(Modifier.padding(14.dp)){
                 Text(rsEnrollmentT(lang,"build_label"),color=c.bright,fontWeight=FontWeight.Bold)
-                Text("Trainer-created accounts · secure QR invitations · camera/gallery activation · authenticated cloud sessions.",color=Color.White.copy(alpha=.72f))
+                Text("Trainer-created accounts · secure QR invitations · password recovery · authenticated cloud sessions.",color=Color.White.copy(alpha=.72f))
             }
         }
     }
 }
+
 @Composable
 private fun ShellV21(
     c:RsPalette,
