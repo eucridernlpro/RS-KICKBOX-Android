@@ -283,13 +283,13 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
         if(showCreate)RsPanel(c){
             Text(rsClassUiV38(lang,"new_class"),color=c.bright,fontWeight=FontWeight.Black)
             OutlinedTextField(title,{title=it.take(100)},label={Text(rsClassUiV38(lang,"class_title"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
-            OutlinedTextField(level,{level=it.take(40)},label={Text("Level")},modifier=Modifier.fillMaxWidth(),singleLine=true)
+            OutlinedTextField(level,{level=it.take(40)},label={Text(rsCloudT93(lang,"level"))},modifier=Modifier.fillMaxWidth(),singleLine=true)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
-                OutlinedTextField(day,{day=it.take(10)},label={Text("Date YYYY-MM-DD")},modifier=Modifier.weight(1f),singleLine=true)
-                OutlinedTextField(time,{time=it.take(5)},label={Text("Time HH:mm")},modifier=Modifier.weight(1f),singleLine=true)
+                OutlinedTextField(day,{day=it.take(10)},label={Text(rsCloudT93(lang,"date"))},modifier=Modifier.weight(1f),singleLine=true)
+                OutlinedTextField(time,{time=it.take(5)},label={Text(rsCloudT93(lang,"time"))},modifier=Modifier.weight(1f),singleLine=true)
             }
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
-                OutlinedTextField(duration,{duration=it.filter(Char::isDigit).take(3)},label={Text("Minutes")},modifier=Modifier.weight(1f),singleLine=true)
+                OutlinedTextField(duration,{duration=it.filter(Char::isDigit).take(3)},label={Text(rsCloudT93(lang,"minutes"))},modifier=Modifier.weight(1f),singleLine=true)
                 OutlinedTextField(capacity,{capacity=it.filter(Char::isDigit).take(3)},label={Text(rsClassUiV38(lang,"capacity"))},modifier=Modifier.weight(1f),singleLine=true)
             }
             Button(
@@ -309,7 +309,7 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
                                     duration="60"
                                     capacity="16"
                                     showCreate=false
-                                    status="Class created and published."
+                                    status=rsCloudT93(lang,"class_created")
                                     revision++
                                 }
                                 .onFailure{status=it.message?:"Could not create class. Use date YYYY-MM-DD and time HH:mm."}
@@ -383,7 +383,7 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
                                     rsDeleteCloudClassV69(clazz.id)
                                         .onSuccess{
                                             pendingDelete=null
-                                            status="Class deleted."
+                                            status=rsCloudT93(lang,"class_deleted")
                                             revision++
                                         }
                                         .onFailure{status=it.message?:"Could not delete class."}
@@ -479,7 +479,7 @@ fun RsAttendanceV38(c:RsPalette,store:RsStore,lang:RsLang){
                 }
 
                 if(roster.isEmpty()&&!loading){
-                    RsPanel(c){Text("No active students found.",color=c.muted)}
+                    RsPanel(c){Text(rsCloudT93(lang,"no_active_students"),color=c.muted)}
                 }
 
                 roster.forEach{student->
