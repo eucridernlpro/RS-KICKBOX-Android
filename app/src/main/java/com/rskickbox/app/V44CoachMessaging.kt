@@ -404,17 +404,17 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
                 studentId=id
                 rsCloudCoachMessagesV72(id)
                     .onSuccess{messages=it}
-                    .onFailure{status=it.message?:"Could not load coach messages."}
+                    .onFailure{status=it.message?:rsCloudT93(lang,"could_not_save")}
                 rsCloudMarkCoachReadV72(id)
             }
-            .onFailure{status=it.message?:"Could not resolve student account."}
+            .onFailure{status=it.message?:rsCloudT93(lang,"could_not_save")}
         loading=false
     }
 
     RsScroll(c,rsCoachUiV44(lang,"student_title"),rsCoachUiV44(lang,"student_sub")){
         RsPanel(c){
             Text(
-                if(loading)"Syncing private coach chat…" else "Private cloud chat connected",
+                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -461,12 +461,12 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang){
         if(selected==null){
             rsCloudCoachThreadsV72()
                 .onSuccess{threads=it}
-                .onFailure{status=it.message?:"Could not load coach inbox."}
+                .onFailure{status=it.message?:rsCloudT93(lang,"could_not_save")}
         }else{
             val id=selected!!.studentId
             rsCloudCoachMessagesV72(id)
                 .onSuccess{messages=it}
-                .onFailure{status=it.message?:"Could not load conversation."}
+                .onFailure{status=it.message?:rsCloudT93(lang,"could_not_save")}
             rsCloudMarkCoachReadV72(id)
         }
         loading=false
@@ -476,7 +476,7 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang){
         RsScroll(c,rsCoachUiV44(lang,"trainer_title"),rsCoachUiV44(lang,"trainer_sub")){
             RsPanel(c){
                 Text(
-                    if(loading)"Syncing coach inbox…" else "Cloud coach inbox connected",
+                    if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                     color=if(loading)c.muted else c.bright,
                     fontWeight=FontWeight.Bold,
                     fontSize=10.sp
