@@ -579,7 +579,8 @@ fun RsBrandSiteSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
 
         listOf(
             "main_logo" to "Main RS logo",
-            "compact_logo" to "Compact header logo",
+            "header_letters_logo" to "RS KICKBOXING header letters logo",
+            "compact_logo" to "Legacy compact logo",
             "royal_crown" to "Royal crown artwork",
             "favicon" to "Favicon / release icon preview"
         ).forEach{(keyName,label)->
@@ -683,7 +684,7 @@ fun RsPerPageBackgroundV21(store:RsStore,route:String,content:@Composable ()->Un
 @Composable
 fun RsBrandedHeaderV21(c:RsPalette,store:RsStore,content:@Composable ColumnScope.()->Unit){
     val uri=store.s(visualKeyV21("header"),"")
-    val compactLogo=store.s("brand_asset_compact_logo","")
+    val compactLogo=store.s("brand_asset_header_letters_logo","")
     Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.panel)){
         if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.matchParentSize(),store.s(posKeyV21("header"),"CENTER"))
         Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=store.s(opacityKeyV21("header"),"0.55").toFloatOrNull()?:.55f)))
