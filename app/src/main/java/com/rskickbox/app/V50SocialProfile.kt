@@ -534,7 +534,7 @@ private fun RsCloudProfileV84(c:RsPalette,store:RsStore,lang:RsLang){
                 },
                 enabled=!saving&&!loading&&displayName.isNotBlank(),
                 modifier=Modifier.fillMaxWidth()
-            ){Text(if(saving)"Saving…" else rsSocialUiV50(lang,"save"))}
+            ){Text(if(saving)rsCloudT93(lang,"saving") else rsSocialUiV50(lang,"save"))}
         }
     }
 }
@@ -567,7 +567,7 @@ private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
     ){
         RsPanel(c){
             Text(
-                if(loading)"Syncing community…" else "Cloud community connected",
+                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -597,7 +597,7 @@ private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
                 },
                 enabled=draft.isNotBlank()&&postingAllowed&&busyId==null,
                 modifier=Modifier.fillMaxWidth()
-            ){Text(if(busyId=="new")"Posting…" else rsSocialUiV50(lang,"post"))}
+            ){Text(if(busyId=="new")rsCloudT93(lang,"saving") else rsSocialUiV50(lang,"post"))}
         }
 
         if(posts.isEmpty()&&!loading)RsPanel(c){Text(rsSocialUiV50(lang,"none"),color=c.muted)}
