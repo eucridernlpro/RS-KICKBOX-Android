@@ -57,10 +57,23 @@ data class RsStudentStorageUsageV110(
     @SerialName("student_id") val studentId:String,
     val email:String,
     @SerialName("display_name") val displayName:String,
+    @SerialName("membership_plan") val membershipPlan:String="PRO",
     @SerialName("used_bytes") val usedBytes:Long,
     @SerialName("limit_bytes") val limitBytes:Long,
     @SerialName("asset_count") val assetCount:Long,
-    @SerialName("warning_message") val warningMessage:String
+    @SerialName("warning_message") val warningMessage:String,
+    @SerialName("custom_limit") val customLimit:Boolean=false
+)
+
+@Serializable
+data class RsStorageQuotaSettingsV112(
+    @SerialName("backend_tier") val backendTier:String,
+    @SerialName("free_basic") val freeBasic:Long,
+    @SerialName("free_pro") val freePro:Long,
+    @SerialName("free_elite") val freeElite:Long,
+    @SerialName("pro_basic") val proBasic:Long,
+    @SerialName("pro_pro") val proPro:Long,
+    @SerialName("pro_elite") val proElite:Long
 )
 
 suspend fun rsTrainingTemplatesV110():Result<List<RsTrainingTemplateV110>> = runCatching{
@@ -163,6 +176,20 @@ suspend fun rsSetStudentStorageLimitV110(studentId:String,limitBytes:Long,warnin
     Unit
 }
 
+suspend fun rsStorageQuotaSettingsV112():Result<RsStorageQuotaSettingsV112> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("Cloud backend is not configured.")
+    client.postgrest.rpc("rs_staff_storage_quota_settings").decodeList<RsStorageQuotaSettingsV112>().first()
+}
+
+suspend fun rsSetStorageBackendTierV112(tier:String):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("Cloud backend is not configured.")
+    client.postgrest.rpc(
+        "rs_staff_set_storage_backend_tier",
+        buildJsonObject{ put("p_backend_tier",tier) }
+    )
+    Unit
+}
+
 private fun rsTrainingPlanT110(lang:RsLang,key:String):String{
     val en=mapOf(
         "templates" to "Reusable Training Plans",
@@ -173,6 +200,9 @@ private fun rsTrainingPlanT110(lang:RsLang,key:String):String{
         "add_step" to "Add step","assign" to "Assign selected plan","due" to "Due","no_plans" to "No training plans yet.",
         "storage" to "Student Storage","storage_sub" to "Trainer-only soft limits. Shared trainer instruction media is stored once and is not charged to every student.",
         "used" to "used","files" to "files","limit" to "soft limit","save_limit" to "Save limit",
+        "backend_tier" to "Supabase storage profile","free_tier" to "Free","pro_tier" to "Pro",
+        "quota_note" to "Default space follows both the Supabase tier and the student's BASIC / PRO / ELITE membership. Individual overrides remain possible.",
+        "inherited" to "plan default","custom" to "custom override",
         "media_reuse" to "Media is referenced from Training Media, not duplicated.",
         "steps" to "TRAINING STEPS","done" to "Done","mark_done" to "Mark done","reopen" to "Reopen",
         "open_example" to "Open example","close_example" to "Close example","loading_example" to "Loading protected example…"
@@ -183,7 +213,10 @@ private fun rsTrainingPlanT110(lang:RsLang,key:String):String{
         "select_plan" to "KIES PLAN","step" to "OEFENING TOEVOEGEN","step_title" to "Titel oefening","instructions" to "Instructies","sets" to "Sets / herhalingen / tijd",
         "media" to "Instructiemedia","no_media" to "Geen media","add_step" to "Stap toevoegen","assign" to "Geselecteerd plan toewijzen","due" to "Deadline",
         "no_plans" to "Nog geen trainingsplannen.","storage" to "Opslag per leerling","storage_sub" to "Alleen voor trainer. Gedeelde instructiemedia wordt één keer opgeslagen.",
-        "used" to "gebruikt","files" to "bestanden","limit" to "zachte limiet","save_limit" to "Limiet opslaan","media_reuse" to "Media wordt gekoppeld vanuit Trainingsmedia, niet gedupliceerd.",
+        "used" to "gebruikt","files" to "bestanden","limit" to "zachte limiet","save_limit" to "Limiet opslaan",
+        "backend_tier" to "Supabase-opslagprofiel","free_tier" to "Gratis","pro_tier" to "Pro",
+        "quota_note" to "Standaardruimte volgt zowel het Supabase-pakket als BASIC / PRO / ELITE. Individuele limieten blijven mogelijk.",
+        "inherited" to "standaard van pakket","custom" to "aangepaste limiet","media_reuse" to "Media wordt gekoppeld vanuit Trainingsmedia, niet gedupliceerd.",
         "steps" to "TRAININGSSTAPPEN","done" to "Klaar","mark_done" to "Markeer klaar","reopen" to "Heropenen",
         "open_example" to "Voorbeeld openen","close_example" to "Voorbeeld sluiten","loading_example" to "Beveiligd voorbeeld laden…"
     )
@@ -193,7 +226,10 @@ private fun rsTrainingPlanT110(lang:RsLang,key:String):String{
         "select_plan" to "ESCOLHER PLANO","step" to "ADICIONAR EXERCÍCIO","step_title" to "Título do exercício","instructions" to "Instruções","sets" to "Séries / repetições / tempo",
         "media" to "Media de instrução","no_media" to "Sem media","add_step" to "Adicionar passo","assign" to "Atribuir plano selecionado","due" to "Prazo",
         "no_plans" to "Ainda não existem planos.","storage" to "Armazenamento por Aluno","storage_sub" to "Limites internos apenas para o treinador. Media partilhada é guardada só uma vez.",
-        "used" to "usado","files" to "ficheiros","limit" to "limite flexível","save_limit" to "Guardar limite","media_reuse" to "A media é referenciada da Media de Treino, sem duplicação.",
+        "used" to "usado","files" to "ficheiros","limit" to "limite flexível","save_limit" to "Guardar limite",
+        "backend_tier" to "Perfil de armazenamento Supabase","free_tier" to "Grátis","pro_tier" to "Pro",
+        "quota_note" to "O espaço padrão depende do plano Supabase e do nível BASIC / PRO / ELITE. Limites individuais continuam possíveis.",
+        "inherited" to "padrão do plano","custom" to "limite personalizado","media_reuse" to "A media é referenciada da Media de Treino, sem duplicação.",
         "steps" to "PASSOS DO TREINO","done" to "Concluído","mark_done" to "Marcar concluído","reopen" to "Reabrir",
         "open_example" to "Abrir exemplo","close_example" to "Fechar exemplo","loading_example" to "A carregar exemplo protegido…"
     )
@@ -432,6 +468,7 @@ fun RsStudentStoragePanelV110(c:RsPalette,lang:RsLang){
     val scope=rememberCoroutineScope()
     var revision by remember{mutableIntStateOf(0)}
     var rows by remember{mutableStateOf<List<RsStudentStorageUsageV110>>(emptyList())}
+    var quota by remember{mutableStateOf<RsStorageQuotaSettingsV112?>(null)}
     var supported by remember{mutableStateOf(true)}
     var busyId by remember{mutableStateOf<String?>(null)}
 
@@ -439,17 +476,44 @@ fun RsStudentStoragePanelV110(c:RsPalette,lang:RsLang){
         rsStudentStorageUsageV110()
             .onSuccess{rows=it;supported=true}
             .onFailure{supported=false}
+        rsStorageQuotaSettingsV112().onSuccess{quota=it}
     }
     if(!supported)return
 
     RsPanel(c){
         Text(rsTrainingPlanT110(lang,"storage"),color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
         Text(rsTrainingPlanT110(lang,"storage_sub"),color=c.muted,fontSize=10.sp)
+        quota?.let{q->
+            Text(rsTrainingPlanT110(lang,"backend_tier"),color=c.bright,fontWeight=FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                listOf("FREE","PRO").forEach{tier->
+                    FilterChip(
+                        selected=q.backendTier==tier,
+                        onClick={
+                            busyId="tier"
+                            scope.launch{
+                                rsSetStorageBackendTierV112(tier).onSuccess{revision++}
+                                busyId=null
+                            }
+                        },
+                        label={Text(if(tier=="FREE")rsTrainingPlanT110(lang,"free_tier") else rsTrainingPlanT110(lang,"pro_tier"))},
+                        enabled=busyId==null,
+                        modifier=Modifier.weight(1f)
+                    )
+                }
+            }
+            val b=if(q.backendTier=="PRO")q.proBasic else q.freeBasic
+            val p=if(q.backendTier=="PRO")q.proPro else q.freePro
+            val e=if(q.backendTier=="PRO")q.proElite else q.freeElite
+            Text("BASIC "+rsMbV110(b)+" · PRO "+rsMbV110(p)+" · ELITE "+rsMbV110(e),color=c.muted,fontSize=10.sp)
+            Text(rsTrainingPlanT110(lang,"quota_note"),color=c.muted,fontSize=10.sp)
+            HorizontalDivider()
+        }
         rows.forEach{row->
             val fraction=if(row.limitBytes<=0L)0f else (row.usedBytes.toDouble()/row.limitBytes.toDouble()).coerceIn(0.0,1.0).toFloat()
             var limitMb by remember(row.studentId,row.limitBytes){mutableStateOf((row.limitBytes/1048576L).toString())}
-            Text(row.displayName.ifBlank{row.email},color=c.bright,fontWeight=FontWeight.Bold)
-            Text(rsMbV110(row.usedBytes)+" "+rsTrainingPlanT110(lang,"used")+" · "+row.assetCount+" "+rsTrainingPlanT110(lang,"files")+" · "+rsMbV110(row.limitBytes)+" "+rsTrainingPlanT110(lang,"limit"),color=c.muted,fontSize=10.sp)
+            Text(row.displayName.ifBlank{row.email}+" · "+row.membershipPlan,color=c.bright,fontWeight=FontWeight.Bold)
+            Text(rsMbV110(row.usedBytes)+" "+rsTrainingPlanT110(lang,"used")+" · "+row.assetCount+" "+rsTrainingPlanT110(lang,"files")+" · "+rsMbV110(row.limitBytes)+" "+rsTrainingPlanT110(lang,"limit")+" · "+rsTrainingPlanT110(lang,if(row.customLimit)"custom" else "inherited"),color=c.muted,fontSize=10.sp)
             LinearProgressIndicator(progress={fraction},modifier=Modifier.fillMaxWidth())
             OutlinedTextField(
                 limitMb,
