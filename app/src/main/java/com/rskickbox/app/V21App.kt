@@ -37,8 +37,8 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     var lang by remember { mutableStateOf(rsLangs.firstOrNull { it.code == store.s("lang", "en") } ?: rsLangs.first()) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
     var introDone by remember { mutableStateOf(!store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
-    val passwordRecoveryLaunch=remember(initialAuthDeepLink){
-        initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true
+    var passwordRecoveryLaunch by remember(initialAuthDeepLink){
+        mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
     }
     val c = paletteFor(theme)
 
@@ -98,6 +98,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                 role == null -> RsLiveBackground(c, store, BgScope.LOGIN) {
                     RsPerPageBackgroundV21(store, "login") {
                         LoginV21(c, store, lang, passwordRecoveryLaunch, { selected -> lang=selected;store.ps("lang",selected.code) }) { selected ->
+                            passwordRecoveryLaunch=false
                             role = selected
                             route = if(selected==RsRole.TRAINER) "trainer" else "home"
                         }
@@ -109,6 +110,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                     RsLiveBackground(c, store, scope) {
                         RsPerPageBackgroundV21(store, route) {
                             ShellV21(c, store, active, lang, route, { selected -> lang=selected;store.ps("lang",selected.code) }, { route=it }, {
+                                passwordRecoveryLaunch=false
                                 role=null
                                 route="home"
                                 appScope.launch { rsCloudLogoutV63() }
