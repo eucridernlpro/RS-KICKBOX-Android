@@ -232,11 +232,11 @@ private fun rsGuideItemsV54():List<RsGuideItemV54> = listOf(
     ),
     RsGuideItemV54(
         "SETTINGS","App Settings & Operations","settings",
-        "Control live student-facing operations without changing app code.",
-        "Enable maintenance notices and switch community posting, class booking, private-lesson requests, referral sharing and in-app reminders on or off.",
-        "Students immediately see the maintenance notice and affected actions become disabled while safe read/cancel/support actions remain available.",
-        "Example: disable new class bookings during a schedule reset while still allowing students to cancel existing bookings.",
-        listOf("Open App Settings","Set maintenance message if needed","Toggle operational controls","Changes save immediately","Review student-side result"),
+        "Control live student-facing operations and the app language without changing Android source.",
+        "Keep RS KICKBOXING on automatic phone-language detection or choose one of the supported languages manually. You can also enable maintenance notices and control community posting, class booking, private-lesson requests, referrals and reminders.",
+        "Students normally receive the closest supported phone language automatically and can override it in Settings. Operational controls still affect the relevant student actions.",
+        "Example: leave language on Phone language for normal users, then temporarily switch your own trainer app to Portuguese for a translation check.",
+        listOf("Open App Settings","Review App language","Use phone language or select a supported manual language","Set maintenance message if needed","Toggle operational controls","Review student-side result"),
         "RELEASE"
     ),
     RsGuideItemV54(
