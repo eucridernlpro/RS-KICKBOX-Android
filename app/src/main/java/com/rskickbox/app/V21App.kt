@@ -92,7 +92,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                 authRestoring -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                     Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(10.dp)){
                         CircularProgressIndicator()
-                        Text("Restoring secure RS KICKBOX session…",color=c.text)
+                        Text(rsCommonT95(lang,"restoring_session"),color=c.text)
                     }
                 }
                 role == null -> RsLiveBackground(c, store, BgScope.LOGIN) {
@@ -183,8 +183,8 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                     "release" -> RsReleaseCenterV16(c, store)
                                     else -> RsScroll(c, route.replaceFirstChar { it.uppercase() }, "RS premium native module") {
                                         RsPanel(c) {
-                                            Text("Module ready",color=c.bright,fontWeight=FontWeight.Bold)
-                                            Text("This module uses the new v0.21 visual system.",color=c.muted)
+                                            Text(rsCommonT95(lang,"module_ready"),color=c.bright,fontWeight=FontWeight.Bold)
+                                            Text(rsCommonT95(lang,"module_ready_sub"),color=c.muted)
                                         }
                                     }
                                 }
@@ -840,7 +840,7 @@ private fun ShellV21(
                     modifier=Modifier.fillMaxWidth()
                 ){
                     Text(
-                        store.s(RsOpsKeysV56.MAINTENANCE_MESSAGE,"RS KICKBOX maintenance notice: some services may be temporarily limited."),
+                        store.s(RsOpsKeysV56.MAINTENANCE_MESSAGE,rsCommonT95(lang,"maintenance_default")),
                         color=c.bright,
                         fontWeight=FontWeight.Bold,
                         fontSize=10.sp,
