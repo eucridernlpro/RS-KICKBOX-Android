@@ -49,6 +49,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
             rsSyncCloudBrandV100(store)
                 .onSuccess{settings->
                     theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
+                    introDone=!settings.introEnabled || (!settings.introEveryLaunch && store.b("intro_seen",false))
                     brandRevision++
                 }
             rsSyncCloudVisualAssetsV101(context,store)
@@ -109,7 +110,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                         Text("RS KICKBOX",color=c.bright,fontWeight=FontWeight.Black)
                     }
                 }
-                !introDone -> RsCinematicIntroV21(c, store) {
+                !introDone -> RsCinematicIntroV21(c, store, lang) {
                     store.pb("intro_seen", true)
                     introDone = true
                 }
@@ -160,7 +161,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                     }
                                     "backgrounds" -> RsVisualAssetStudioV21(c, store)
                                     "branding" -> RsBrandSiteSettingsV21(c, store, lang)
-                                    "intro_settings" -> RsIntroSettingsV21(c, store)
+                                    "intro_settings" -> RsIntroSettingsV21(c, store, lang)
                                     "voice" -> RsTechniqueCoachV27(c, lang, store, active)
                                     "session" -> if(active==RsRole.TRAINER) RsSessionBuilderV52(c,store,lang) else RsSessionPlayerV52(c,store,lang)
                                     "access" -> RsAccessControlV49(c,store,lang)
