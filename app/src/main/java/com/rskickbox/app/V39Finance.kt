@@ -130,7 +130,7 @@ fun RsStudentFinanceV39(c:RsPalette,store:RsStore,lang:RsLang){
     RsScroll(c,rsFinanceUiV39(lang,"student_title"),rsFinanceUiV39(lang,"student_sub")){
         RsPanel(c){
             Text("RS "+plan,color=c.bright,fontSize=26.sp,fontWeight=FontWeight.Black)
-            Text(rsMoneyV39(amountCents)+" / month · "+rsFinanceUiV39(lang,"active"),color=c.text)
+            Text(rsMoneyV39(amountCents)+ / "+rsReleaseT98(lang,"per_month")+" · +rsFinanceUiV39(lang,"active"),color=c.text)
             Text(rsFinanceUiV39(lang,"next_renewal")+" · 01 Oct 2026",color=c.muted)
         }
         if(enabledMethods.isNotEmpty())RsPanel(c){
@@ -255,17 +255,17 @@ private fun RsCloudStudentFinanceV77(c:RsPalette,lang:RsLang){
         loading=true
         rsMyBillingSummaryV77()
             .onSuccess{summary=it}
-            .onFailure{status=it.message?:"Could not load membership billing."}
+            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
         rsMyInvoicesV77()
             .onSuccess{invoices=it}
-            .onFailure{status=it.message?:"Could not load invoice history."}
+            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
-    RsScroll(c,rsFinanceUiV39(lang,"student_title"),"Your real membership and invoice history from RS KICKBOX."){
+    RsScroll(c,rsFinanceUiV39(lang,"student_title"),rsReleaseT98(lang,"billing_sub")){
         RsPanel(c){
             Text(
-                if(loading)"Syncing billing…" else "Cloud billing connected",
+                if(loading)rsReleaseT98(lang,"sync_billing") else rsReleaseT98(lang,"billing_connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -278,7 +278,7 @@ private fun RsCloudStudentFinanceV77(c:RsPalette,lang:RsLang){
             RsPanel(c){
                 Text("RS "+billing.plan,color=c.bright,fontSize=26.sp,fontWeight=FontWeight.Black)
                 Text(
-                    rsMoneyV39(billing.amountCents)+" / month · "+
+                    rsMoneyV39(billing.amountCents)+ / "+rsReleaseT98(lang,"per_month")+" · +
                         if(billing.active&&billing.membershipStatus=="active")rsFinanceUiV39(lang,"active")
                         else billing.membershipStatus.uppercase(),
                     color=c.text
@@ -326,19 +326,19 @@ private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
         loading=true
         rsStaffInvoicesV77()
             .onSuccess{invoices=it}
-            .onFailure{status=it.message?:"Could not load invoices."}
+            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
     val collected=invoices.filter{it.status=="paid"}.sumOf{it.amountCents}
     val outstanding=invoices.filter{it.status in listOf("pending","overdue")}.sumOf{it.amountCents}
 
-    RsScroll(c,rsFinanceUiV39(lang,"invoices"),"Live invoice ledger synchronized with Supabase."){
+    RsScroll(c,rsFinanceUiV39(lang,"invoices"),rsReleaseT98(lang,"invoice_sub")){
         RsPanel(c){
             Text(rsMoneyV39(collected)+" "+rsFinanceUiV39(lang,"collected"),color=c.bright,fontSize=22.sp,fontWeight=FontWeight.Black)
             Text(rsMoneyV39(outstanding)+" "+rsFinanceUiV39(lang,"outstanding"),color=c.muted)
             Text(
-                if(loading)"Syncing invoices…" else "Cloud invoice ledger connected",
+                if(loading)rsReleaseT98(lang,"sync_invoices") else rsReleaseT98(lang,"invoice_connected"),
                 color=if(loading)c.muted else c.bright,
                 fontSize=10.sp,
                 fontWeight=FontWeight.Bold
@@ -392,13 +392,13 @@ private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
                                 status=rsCloudT93(lang,"invoice_created")
                                 revision++
                             }
-                            .onFailure{status=it.message?:"Could not create invoice."}
+                            .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
                 enabled=!busy&&studentEmail.contains("@")&&period.isNotBlank()&&(amount.replace(',','.').toDoubleOrNull()?:0.0)>0.0,
                 modifier=Modifier.fillMaxWidth()
-            ){Text(if(busy)"Saving…" else rsFinanceUiV39(lang,"save"))}
+            ){Text(if(busy)rsReleaseT98(lang,"saving") else rsFinanceUiV39(lang,"save"))}
         }
 
         invoices.forEach{inv->
@@ -423,10 +423,10 @@ private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
                         scope.launch{
                             rsSetCloudInvoiceStatusV77(inv.id,next)
                                 .onSuccess{
-                                    status=if(next=="paid")"Invoice marked paid." else "Invoice marked pending."
+                                    status=if(next=="paid")rsReleaseT98(lang,"invoice_paid") else rsReleaseT98(lang,"invoice_pending")
                                     revision++
                                 }
-                                .onFailure{status=it.message?:"Could not update invoice."}
+                                .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
                             busy=false
                         }
                     },
@@ -446,7 +446,7 @@ private fun RsCloudTrainerInvoicesV77(c:RsPalette,lang:RsLang){
                                         status=rsCloudT93(lang,"invoice_deleted")
                                         revision++
                                     }
-                                    .onFailure{status=it.message?:"Could not delete invoice."}
+                                    .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
                                 busy=false
                             }
                         }else pendingDelete=inv.id
