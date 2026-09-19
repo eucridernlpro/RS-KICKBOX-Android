@@ -36,6 +36,50 @@ private fun visualKeyV21(slot:String)="visual_v21_$slot"
 private fun posKeyV21(slot:String)="visual_v21_pos_$slot"
 private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 
+
+private fun rsVisualStudioT109(lang:RsLang,key:String):String{
+    val en=mapOf(
+        "title" to "VISUAL PLACEMENT EDITOR","sub" to "Choose one place. Only that visual is loaded and edited.",
+        "category" to "Category","place" to "Place","preview" to "VISUAL PREVIEW",
+        "preview_selected" to "Preview selected background","gallery" to "Gallery","files" to "Files","reset" to "Reset",
+        "optimizing" to "Automatic formatting / optimization in progress…","overlay" to "Overlay","login_transparency" to "LOGIN FORM TRANSPARENCY",
+        "login_transparency_sub" to "Controls how much of the login background remains visible through the login boxes.",
+        "position" to "Position","close_preview" to "Close preview","full_test" to rsVisualStudioT109(lang,"full_test"),
+        "default_visual" to "DEFAULT RS VISUAL","custom_saved" to "CUSTOM VISUAL SAVED","cloud_synced" to "Cloud synced",
+        "local_cloud_fail" to "Visual saved locally but cloud sync failed.","preparing" to "Preparing visual…",
+        "size_small" to "Best for dashboard cards. Use a clear subject with safe space for title text.",
+        "size_medium" to "Best for header/footer banners. Use a wide image with the main subject away from text controls.",
+        "size_big" to "Best for full-page backgrounds. Use portrait or adaptable artwork with important details away from screen edges."
+    )
+    val packs=mapOf(
+        "nl" to mapOf("title" to "VISUELE PLAATSING","sub" to "Kies één plek. Alleen die visual wordt geladen en bewerkt.","category" to "Categorie","place" to "Plaats","preview" to "VISUELE PREVIEW","preview_selected" to "Geselecteerde achtergrond bekijken","gallery" to "Galerij","files" to "Bestanden","reset" to "Herstellen","optimizing" to "Automatische opmaak / optimalisatie bezig…","overlay" to "Overlay","login_transparency" to "TRANSPARANTIE LOGINFORMULIER","login_transparency_sub" to "Bepaalt hoeveel van de loginachtergrond zichtbaar blijft door de loginvakken.","position" to "Positie","close_preview" to "Preview sluiten","full_test" to "VOLLEDIGE ACHTERGRONDTEST","default_visual" to "STANDAARD RS-VISUAL","custom_saved" to "AANGEPASTE VISUAL OPGESLAGEN","cloud_synced" to "Cloud gesynchroniseerd","local_cloud_fail" to "Visual lokaal opgeslagen maar cloudsynchronisatie is mislukt.","preparing" to "Visual voorbereiden…","size_small" to "Voor dashboardkaarten. Houd ruimte vrij voor titels.","size_medium" to "Voor header/footer-banners. Houd het onderwerp weg van tekstbediening.","size_big" to "Voor volledige pagina-achtergronden. Houd belangrijke details weg van schermranden."),
+        "pt" to mapOf("title" to "EDITOR DE POSICIONAMENTO VISUAL","sub" to "Escolhe um local. Apenas esse visual é carregado e editado.","category" to "Categoria","place" to "Local","preview" to "PRÉ-VISUALIZAÇÃO","preview_selected" to "Pré-visualizar fundo selecionado","gallery" to "Galeria","files" to "Ficheiros","reset" to "Repor","optimizing" to "Formatação / otimização automática em curso…","overlay" to "Sobreposição","login_transparency" to "TRANSPARÊNCIA DO LOGIN","login_transparency_sub" to "Controla quanto do fundo fica visível através das caixas de login.","position" to "Posição","close_preview" to "Fechar pré-visualização","full_test" to "TESTE DE FUNDO EM ECRÃ COMPLETO","default_visual" to "VISUAL RS PADRÃO","custom_saved" to "VISUAL PERSONALIZADO GUARDADO","cloud_synced" to "Cloud sincronizada","local_cloud_fail" to "Visual guardado localmente mas a sincronização cloud falhou.","preparing" to "A preparar visual…","size_small" to "Ideal para cartões do painel. Deixa espaço seguro para texto.","size_medium" to "Ideal para banners. Mantém o assunto afastado dos controlos.","size_big" to "Ideal para fundos de página completa. Mantém detalhes importantes longe das margens."),
+        "es" to mapOf("title" to "EDITOR DE COLOCACIÓN VISUAL","sub" to "Elige un lugar. Solo ese visual se carga y edita.","category" to "Categoría","place" to "Lugar","preview" to "VISTA PREVIA","preview_selected" to "Previsualizar fondo seleccionado","gallery" to "Galería","files" to "Archivos","reset" to "Restablecer","optimizing" to "Formato / optimización automática en curso…","overlay" to "Superposición","login_transparency" to "TRANSPARENCIA DEL LOGIN","login_transparency_sub" to "Controla cuánto fondo queda visible a través de los campos de login.","position" to "Posición","close_preview" to "Cerrar vista previa","full_test" to "PRUEBA DE FONDO A PANTALLA COMPLETA","default_visual" to "VISUAL RS PREDETERMINADO","custom_saved" to "VISUAL PERSONALIZADO GUARDADO","cloud_synced" to "Cloud sincronizada","local_cloud_fail" to "Visual guardado localmente pero falló la sincronización cloud.","preparing" to "Preparando visual…"),
+        "fr" to mapOf("title" to "ÉDITEUR DE PLACEMENT VISUEL","sub" to "Choisis un emplacement. Seul ce visuel est chargé et modifié.","category" to "Catégorie","place" to "Emplacement","preview" to "APERÇU VISUEL","preview_selected" to "Aperçu du fond sélectionné","gallery" to "Galerie","files" to "Fichiers","reset" to "Réinitialiser","optimizing" to "Mise en forme / optimisation automatique…","overlay" to "Superposition","login_transparency" to "TRANSPARENCE DU LOGIN","login_transparency_sub" to "Contrôle la visibilité du fond à travers les champs de connexion.","position" to "Position","close_preview" to "Fermer l’aperçu","full_test" to "TEST DU FOND PLEIN ÉCRAN","default_visual" to "VISUEL RS PAR DÉFAUT","custom_saved" to "VISUEL PERSONNALISÉ ENREGISTRÉ","cloud_synced" to "Cloud synchronisé","local_cloud_fail" to "Visuel enregistré localement mais synchronisation cloud échouée.","preparing" to "Préparation du visuel…"),
+        "de" to mapOf("title" to "VISUELLE PLATZIERUNG","sub" to "Wähle einen Bereich. Nur dieses Visual wird geladen und bearbeitet.","category" to "Kategorie","place" to "Bereich","preview" to "VORSCHAU","preview_selected" to "Ausgewählten Hintergrund ansehen","gallery" to "Galerie","files" to "Dateien","reset" to "Zurücksetzen","optimizing" to "Automatische Formatierung / Optimierung läuft…","overlay" to "Overlay","login_transparency" to "LOGIN-TRANSPARENZ","login_transparency_sub" to "Steuert, wie viel Hintergrund durch die Login-Felder sichtbar bleibt.","position" to "Position","close_preview" to "Vorschau schließen","full_test" to "VOLLBILD-HINTERGRUNDTEST","default_visual" to "STANDARD-RS-VISUAL","custom_saved" to "EIGENES VISUAL GESPEICHERT","cloud_synced" to "Cloud synchronisiert","local_cloud_fail" to "Visual lokal gespeichert, Cloud-Sync fehlgeschlagen.","preparing" to "Visual wird vorbereitet…"),
+        "it" to mapOf("title" to "EDITOR POSIZIONAMENTO VISIVO","sub" to "Scegli una posizione. Viene caricato e modificato solo quel visual.","category" to "Categoria","place" to "Posizione","preview" to "ANTEPRIMA","preview_selected" to "Anteprima sfondo selezionato","gallery" to "Galleria","files" to "File","reset" to "Ripristina","optimizing" to "Formattazione / ottimizzazione automatica…","overlay" to "Overlay","login_transparency" to "TRASPARENZA LOGIN","login_transparency_sub" to "Controlla quanto sfondo resta visibile attraverso i campi login.","position" to "Posizione","close_preview" to "Chiudi anteprima","full_test" to "TEST SFONDO A SCHERMO INTERO","default_visual" to "VISUAL RS PREDEFINITO","custom_saved" to "VISUAL PERSONALIZZATO SALVATO","cloud_synced" to "Cloud sincronizzato","local_cloud_fail" to "Visual salvato localmente ma sincronizzazione cloud fallita.","preparing" to "Preparazione visual…"),
+        "pl" to mapOf("title" to "EDYTOR POŁOŻENIA WIZUALNEGO","sub" to "Wybierz miejsce. Tylko ten element jest ładowany i edytowany.","category" to "Kategoria","place" to "Miejsce","preview" to "PODGLĄD","preview_selected" to "Podgląd wybranego tła","gallery" to "Galeria","files" to "Pliki","reset" to "Resetuj","optimizing" to "Automatyczne formatowanie / optymalizacja…","overlay" to "Nakładka","login_transparency" to "PRZEZROCZYSTOŚĆ LOGOWANIA","login_transparency_sub" to "Steruje widocznością tła przez pola logowania.","position" to "Pozycja","close_preview" to "Zamknij podgląd","full_test" to "TEST TŁA PEŁNOEKRANOWEGO","default_visual" to "DOMYŚLNY WIZUAL RS","custom_saved" to "WŁASNY WIZUAL ZAPISANY","cloud_synced" to "Cloud zsynchronizowany","local_cloud_fail" to "Wizual zapisany lokalnie, ale synchronizacja cloud nie powiodła się.","preparing" to "Przygotowywanie wizualu…"),
+        "tr" to mapOf("title" to "GÖRSEL YERLEŞİM EDİTÖRÜ","sub" to "Bir alan seç. Yalnızca o görsel yüklenir ve düzenlenir.","category" to "Kategori","place" to "Alan","preview" to "GÖRSEL ÖNİZLEME","preview_selected" to "Seçili arka planı önizle","gallery" to "Galeri","files" to "Dosyalar","reset" to "Sıfırla","optimizing" to "Otomatik biçimlendirme / optimizasyon sürüyor…","overlay" to "Kaplama","login_transparency" to "GİRİŞ ŞEFFAFLIĞI","login_transparency_sub" to "Giriş kutularından arka planın ne kadar görüneceğini belirler.","position" to "Konum","close_preview" to "Önizlemeyi kapat","full_test" to "TAM EKRAN ARKA PLAN TESTİ","default_visual" to "VARSAYILAN RS GÖRSELİ","custom_saved" to "ÖZEL GÖRSEL KAYDEDİLDİ","cloud_synced" to "Cloud senkronize","local_cloud_fail" to "Görsel yerel kaydedildi fakat cloud senkronizasyonu başarısız.","preparing" to "Görsel hazırlanıyor…")
+    )
+    return packs[lang.code]?.get(key)?:en[key]?:key
+}
+
+private fun rsVisualGroupV109(lang:RsLang,group:String):String=when(lang.code){
+    "nl"->group.replace("Splash / Login","Splash / Login").replace("Dashboards","Dashboards").replace("Banners","Banners").replace("Music Player","Muziekspeler").replace("Student / Training","Leerling / Training").replace("Student / Club","Leerling / Club").replace("Student / Performance","Leerling / Prestatie").replace("Student / Library","Leerling / Bibliotheek").replace("Student / Account","Leerling / Account").replace("Trainer / Brand","Trainer / Merk").replace("Trainer / Coaching","Trainer / Coaching").replace("Trainer / Members","Trainer / Leden").replace("Trainer / Operations","Trainer / Operatie").replace("Trainer / Business","Trainer / Zakelijk").replace("Dashboard tiles","Dashboardkaarten")
+    "pt"->group.replace("Dashboards","Painéis").replace("Banners","Banners").replace("Music Player","Leitor de Música").replace("Student / Training","Aluno / Treino").replace("Student / Club","Aluno / Clube").replace("Student / Performance","Aluno / Desempenho").replace("Student / Library","Aluno / Biblioteca").replace("Student / Account","Aluno / Conta").replace("Trainer / Brand","Treinador / Marca").replace("Trainer / Coaching","Treinador / Coaching").replace("Trainer / Members","Treinador / Membros").replace("Trainer / Operations","Treinador / Operações").replace("Trainer / Business","Treinador / Negócio").replace("Dashboard tiles","Cartões do painel")
+    else->group
+}
+
+private fun rsVisualSlotTitleV109(lang:RsLang,slot:VisualSlotV21):String{
+    val route=slot.key.removePrefix("tile_")
+    return when(slot.key){
+        "login"->when(lang.code){"nl"->"Loginpagina";"pt"->"Página de login";"es"->"Página de login";"fr"->"Page de connexion";"de"->"Login-Seite";"it"->"Pagina login";"pl"->"Strona logowania";"tr"->"Giriş sayfası";else->slot.title}
+        "student_home"->rsRouteTitle(lang,"home",slot.title)
+        "trainer_home"->rsRouteTitle(lang,"trainer",slot.title)
+        else->rsRouteTitle(lang,route,slot.title)
+    }
+}
+
 private val visualSlotsV21=listOf(
     VisualSlotV21("login","Login page","Splash / Login","BIG","Behind member access"),
     VisualSlotV21("student_home","Student dashboard","Dashboards","BIG","Student dashboard background"),
@@ -130,7 +174,7 @@ private val allVisualSlotsV26=visualSlotsV21+dashboardTileSlotsV26
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
+fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore,lang:RsLang){
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var selectedGroup by remember{mutableStateOf(allVisualSlotsV26.first().group)}
@@ -157,7 +201,7 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
     fun saveVisual(picked:Uri,persist:Boolean){
         if(persist)runCatching{context.contentResolver.takePersistableUriPermission(picked,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
         optimizing=true
-        message="Preparing ${selected.title}…"
+        message=rsVisualStudioT109(lang,"preparing")
         rsImportVisualMediaV29(
             context=context,
             source=picked,
@@ -180,8 +224,8 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                             pos,
                             opacity
                         )
-                            .onSuccess{message=info.note+" · Cloud synced"}
-                            .onFailure{message=it.message?:"Visual saved locally but cloud sync failed."}
+                            .onSuccess{message=info.note+" · "+rsVisualStudioT109(lang,"cloud_synced")}
+                            .onFailure{message=it.message?:rsVisualStudioT109(lang,"local_cloud_fail")}
                         optimizing=false
                         refresh++
                     }
@@ -204,8 +248,8 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
         Modifier.fillMaxSize().padding(horizontal=6.dp,vertical=4.dp),
         verticalArrangement=Arrangement.spacedBy(8.dp)
     ){
-        Text("VISUAL PLACEMENT EDITOR",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp)
-        Text("Choose one place. Only that visual is loaded and edited.",color=c.muted,fontSize=11.sp,maxLines=2)
+        Text(rsVisualStudioT109(lang,"title"),color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp)
+        Text(rsVisualStudioT109(lang,"sub"),color=c.muted,fontSize=11.sp,maxLines=2)
 
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
             ExposedDropdownMenuBox(
@@ -214,10 +258,10 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                 modifier=Modifier.weight(1f)
             ){
                 OutlinedTextField(
-                    value=selectedGroup,
+                    value=rsVisualGroupV109(lang,selectedGroup),
                     onValueChange={},
                     readOnly=true,
-                    label={Text("Category",fontSize=10.sp)},
+                    label={Text(rsVisualStudioT109(lang,"category"),fontSize=10.sp)},
                     trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(groupMenuOpen)},
                     modifier=Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                     textStyle=LocalTextStyle.current.copy(fontSize=11.sp),
@@ -225,7 +269,7 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                 )
                 ExposedDropdownMenu(expanded=groupMenuOpen,onDismissRequest={groupMenuOpen=false}){
                     groups.forEach{g->
-                        DropdownMenuItem(text={Text(g,fontSize=12.sp)},onClick={
+                        DropdownMenuItem(text={Text(rsVisualGroupV109(lang,g),fontSize=12.sp)},onClick={
                             selectedGroup=g
                             selectedSlotKey=allVisualSlotsV26.first{it.group==g}.key
                             groupMenuOpen=false
@@ -240,10 +284,10 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                 modifier=Modifier.weight(1.25f)
             ){
                 OutlinedTextField(
-                    value=selected.title,
+                    value=rsVisualSlotTitleV109(lang,selected),
                     onValueChange={},
                     readOnly=true,
-                    label={Text("Place",fontSize=10.sp)},
+                    label={Text(rsVisualStudioT109(lang,"place"),fontSize=10.sp)},
                     trailingIcon={ExposedDropdownMenuDefaults.TrailingIcon(slotMenuOpen)},
                     modifier=Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                     textStyle=LocalTextStyle.current.copy(fontSize=10.sp),
@@ -251,7 +295,7 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                 )
                 ExposedDropdownMenu(expanded=slotMenuOpen,onDismissRequest={slotMenuOpen=false}){
                     visibleSlots.forEach{slot->
-                        DropdownMenuItem(text={Text(slot.title,fontSize=12.sp)},onClick={selectedSlotKey=slot.key;slotMenuOpen=false})
+                        DropdownMenuItem(text={Text(rsVisualSlotTitleV109(lang,slot),fontSize=12.sp)},onClick={selectedSlotKey=slot.key;slotMenuOpen=false})
                     }
                 }
             }
@@ -266,7 +310,7 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
             Column(Modifier.fillMaxSize().padding(12.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
-                        Text(selected.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp,maxLines=2)
+                        Text(rsVisualSlotTitleV109(lang,selected),color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp,maxLines=2)
                         Text(selected.hint,color=c.muted,fontSize=10.sp,maxLines=2)
                     }
                     Surface(shape=RoundedCornerShape(12.dp),color=c.gold.copy(alpha=.18f),border=BorderStroke(1.dp,c.bright.copy(alpha=.35f))){
@@ -276,9 +320,9 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
 
                 Text(
                     when(selected.size){
-                        "SMALL"->"Best for dashboard cards. Use a clear subject with safe space for title text."
-                        "MEDIUM"->"Best for header/footer banners. Use a wide image with the main subject away from text controls."
-                        else->"Best for full-page backgrounds. Use portrait or adaptable artwork with important details away from screen edges."
+                        "SMALL"->rsVisualStudioT109(lang,"size_small")
+                        "MEDIUM"->rsVisualStudioT109(lang,"size_medium")
+                        else->rsVisualStudioT109(lang,"size_big")
                     },
                     color=c.text.copy(alpha=.84f),fontSize=9.sp,maxLines=3
                 )
@@ -290,11 +334,11 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                     else Box(Modifier.fillMaxSize().background(c.gold.copy(alpha=.10f)),contentAlignment=Alignment.Center){
                         Column(horizontalAlignment=Alignment.CenterHorizontally){
                             Text("♛ RS",color=c.bright,fontSize=28.sp,fontWeight=FontWeight.Black)
-                            Text("VISUAL PREVIEW",color=c.muted,fontSize=10.sp)
+                            Text(rsVisualStudioT109(lang,"preview"),color=c.muted,fontSize=10.sp)
                         }
                     }
                     Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=opacity.coerceIn(0f,.85f))))
-                    Text(if(uri.isBlank())"DEFAULT RS VISUAL" else "CUSTOM VISUAL SAVED",color=c.bright,fontWeight=FontWeight.Bold,fontSize=9.sp,modifier=Modifier.align(Alignment.BottomStart).padding(10.dp))
+                    Text(if(uri.isBlank())rsVisualStudioT109(lang,"default_visual") else rsVisualStudioT109(lang,"custom_saved"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=9.sp,modifier=Modifier.align(Alignment.BottomStart).padding(10.dp))
                 }
 
                 if(uri.isNotBlank()){
@@ -302,7 +346,7 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                         onClick={fullPreview=true},
                         enabled=!optimizing,
                         modifier=Modifier.fillMaxWidth()
-                    ){Text("▶ Preview selected background",fontSize=10.sp)}
+                    ){Text("▶ "+rsVisualStudioT109(lang,"preview_selected"),fontSize=10.sp)}
                 }
 
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
@@ -310,8 +354,8 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                         onClick={galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))},
                         enabled=!optimizing,
                         modifier=Modifier.weight(1f)
-                    ){Text("Gallery",fontSize=10.sp)}
-                    OutlinedButton(onClick={filePicker.launch(arrayOf("image/*","video/*"))},enabled=!optimizing,modifier=Modifier.weight(1f)){Text("Files",fontSize=10.sp)}
+                    ){Text(rsVisualStudioT109(lang,"gallery"),fontSize=10.sp)}
+                    OutlinedButton(onClick={filePicker.launch(arrayOf("image/*","video/*"))},enabled=!optimizing,modifier=Modifier.weight(1f)){Text(rsVisualStudioT109(lang,"files"),fontSize=10.sp)}
                     OutlinedButton(
                         onClick={
                             val previous=store.s(visualKeyV21(selected.key),"")
@@ -328,7 +372,7 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                         },
                         enabled=uri.isNotBlank(),
                         modifier=Modifier.weight(1f)
-                    ){Text("Reset",fontSize=10.sp)}
+                    ){Text(rsVisualStudioT109(lang,"reset"),fontSize=10.sp)}
                 }
 
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
@@ -350,10 +394,10 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
 
                 if(optimizing){
                     LinearProgressIndicator(Modifier.fillMaxWidth())
-                    Text("Automatic formatting / optimization in progress…",color=c.bright,fontSize=9.sp)
+                    Text(rsVisualStudioT109(lang,"optimizing"),color=c.bright,fontSize=9.sp)
                 }
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                    Text("Overlay ${(opacity*100).toInt()}%",color=c.muted,fontSize=9.sp,modifier=Modifier.width(75.dp))
+                    Text(rsVisualStudioT109(lang,"overlay")+" ${(opacity*100).toInt()}%",color=c.muted,fontSize=9.sp,modifier=Modifier.width(75.dp))
                     Slider(
                         value=opacity,
                         onValueChange={v->opacity=v;store.ps(opacityKeyV21(selected.key),v.toString())},
@@ -368,8 +412,8 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                 }
                 if(selected.key=="login"){
                     var loginFormOpacity by remember(refresh){mutableFloatStateOf(store.s("login_form_opacity","0.82").toFloatOrNull()?:.82f)}
-                    Text("LOGIN FORM TRANSPARENCY",color=c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
-                    Text("Controls how much of the login background remains visible through the login boxes.",color=c.muted,fontSize=9.sp)
+                    Text(rsVisualStudioT109(lang,"login_transparency"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+                    Text(rsVisualStudioT109(lang,"login_transparency_sub"),color=c.muted,fontSize=9.sp)
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                         Text("${(loginFormOpacity*100).toInt()}%",color=c.text,fontSize=10.sp,modifier=Modifier.width(45.dp))
                         Slider(
@@ -416,13 +460,13 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                         Modifier.align(Alignment.TopStart).fillMaxWidth().padding(14.dp),
                         verticalArrangement=Arrangement.spacedBy(6.dp)
                     ){
-                        Text(selected.title,color=Color.White,fontWeight=FontWeight.Black)
-                        Text("Position $pos · Overlay ${(opacity*100).toInt()}%",color=Color.White.copy(alpha=.74f),fontSize=10.sp)
+                        Text(rsVisualSlotTitleV109(lang,selected),color=Color.White,fontWeight=FontWeight.Black)
+                        Text(rsVisualStudioT109(lang,"position")+" $pos · "+rsVisualStudioT109(lang,"overlay")+" ${(opacity*100).toInt()}%",color=Color.White.copy(alpha=.74f),fontSize=10.sp)
                     }
                     TextButton(
                         onClick={fullPreview=false},
                         modifier=Modifier.align(Alignment.TopEnd).padding(8.dp)
-                    ){Text("Close preview",color=Color.White)}
+                    ){Text(rsVisualStudioT109(lang,"close_preview"),color=Color.White)}
                     Text(
                         "FULL-SCREEN BACKGROUND TEST",
                         color=Color.White.copy(alpha=.72f),
