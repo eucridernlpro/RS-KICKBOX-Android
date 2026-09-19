@@ -25,6 +25,9 @@ data class RsCloudCoachMessageV72(
     @SerialName("student_name") val studentName:String,
     @SerialName("sender_role") val senderRole:String,
     val body:String,
+    @SerialName("media_path") val mediaPath:String?=null,
+    @SerialName("media_kind") val mediaKind:String?=null,
+    @SerialName("media_name") val mediaName:String?=null,
     @SerialName("created_at") val createdAt:String
 ){
     fun createdAtMillis():Long=runCatching{Instant.parse(createdAt).toEpochMilli()}.getOrDefault(0L)
@@ -57,15 +60,28 @@ suspend fun rsCloudMyStudentIdV72():Result<String> = runCatching{
         ?:error("Active student account not found.")
 }
 
-suspend fun rsCloudSendCoachMessageV72(studentId:String,body:String):Result<Unit> = runCatching{
+suspend fun rsCloudSendCoachMessageV72(
+    studentId:String,
+    body:String,
+    attachment:RsChatAttachmentV92?=null
+):Result<Unit> = runCatching{
     val clean=body.trim()
-    require(clean.isNotBlank()){"Write a message first."}
+    require(clean.isNotBlank()||attachment!=null){"Write a message or add an attachment."}
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     client.postgrest.rpc(
-        "rs_send_coach_message",
+        "rs_send_coach_message_v2",
         buildJsonObject{
             put("p_student_id",studentId)
             put("p_body",clean)
+            if(attachment==null){
+                put("p_media_path",kotlinx.serialization.json.JsonNull)
+                put("p_media_kind",kotlinx.serialization.json.JsonNull)
+                put("p_media_name",kotlinx.serialization.json.JsonNull)
+            }else{
+                put("p_media_path",attachment.path)
+                put("p_media_kind",attachment.kind)
+                put("p_media_name",attachment.name)
+            }
         }
     )
     Unit
