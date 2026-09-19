@@ -130,7 +130,7 @@ fun RsStudentFinanceV39(c:RsPalette,store:RsStore,lang:RsLang){
     RsScroll(c,rsFinanceUiV39(lang,"student_title"),rsFinanceUiV39(lang,"student_sub")){
         RsPanel(c){
             Text("RS "+plan,color=c.bright,fontSize=26.sp,fontWeight=FontWeight.Black)
-            Text(rsMoneyV39(amountCents)+ / "+rsReleaseT98(lang,"per_month")+" · +rsFinanceUiV39(lang,"active"),color=c.text)
+            Text(rsMoneyV39(amountCents)+" / "+rsReleaseT98(lang,"per_month")+" · "+rsFinanceUiV39(lang,"active"),color=c.text)
             Text(rsFinanceUiV39(lang,"next_renewal")+" · 01 Oct 2026",color=c.muted)
         }
         if(enabledMethods.isNotEmpty())RsPanel(c){
@@ -278,7 +278,7 @@ private fun RsCloudStudentFinanceV77(c:RsPalette,lang:RsLang){
             RsPanel(c){
                 Text("RS "+billing.plan,color=c.bright,fontSize=26.sp,fontWeight=FontWeight.Black)
                 Text(
-                    rsMoneyV39(billing.amountCents)+ / "+rsReleaseT98(lang,"per_month")+" · +
+                    rsMoneyV39(billing.amountCents)+" / "+rsReleaseT98(lang,"per_month")+" · "+
                         if(billing.active&&billing.membershipStatus=="active")rsFinanceUiV39(lang,"active")
                         else billing.membershipStatus.uppercase(),
                     color=c.text
