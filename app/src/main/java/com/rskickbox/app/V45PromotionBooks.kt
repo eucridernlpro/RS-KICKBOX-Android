@@ -182,7 +182,7 @@ private fun rsCanReadFullV45(store:RsStore,book:RsBookConfigV45):Boolean{
 
 fun rsPromoUiV45(lang:RsLang,key:String):String{
     val en=mapOf(
-        "promo_page" to "Promotions","promo_sub" to "Offers, products and featured RS KICKBOX content.",
+        "promo_page" to "Promotions","promo_sub" to "Offers, products and featured RS KICKBOXING content.",
         "featured" to "FEATURED PROMOTIONS","book" to "FEATURED BOOK","buy" to "Buy on Amazon",
         "preview" to "Read Preview","read" to "Read Full Book","locked" to "Full book access is not included in your current access level.",
         "manager" to "Promotion Manager","manager_sub" to "Upload clickable thumbnails, external links and control the in-app book.",
@@ -198,7 +198,7 @@ fun rsPromoUiV45(lang:RsLang,key:String):String{
         "full_error" to "Could not import full book PDF.","book_saved" to "Book settings saved."
     )
     val nl=en+mapOf(
-        "promo_page" to "Promoties","promo_sub" to "Aanbiedingen, producten en uitgelichte RS KICKBOX-content.",
+        "promo_page" to "Promoties","promo_sub" to "Aanbiedingen, producten en uitgelichte RS KICKBOXING-content.",
         "featured" to "UITGELICHTE PROMOTIES","book" to "UITGELICHT BOEK","buy" to "Kopen op Amazon",
         "preview" to "Preview lezen","read" to "Volledig boek lezen","locked" to "Volledige boektoegang zit niet in je huidige toegangsniveau.",
         "manager" to "Promotiebeheer","manager_sub" to "Upload klikbare thumbnails, externe links en beheer het boek in de app.",
@@ -213,7 +213,7 @@ fun rsPromoUiV45(lang:RsLang,key:String):String{
         "full_ready" to "Volledig boek-PDF geïmporteerd.","full_error" to "Volledig boek-PDF kon niet worden geïmporteerd.","book_saved" to "Boekinstellingen opgeslagen."
     )
     val pt=en+mapOf(
-        "promo_page" to "Promoções","promo_sub" to "Ofertas, produtos e conteúdo RS KICKBOX em destaque.",
+        "promo_page" to "Promoções","promo_sub" to "Ofertas, produtos e conteúdo RS KICKBOXING em destaque.",
         "featured" to "PROMOÇÕES EM DESTAQUE","book" to "LIVRO EM DESTAQUE","buy" to "Comprar na Amazon",
         "preview" to "Ler Prévia","read" to "Ler Livro Completo","locked" to "O livro completo não está incluído no teu nível de acesso atual.",
         "manager" to "Gestor de Promoções","manager_sub" to "Carrega miniaturas clicáveis, links externos e gere o livro dentro da app.",
@@ -228,7 +228,7 @@ fun rsPromoUiV45(lang:RsLang,key:String):String{
         "full_ready" to "PDF completo importado.","full_error" to "Não foi possível importar o PDF completo.","book_saved" to "Definições do livro guardadas."
     )
     val es=en+mapOf(
-        "promo_page" to "Promociones","promo_sub" to "Ofertas, productos y contenido destacado de RS KICKBOX.",
+        "promo_page" to "Promociones","promo_sub" to "Ofertas, productos y contenido destacado de RS KICKBOXING.",
         "featured" to "PROMOCIONES DESTACADAS","book" to "LIBRO DESTACADO","buy" to "Comprar en Amazon",
         "preview" to "Leer Vista Previa","read" to "Leer Libro Completo","locked" to "El libro completo no está incluido en tu nivel de acceso actual.",
         "manager" to "Gestor de Promociones","manager_sub" to "Sube miniaturas clicables, enlaces externos y controla el libro dentro de la app.",
@@ -243,7 +243,7 @@ fun rsPromoUiV45(lang:RsLang,key:String):String{
         "full_ready" to "PDF completo importado.","full_error" to "No se pudo importar el PDF completo.","book_saved" to "Ajustes del libro guardados."
     )
     val fr=en+mapOf(
-        "promo_page" to "Promotions","promo_sub" to "Offres, produits et contenu RS KICKBOX mis en avant.",
+        "promo_page" to "Promotions","promo_sub" to "Offres, produits et contenu RS KICKBOXING mis en avant.",
         "featured" to "PROMOTIONS À LA UNE","book" to "LIVRE À LA UNE","buy" to "Acheter sur Amazon",
         "preview" to "Lire l’Aperçu","read" to "Lire le Livre Complet","locked" to "Le livre complet n’est pas inclus dans ton niveau d’accès actuel.",
         "manager" to "Gestion Promotion","manager_sub" to "Ajoute des miniatures cliquables, des liens externes et gère le livre dans l’app.",
@@ -258,7 +258,7 @@ fun rsPromoUiV45(lang:RsLang,key:String):String{
         "full_ready" to "PDF complet importé.","full_error" to "Impossible d’importer le PDF complet.","book_saved" to "Réglages du livre enregistrés."
     )
     val de=en+mapOf(
-        "promo_page" to "Aktionen","promo_sub" to "Angebote, Produkte und hervorgehobene RS KICKBOX-Inhalte.",
+        "promo_page" to "Aktionen","promo_sub" to "Angebote, Produkte und hervorgehobene RS KICKBOXING-Inhalte.",
         "featured" to "HERVORGEHOBENE AKTIONEN","book" to "HERVORGEHOBENES BUCH","buy" to "Bei Amazon kaufen",
         "preview" to "Vorschau lesen","read" to "Ganzes Buch lesen","locked" to "Der vollständige Buchzugriff ist in deiner aktuellen Stufe nicht enthalten.",
         "manager" to "Promo-Manager","manager_sub" to "Lade klickbare Miniaturen und externe Links hoch und verwalte das In-App-Buch.",
@@ -273,7 +273,7 @@ fun rsPromoUiV45(lang:RsLang,key:String):String{
         "full_ready" to "Vollständiges PDF importiert.","full_error" to "Vollständiges PDF konnte nicht importiert werden.","book_saved" to "Bucheinstellungen gespeichert."
     )
     val it=en+mapOf(
-        "promo_page" to "Promozioni","promo_sub" to "Offerte, prodotti e contenuti RS KICKBOX in evidenza.",
+        "promo_page" to "Promozioni","promo_sub" to "Offerte, prodotti e contenuti RS KICKBOXING in evidenza.",
         "featured" to "PROMOZIONI IN EVIDENZA","book" to "LIBRO IN EVIDENZA","buy" to "Acquista su Amazon",
         "preview" to "Leggi Anteprima","read" to "Leggi Libro Completo","locked" to "L’accesso al libro completo non è incluso nel tuo livello attuale.",
         "manager" to "Gestione Promozioni","manager_sub" to "Carica miniature cliccabili, link esterni e gestisci il libro nell’app.",
@@ -288,7 +288,7 @@ fun rsPromoUiV45(lang:RsLang,key:String):String{
         "full_ready" to "PDF completo importato.","full_error" to "Impossibile importare il PDF completo.","book_saved" to "Impostazioni libro salvate."
     )
     val pl=en+mapOf(
-        "promo_page" to "Promocje","promo_sub" to "Oferty, produkty i wyróżnione treści RS KICKBOX.",
+        "promo_page" to "Promocje","promo_sub" to "Oferty, produkty i wyróżnione treści RS KICKBOXING.",
         "featured" to "WYRÓŻNIONE PROMOCJE","book" to "WYRÓŻNIONA KSIĄŻKA","buy" to "Kup na Amazon",
         "preview" to "Czytaj Podgląd","read" to "Czytaj Pełną Książkę","locked" to "Pełny dostęp do książki nie jest dostępny w Twoim obecnym poziomie.",
         "manager" to "Menedżer Promocji","manager_sub" to "Dodawaj klikalne miniatury, linki zewnętrzne i zarządzaj książką w aplikacji.",
@@ -303,7 +303,7 @@ fun rsPromoUiV45(lang:RsLang,key:String):String{
         "full_ready" to "Pełny PDF zaimportowany.","full_error" to "Nie udało się zaimportować pełnego PDF.","book_saved" to "Ustawienia książki zapisane."
     )
     val tr=en+mapOf(
-        "promo_page" to "Promosyonlar","promo_sub" to "Teklifler, ürünler ve öne çıkan RS KICKBOX içerikleri.",
+        "promo_page" to "Promosyonlar","promo_sub" to "Teklifler, ürünler ve öne çıkan RS KICKBOXING içerikleri.",
         "featured" to "ÖNE ÇIKAN PROMOSYONLAR","book" to "ÖNE ÇIKAN KİTAP","buy" to "Amazon’dan Satın Al",
         "preview" to "Önizlemeyi Oku","read" to "Tam Kitabı Oku","locked" to "Tam kitap erişimi mevcut erişim seviyene dahil değil.",
         "manager" to "Promosyon Yönetimi","manager_sub" to "Tıklanabilir görseller, harici bağlantılar yükle ve uygulama içi kitabı yönet.",
