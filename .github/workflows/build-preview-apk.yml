@@ -5,9 +5,21 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'app/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - '.github/workflows/build-preview-apk.yml'
   pull_request:
     branches:
       - main
+    paths:
+      - 'app/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - '.github/workflows/build-preview-apk.yml'
 
 concurrency:
   group: rs-kickbox-preview-${{ github.ref }}
