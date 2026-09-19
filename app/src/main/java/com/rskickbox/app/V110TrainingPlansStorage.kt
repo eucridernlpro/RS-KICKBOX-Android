@@ -470,6 +470,7 @@ fun RsStudentStoragePanelV110(c:RsPalette,lang:RsLang){
                 enabled=busyId==null,
                 modifier=Modifier.fillMaxWidth()
             ){Text(rsTrainingPlanT110(lang,"save_limit"))}
+            RsStudentStorageCleanupV111(c,lang,row.studentId)
             HorizontalDivider()
         }
     }
