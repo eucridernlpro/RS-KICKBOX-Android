@@ -213,9 +213,9 @@ private fun rsReleaseCenterT105(lang:RsLang,key:String):String{
 @Composable
 fun RsReleaseCenterV16(c: RsPalette, s: RsStore, lang:RsLang) {
     val context = LocalContext.current
-    var privacyUrl by remember { mutableStateOf(s.s("legal_privacy_url", "")) }
+    var privacyUrl by remember { mutableStateOf(s.s("legal_privacy_url", "https://eucridernlpro.github.io/RS-KICKBOX-Android/privacy-policy.html")) }
     var termsUrl by remember { mutableStateOf(s.s("legal_terms_url", "")) }
-    var deleteUrl by remember { mutableStateOf(s.s("legal_delete_url", "")) }
+    var deleteUrl by remember { mutableStateOf(s.s("legal_delete_url", "https://eucridernlpro.github.io/RS-KICKBOX-Android/account-deletion.html")) }
     var supportEmail by remember { mutableStateOf(s.s("support_email", "support@rskickbox.nl")) }
     var status by remember { mutableStateOf("") }
     var backendProbe by remember { mutableStateOf<RsSupabaseProbeV62?>(null) }
