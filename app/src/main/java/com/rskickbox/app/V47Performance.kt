@@ -290,9 +290,9 @@ private fun RsCloudStudentChallengesV83(c:RsPalette,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsPerformanceUiV47(lang,"challenges"),"Live trainer-assigned goals synchronized with your account."){
+    RsScroll(c,rsPerformanceUiV47(lang,"challenges"),rsPerformanceUiV47(lang,"challenge_sub")){
         RsPanel(c){
-            Text(if(loading)"Syncing challenges…" else "Cloud challenges connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            Text(if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
         if(items.isEmpty()&&!loading)RsPanel(c){Text(rsPerformanceUiV47(lang,"none"),color=c.muted)}
@@ -347,9 +347,9 @@ private fun RsCloudChallengeManagerV83(c:RsPalette,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsPerformanceUiV47(lang,"challenge_admin"),"Assign and manage cloud challenges for every student."){
+    RsScroll(c,rsPerformanceUiV47(lang,"challenge_admin"),rsPerformanceUiV47(lang,"challenge_admin_sub")){
         RsPanel(c){
-            Text(if(loading)"Syncing Challenge Manager…" else "Cloud Challenge Manager connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            Text(if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
         RsPanel(c){
@@ -438,9 +438,9 @@ private fun RsCloudStudentFightCampV83(c:RsPalette,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsPerformanceUiV47(lang,"fightcamp"),"Your trainer-managed Fight Camp synced from the club backend."){
+    RsScroll(c,rsPerformanceUiV47(lang,"fightcamp"),rsPerformanceUiV47(lang,"fightcamp_sub")){
         RsPanel(c){
-            Text(if(loading)"Syncing Fight Camp…" else "Cloud Fight Camp connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            Text(if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
         val active=camp
@@ -499,9 +499,9 @@ private fun RsCloudFightCampManagerV83(c:RsPalette,lang:RsLang){
         active=selectedCamp?.active?:true
     }
 
-    RsScroll(c,rsPerformanceUiV47(lang,"fightcamp_admin"),"Create and update the same Fight Camp students see on their devices."){
+    RsScroll(c,rsPerformanceUiV47(lang,"fightcamp_admin"),rsPerformanceUiV47(lang,"fightcamp_admin_sub")){
         RsPanel(c){
-            Text(if(loading)"Syncing Fight Camp Manager…" else "Cloud Fight Camp Manager connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            Text(if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
         RsPanel(c){
@@ -560,7 +560,7 @@ private fun RsCloudBadgesV83(c:RsPalette,lang:RsLang){
         Triple("Camp Finisher","Reach week 8 of Fight Camp",(camp?.currentWeek?:0)>=8)
     )
 
-    RsScroll(c,rsPerformanceUiV47(lang,"badges"),"Achievements calculated from your synchronized RS training records."){
+    RsScroll(c,rsPerformanceUiV47(lang,"badges"),rsPerformanceUiV47(lang,"badges_sub")){
         if(loading)RsPanel(c){Text(rsCloudT93(lang,"syncing_badges"),color=c.muted)}
         badges.forEach{(name,desc,earned)->
             RsPanel(c){
