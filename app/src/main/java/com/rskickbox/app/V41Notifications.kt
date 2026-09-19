@@ -214,7 +214,7 @@ private fun RsCloudTrainerNotificationsV74(c:RsPalette,lang:RsLang){
         loading=true
         rsCloudNotificationsV74()
             .onSuccess{items=it}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -271,7 +271,7 @@ private fun RsCloudTrainerNotificationsV74(c:RsPalette,lang:RsLang){
                                 status=rsCloudT93(lang,"notification_published")
                                 revision++
                             }
-                            .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -302,7 +302,7 @@ private fun RsCloudTrainerNotificationsV74(c:RsPalette,lang:RsLang){
                                         status=rsCloudT93(lang,"notification_deleted")
                                         revision++
                                     }
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                 busy=false
                             }
                         }else pendingDelete=item.id
@@ -328,7 +328,7 @@ private fun RsCloudStudentNotificationsV74(c:RsPalette,lang:RsLang){
         loading=true
         rsCloudNotificationsV74()
             .onSuccess{items=it}
-            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -361,7 +361,7 @@ private fun RsCloudStudentNotificationsV74(c:RsPalette,lang:RsLang){
                             scope.launch{
                                 rsMarkCloudNotificationReadV74(item.id)
                                     .onSuccess{revision++}
-                                    .onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                 busyId=null
                             }
                         },
