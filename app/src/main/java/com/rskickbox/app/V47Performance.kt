@@ -369,7 +369,7 @@ private fun RsCloudChallengeManagerV83(c:RsPalette,lang:RsLang){
                     busy=true
                     scope.launch{
                         rsAssignCloudChallengeV83(selectedId,title.trim(),target.toIntOrNull()?.coerceIn(1,10000)?:10,unit.trim().ifBlank{"sessions"})
-                            .onSuccess{title="";target="10";unit="sessions";status="Challenge assigned.";revision++}
+                            .onSuccess{title="";target="10";unit="sessions";status=rsCloudT93(lang,"challenge_assigned");revision++}
                             .onFailure{status=it.message?:"Could not assign challenge."}
                         busy=false
                     }
@@ -410,7 +410,7 @@ private fun RsCloudChallengeManagerV83(c:RsPalette,lang:RsLang){
                             busy=true
                             scope.launch{
                                 rsDeleteCloudChallengeV83(x.id)
-                                    .onSuccess{pendingDelete=null;status="Challenge deleted.";revision++}
+                                    .onSuccess{pendingDelete=null;status=rsCloudT93(lang,"challenge_deleted");revision++}
                                     .onFailure{status=it.message?:"Could not delete challenge."}
                                 busy=false
                             }
@@ -520,7 +520,7 @@ private fun RsCloudFightCampManagerV83(c:RsPalette,lang:RsLang){
                     busy=true
                     scope.launch{
                         rsSetCloudFightCampV83(selectedId,week.toInt(),focus.trim(),active)
-                            .onSuccess{status="Fight Camp saved.";revision++}
+                            .onSuccess{status=rsCloudT93(lang,"fightcamp_saved");revision++}
                             .onFailure{status=it.message?:"Could not save Fight Camp."}
                         busy=false
                     }
@@ -561,7 +561,7 @@ private fun RsCloudBadgesV83(c:RsPalette,lang:RsLang){
     )
 
     RsScroll(c,rsPerformanceUiV47(lang,"badges"),"Achievements calculated from your synchronized RS training records."){
-        if(loading)RsPanel(c){Text("Syncing badges…",color=c.muted)}
+        if(loading)RsPanel(c){Text(rsCloudT93(lang,"syncing_badges"),color=c.muted)}
         badges.forEach{(name,desc,earned)->
             RsPanel(c){
                 Text((if(earned)"★ " else "☆ ")+name,color=if(earned)c.bright else c.muted,fontWeight=FontWeight.Black,fontSize=18.sp)
