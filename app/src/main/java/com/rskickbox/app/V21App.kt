@@ -142,7 +142,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                     "finance" -> RsStudentFinanceV39(c,store,lang)
                                     "community" -> RsCommunityV50(c,store,lang,active)
                                     "media" -> RsTrainingMediaV55(c,store,lang,active)
-                                    "music", "music_admin" -> RsLocalMusicCenterV20(c, store, active, lang)
+                                    "music", "music_admin" -> RsPersistentMusicCenterV90(c, store, active, lang)
                                     "techniques" -> RsTechniqueLibraryV54(c,lang)
                                     "home_training" -> RsWorkoutHomeHubV89(c,store,lang)
                                     "workout" -> RsWorkoutHomeHubV89(c,store,lang)
@@ -687,14 +687,11 @@ private fun ShellV21(
         "access" to "Access & Subscriptions",
         "plans_admin" to "Membership Plans",
         "voice" to "AI Technique Coach",
-        "session" to "Trainer Session",
         "session_builder" to "Session Builder",
-        "qr_attendance" to "QR Attendance",
         "content" to "Content Manager",
         "media" to "Training Media Manager",
-        "lesson_editor" to "Lesson Editor",
         "classes" to "Class Manager",
-        "attendance" to "Attendance",
+        "attendance" to "Attendance Center",
         "backgrounds" to "Visual Asset Studio",
         "branding" to "Branding & Site Settings",
         "payments" to "Payment Center",
@@ -722,10 +719,9 @@ private fun ShellV21(
         "session" to "Session Player",
         "academy" to "RS Academy",
         "techniques" to "Technique Library",
-        "home_training" to "Home Training",
-        "workout" to "Workout Generator",
+        "home_training" to "Workout & Home Training",
         "compare" to "Technique Compare",
-        "classes" to "Classes & Events",
+        "classes" to "Classes & Training",
         "checkin" to "Class Check-In",
         "homework" to "Homework",
         "progress" to "Progress",
@@ -736,9 +732,7 @@ private fun ShellV21(
         "groups" to "Groups",
         "media" to "Training Media",
         "vault" to "Knowledge Vault",
-        "favorites" to "Saved & Favorites",
-        "history" to "Training History",
-        "search" to "Search",
+
         "music" to "My RS Music",
         "finance" to "Membership & Payments",
         "promotions" to "Promotions",
@@ -838,7 +832,8 @@ private fun ShellV21(
                     }
                 }
             }
-            if(role==RsRole.STUDENT && rsOpsEnabledV56(store,RsOpsKeysV56.MAINTENANCE,false)){
+            RsMiniMusicPlayerV90(c){onRoute(if(role==RsRole.TRAINER)"music_admin" else "music")}
+                        if(role==RsRole.STUDENT && rsOpsEnabledV56(store,RsOpsKeysV56.MAINTENANCE,false)){
                 Surface(
                     color=c.gold.copy(alpha=.18f),
                     shape=RoundedCornerShape(14.dp),
