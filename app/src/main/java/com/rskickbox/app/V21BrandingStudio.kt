@@ -44,7 +44,7 @@ private fun rsVisualStudioT109(lang:RsLang,key:String):String{
         "preview_selected" to "Preview selected background","gallery" to "Gallery","files" to "Files","reset" to "Reset",
         "optimizing" to "Automatic formatting / optimization in progress…","overlay" to "Overlay","login_transparency" to "LOGIN FORM TRANSPARENCY",
         "login_transparency_sub" to "Controls how much of the login background remains visible through the login boxes.",
-        "position" to "Position","close_preview" to "Close preview","full_test" to rsVisualStudioT109(lang,"full_test"),
+        "position" to "Position","close_preview" to "Close preview","full_test" to "FULL-SCREEN BACKGROUND TEST",
         "default_visual" to "DEFAULT RS VISUAL","custom_saved" to "CUSTOM VISUAL SAVED","cloud_synced" to "Cloud synced",
         "local_cloud_fail" to "Visual saved locally but cloud sync failed.","preparing" to "Preparing visual…",
         "size_small" to "Best for dashboard cards. Use a clear subject with safe space for title text.",
