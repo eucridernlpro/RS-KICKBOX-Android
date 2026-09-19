@@ -23,7 +23,10 @@ object RsSupabaseV60 {
                 supabaseUrl=BuildConfig.SUPABASE_URL,
                 supabaseKey=BuildConfig.SUPABASE_PUBLISHABLE_KEY
             ){
-                install(Auth)
+                install(Auth) {
+                    scheme = "rskickbox"
+                    host = "auth-callback"
+                }
                 install(Postgrest)
                 install(Functions)
                 install(Storage)
