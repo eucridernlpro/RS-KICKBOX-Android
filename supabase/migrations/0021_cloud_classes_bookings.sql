@@ -161,3 +161,111 @@ comment on function public.rs_book_class(uuid) is
 'Atomic student booking action with row lock and server-side capacity enforcement.';
 comment on function public.rs_cancel_class_booking(uuid) is
 'Cancels the authenticated student booking for one class.';
+
+
+create or replace function public.rs_staff_create_class(
+    p_title text,
+    p_level text,
+    p_starts_at timestamptz,
+    p_duration_minutes integer,
+    p_capacity integer
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    v_id uuid;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+    if trim(p_title)='' then
+        raise exception 'class title required' using errcode='22023';
+    end if;
+    if p_duration_minutes < 15 or p_duration_minutes > 300 then
+        raise exception 'invalid duration' using errcode='22023';
+    end if;
+    if p_capacity < 1 or p_capacity > 100 then
+        raise exception 'invalid capacity' using errcode='22023';
+    end if;
+
+    insert into public.rs_classes(
+        title,level,starts_at,duration_minutes,capacity,
+        booking_open,active,created_by
+    )
+    values(
+        trim(p_title),
+        coalesce(nullif(trim(p_level),''),'ALL LEVELS'),
+        p_starts_at,
+        p_duration_minutes,
+        p_capacity,
+        true,
+        true,
+        (select auth.uid())
+    )
+    returning id into v_id;
+
+    return v_id;
+end;
+$$;
+
+revoke execute on function public.rs_staff_create_class(text,text,timestamptz,integer,integer) from public;
+revoke execute on function public.rs_staff_create_class(text,text,timestamptz,integer,integer) from anon;
+grant execute on function public.rs_staff_create_class(text,text,timestamptz,integer,integer) to authenticated;
+
+create or replace function public.rs_staff_set_class_state(
+    p_class_id uuid,
+    p_active boolean,
+    p_booking_open boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    update public.rs_classes
+    set active=p_active,
+        booking_open=p_booking_open,
+        updated_at=now()
+    where id=p_class_id;
+
+    if not found then
+        raise exception 'class not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_set_class_state(uuid,boolean,boolean) from public;
+revoke execute on function public.rs_staff_set_class_state(uuid,boolean,boolean) from anon;
+grant execute on function public.rs_staff_set_class_state(uuid,boolean,boolean) to authenticated;
+
+create or replace function public.rs_staff_delete_class(p_class_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+
+    delete from public.rs_classes
+    where id=p_class_id;
+
+    if not found then
+        raise exception 'class not found' using errcode='P0002';
+    end if;
+end;
+$$;
+
+revoke execute on function public.rs_staff_delete_class(uuid) from public;
+revoke execute on function public.rs_staff_delete_class(uuid) from anon;
+grant execute on function public.rs_staff_delete_class(uuid) to authenticated;
