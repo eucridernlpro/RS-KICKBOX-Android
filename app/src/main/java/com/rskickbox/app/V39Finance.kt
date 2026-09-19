@@ -149,7 +149,7 @@ fun RsStudentFinanceV39(c:RsPalette,store:RsStore,lang:RsLang){
 @Composable
 fun RsTrainerPaymentCenterV39(c:RsPalette,store:RsStore,lang:RsLang){
     var account by remember{mutableStateOf(store.s("pay_v39_account","NL00 BANK 0000 0000 00"))}
-    var note by remember{mutableStateOf(store.s("pay_v39_note","RS KICKBOX membership"))}
+    var note by remember{mutableStateOf(store.s("pay_v39_note","RS KICKBOXING membership"))}
     RsScroll(c,rsFinanceUiV39(lang,"trainer_title"),rsFinanceUiV39(lang,"trainer_sub")){
         RsPanel(c){
             Text(rsFinanceUiV39(lang,"methods"),color=c.bright,fontWeight=FontWeight.Bold)
