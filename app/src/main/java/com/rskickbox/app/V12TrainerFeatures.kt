@@ -225,7 +225,12 @@ fun RsMemberManager(c:RsPalette,s:RsStore?=null,lang:RsLang=rsLangs.first()){
 
         visibleStudents.forEach{student->
             RsPanel(c){
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(10.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    RsMemberAvatarV68(c,student.email,student.name,size=48.dp)
                     Column(Modifier.weight(1f)){
                         Text(student.name,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
                         Text(student.email,color=c.text,fontSize=11.sp)
