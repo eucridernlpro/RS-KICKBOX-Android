@@ -108,7 +108,7 @@ private fun rsDecodeBookingsV43(raw:String):List<RsPrivateBookingV43>{
                     o.optString("studentEmail"),
                     o.optString("studentName"),
                     o.optString("note"),
-                    o.optString("status","REQUESTED")
+                    o.optString("status",rsCloudT93(lang,"requested"))
                 ))
             }
         }
@@ -164,13 +164,13 @@ fun RsStudentPrivateLessonsV43(c:RsPalette,store:RsStore,lang:RsLang){
                 Text(slot.dayLabel+" · "+slot.timeLabel,color=c.bright,fontSize=18.sp,fontWeight=FontWeight.Black)
                 Text(slot.durationMinutes.toString()+" min",color=c.muted)
                 val statusText=when(booking?.status){
-                    "CONFIRMED"->rsPrivateUiV43(lang,"confirmed")
-                    "DECLINED"->rsPrivateUiV43(lang,"declined")
-                    "REQUESTED"->rsPrivateUiV43(lang,"requested")
+                    rsCloudT93(lang,"confirmed")->rsPrivateUiV43(lang,"confirmed")
+                    rsCloudT93(lang,"declined")->rsPrivateUiV43(lang,"declined")
+                    rsCloudT93(lang,"requested")->rsPrivateUiV43(lang,"requested")
                     else->rsPrivateUiV43(lang,"available")
                 }
                 Text(statusText,color=c.text,fontWeight=FontWeight.Bold)
-                if(booking==null || booking.status=="DECLINED"){
+                if(booking==null || booking.status==rsCloudT93(lang,"declined")){
                     if(!requestsAllowed)Text(rsOpsUiV56(lang,"private_disabled"),color=c.muted,fontSize=10.sp)
                     OutlinedTextField(
                         value=noteBySlot[slot.id].orEmpty(),
@@ -183,7 +183,7 @@ fun RsStudentPrivateLessonsV43(c:RsPalette,store:RsStore,lang:RsLang){
                             val updated=rsLoadBookingsV43(store).filterNot{
                                 it.slotId==slot.id && it.studentEmail.equals(email,true)
                             }+RsPrivateBookingV43(
-                                UUID.randomUUID().toString(),slot.id,email,name,noteBySlot[slot.id].orEmpty().trim(),"REQUESTED"
+                                UUID.randomUUID().toString(),slot.id,email,name,noteBySlot[slot.id].orEmpty().trim(),rsCloudT93(lang,"requested")
                             )
                             rsSaveBookingsV43(store,updated)
                             revision++
@@ -274,8 +274,8 @@ fun RsTrainerScheduleV43(c:RsPalette,store:RsStore,lang:RsLang){
                 Text((slot?.dayLabel?:"")+" · "+(slot?.timeLabel?:""),color=c.text)
                 if(booking.note.isNotBlank())Text(booking.note,color=c.muted)
                 val statusText=when(booking.status){
-                    "CONFIRMED"->rsPrivateUiV43(lang,"confirmed")
-                    "DECLINED"->rsPrivateUiV43(lang,"declined")
+                    rsCloudT93(lang,"confirmed")->rsPrivateUiV43(lang,"confirmed")
+                    rsCloudT93(lang,"declined")->rsPrivateUiV43(lang,"declined")
                     else->rsPrivateUiV43(lang,"requested")
                 }
                 Text(statusText,color=c.bright,fontWeight=FontWeight.Bold)
@@ -284,8 +284,8 @@ fun RsTrainerScheduleV43(c:RsPalette,store:RsStore,lang:RsLang){
                         onClick={
                             saveBookings(bookings.map{
                                 when{
-                                    it.id==booking.id->it.copy(status="CONFIRMED")
-                                    it.slotId==booking.slotId && it.status!="CANCELLED"->it.copy(status="DECLINED")
+                                    it.id==booking.id->it.copy(status=rsCloudT93(lang,"confirmed"))
+                                    it.slotId==booking.slotId && it.status!="CANCELLED"->it.copy(status=rsCloudT93(lang,"declined"))
                                     else->it
                                 }
                             })
@@ -293,12 +293,12 @@ fun RsTrainerScheduleV43(c:RsPalette,store:RsStore,lang:RsLang){
                         modifier=Modifier.weight(1f)
                     ){Text(rsPrivateUiV43(lang,"approve"),fontSize=10.sp)}
                     OutlinedButton(
-                        onClick={saveBookings(bookings.map{if(it.id==booking.id)it.copy(status="DECLINED") else it})},
+                        onClick={saveBookings(bookings.map{if(it.id==booking.id)it.copy(status=rsCloudT93(lang,"declined")) else it})},
                         modifier=Modifier.weight(1f)
                     ){Text(rsPrivateUiV43(lang,"decline"),fontSize=10.sp)}
                 }
-                if(booking.status!="REQUESTED")OutlinedButton(
-                    onClick={saveBookings(bookings.map{if(it.id==booking.id)it.copy(status="REQUESTED") else it})},
+                if(booking.status!=rsCloudT93(lang,"requested"))OutlinedButton(
+                    onClick={saveBookings(bookings.map{if(it.id==booking.id)it.copy(status=rsCloudT93(lang,"requested")) else it})},
                     modifier=Modifier.fillMaxWidth()
                 ){Text(rsPrivateUiV43(lang,"reset"),fontSize=10.sp)}
             }
@@ -336,7 +336,7 @@ private fun RsCloudStudentPrivateLessonsV76(c:RsPalette,lang:RsLang){
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
 
-        if(slots.isEmpty()&&!loading)RsPanel(c){Text("No private lesson availability yet.",color=c.muted)}
+        if(slots.isEmpty()&&!loading)RsPanel(c){Text(rsCloudT93(lang,"no_private_slots"),color=c.muted)}
 
         slots.forEach{slot->
             val activeBookingId=slot.myBookingId
@@ -372,7 +372,7 @@ private fun RsCloudStudentPrivateLessonsV76(c:RsPalette,lang:RsLang){
                                     notes[slot.slotId]?:slot.myNote.orEmpty()
                                 )
                                     .onSuccess{
-                                        status="Private lesson request sent."
+                                        status=rsCloudT93(lang,"lesson_request_sent")
                                         revision++
                                     }
                                     .onFailure{status=it.message?:"Could not request private lesson."}
@@ -389,7 +389,7 @@ private fun RsCloudStudentPrivateLessonsV76(c:RsPalette,lang:RsLang){
                             scope.launch{
                                 rsCancelCloudPrivateLessonV76(activeBookingId)
                                     .onSuccess{
-                                        status="Private lesson request cancelled."
+                                        status=rsCloudT93(lang,"lesson_request_cancelled")
                                         revision++
                                     }
                                     .onFailure{status=it.message?:"Could not cancel request."}
@@ -462,7 +462,7 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
                                 time=""
                                 duration="60"
                                 showCreate=false
-                                status="Private lesson slot created."
+                                status=rsCloudT93(lang,"lesson_slot_created")
                                 revision++
                             }
                             .onFailure{status=it.message?:"Could not create private lesson slot."}
@@ -503,7 +503,7 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
                                 rsDeleteCloudPrivateSlotV76(slot.slotId)
                                     .onSuccess{
                                         pendingDelete=null
-                                        status="Private lesson slot deleted."
+                                        status=rsCloudT93(lang,"lesson_slot_deleted")
                                         revision++
                                     }
                                     .onFailure{status=it.message?:"Could not delete slot."}
@@ -550,7 +550,7 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
                             busy=true
                             scope.launch{
                                 rsSetCloudPrivateRequestStatusV76(request.bookingId,"confirmed")
-                                    .onSuccess{status="Private lesson confirmed.";revision++}
+                                    .onSuccess{status=rsCloudT93(lang,"lesson_confirmed");revision++}
                                     .onFailure{status=it.message?:"Could not confirm lesson."}
                                 busy=false
                             }
@@ -563,7 +563,7 @@ private fun RsCloudTrainerScheduleV76(c:RsPalette,lang:RsLang){
                             busy=true
                             scope.launch{
                                 rsSetCloudPrivateRequestStatusV76(request.bookingId,"declined")
-                                    .onSuccess{status="Private lesson declined.";revision++}
+                                    .onSuccess{status=rsCloudT93(lang,"lesson_declined");revision++}
                                     .onFailure{status=it.message?:"Could not decline lesson."}
                                 busy=false
                             }
