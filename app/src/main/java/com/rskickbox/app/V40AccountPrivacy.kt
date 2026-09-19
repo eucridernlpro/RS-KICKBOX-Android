@@ -2,6 +2,7 @@ package com.rskickbox.app
 
 import android.content.ClipData
 import android.content.Intent
+import android.net.Uri
 import androidx.core.content.FileProvider
 import org.json.JSONArray
 import org.json.JSONObject
@@ -37,6 +38,41 @@ private fun rsAccountUiV40(lang:RsLang,key:String):String{
     val tr=en+mapOf("title" to "Ayarlar & Gizlilik","sub" to "Tercihler, gizlilik, yerel dışa aktarma ve hesap kontrolleri.","prefs" to "TERCİHLER","push" to "Anlık bildirimler","booking" to "Rezervasyon hatırlatmaları","training" to "Antrenman hatırlatmaları","private_profile" to "Özel profil","voice" to "Otomatik sesli koç","data" to "VERİLERİN","export_desc" to "Bu cihazdaki öğrenciye ait yerel verilerin JSON dışa aktarımını oluşturur.","export" to "Yerel verilerimi dışa aktar","delete" to "Hesap silme isteği","delete_title" to "Hesap silme isteği","delete_desc" to "Bu yerel test hesabını devre dışı bırakmak için DELETE yaz. Üretim silme işlemi sunucu tarafında yapılır ve yasal kayıtlar korunabilir.","type_delete" to "DELETE yaz","confirm" to "İsteği onayla","cancel" to "İptal","export_ready" to "Yerel veri dışa aktarımı paylaşmaya hazır.","delete_done" to "Yerel öğrenci erişimi devre dışı. Backend silme henüz bağlı değil.")
     val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
+}
+
+private fun rsCloudPrivacyT105(lang:RsLang,key:String):String{
+    val en=mapOf(
+        "cloud_desc" to "You can share an immediate export of local app data or submit a secure request for account data held in the RS KICKBOX backend.",
+        "share_local" to "Share local app data export","request_export" to "Request cloud data export","export_submitted" to "Cloud data-export request submitted.",
+        "requests" to "ACCOUNT REQUESTS","syncing_requests" to "Syncing request status…","requests_secure" to "Requests are tracked securely in Supabase.","none" to "No privacy/account requests yet.",
+        "delete_desc" to "Type DELETE to submit a real account-deletion request. RS KICKBOX will process the request securely and may retain only records that must legally be kept.",
+        "delete_submitted" to "Account-deletion request submitted.","submitting" to "Submitting…",
+        "links" to "PRIVACY & ACCOUNT LINKS","privacy" to "Privacy policy","deletion" to "Account deletion web page","link_note" to "These public links are used for privacy information and external account-deletion requests."
+    )
+    val nl=en+mapOf("cloud_desc" to "Je kunt direct lokale app-data delen of een beveiligd verzoek indienen voor accountgegevens in de RS KICKBOX-backend.","share_local" to "Lokale app-data delen","request_export" to "Clouddata-export aanvragen","export_submitted" to "Clouddata-exportverzoek ingediend.","requests" to "ACCOUNTVERZOEKEN","syncing_requests" to "Verzoekstatus synchroniseren…","requests_secure" to "Verzoeken worden veilig in Supabase bijgehouden.","none" to "Nog geen privacy-/accountverzoeken.","delete_desc" to "Typ DELETE om een echt verzoek tot accountverwijdering in te dienen. RS KICKBOX verwerkt dit veilig en bewaart alleen gegevens die wettelijk moeten worden behouden.","delete_submitted" to "Verzoek tot accountverwijdering ingediend.","submitting" to "Indienen…","links" to "PRIVACY- & ACCOUNTLINKS","privacy" to "Privacybeleid","deletion" to "Webpagina accountverwijdering","link_note" to "Deze openbare links geven privacy-informatie en bieden een externe route voor accountverwijdering.")
+    val pt=en+mapOf("cloud_desc" to "Podes partilhar imediatamente os dados locais da app ou enviar um pedido seguro para os dados da conta guardados no backend RS KICKBOX.","share_local" to "Partilhar dados locais da app","request_export" to "Pedir exportação de dados cloud","export_submitted" to "Pedido de exportação cloud enviado.","requests" to "PEDIDOS DA CONTA","syncing_requests" to "A sincronizar estado dos pedidos…","requests_secure" to "Os pedidos são registados com segurança no Supabase.","none" to "Ainda não existem pedidos de privacidade/conta.","delete_desc" to "Escreve DELETE para enviar um pedido real de eliminação da conta. O RS KICKBOX processará o pedido com segurança e poderá manter apenas registos legalmente obrigatórios.","delete_submitted" to "Pedido de eliminação da conta enviado.","submitting" to "A enviar…","links" to "LINKS DE PRIVACIDADE & CONTA","privacy" to "Política de privacidade","deletion" to "Página web de eliminação da conta","link_note" to "Estes links públicos apresentam informação de privacidade e permitem pedidos externos de eliminação.")
+    val es=en+mapOf("cloud_desc" to "Puedes compartir de inmediato los datos locales de la app o enviar una solicitud segura para los datos de cuenta guardados en el backend de RS KICKBOX.","share_local" to "Compartir datos locales de la app","request_export" to "Solicitar exportación de datos cloud","export_submitted" to "Solicitud de exportación cloud enviada.","requests" to "SOLICITUDES DE CUENTA","syncing_requests" to "Sincronizando estado de solicitudes…","requests_secure" to "Las solicitudes se registran de forma segura en Supabase.","none" to "Aún no hay solicitudes de privacidad/cuenta.","delete_desc" to "Escribe DELETE para enviar una solicitud real de eliminación de cuenta. RS KICKBOX la procesará de forma segura y solo podrá conservar registros exigidos legalmente.","delete_submitted" to "Solicitud de eliminación de cuenta enviada.","submitting" to "Enviando…","links" to "ENLACES DE PRIVACIDAD Y CUENTA","privacy" to "Política de privacidad","deletion" to "Página web de eliminación de cuenta","link_note" to "Estos enlaces públicos muestran información de privacidad y permiten solicitudes externas de eliminación.")
+    val fr=en+mapOf("cloud_desc" to "Tu peux partager immédiatement les données locales de l’app ou envoyer une demande sécurisée pour les données de compte stockées dans le backend RS KICKBOX.","share_local" to "Partager les données locales","request_export" to "Demander l’export cloud","export_submitted" to "Demande d’export cloud envoyée.","requests" to "DEMANDES DE COMPTE","syncing_requests" to "Synchronisation des demandes…","requests_secure" to "Les demandes sont suivies de façon sécurisée dans Supabase.","none" to "Aucune demande de confidentialité/compte.","delete_desc" to "Tape DELETE pour envoyer une vraie demande de suppression de compte. RS KICKBOX la traitera de façon sécurisée et pourra conserver uniquement les données légalement requises.","delete_submitted" to "Demande de suppression de compte envoyée.","submitting" to "Envoi…","links" to "LIENS CONFIDENTIALITÉ & COMPTE","privacy" to "Politique de confidentialité","deletion" to "Page web de suppression du compte","link_note" to "Ces liens publics fournissent les informations de confidentialité et une voie externe pour demander la suppression.")
+    val de=en+mapOf("cloud_desc" to "Du kannst lokale App-Daten sofort teilen oder eine sichere Anfrage für Kontodaten im RS KICKBOX-Backend stellen.","share_local" to "Lokale App-Daten teilen","request_export" to "Cloud-Datenexport anfordern","export_submitted" to "Cloud-Datenexport angefordert.","requests" to "KONTOANFRAGEN","syncing_requests" to "Anfragestatus wird synchronisiert…","requests_secure" to "Anfragen werden sicher in Supabase verfolgt.","none" to "Noch keine Datenschutz-/Kontoanfragen.","delete_desc" to "Gib DELETE ein, um eine echte Kontolöschungsanfrage zu senden. RS KICKBOX verarbeitet sie sicher und darf nur gesetzlich erforderliche Daten aufbewahren.","delete_submitted" to "Kontolöschungsanfrage gesendet.","submitting" to "Wird gesendet…","links" to "DATENSCHUTZ- & KONTOLINKS","privacy" to "Datenschutzrichtlinie","deletion" to "Webseite zur Kontolöschung","link_note" to "Diese öffentlichen Links enthalten Datenschutzinformationen und ermöglichen externe Löschanfragen.")
+    val it=en+mapOf("cloud_desc" to "Puoi condividere subito i dati locali dell’app o inviare una richiesta sicura per i dati account nel backend RS KICKBOX.","share_local" to "Condividi dati locali app","request_export" to "Richiedi esportazione cloud","export_submitted" to "Richiesta di esportazione cloud inviata.","requests" to "RICHIESTE ACCOUNT","syncing_requests" to "Sincronizzazione richieste…","requests_secure" to "Le richieste sono tracciate in modo sicuro in Supabase.","none" to "Nessuna richiesta privacy/account.","delete_desc" to "Digita DELETE per inviare una vera richiesta di eliminazione account. RS KICKBOX la elaborerà in modo sicuro e potrà conservare solo dati obbligatori per legge.","delete_submitted" to "Richiesta eliminazione account inviata.","submitting" to "Invio…","links" to "LINK PRIVACY & ACCOUNT","privacy" to "Informativa privacy","deletion" to "Pagina web eliminazione account","link_note" to "Questi link pubblici mostrano informazioni sulla privacy e consentono richieste esterne di eliminazione.")
+    val pl=en+mapOf("cloud_desc" to "Możesz natychmiast udostępnić lokalne dane aplikacji lub wysłać bezpieczny wniosek o dane konta przechowywane w backendzie RS KICKBOX.","share_local" to "Udostępnij lokalne dane aplikacji","request_export" to "Poproś o eksport danych z chmury","export_submitted" to "Wysłano wniosek o eksport danych z chmury.","requests" to "WNIOSKI DOTYCZĄCE KONTA","syncing_requests" to "Synchronizacja statusu wniosków…","requests_secure" to "Wnioski są bezpiecznie śledzone w Supabase.","none" to "Brak wniosków prywatności/konta.","delete_desc" to "Wpisz DELETE, aby wysłać rzeczywisty wniosek o usunięcie konta. RS KICKBOX przetworzy go bezpiecznie i może zachować wyłącznie dane wymagane prawem.","delete_submitted" to "Wysłano wniosek o usunięcie konta.","submitting" to "Wysyłanie…","links" to "LINKI PRYWATNOŚCI I KONTA","privacy" to "Polityka prywatności","deletion" to "Strona usunięcia konta","link_note" to "Te publiczne linki zawierają informacje o prywatności i zewnętrzną ścieżkę usunięcia konta.")
+    val tr=en+mapOf("cloud_desc" to "Yerel uygulama verilerini hemen paylaşabilir veya RS KICKBOX backendindeki hesap verileri için güvenli bir istek gönderebilirsin.","share_local" to "Yerel uygulama verilerini paylaş","request_export" to "Bulut veri dışa aktarımı iste","export_submitted" to "Bulut veri dışa aktarım isteği gönderildi.","requests" to "HESAP İSTEKLERİ","syncing_requests" to "İstek durumu eşitleniyor…","requests_secure" to "İstekler Supabase’de güvenli şekilde takip edilir.","none" to "Henüz gizlilik/hesap isteği yok.","delete_desc" to "Gerçek hesap silme isteği göndermek için DELETE yaz. RS KICKBOX isteği güvenli şekilde işler ve yalnızca yasal olarak tutulması gereken kayıtları saklayabilir.","delete_submitted" to "Hesap silme isteği gönderildi.","submitting" to "Gönderiliyor…","links" to "GİZLİLİK & HESAP BAĞLANTILARI","privacy" to "Gizlilik politikası","deletion" to "Hesap silme web sayfası","link_note" to "Bu herkese açık bağlantılar gizlilik bilgilerini ve harici hesap silme yolunu sağlar.")
+    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
+    return pack[key]?:en[key]?:key
+}
+
+@Composable
+private fun RsPrivacyLinksV105(c:RsPalette,store:RsStore,lang:RsLang){
+    val context=androidx.compose.ui.platform.LocalContext.current
+    val privacy=store.s("legal_privacy_url","https://eucridernlpro.github.io/RS-KICKBOX-Android/privacy-policy.html")
+    val deletion=store.s("legal_delete_url","https://eucridernlpro.github.io/RS-KICKBOX-Android/account-deletion.html")
+    fun open(url:String){runCatching{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url)))}}
+    RsPanel(c){
+        Text(rsCloudPrivacyT105(lang,"links"),color=c.bright,fontWeight=FontWeight.Bold)
+        Text(rsCloudPrivacyT105(lang,"link_note"),color=c.muted,fontSize=10.sp)
+        OutlinedButton(onClick={open(privacy)},modifier=Modifier.fillMaxWidth()){Text(rsCloudPrivacyT105(lang,"privacy"))}
+        OutlinedButton(onClick={open(deletion)},modifier=Modifier.fillMaxWidth()){Text(rsCloudPrivacyT105(lang,"deletion"))}
+    }
 }
 
 private fun rsBuildLocalExportV40(store:RsStore):String{
@@ -132,6 +168,7 @@ fun RsStudentPrivacyV40(c:RsPalette,store:RsStore,lang:RsLang,onLocalAccountDisa
             }
             if(status.isNotBlank())Text(status,color=c.muted)
         }
+        RsPrivacyLinksV105(c,store,lang)
     }
 
     if(showDelete){
@@ -216,17 +253,14 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
 
         RsPanel(c){
             Text(rsAccountUiV40(lang,"data"),color=c.bright,fontWeight=FontWeight.Bold)
-            Text(
-                "You can share an immediate export of local app data or submit a secure request for your account data held in the RS KICKBOX backend.",
-                color=c.muted
-            )
+            Text(rsCloudPrivacyT105(lang,"cloud_desc"),color=c.muted)
             Button(
                 onClick={
                     rsShareLocalExportV40(context,store)
                     status=rsAccountUiV40(lang,"export_ready")
                 },
                 modifier=Modifier.fillMaxWidth()
-            ){Text("Share local app data export")}
+            ){Text(rsCloudPrivacyT105(lang,"share_local"))}
 
             OutlinedButton(
                 onClick={
@@ -235,7 +269,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
                     scope.launch{
                         rsCreateAccountRequestV78("data_export")
                             .onSuccess{
-                                status="Cloud data-export request submitted."
+                                status=rsCloudPrivacyT105(lang,"export_submitted")
                                 revision++
                             }
                             .onFailure{status=rsReleaseT98(lang,"save_failed")}
@@ -244,7 +278,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
                 },
                 enabled=!busy,
                 modifier=Modifier.fillMaxWidth()
-            ){Text(if(busy)"Please wait…" else "Request cloud data export")}
+            ){Text(if(busy)rsReleaseT98(lang,"please_wait") else rsCloudPrivacyT105(lang,"request_export"))}
 
             OutlinedButton(
                 onClick={showDelete=true},
@@ -256,13 +290,13 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
         }
 
         RsPanel(c){
-            Text("ACCOUNT REQUESTS",color=c.bright,fontWeight=FontWeight.Bold)
+            Text(rsCloudPrivacyT105(lang,"requests"),color=c.bright,fontWeight=FontWeight.Bold)
             Text(
-                if(loading)"Syncing request status…" else "Requests are tracked securely in Supabase.",
+                if(loading)rsCloudPrivacyT105(lang,"syncing_requests") else rsCloudPrivacyT105(lang,"requests_secure"),
                 color=c.muted,
                 fontSize=10.sp
             )
-            if(requests.isEmpty()&&!loading)Text("No privacy/account requests yet.",color=c.muted)
+            if(requests.isEmpty()&&!loading)Text(rsCloudPrivacyT105(lang,"none"),color=c.muted)
             requests.take(10).forEach{request->
                 Text(
                     request.requestType.replace('_',' ').uppercase()+" · "+request.status.uppercase(),
@@ -273,6 +307,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
                 if(request.staffNote.isNotBlank())Text(request.staffNote,color=c.text,fontSize=10.sp)
             }
         }
+        RsPrivacyLinksV105(c,store,lang)
     }
 
     if(showDelete){
@@ -281,9 +316,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
             title={Text(rsAccountUiV40(lang,"delete_title"))},
             text={
                 Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
-                    Text(
-                        "Type DELETE to submit a real account-deletion request. Your account is not immediately erased: RS KICKBOX can process the request safely while preserving records that must legally be retained."
-                    )
+                    Text(rsCloudPrivacyT105(lang,"delete_desc"))
                     OutlinedTextField(
                         deleteText,
                         {deleteText=it},
@@ -298,7 +331,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
                         scope.launch{
                             rsCreateAccountRequestV78("account_deletion")
                                 .onSuccess{
-                                    status="Account-deletion request submitted."
+                                    status=rsCloudPrivacyT105(lang,"delete_submitted")
                                     revision++
                                     showDelete=false
                                     deleteText=""
@@ -308,7 +341,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
                         }
                     },
                     enabled=deleteText=="DELETE"&&!busy
-                ){Text(if(busy)"Submitting…" else rsAccountUiV40(lang,"confirm"))}
+                ){Text(if(busy)rsCloudPrivacyT105(lang,"submitting") else rsAccountUiV40(lang,"confirm"))}
             },
             dismissButton={
                 TextButton(onClick={showDelete=false;deleteText=""}){Text(rsAccountUiV40(lang,"cancel"))}
