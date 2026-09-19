@@ -832,7 +832,7 @@ private fun ShellV21(
                     }
                 }
             }
-            RsMiniMusicPlayerV90(c){onRoute(if(role==RsRole.TRAINER)"music_admin" else "music")}
+            RsMiniMusicPlayerV90(c,lang){onRoute(if(role==RsRole.TRAINER)"music_admin" else "music")}
                         if(role==RsRole.STUDENT && rsOpsEnabledV56(store,RsOpsKeysV56.MAINTENANCE,false)){
                 Surface(
                     color=c.gold.copy(alpha=.18f),
