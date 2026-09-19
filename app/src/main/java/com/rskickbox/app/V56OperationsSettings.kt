@@ -323,7 +323,7 @@ private fun rsOpsCloudT105(lang:RsLang,key:String):String{
 
 
 @Composable
-fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
+fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang,onLanguageChanged:(RsLang)->Unit={}){
     val scope=rememberCoroutineScope()
     val cloudMode=RsSupabaseV60.configured
     var maintenance by remember{mutableStateOf(rsOpsEnabledV56(store,RsOpsKeysV56.MAINTENANCE,false))}
@@ -400,6 +400,7 @@ fun RsAdminSettingsV56(c:RsPalette,store:RsStore,lang:RsLang){
     }
 
     RsScroll(c,rsOpsUiV56(lang,"title"),rsOpsUiV56(lang,"sub")){
+        RsLanguageSettingsPanelV111(c,store,lang,onLanguageChanged)
         if(cloudMode)RsPanel(c){
             Text(
                 if(cloudLoading)rsOpsCloudT105(lang,"syncing") else rsOpsCloudT105(lang,"connected"),
