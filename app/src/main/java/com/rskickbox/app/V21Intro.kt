@@ -28,6 +28,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import kotlinx.coroutines.launch
 
 private const val RS_INTRO_VIDEO_MAX_MS = 15_000L
 
@@ -187,6 +188,7 @@ private data class PendingSplashV30(val uri:String="",val duration:Long=0L)
 @Composable
 fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
     val context=LocalContext.current
+    val scope=rememberCoroutineScope()
     var enabled by remember{mutableStateOf(store.b("intro_enabled",true))}
     var everyLaunch by remember{mutableStateOf(store.b("intro_every_launch",true))}
     var videoSound by remember{mutableStateOf(store.b("intro_video_sound",true))}
@@ -270,8 +272,15 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                         savedPhone=local
                         store.ps("intro_phone_video_uri",local)
                         pendingPhone=PendingSplashV30()
-                        savingTarget=""
                         message="Phone splash converted to H.264/AAC and saved."
+                        if(RsSupabaseV60.configured){
+                            scope.launch{
+                                rsUploadCloudVisualAssetV101(context,"intro:phone",local,"VIDEO","CENTER",0f)
+                                    .onSuccess{message="Phone splash saved · cloud synced."}
+                                    .onFailure{message=it.message?:"Phone splash saved locally but cloud sync failed."}
+                                savingTarget=""
+                            }
+                        }else savingTarget=""
                     },
                     onError={err->savingTarget="";message=err}
                 )
@@ -283,6 +292,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                 savedPhone=""
                 pendingPhone=PendingSplashV30()
                 message="Phone splash deleted."
+                if(RsSupabaseV60.configured)scope.launch{rsDeleteCloudVisualAssetV101("intro:phone")}
             }
         )
 
@@ -307,8 +317,15 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                         savedTablet=local
                         store.ps("intro_tablet_video_uri",local)
                         pendingTablet=PendingSplashV30()
-                        savingTarget=""
                         message="Tablet splash converted to H.264/AAC and saved."
+                        if(RsSupabaseV60.configured){
+                            scope.launch{
+                                rsUploadCloudVisualAssetV101(context,"intro:tablet",local,"VIDEO","CENTER",0f)
+                                    .onSuccess{message="Tablet splash saved · cloud synced."}
+                                    .onFailure{message=it.message?:"Tablet splash saved locally but cloud sync failed."}
+                                savingTarget=""
+                            }
+                        }else savingTarget=""
                     },
                     onError={err->savingTarget="";message=err}
                 )
@@ -320,6 +337,7 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore){
                 savedTablet=""
                 pendingTablet=PendingSplashV30()
                 message="Tablet splash deleted."
+                if(RsSupabaseV60.configured)scope.launch{rsDeleteCloudVisualAssetV101("intro:tablet")}
             }
         )
 
