@@ -10,6 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 data class RsContentItemV48(
     val id:String,val title:String,val category:String,val body:String,
@@ -99,6 +100,10 @@ private fun rsContentUiV48(lang:RsLang,key:String):String{
 
 @Composable
 fun RsContentManagerV48(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){
+        RsCloudContentManagerV79(c,lang)
+        return
+    }
     var revision by remember{mutableIntStateOf(0)}
     var title by remember{mutableStateOf("")}
     var category by remember{mutableStateOf("TECHNIQUE")}
@@ -200,17 +205,27 @@ private fun RsContentListV48(c:RsPalette,store:RsStore,lang:RsLang,title:String,
 }
 
 @Composable
-fun RsKnowledgeVaultV48(c:RsPalette,store:RsStore,lang:RsLang)=
-    RsContentListV48(c,store,lang,rsContentUiV48(lang,"vault"),rsContentUiV48(lang,"vault_sub"),rsVisibleContentV48(store))
+fun RsKnowledgeVaultV48(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured)RsCloudContentBrowserV79(c,lang,"vault")
+    else RsContentListV48(c,store,lang,rsContentUiV48(lang,"vault"),rsContentUiV48(lang,"vault_sub"),rsVisibleContentV48(store))
+}
 
 @Composable
 fun RsFavoritesV48(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){
+        RsCloudContentBrowserV79(c,lang,"favorites")
+        return
+    }
     val ids=rsFavoriteIdsV48(store)
     RsContentListV48(c,store,lang,rsContentUiV48(lang,"favorites"),rsContentUiV48(lang,"favorites_sub"),rsVisibleContentV48(store).filter{it.id in ids})
 }
 
 @Composable
 fun RsSearchV48(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){
+        RsCloudContentBrowserV79(c,lang,"search")
+        return
+    }
     var query by remember{mutableStateOf("")}
     var selected by remember{mutableStateOf<RsContentItemV48?>(null)}
     if(selected!=null){
@@ -236,7 +251,262 @@ fun RsSearchV48(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsHistoryV48(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){
+        RsCloudContentBrowserV79(c,lang,"history")
+        return
+    }
     val ids=rsHistoryIdsV48(store)
     val byId=rsVisibleContentV48(store).associateBy{it.id}
     RsContentListV48(c,store,lang,"Training History","Recently opened training content.",ids.mapNotNull{byId[it]})
+}
+
+
+@Composable
+private fun RsCloudContentReaderV79(
+    c:RsPalette,
+    lang:RsLang,
+    row:RsCloudContentRowV79,
+    onBack:()->Unit,
+    onChanged:()->Unit
+){
+    val scope=rememberCoroutineScope()
+    var busy by remember{mutableStateOf(false)}
+    var favorite by remember(row.id,row.favorite){mutableStateOf(row.favorite)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(row.id){rsRecordCloudContentOpenV79(row.id)}
+
+    RsScroll(c,row.title,row.category+" · "+row.accessTier){
+        OutlinedButton(onClick=onBack,modifier=Modifier.fillMaxWidth()){
+            Text(rsContentUiV48(lang,"back"))
+        }
+        RsPanel(c){
+            Text(row.body,color=c.text,fontSize=16.sp,lineHeight=24.sp)
+        }
+        Button(
+            onClick={
+                busy=true
+                val next=!favorite
+                scope.launch{
+                    rsToggleCloudContentFavoriteV79(row.id,next)
+                        .onSuccess{
+                            favorite=next
+                            status=if(next)"Saved to favorites." else "Removed from favorites."
+                            onChanged()
+                        }
+                        .onFailure{status=it.message?:"Could not update favorite."}
+                    busy=false
+                }
+            },
+            enabled=!busy,
+            modifier=Modifier.fillMaxWidth()
+        ){Text(if(favorite)rsContentUiV48(lang,"unfavorite") else rsContentUiV48(lang,"favorite"))}
+        if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+    }
+}
+
+@Composable
+private fun RsCloudContentBrowserV79(c:RsPalette,lang:RsLang,mode:String){
+    var revision by remember{mutableIntStateOf(0)}
+    var loading by remember{mutableStateOf(true)}
+    var rows by remember{mutableStateOf<List<RsCloudContentRowV79>>(emptyList())}
+    var status by remember{mutableStateOf("")}
+    var query by remember{mutableStateOf("")}
+    var selected by remember{mutableStateOf<RsCloudContentRowV79?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudContentV79()
+            .onSuccess{rows=it}
+            .onFailure{status=it.message?:"Could not load training content."}
+        loading=false
+    }
+
+    val active=selected
+    if(active!=null){
+        RsCloudContentReaderV79(c,lang,active,{selected=null}){revision++}
+        return
+    }
+
+    val filtered=when(mode){
+        "favorites"->rows.filter{it.favorite}
+        "history"->rows.filter{it.lastOpenedAt!=null}.sortedByDescending{it.lastOpenedAt}
+        "search"->if(query.isBlank())emptyList() else rows.filter{
+            it.title.contains(query,true)||
+            it.category.contains(query,true)||
+            it.body.contains(query,true)
+        }
+        else->rows.filter{it.published}
+    }
+
+    val title=when(mode){
+        "favorites"->rsContentUiV48(lang,"favorites")
+        "history"->"Training History"
+        "search"->rsContentUiV48(lang,"search")
+        else->rsContentUiV48(lang,"vault")
+    }
+    val subtitle=when(mode){
+        "favorites"->rsContentUiV48(lang,"favorites_sub")
+        "history"->"Recently opened cloud training content."
+        "search"->rsContentUiV48(lang,"search_sub")
+        else->"Your live RS KICKBOX training library, filtered by membership access."
+    }
+
+    RsScroll(c,title,subtitle){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing training library…" else "Cloud content library connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        if(mode=="search"){
+            OutlinedTextField(
+                query,
+                {query=it.take(120)},
+                label={Text(rsContentUiV48(lang,"query"))},
+                modifier=Modifier.fillMaxWidth(),
+                singleLine=true
+            )
+        }
+        if(filtered.isEmpty()&&!loading&&(mode!="search"||query.isNotBlank())){
+            RsPanel(c){Text(rsContentUiV48(lang,"none"),color=c.muted)}
+        }
+        filtered.forEach{row->
+            RsPanel(c){
+                Text(row.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                Text(row.category+" · "+row.accessTier,color=c.muted)
+                Text(row.body.take(180)+(if(row.body.length>180)"…" else ""),color=c.text)
+                Button(
+                    onClick={selected=row},
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(rsContentUiV48(lang,"read"))}
+                if(row.favorite)Text("★ "+rsContentUiV48(lang,"unfavorite"),color=c.bright,fontSize=10.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudContentManagerV79(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var items by remember{mutableStateOf<List<RsCloudContentRowV79>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var title by remember{mutableStateOf("")}
+    var category by remember{mutableStateOf("TECHNIQUE")}
+    var body by remember{mutableStateOf("")}
+    var tier by remember{mutableStateOf("ALL")}
+    var published by remember{mutableStateOf(true)}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudContentV79()
+            .onSuccess{items=it}
+            .onFailure{status=it.message?:"Could not load content manager."}
+        loading=false
+    }
+
+    RsScroll(c,rsContentUiV48(lang,"manager"),"Create and publish shared training content by membership level."){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing Content Manager…" else "Supabase Content Manager connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        RsPanel(c){
+            Text(rsContentUiV48(lang,"new"),color=c.bright,fontWeight=FontWeight.Black)
+            OutlinedTextField(title,{title=it.take(120)},label={Text(rsContentUiV48(lang,"title"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            OutlinedTextField(category,{category=it.take(40)},label={Text(rsContentUiV48(lang,"category"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            OutlinedTextField(body,{body=it.take(8000)},label={Text(rsContentUiV48(lang,"body"))},modifier=Modifier.fillMaxWidth(),minLines=6,enabled=!busy)
+            Text(rsContentUiV48(lang,"tier"),color=c.muted)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
+                listOf("ALL","BASIC","PRO","ELITE").forEach{x->
+                    FilterChip(
+                        selected=tier==x,
+                        onClick={tier=x},
+                        enabled=!busy,
+                        label={Text(x,fontSize=9.sp)},
+                        modifier=Modifier.weight(1f)
+                    )
+                }
+            }
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                Text(if(published)rsContentUiV48(lang,"publish") else rsContentUiV48(lang,"draft"),color=c.muted)
+                Switch(published,{published=it},enabled=!busy)
+            }
+            Button(
+                onClick={
+                    busy=true
+                    scope.launch{
+                        rsCreateCloudContentV79(title,category,body,tier,published)
+                            .onSuccess{
+                                title=""
+                                category="TECHNIQUE"
+                                body=""
+                                tier="ALL"
+                                published=true
+                                status="Training content saved."
+                                revision++
+                            }
+                            .onFailure{status=it.message?:"Could not save training content."}
+                        busy=false
+                    }
+                },
+                enabled=!busy&&title.isNotBlank()&&body.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Saving…" else rsContentUiV48(lang,"save"))}
+        }
+
+        items.forEach{item->
+            RsPanel(c){
+                Text(item.title,color=c.bright,fontWeight=FontWeight.Black)
+                Text(item.category+" · "+item.accessTier+" · "+if(item.published)rsContentUiV48(lang,"publish") else rsContentUiV48(lang,"draft"),color=c.muted)
+                Text(item.body.take(220)+(if(item.body.length>220)"…" else ""),color=c.text)
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                    Text(if(item.published)rsContentUiV48(lang,"publish") else rsContentUiV48(lang,"draft"),color=c.muted)
+                    Switch(
+                        item.published,
+                        {value->
+                            busy=true
+                            scope.launch{
+                                rsSetCloudContentPublishedV79(item.id,value)
+                                    .onSuccess{revision++}
+                                    .onFailure{status=it.message?:"Could not change publish state."}
+                                busy=false
+                            }
+                        },
+                        enabled=!busy
+                    )
+                }
+                OutlinedButton(
+                    onClick={
+                        if(pendingDelete==item.id){
+                            busy=true
+                            scope.launch{
+                                rsDeleteCloudContentV79(item.id)
+                                    .onSuccess{
+                                        pendingDelete=null
+                                        status="Training content deleted."
+                                        revision++
+                                    }
+                                    .onFailure{status=it.message?:"Could not delete content."}
+                                busy=false
+                            }
+                        }else pendingDelete=item.id
+                    },
+                    enabled=!busy,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(pendingDelete==item.id)rsContentUiV48(lang,"confirm") else rsContentUiV48(lang,"delete"))}
+            }
+        }
+    }
 }
