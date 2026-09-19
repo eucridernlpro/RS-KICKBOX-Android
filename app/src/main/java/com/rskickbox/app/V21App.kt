@@ -222,6 +222,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                     "fightcamp_admin" -> RsFightCampManagerV47(c,store,lang)
                                     "landing_admin" -> RsPromotionManagerV45(c,store,lang)
                                     "release" -> RsReleaseCenterV16(c, store, lang)
+                                    "privacy_admin" -> RsPrivacyRequestsAdminV107(c,lang)
                                     else -> RsScroll(c, route.replaceFirstChar { it.uppercase() }, "RS premium native module") {
                                         RsPanel(c) {
                                             Text(rsCommonT95(lang,"module_ready"),color=c.bright,fontWeight=FontWeight.Bold)
