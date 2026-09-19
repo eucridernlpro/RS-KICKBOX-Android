@@ -425,7 +425,7 @@ private fun RsCloudStudentHomeworkV80(c:RsPalette,lang:RsLang){
         loading=true
         rsHomeworkFeedV80()
             .onSuccess{items=it}
-            .onFailure{status=it.message?:"Could not load homework."}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -447,7 +447,7 @@ private fun RsCloudStudentHomeworkV80(c:RsPalette,lang:RsLang){
                         scope.launch{
                             rsSetHomeworkCompletedV80(x.id,!x.completed)
                                 .onSuccess{revision++}
-                                .onFailure{status=it.message?:"Could not update homework."}
+                                .onFailure{status=rsReleaseT98(lang,"update_failed")}
                             busyId=null
                         }
                     },
@@ -479,8 +479,8 @@ private fun RsCloudHomeworkManagerV80(c:RsPalette,lang:RsLang){
         rsDevelopmentStudentsV80().onSuccess{
             students=it
             if(selectedId.isBlank())selectedId=it.firstOrNull()?.id.orEmpty()
-        }.onFailure{status=it.message?:"Could not load students."}
-        rsHomeworkFeedV80().onSuccess{items=it}.onFailure{status=it.message?:"Could not load homework."}
+        }.onFailure{status=rsReleaseT98(lang,"load_failed")}
+        rsHomeworkFeedV80().onSuccess{items=it}.onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -502,7 +502,7 @@ private fun RsCloudHomeworkManagerV80(c:RsPalette,lang:RsLang){
                     scope.launch{
                         rsAssignHomeworkV80(selectedId,title.trim(),details.trim(),due.trim())
                             .onSuccess{title="";details="";due="";status=rsCloudT93(lang,"homework_assigned");revision++}
-                            .onFailure{status=it.message?:"Could not assign homework."}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -520,7 +520,7 @@ private fun RsCloudHomeworkManagerV80(c:RsPalette,lang:RsLang){
                         if(pendingDelete==x.id){
                             busy=true
                             scope.launch{
-                                rsDeleteHomeworkV80(x.id).onSuccess{pendingDelete=null;revision++}.onFailure{status=it.message?:"Could not delete homework."}
+                                rsDeleteHomeworkV80(x.id).onSuccess{pendingDelete=null;revision++}.onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                 busy=false
                             }
                         }else pendingDelete=x.id
@@ -549,7 +549,7 @@ private fun RsCloudCoachNotesV80(c:RsPalette,lang:RsLang){
     LaunchedEffect(revision){
         loading=true
         rsDevelopmentStudentsV80().onSuccess{students=it;if(selectedId.isBlank())selectedId=it.firstOrNull()?.id.orEmpty()}
-        rsCoachNotesFeedV80().onSuccess{notes=it}.onFailure{status=it.message?:"Could not load coach notes."}
+        rsCoachNotesFeedV80().onSuccess{notes=it}.onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -564,7 +564,7 @@ private fun RsCloudCoachNotesV80(c:RsPalette,lang:RsLang){
                     scope.launch{
                         rsAddCoachNoteV80(selectedId,note.trim())
                             .onSuccess{note="";status=rsCloudT93(lang,"coach_note_saved");revision++}
-                            .onFailure{status=it.message?:"Could not save coach note."}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -582,7 +582,7 @@ private fun RsCloudCoachNotesV80(c:RsPalette,lang:RsLang){
                         if(pendingDelete==x.id){
                             busy=true
                             scope.launch{
-                                rsDeleteCoachNoteV80(x.id).onSuccess{pendingDelete=null;revision++}.onFailure{status=it.message?:"Could not delete coach note."}
+                                rsDeleteCoachNoteV80(x.id).onSuccess{pendingDelete=null;revision++}.onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                 busy=false
                             }
                         }else pendingDelete=x.id
@@ -636,7 +636,7 @@ private fun RsCloudAssessmentsV80(c:RsPalette,lang:RsLang){
                     scope.launch{
                         rsAddAssessmentV80(selectedId,punches.toInt(),kicks.toInt(),defense.toInt(),footwork.toInt(),combos.toInt(),conditioning.toInt(),summary.trim())
                             .onSuccess{summary="";status=rsCloudT93(lang,"assessment_saved");revision++}
-                            .onFailure{status=it.message?:"Could not save assessment."}
+                            .onFailure{status=rsReleaseT98(lang,"save_failed")}
                         busy=false
                     }
                 },
@@ -656,7 +656,7 @@ private fun RsCloudStudentProgressV80(c:RsPalette,lang:RsLang){
 
     LaunchedEffect(Unit){
         loading=true
-        rsAssessmentFeedV80().onSuccess{assessments=it}.onFailure{status=it.message?:"Could not load progress."}
+        rsAssessmentFeedV80().onSuccess{assessments=it}.onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
