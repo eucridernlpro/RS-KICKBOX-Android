@@ -108,7 +108,7 @@ private fun rsDecodeBookingsV43(raw:String):List<RsPrivateBookingV43>{
                     o.optString("studentEmail"),
                     o.optString("studentName"),
                     o.optString("note"),
-                    o.optString("status",rsCloudT93(lang,"requested"))
+                    o.optString("status","REQUESTED")
                 ))
             }
         }
