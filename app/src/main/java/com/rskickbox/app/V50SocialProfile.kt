@@ -667,6 +667,8 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
     val scope=rememberCoroutineScope()
     var revision by remember{mutableIntStateOf(0)}
     var groups by remember{mutableStateOf<List<RsCloudGroupV84>>(emptyList())}
+    var selectedGroup by remember{mutableStateOf<RsCloudGroupV84?>(null)}
+    var messages by remember{mutableStateOf<List<RsCloudGroupMessageV92>>(emptyList())}
     var name by remember{mutableStateOf("")}
     var description by remember{mutableStateOf("")}
     var loading by remember{mutableStateOf(true)}
@@ -674,18 +676,79 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
     var status by remember{mutableStateOf("")}
     var pendingDelete by remember{mutableStateOf<String?>(null)}
 
-    LaunchedEffect(revision){
+    LaunchedEffect(revision,selectedGroup?.id){
         loading=true
-        rsCloudGroupsV84()
-            .onSuccess{groups=it}
-            .onFailure{status=it.message?:"Could not load groups."}
+        if(selectedGroup==null){
+            rsCloudGroupsV84()
+                .onSuccess{groups=it}
+                .onFailure{status=it.message?:rsGroupChatT(lang,"update_error")}
+        }else{
+            rsCloudGroupMessagesV92(selectedGroup!!.id)
+                .onSuccess{messages=it}
+                .onFailure{status=it.message?:rsGroupChatT(lang,"update_error")}
+        }
         loading=false
     }
 
-    RsScroll(c,rsSocialUiV50(lang,"groups"),if(role==RsRole.TRAINER)"Manage live training groups." else "Join live training groups that match your goals."){
+    val activeGroup=selectedGroup
+    if(activeGroup!=null){
+        RsScroll(c,activeGroup.name,rsGroupChatT(lang,"chat_sub")){
+            OutlinedButton(
+                onClick={selectedGroup=null;messages=emptyList();status="";revision++},
+                modifier=Modifier.fillMaxWidth()
+            ){Text(rsGroupChatT(lang,"back"))}
+
+            RsPanel(c){
+                Text(
+                    if(loading)rsGroupChatT(lang,"loading_chat") else rsGroupChatT(lang,"chat_ready"),
+                    color=if(loading)c.muted else c.bright,
+                    fontWeight=FontWeight.Bold,
+                    fontSize=10.sp
+                )
+                if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+            }
+
+            if(messages.isEmpty()&&!loading){
+                RsPanel(c){Text(rsGroupChatT(lang,"no_messages"),color=c.muted)}
+            }
+
+            messages.forEach{m->
+                RsPanel(c){
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement=Arrangement.spacedBy(8.dp),
+                        verticalAlignment=Alignment.CenterVertically
+                    ){
+                        RsMemberAvatarV68(c,m.senderEmail,m.senderName,size=34.dp)
+                        Text(m.senderName.ifBlank{m.senderEmail},color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                    }
+                    if(m.body.isNotBlank())Text(m.body,color=c.text)
+                    RsChatAttachmentPreviewV92(c,lang,m.mediaPath,m.mediaKind,m.mediaName)
+                }
+            }
+
+            RsChatComposerV92(
+                c=c,
+                lang=lang,
+                scopeType="group",
+                scopeId=activeGroup.id,
+                enabled=!loading,
+                onSent={revision++},
+                onStatus={status=it},
+                onSend={body,attachment->rsSendCloudGroupMessageV92(activeGroup.id,body,attachment)}
+            )
+        }
+        return
+    }
+
+    RsScroll(
+        c,
+        rsSocialUiV50(lang,"groups"),
+        if(role==RsRole.TRAINER)rsGroupChatT(lang,"manage_sub") else rsGroupChatT(lang,"student_sub")
+    ){
         RsPanel(c){
             Text(
-                if(loading)"Syncing groups…" else "Cloud groups connected",
+                if(loading)rsGroupChatT(lang,"syncing") else rsGroupChatT(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -702,21 +765,21 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                     busyId="new"
                     scope.launch{
                         rsCreateCloudGroupV84(name,description)
-                            .onSuccess{name="";description="";status="Group created.";revision++}
-                            .onFailure{status=it.message?:"Could not create group."}
+                            .onSuccess{name="";description="";status=rsGroupChatT(lang,"created");revision++}
+                            .onFailure{status=it.message?:rsGroupChatT(lang,"create_error")}
                         busyId=null
                     }
                 },
                 enabled=name.isNotBlank()&&busyId==null,
                 modifier=Modifier.fillMaxWidth()
-            ){Text(if(busyId=="new")"Creating…" else rsSocialUiV50(lang,"create"))}
+            ){Text(if(busyId=="new")rsGroupChatT(lang,"creating") else rsSocialUiV50(lang,"create"))}
         }
 
         groups.forEach{g->
             RsPanel(c){
                 Text(g.name,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
                 Text(g.description,color=c.text)
-                Text(g.memberCount.toString()+" members",color=c.muted,fontSize=10.sp)
+                Text(g.memberCount.toString()+" "+rsGroupChatT(lang,"members"),color=c.muted,fontSize=10.sp)
 
                 if(role==RsRole.STUDENT){
                     Button(
@@ -724,15 +787,27 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                             busyId=g.id
                             scope.launch{
                                 rsSetMyCloudGroupMembershipV84(g.id,!g.joined)
-                                    .onSuccess{status=if(g.joined)"Left group." else "Joined group.";revision++}
-                                    .onFailure{status=it.message?:"Could not update group membership."}
+                                    .onSuccess{status=if(g.joined)rsGroupChatT(lang,"left") else rsGroupChatT(lang,"joined");revision++}
+                                    .onFailure{status=it.message?:rsGroupChatT(lang,"update_error")}
                                 busyId=null
                             }
                         },
                         enabled=busyId==null,
                         modifier=Modifier.fillMaxWidth()
-                    ){Text(if(busyId==g.id)"Please wait…" else if(g.joined)rsSocialUiV50(lang,"leave") else rsSocialUiV50(lang,"join"))}
+                    ){Text(if(busyId==g.id)rsGroupChatT(lang,"wait") else if(g.joined)rsSocialUiV50(lang,"leave") else rsSocialUiV50(lang,"join"))}
+
+                    if(g.joined){
+                        OutlinedButton(
+                            onClick={selectedGroup=g;status="";revision++},
+                            modifier=Modifier.fillMaxWidth()
+                        ){Text(rsGroupChatT(lang,"open_chat"))}
+                    }
                 }else{
+                    Button(
+                        onClick={selectedGroup=g;status="";revision++},
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(rsGroupChatT(lang,"open_chat"))}
+
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
                         Text(if(g.active)rsSocialUiV50(lang,"active") else rsSocialUiV50(lang,"inactive"),color=c.muted)
                         Switch(
@@ -742,7 +817,7 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                                 scope.launch{
                                     rsSetCloudGroupActiveV84(g.id,value)
                                         .onSuccess{revision++}
-                                        .onFailure{status=it.message?:"Could not update group."}
+                                        .onFailure{status=it.message?:rsGroupChatT(lang,"update_error")}
                                     busyId=null
                                 }
                             },
@@ -755,8 +830,8 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                                 busyId=g.id
                                 scope.launch{
                                     rsDeleteCloudGroupV84(g.id)
-                                        .onSuccess{pendingDelete=null;status="Group deleted.";revision++}
-                                        .onFailure{status=it.message?:"Could not delete group."}
+                                        .onSuccess{pendingDelete=null;status=rsGroupChatT(lang,"deleted");revision++}
+                                        .onFailure{status=it.message?:rsGroupChatT(lang,"delete_error")}
                                     busyId=null
                                 }
                             }else pendingDelete=g.id
