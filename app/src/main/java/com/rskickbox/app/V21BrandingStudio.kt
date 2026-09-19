@@ -132,6 +132,7 @@ private val allVisualSlotsV26=visualSlotsV21+dashboardTileSlotsV26
 @Composable
 fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
     val context=LocalContext.current
+    val scope=rememberCoroutineScope()
     var selectedGroup by remember{mutableStateOf(allVisualSlotsV26.first().group)}
     var selectedSlotKey by remember{mutableStateOf(allVisualSlotsV26.first().key)}
     var groupMenuOpen by remember{mutableStateOf(false)}
@@ -168,8 +169,26 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                 store.ps("visual_v21_kind_${selected.key}",info.kind)
                 if(previous.isNotBlank() && previous!=info.uri)rsDeleteOwnedVisualV29(context,previous)
                 message=info.note
-                optimizing=false
-                refresh++
+                if(RsSupabaseV60.configured){
+                    optimizing=true
+                    scope.launch{
+                        rsUploadCloudVisualAssetV101(
+                            context,
+                            "visual:"+selected.key,
+                            info.uri,
+                            info.kind,
+                            pos,
+                            opacity
+                        )
+                            .onSuccess{message=info.note+" · Cloud synced"}
+                            .onFailure{message=it.message?:"Visual saved locally but cloud sync failed."}
+                        optimizing=false
+                        refresh++
+                    }
+                }else{
+                    optimizing=false
+                    refresh++
+                }
             },
             onError={err->message=err;optimizing=false}
         )
@@ -300,7 +319,12 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                             store.ps(visualKeyV21(selected.key),"")
                             store.ps("visual_v21_kind_${selected.key}","")
                             message="${selected.title} reset."
-                            refresh++
+                            if(RsSupabaseV60.configured){
+                                scope.launch{
+                                    rsDeleteCloudVisualAssetV101("visual:"+selected.key)
+                                    refresh++
+                                }
+                            }else refresh++
                         },
                         enabled=uri.isNotBlank(),
                         modifier=Modifier.weight(1f)
@@ -311,7 +335,13 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                     listOf("LEFT","CENTER","RIGHT","TOP","BOTTOM").forEach{p->
                         FilterChip(
                             selected=pos==p,
-                            onClick={pos=p;store.ps(posKeyV21(selected.key),p)},
+                            onClick={
+                                pos=p
+                                store.ps(posKeyV21(selected.key),p)
+                                if(RsSupabaseV60.configured){
+                                    scope.launch{rsUpdateCloudVisualMetadataV101("visual:"+selected.key,p,opacity)}
+                                }
+                            },
                             label={Text(p.take(1),fontSize=9.sp)},
                             modifier=Modifier.weight(1f)
                         )
@@ -327,6 +357,11 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                     Slider(
                         value=opacity,
                         onValueChange={v->opacity=v;store.ps(opacityKeyV21(selected.key),v.toString())},
+                        onValueChangeFinished={
+                            if(RsSupabaseV60.configured){
+                                scope.launch{rsUpdateCloudVisualMetadataV101("visual:"+selected.key,pos,opacity)}
+                            }
+                        },
                         valueRange=0f..0.85f,
                         modifier=Modifier.weight(1f)
                     )
@@ -342,6 +377,20 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore){
                             onValueChange={v->
                                 loginFormOpacity=v
                                 store.ps("login_form_opacity",v.toString())
+                            },
+                            onValueChangeFinished={
+                                if(RsSupabaseV60.configured){
+                                    scope.launch{
+                                        rsSaveCloudBrandV100(
+                                            store.s("brand_header_name","RS KICKBOX"),
+                                            store.s("brand_login_title","Premium cinematic kickboxing"),
+                                            store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"),
+                                            store.s("brand_footer_text","RS KICKBOX · TRAIN · LEARN · CONNECT · GROW"),
+                                            store.s("theme","ELITE_GOLD"),
+                                            loginFormOpacity
+                                        )
+                                    }
+                                }
                             },
                             valueRange=.20f..1f,
                             modifier=Modifier.weight(1f)
@@ -405,8 +454,17 @@ fun RsBrandSiteSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
         if(active.isBlank())return
         if(persist)runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
         store.ps("brand_asset_$active",uri.toString())
+        val activeKey=active
         refresh++
         message=active+" updated."
+        if(RsSupabaseV60.configured){
+            scope.launch{
+                val kind=rsVisualKindV29(context,uri)
+                rsUploadCloudVisualAssetV101(context,"brand:"+activeKey,uri.toString(),kind,"CENTER",0f)
+                    .onSuccess{message=activeKey+" updated · cloud synced"}
+                    .onFailure{message=it.message?:"Brand asset saved locally but cloud sync failed."}
+            }
+        }
     }
 
     val galleryPickerBrand=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
@@ -489,7 +547,12 @@ fun RsBrandSiteSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
                         modifier=Modifier.weight(1f)
                     ){Text(if(uri.isBlank())rsBrandUiV100(lang,"upload") else rsBrandUiV100(lang,"replace"))}
                     OutlinedButton(
-                        onClick={store.ps("brand_asset_$keyName","");refresh++},
+                        onClick={
+                            store.ps("brand_asset_$keyName","")
+                            if(RsSupabaseV60.configured){
+                                scope.launch{rsDeleteCloudVisualAssetV101("brand:"+keyName);refresh++}
+                            }else refresh++
+                        },
                         enabled=uri.isNotBlank(),
                         modifier=Modifier.weight(1f)
                     ){Text(rsBrandUiV100(lang,"reset"))}
