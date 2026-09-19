@@ -166,26 +166,26 @@ fun rsShareStudentInviteV33(context:Context,account:RsStudentAccountV33){
     FileOutputStream(file).use{bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}
     val uri=FileProvider.getUriForFile(context,context.packageName+".fileprovider",file)
     val text=buildString{
-        append("RS KICKBOX invitation for ")
+        append("RS KICKBOXING invitation for ")
         append(account.name)
         append("\n\nInstall the app: ")
         append(RS_PLAY_STORE_URL_V33)
-        append("\n\nScan the attached QR on the RS KICKBOX login page. Your activation code is inside the QR invitation.")
+        append("\n\nScan the attached QR on the RS KICKBOXING login page. Your activation code is inside the QR invitation.")
     }
     val intent=Intent(Intent.ACTION_SEND).apply{
         type="image/png"
         putExtra(Intent.EXTRA_STREAM,uri)
         putExtra(Intent.EXTRA_TEXT,text)
-        clipData=ClipData.newRawUri("RS KICKBOX invitation QR",uri)
+        clipData=ClipData.newRawUri("RS KICKBOXING invitation QR",uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    context.startActivity(Intent.createChooser(intent,"Share RS KICKBOX invitation"))
+    context.startActivity(Intent.createChooser(intent,"Share RS KICKBOXING invitation"))
 }
 
 fun rsSharePlayStoreLinkV33(context:Context){
     val intent=Intent(Intent.ACTION_SEND).apply{
         type="text/plain"
-        putExtra(Intent.EXTRA_TEXT,"Download RS KICKBOX: $RS_PLAY_STORE_URL_V33")
+        putExtra(Intent.EXTRA_TEXT,"Download RS KICKBOXING: $RS_PLAY_STORE_URL_V33")
     }
-    context.startActivity(Intent.createChooser(intent,"Share RS KICKBOX download link"))
+    context.startActivity(Intent.createChooser(intent,"Share RS KICKBOXING download link"))
 }
