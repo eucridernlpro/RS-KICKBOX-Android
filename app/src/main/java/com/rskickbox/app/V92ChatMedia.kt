@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.storage
 import io.ktor.http.ContentType
@@ -132,6 +133,23 @@ suspend fun rsUploadChatMediaV92(
     client.storage.from(RS_CHAT_MEDIA_BUCKET_V92).upload(path,bytes){
         upsert=false
         this.contentType=contentType
+    }
+    val currentUser=client.auth.currentUserOrNull()
+    val studentId=when(scopeType){
+        "coach"->scopeId
+        else->currentUser?.id.orEmpty()
+    }
+    if(studentId.isNotBlank()){
+        runCatching{
+            rsRegisterStudentMediaAssetV111(
+                studentId=studentId,
+                bucket=RS_CHAT_MEDIA_BUCKET_V92,
+                path=path,
+                kind=kind,
+                sourceArea="CHAT",
+                byteSize=bytes.size.toLong()
+            )
+        }
     }
     RsChatAttachmentV92(path,kind,name)
 }
