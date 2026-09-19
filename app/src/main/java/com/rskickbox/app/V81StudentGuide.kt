@@ -265,22 +265,29 @@ private fun rsStudentGuideUiV81(lang:RsLang,key:String):String{
         "search" to "Pesquisar no guia…","all" to "TODAS","show" to "Ver como funciona","hide" to "Ocultar guia",
         "purpose" to "O QUE ESTA SECÇÃO FAZ","example" to "EXEMPLO","steps" to "COMO USAR","tip" to "BOM SABER","open" to "Abrir esta secção","sections" to "secções disponíveis"
     )
-    val es=en+mapOf("title" to "Guía de la App para Alumnos","subtitle" to "Aprende qué hace cada sección disponible de RS KICKBOX y cómo usarla.","access" to "La guía sigue automáticamente tu acceso actual. Una sección bloqueada por el entrenador solo aparece cuando se desbloquea.","search" to "Buscar en la guía…","all" to "TODAS","show" to "Ver cómo funciona","hide" to "Ocultar guía","purpose" to "QUÉ HACE ESTA SECCIÓN","example" to "EJEMPLO","steps" to "CÓMO USARLA","tip" to "BUENO SABER","open" to "Abrir esta sección","sections" to "secciones disponibles")
-    val fr=en+mapOf("title" to "Guide App Élève","subtitle" to "Découvre le rôle de chaque section RS KICKBOX disponible et comment l’utiliser.","access" to "Le guide suit automatiquement tes accès actuels. Une section bloquée par l’entraîneur apparaît seulement après son déblocage.","search" to "Rechercher dans le guide…","all" to "TOUT","show" to "Voir comment ça marche","hide" to "Masquer","purpose" to "RÔLE DE CETTE SECTION","example" to "EXEMPLE","steps" to "COMMENT L’UTILISER","tip" to "BON À SAVOIR","open" to "Ouvrir cette section","sections" to "sections disponibles")
-    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;else->en}
+    val es=en+mapOf("title" to "Guía de la App para Alumnos","subtitle" to "Aprende qué hace cada sección disponible de RS KICKBOX y cómo usarla.","quick" to "INICIO RÁPIDO","quick_body" to "Empieza con Mi Perfil → Clases → Notificaciones → Tareas → Progreso. Después explora coaching, entrenamiento y biblioteca.","access" to "La guía sigue automáticamente tu acceso actual. Una sección bloqueada por el entrenador solo aparece cuando se desbloquea.","search" to "Buscar en la guía…","all" to "TODAS","show" to "Ver cómo funciona","hide" to "Ocultar guía","purpose" to "QUÉ HACE ESTA SECCIÓN","example" to "EJEMPLO","steps" to "CÓMO USARLA","tip" to "BUENO SABER","open" to "Abrir esta sección","sections" to "secciones disponibles")
+    val fr=en+mapOf("title" to "Guide App Élève","subtitle" to "Découvre le rôle de chaque section RS KICKBOX disponible et comment l’utiliser.","quick" to "DÉMARRAGE RAPIDE","quick_body" to "Commence par Mon Profil → Cours → Notifications → Devoirs → Progression. Explore ensuite le coaching, l’entraînement et la bibliothèque.","access" to "Le guide suit automatiquement tes accès actuels. Une section bloquée par l’entraîneur apparaît seulement après son déblocage.","search" to "Rechercher dans le guide…","all" to "TOUT","show" to "Voir comment ça marche","hide" to "Masquer","purpose" to "RÔLE DE CETTE SECTION","example" to "EXEMPLE","steps" to "COMMENT L’UTILISER","tip" to "BON À SAVOIR","open" to "Ouvrir cette section","sections" to "sections disponibles")
+    val de=en+mapOf("title" to "Schüler-App-Anleitung","subtitle" to "Erfahre, was jeder verfügbare RS KICKBOX-Bereich macht und wie du ihn verwendest.","quick" to "SCHNELLSTART","quick_body" to "Beginne mit Mein Profil → Kurse → Benachrichtigungen → Hausaufgaben → Fortschritt. Entdecke danach Coaching, Training und Bibliothek.","access" to "Die Anleitung folgt automatisch deinem aktuellen App-Zugriff. Ein vom Trainer gesperrter Bereich erscheint erst nach der Freigabe.","search" to "App-Anleitung durchsuchen…","all" to "ALLE","show" to "So funktioniert es","hide" to "Anleitung ausblenden","purpose" to "WAS DIESER BEREICH MACHT","example" to "BEISPIEL","steps" to "SO VERWENDEST DU IHN","tip" to "GUT ZU WISSEN","open" to "Diesen Bereich öffnen","sections" to "verfügbare Bereiche")
+    val it=en+mapOf("title" to "Guida App Allievo","subtitle" to "Scopri cosa fa ogni sezione RS KICKBOX disponibile e come usarla.","quick" to "AVVIO RAPIDO","quick_body" to "Inizia con Il Mio Profilo → Lezioni → Notifiche → Compiti → Progressi. Poi esplora coaching, allenamento e libreria.","access" to "La guida segue automaticamente il tuo accesso attuale. Una sezione bloccata dall'allenatore appare solo dopo lo sblocco.","search" to "Cerca nella guida…","all" to "TUTTE","show" to "Mostra come funziona","hide" to "Nascondi guida","purpose" to "COSA FA QUESTA SEZIONE","example" to "ESEMPIO","steps" to "COME USARLA","tip" to "BUONO A SAPERSI","open" to "Apri questa sezione","sections" to "sezioni disponibili")
+    val pl=en+mapOf("title" to "Przewodnik Aplikacji Ucznia","subtitle" to "Dowiedz się, do czego służy każda dostępna sekcja RS KICKBOX i jak jej używać.","quick" to "SZYBKI START","quick_body" to "Zacznij od Mój Profil → Zajęcia → Powiadomienia → Zadania → Postępy. Potem poznaj coaching, trening i bibliotekę.","access" to "Przewodnik automatycznie uwzględnia Twój bieżący dostęp. Sekcja zablokowana przez trenera pojawi się dopiero po odblokowaniu.","search" to "Szukaj w przewodniku…","all" to "WSZYSTKIE","show" to "Pokaż jak działa","hide" to "Ukryj przewodnik","purpose" to "DO CZEGO SŁUŻY TA SEKCJA","example" to "PRZYKŁAD","steps" to "JAK Z NIEJ KORZYSTAĆ","tip" to "WARTO WIEDZIEĆ","open" to "Otwórz tę sekcję","sections" to "dostępne sekcje")
+    val tr=en+mapOf("title" to "Öğrenci Uygulama Rehberi","subtitle" to "Kullanılabilir her RS KICKBOX bölümünün ne yaptığını ve nasıl kullanılacağını öğren.","quick" to "HIZLI BAŞLANGIÇ","quick_body" to "Profilim → Dersler → Bildirimler → Ödev → İlerleme ile başla. Ardından koçluk, antrenman ve kütüphane araçlarını keşfet.","access" to "Rehber mevcut uygulama erişimini otomatik olarak takip eder. Antrenörün kilitledığı bir bölüm yalnızca kilit açıldıktan sonra görünür.","search" to "Uygulama rehberinde ara…","all" to "TÜMÜ","show" to "Nasıl çalıştığını göster","hide" to "Rehberi gizle","purpose" to "BU BÖLÜM NE YAPAR","example" to "ÖRNEK","steps" to "NASIL KULLANILIR","tip" to "BİLMEKTE FAYDA VAR","open" to "Bu bölümü aç","sections" to "kullanılabilir bölüm")
+    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
 }
 
-private fun rsStudentGuideCategoryV81(lang:RsLang,cat:String):String=when(cat){
-    "START"->when(lang.code){"nl"->"START";"pt"->"INÍCIO";else->"START"}
-    "TRAINING"->when(lang.code){"nl"->"TRAINING";"pt"->"TREINO";"es"->"ENTRENAMIENTO";"fr"->"ENTRAÎNEMENT";else->"TRAINING"}
-    "COACHING"->"COACHING"
-    "PERFORMANCE"->when(lang.code){"pt"->"DESEMPENHO";"es"->"RENDIMIENTO";"fr"->"PERFORMANCE";else->"PERFORMANCE"}
-    "LIBRARY"->when(lang.code){"nl"->"BIBLIOTHEEK";"pt"->"BIBLIOTECA";"es"->"BIBLIOTECA";"fr"->"BIBLIOTHÈQUE";else->"LIBRARY"}
-    "COMMUNITY"->when(lang.code){"nl"->"COMMUNITY";"pt"->"COMUNIDADE";"es"->"COMUNIDAD";"fr"->"COMMUNAUTÉ";else->"COMMUNITY"}
-    "MEMBER"->when(lang.code){"nl"->"LEDENSERVICE";"pt"->"MEMBRO";"es"->"MIEMBRO";"fr"->"MEMBRE";else->"MEMBER"}
-    "ACCOUNT"->when(lang.code){"nl"->"ACCOUNT";"pt"->"CONTA";"es"->"CUENTA";"fr"->"COMPTE";else->"ACCOUNT"}
-    else->cat
+private fun rsStudentGuideCategoryV81(lang:RsLang,cat:String):String{
+    val packs=mapOf(
+        "START" to listOf("START","START","INÍCIO","INICIO","DÉPART","START","INIZIO","START","BAŞLANGIÇ"),
+        "TRAINING" to listOf("TRAINING","TRAINING","TREINO","ENTRENAMIENTO","ENTRAÎNEMENT","TRAINING","ALLENAMENTO","TRENING","ANTRENMAN"),
+        "COACHING" to listOf("COACHING","COACHING","COACHING","COACHING","COACHING","COACHING","COACHING","COACHING","KOÇLUK"),
+        "PERFORMANCE" to listOf("PERFORMANCE","PRESTATIE","DESEMPENHO","RENDIMIENTO","PERFORMANCE","LEISTUNG","PRESTAZIONE","WYNIKI","PERFORMANS"),
+        "LIBRARY" to listOf("LIBRARY","BIBLIOTHEEK","BIBLIOTECA","BIBLIOTECA","BIBLIOTHÈQUE","BIBLIOTHEK","LIBRERIA","BIBLIOTEKA","KÜTÜPHANE"),
+        "COMMUNITY" to listOf("COMMUNITY","COMMUNITY","COMUNIDADE","COMUNIDAD","COMMUNAUTÉ","COMMUNITY","COMMUNITY","SPOŁECZNOŚĆ","TOPLULUK"),
+        "MEMBER" to listOf("MEMBER","LEDENSERVICE","MEMBRO","MIEMBRO","MEMBRE","MITGLIED","MEMBRO","CZŁONEK","ÜYE"),
+        "ACCOUNT" to listOf("ACCOUNT","ACCOUNT","CONTA","CUENTA","COMPTE","KONTO","ACCOUNT","KONTO","HESAP")
+    )
+    val index=when(lang.code){"nl"->1;"pt"->2;"es"->3;"fr"->4;"de"->5;"it"->6;"pl"->7;"tr"->8;else->0}
+    return packs[cat]?.getOrNull(index)?:cat
 }
 
 fun rsStudentFeatureEnabledV81(store:RsStore,route:String):Boolean =
@@ -299,6 +306,39 @@ private fun rsStudentGuideVisibleV81(store:RsStore,item:RsStudentGuideItemV81):B
     val plan=store.s("session_plan","BASIC")
     return rsPlanRankV81(plan)>=rsPlanRankV81(item.minPlan)
 }
+
+private data class RsStudentGuideLocalizedV105(
+    val title:String,
+    val purpose:String,
+    val example:String,
+    val steps:List<String>,
+    val tip:String
+)
+
+private fun rsStudentGuideLocalizedV105(lang:RsLang,item:RsStudentGuideItemV81):RsStudentGuideLocalizedV105{
+    if(lang.code=="en")return RsStudentGuideLocalizedV105(item.title,item.purpose,item.example,item.steps,item.tip)
+    val title=rsRouteTitle(lang,item.route,item.title)
+    val hint=rsRouteHint(lang,item.route,title)
+    fun text(key:String):String=when(lang.code){
+        "nl"->when(key){"purpose"->"$title helpt je met: $hint.";"example"->"Open $title en gebruik de beschikbare opties voor jouw training of account.";"step1"->"Open $title.";"step2"->"Bekijk de beschikbare informatie en opties.";"step3"->"Gebruik alleen functies die voor jouw account beschikbaar zijn.";"step4"->"Controleer het resultaat en keer terug wanneer nodig.";"tip"->"Volg de aanwijzingen van je trainer en gebruik alleen toegang die voor jouw account is vrijgegeven.";else->""}
+        "pt"->when(key){"purpose"->"$title ajuda-te com: $hint.";"example"->"Abre $title e usa as opções disponíveis para o teu treino ou conta.";"step1"->"Abre $title.";"step2"->"Revê a informação e as opções disponíveis.";"step3"->"Usa apenas as funções disponíveis para a tua conta.";"step4"->"Confirma o resultado e volta quando precisares.";"tip"->"Segue as indicações do treinador e usa apenas o acesso autorizado para a tua conta.";else->""}
+        "es"->when(key){"purpose"->"$title te ayuda con: $hint.";"example"->"Abre $title y usa las opciones disponibles para tu entrenamiento o cuenta.";"step1"->"Abre $title.";"step2"->"Revisa la información y las opciones disponibles.";"step3"->"Usa solo las funciones disponibles para tu cuenta.";"step4"->"Comprueba el resultado y vuelve cuando lo necesites.";"tip"->"Sigue las indicaciones de tu entrenador y utiliza solo el acceso habilitado para tu cuenta.";else->""}
+        "fr"->when(key){"purpose"->"$title t’aide pour : $hint.";"example"->"Ouvre $title et utilise les options disponibles pour ton entraînement ou ton compte.";"step1"->"Ouvre $title.";"step2"->"Consulte les informations et options disponibles.";"step3"->"Utilise uniquement les fonctions disponibles pour ton compte.";"step4"->"Vérifie le résultat et reviens quand nécessaire.";"tip"->"Suis les consignes de ton entraîneur et utilise uniquement les accès autorisés pour ton compte.";else->""}
+        "de"->when(key){"purpose"->"$title hilft dir bei: $hint.";"example"->"Öffne $title und nutze die verfügbaren Optionen für dein Training oder Konto.";"step1"->"Öffne $title.";"step2"->"Prüfe die verfügbaren Informationen und Optionen.";"step3"->"Nutze nur Funktionen, die für dein Konto freigeschaltet sind.";"step4"->"Prüfe das Ergebnis und kehre bei Bedarf zurück.";"tip"->"Folge den Anweisungen deines Trainers und nutze nur die für dein Konto freigegebenen Funktionen.";else->""}
+        "it"->when(key){"purpose"->"$title ti aiuta con: $hint.";"example"->"Apri $title e usa le opzioni disponibili per il tuo allenamento o account.";"step1"->"Apri $title.";"step2"->"Controlla le informazioni e le opzioni disponibili.";"step3"->"Usa solo le funzioni disponibili per il tuo account.";"step4"->"Controlla il risultato e torna quando serve.";"tip"->"Segui le indicazioni dell'allenatore e usa solo le funzioni abilitate per il tuo account.";else->""}
+        "pl"->when(key){"purpose"->"$title pomaga w: $hint.";"example"->"Otwórz $title i użyj dostępnych opcji dla swojego treningu lub konta.";"step1"->"Otwórz $title.";"step2"->"Sprawdź dostępne informacje i opcje.";"step3"->"Używaj tylko funkcji dostępnych dla Twojego konta.";"step4"->"Sprawdź wynik i wróć, gdy będzie to potrzebne.";"tip"->"Stosuj się do wskazówek trenera i korzystaj tylko z funkcji udostępnionych Twojemu kontu.";else->""}
+        "tr"->when(key){"purpose"->"$title şu konularda yardımcı olur: $hint.";"example"->"$title bölümünü aç ve antrenmanın veya hesabın için kullanılabilir seçenekleri kullan.";"step1"->"$title bölümünü aç.";"step2"->"Kullanılabilir bilgi ve seçenekleri incele.";"step3"->"Yalnızca hesabına açık olan özellikleri kullan.";"step4"->"Sonucu kontrol et ve gerektiğinde tekrar dön.";"tip"->"Antrenörünün talimatlarını takip et ve yalnızca hesabın için açılmış özellikleri kullan.";else->""}
+        else->""
+    }
+    return RsStudentGuideLocalizedV105(
+        title=title,
+        purpose=text("purpose"),
+        example=text("example"),
+        steps=listOf(text("step1"),text("step2"),text("step3"),text("step4")),
+        tip=text("tip")
+    )
+}
+
 
 @Composable
 fun RsStudentGuideV81(
@@ -354,17 +394,18 @@ fun RsStudentGuideV81(
 
         filtered.forEach{item->
             val open=expanded==item.route
+            val localized=rsStudentGuideLocalizedV105(lang,item)
             RsPanel(c){
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
                         Text(rsStudentGuideCategoryV81(lang,item.category),color=c.muted,fontSize=9.sp,fontWeight=FontWeight.Bold)
-                        Text(item.title,color=c.bright,fontSize=19.sp,fontWeight=FontWeight.Black)
+                        Text(localized.title,color=c.bright,fontSize=19.sp,fontWeight=FontWeight.Black)
                     }
                     Surface(shape=MaterialTheme.shapes.medium,color=c.gold.copy(alpha=.16f)){
                         Text("?",color=c.bright,fontSize=16.sp,fontWeight=FontWeight.Black,modifier=Modifier.padding(horizontal=11.dp,vertical=6.dp))
                     }
                 }
-                Text(item.purpose,color=c.text,maxLines=if(open)Int.MAX_VALUE else 3,overflow=TextOverflow.Ellipsis)
+                Text(localized.purpose,color=c.text,maxLines=if(open)Int.MAX_VALUE else 3,overflow=TextOverflow.Ellipsis)
 
                 OutlinedButton(
                     onClick={expanded=if(open)null else item.route},
@@ -374,13 +415,13 @@ fun RsStudentGuideV81(
                 if(open){
                     HorizontalDivider()
                     Text(rsStudentGuideUiV81(lang,"purpose"),color=c.bright,fontWeight=FontWeight.Black,fontSize=10.sp)
-                    Text(item.purpose,color=c.text)
+                    Text(localized.purpose,color=c.text)
 
                     Text(rsStudentGuideUiV81(lang,"example"),color=c.bright,fontWeight=FontWeight.Black,fontSize=10.sp)
-                    Text(item.example,color=c.text)
+                    Text(localized.example,color=c.text)
 
                     Text(rsStudentGuideUiV81(lang,"steps"),color=c.bright,fontWeight=FontWeight.Black,fontSize=10.sp)
-                    item.steps.forEachIndexed{i,step->
+                    localized.steps.forEachIndexed{i,step->
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=Alignment.Top){
                             Surface(color=c.gold.copy(alpha=.18f),shape=MaterialTheme.shapes.small,modifier=Modifier.size(25.dp)){
                                 Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
@@ -393,7 +434,7 @@ fun RsStudentGuideV81(
 
                     RsPanel(c){
                         Text(rsStudentGuideUiV81(lang,"tip"),color=c.bright,fontWeight=FontWeight.Black,fontSize=10.sp)
-                        Text(item.tip,color=c.muted,fontSize=11.sp)
+                        Text(localized.tip,color=c.muted,fontSize=11.sp)
                     }
 
                     Button(
