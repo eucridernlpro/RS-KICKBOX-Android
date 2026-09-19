@@ -99,7 +99,7 @@ fun RsMembershipPlansV49(c:RsPalette,store:RsStore,lang:RsLang){
     RsScroll(c,rsPlanUiV49(lang,"plans"),rsPlanUiV49(lang,"plans_sub")){
         if(cloudMode)RsPanel(c){
             Text(
-                if(loading)"Syncing membership plans…" else "Cloud membership plans connected",
+                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -191,7 +191,7 @@ fun RsAccessControlV49(c:RsPalette,store:RsStore,lang:RsLang){
         RsScroll(c,rsPlanUiV49(lang,"access"),rsPlanUiV49(lang,"access_sub")){
             RsPanel(c){
                 Text(
-                    if(loading)"Syncing student access…" else "Live student access connected",
+                    if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                     color=if(loading)c.muted else c.bright,
                     fontWeight=FontWeight.Bold,
                     fontSize=10.sp
