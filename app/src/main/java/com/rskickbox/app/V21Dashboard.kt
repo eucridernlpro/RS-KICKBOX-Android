@@ -302,6 +302,7 @@ private fun trainerV21()=listOf(
         DashV21("analytics","Analytics","Club performance","progress"),
         DashV21("support","Support & Final QC","Operations · QA","settings"),
         DashV21("release","Release & Legal Center","Policies · Play Store","settings"),
+        DashV21("privacy_admin","Privacy Requests","Data export · account deletion","settings"),
         DashV21("settings","App Settings","Privacy · maintenance","settings")
     ))
 )
