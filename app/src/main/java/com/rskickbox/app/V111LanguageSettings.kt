@@ -49,6 +49,7 @@ private fun rsLanguageSettingsT111(lang:RsLang,key:String):String{
     return pack[key]?:en[key]?:key
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RsLanguageSettingsPanelV111(
     c:RsPalette,
