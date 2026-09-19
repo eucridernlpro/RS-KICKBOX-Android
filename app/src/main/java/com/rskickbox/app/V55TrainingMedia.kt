@@ -281,7 +281,7 @@ fun RsTrainingMediaV55(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                 }
                 status=rsMediaUiV55(lang,"ready")
             }.onFailure{
-                status=it.message?:"Could not import media."
+                status=rsReleaseT98(lang,"save_failed")
             }
             importing=false
         }
@@ -427,7 +427,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
         loading=true
         rsCloudTrainingMediaV73()
             .onSuccess{all=it}
-            .onFailure{status=it.message?:"Could not load training media."}
+            .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
@@ -446,7 +446,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
             status=rsCloudT93(lang,"downloading_media")
             rsCloudTrainingMediaLocalUriV73(context,activeSelected)
                 .onSuccess{selectedLocalUri=it;status=""}
-                .onFailure{status=it.message?:"Could not open training media."}
+                .onFailure{status=rsReleaseT98(lang,"load_failed")}
         }
         if(selectedLocalUri.isBlank()){
             RsScroll(c,activeSelected.title,activeSelected.category+" · "+activeSelected.accessTier){
@@ -571,7 +571,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
                                     status=rsCloudT93(lang,"media_published")
                                     revision++
                                 }
-                                .onFailure{status=it.message?:"Could not upload training media."}
+                                .onFailure{status=rsReleaseT98(lang,"save_failed")}
                             busy=false
                         }
                     },
@@ -615,7 +615,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
                                 scope.launch{
                                     rsSetCloudTrainingMediaPublishedV73(item.id,value)
                                         .onSuccess{revision++}
-                                        .onFailure{status=it.message?:"Could not change publish state."}
+                                        .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                     busy=false
                                 }
                             },
@@ -633,7 +633,7 @@ private fun RsCloudTrainingMediaScreenV73(c:RsPalette,lang:RsLang,role:RsRole){
                                             status=rsCloudT93(lang,"media_deleted")
                                             revision++
                                         }
-                                        .onFailure{status=it.message?:"Could not delete training media."}
+                                        .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                     busy=false
                                 }
                             }else pendingDelete=item.id
