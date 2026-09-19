@@ -1,6 +1,6 @@
 # RS KICKBOX — Play Store Release Checklist
 
-Current Android line: **v0.110.0** · **versionCode 110**  
+Current Android line: **v0.111.0** · **versionCode 110**  
 Package: **com.rskickbox.app**  
 Target SDK: **36**
 
@@ -177,3 +177,13 @@ Run at least:
 8. Play Console forms/listing/reviewer access not yet completed.
 
 Do not call the project production-ready until all blockers above are verified.
+
+
+## v0.111 milestone
+- Visible public brand is RS KICKBOXING while package/internal IDs stay unchanged.
+- Reusable multimedia training plans can be assigned through Homework and confirmed Private Lessons.
+- Trainer-approved AI correction media tags reuse Training Media instead of inventing duplicate demonstrations.
+- Student media accounting tracks technique/chat uploads; trainer can inspect per-student storage and delete old cloud media.
+- Trainer can edit own chat messages, delete/moderate messages and attachments, and clear private/group conversations with confirmation.
+- Trainer Guide and Student Guide are updated for the new workflows.
+- Requires Supabase delta: supabase/RS_KICKBOX_V111_BACKEND_UPDATE.sql.
