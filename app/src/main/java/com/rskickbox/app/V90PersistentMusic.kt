@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -35,6 +36,7 @@ class RsMusicPlaybackServiceV90 : MediaSessionService() {
         super.onCreate()
         val player=ExoPlayer.Builder(this).build().apply{
             repeatMode=Player.REPEAT_MODE_ALL
+            setWakeMode(C.WAKE_MODE_LOCAL)
         }
         mediaSession=MediaSession.Builder(this,player).build()
     }
