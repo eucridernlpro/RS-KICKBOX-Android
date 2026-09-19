@@ -135,7 +135,7 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
             cloudLoading=true
             rsCloudClassesV69()
                 .onSuccess{cloudItems=it}
-                .onFailure{status=it.message?:"Could not load club classes."}
+                .onFailure{status=rsReleaseT98(lang,"load_failed")}
             cloudLoading=false
         }
     }
@@ -191,7 +191,7 @@ fun RsStudentClassesV38(c:RsPalette,store:RsStore,lang:RsLang){
                                         status=if(isBooked)"Booking cancelled." else "Class booked successfully."
                                         revision++
                                     }
-                                    .onFailure{status=it.message?:"Could not update booking."}
+                                    .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                 cloudBusyId=null
                             }
                         }else{
@@ -249,7 +249,7 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
             cloudLoading=true
             rsCloudClassesV69()
                 .onSuccess{cloudItems=it}
-                .onFailure{status=it.message?:"Could not load cloud classes."}
+                .onFailure{status=rsReleaseT98(lang,"load_failed")}
             cloudLoading=false
         }
     }
@@ -312,7 +312,7 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
                                     status=rsCloudT93(lang,"class_created")
                                     revision++
                                 }
-                                .onFailure{status=it.message?:"Could not create class. Use date YYYY-MM-DD and time HH:mm."}
+                                .onFailure{status=rsReleaseT98(lang,"save_failed")}
                             cloudBusy=false
                         }
                     }else{
@@ -346,7 +346,7 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
                                 scope.launch{
                                     rsSetCloudClassStateV69(clazz.id,on,clazz.bookingOpen)
                                         .onSuccess{revision++}
-                                        .onFailure{status=it.message?:"Could not update class."}
+                                        .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                     cloudBusy=false
                                 }
                             }else saveLocal(classes.map{if(it.id==clazz.id)it.copy(active=on) else it})
@@ -365,7 +365,7 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
                                 scope.launch{
                                     rsSetCloudClassStateV69(clazz.id,clazz.active,on)
                                         .onSuccess{revision++}
-                                        .onFailure{status=it.message?:"Could not update booking state."}
+                                        .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                     cloudBusy=false
                                 }
                             }else saveLocal(classes.map{if(it.id==clazz.id)it.copy(bookingOpen=on) else it})
@@ -386,7 +386,7 @@ fun RsClassManagerV38(c:RsPalette,store:RsStore,lang:RsLang){
                                             status=rsCloudT93(lang,"class_deleted")
                                             revision++
                                         }
-                                        .onFailure{status=it.message?:"Could not delete class."}
+                                        .onFailure{status=rsReleaseT98(lang,"delete_failed")}
                                     cloudBusy=false
                                 }
                             }else{
@@ -427,7 +427,7 @@ fun RsAttendanceV38(c:RsPalette,store:RsStore,lang:RsLang){
                         selectedClassId=cloudClasses.firstOrNull()?.clazz?.id.orEmpty()
                     }
                 }
-                .onFailure{status=it.message?:"Could not load classes."}
+                .onFailure{status=rsReleaseT98(lang,"load_failed")}
             loading=false
         }
     }
@@ -437,7 +437,7 @@ fun RsAttendanceV38(c:RsPalette,store:RsStore,lang:RsLang){
             loading=true
             rsCloudAttendanceRosterV70(selectedClassId)
                 .onSuccess{roster=it}
-                .onFailure{status=it.message?:"Could not load attendance roster."}
+                .onFailure{status=rsReleaseT98(lang,"load_failed")}
             loading=false
         }
     }
@@ -519,7 +519,7 @@ fun RsAttendanceV38(c:RsPalette,store:RsStore,lang:RsLang){
                                                 status=if(present)"Marked present." else "Attendance removed."
                                                 revision++
                                             }
-                                            .onFailure{status=it.message?:"Could not update attendance."}
+                                            .onFailure{status=rsReleaseT98(lang,"update_failed")}
                                         busyStudentId=null
                                     }
                                 },
