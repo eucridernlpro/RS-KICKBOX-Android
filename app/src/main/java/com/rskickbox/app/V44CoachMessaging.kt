@@ -379,7 +379,8 @@ private fun RsCloudCoachBubbleV72(
                     )
                 }
             }
-            Text(message.body,color=c.text)
+            if(message.body.isNotBlank())Text(message.body,color=c.text)
+            RsChatAttachmentPreviewV92(c,lang,message.mediaPath,message.mediaKind,message.mediaName)
             Text(rsCoachTimeV44(message.createdAtMillis()),color=c.muted,fontSize=9.sp)
         }
     }
@@ -428,36 +429,17 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
 
         messages.forEach{RsCloudCoachBubbleV72(c,lang,it)}
 
-        RsPanel(c){
-            OutlinedTextField(
-                value=draft,
-                onValueChange={draft=it.take(1200)},
-                label={Text(rsCoachUiV44(lang,"message"))},
-                modifier=Modifier.fillMaxWidth(),
-                minLines=3,
-                maxLines=8,
-                enabled=!sending
+        if(studentId.isNotBlank()){
+            RsChatComposerV92(
+                c=c,
+                lang=lang,
+                scopeType="coach",
+                scopeId=studentId,
+                enabled=!loading,
+                onSent={revision++},
+                onStatus={status=it},
+                onSend={body,attachment->rsCloudSendCoachMessageV72(studentId,body,attachment)}
             )
-            Button(
-                onClick={
-                    if(studentId.isBlank())return@Button
-                    sending=true
-                    status=""
-                    val clean=draft.trim()
-                    scope.launch{
-                        rsCloudSendCoachMessageV72(studentId,clean)
-                            .onSuccess{
-                                draft=""
-                                status="Message sent."
-                                revision++
-                            }
-                            .onFailure{status=it.message?:"Could not send message."}
-                        sending=false
-                    }
-                },
-                enabled=!sending&&draft.trim().isNotBlank()&&studentId.isNotBlank(),
-                modifier=Modifier.fillMaxWidth()
-            ){Text(if(sending)"Sending…" else rsCoachUiV44(lang,"send"))}
         }
     }
 }
@@ -555,35 +537,16 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang){
             if(messages.isEmpty()&&!loading)RsPanel(c){Text(rsCoachUiV44(lang,"no_messages"),color=c.muted)}
             messages.forEach{RsCloudCoachBubbleV72(c,lang,it)}
 
-            RsPanel(c){
-                OutlinedTextField(
-                    value=draft,
-                    onValueChange={draft=it.take(1200)},
-                    label={Text(rsCoachUiV44(lang,"message"))},
-                    modifier=Modifier.fillMaxWidth(),
-                    minLines=3,
-                    maxLines=8,
-                    enabled=!sending
-                )
-                Button(
-                    onClick={
-                        sending=true
-                        status=""
-                        scope.launch{
-                            rsCloudSendCoachMessageV72(thread.studentId,draft.trim())
-                                .onSuccess{
-                                    draft=""
-                                    status="Message sent."
-                                    revision++
-                                }
-                                .onFailure{status=it.message?:"Could not send message."}
-                            sending=false
-                        }
-                    },
-                    enabled=!sending&&draft.trim().isNotBlank(),
-                    modifier=Modifier.fillMaxWidth()
-                ){Text(if(sending)"Sending…" else rsCoachUiV44(lang,"send"))}
-            }
+            RsChatComposerV92(
+                c=c,
+                lang=lang,
+                scopeType="coach",
+                scopeId=thread.studentId,
+                enabled=!loading,
+                onSent={revision++},
+                onStatus={status=it},
+                onSend={body,attachment->rsCloudSendCoachMessageV72(thread.studentId,body,attachment)}
+            )
         }
     }
 }
