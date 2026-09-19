@@ -35,6 +35,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     var authRestoring by remember { mutableStateOf(false) }
     var cloudControlsRevision by remember { mutableIntStateOf(0) }
     var brandRevision by remember { mutableIntStateOf(0) }
+    var brandAssetsRestoring by remember { mutableStateOf(RsSupabaseV60.configured) }
     var lang by remember { mutableStateOf(rsLangs.firstOrNull { it.code == store.s("lang", "en") } ?: rsLangs.first()) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
     var introDone by remember { mutableStateOf(!store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
@@ -50,6 +51,11 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                     theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
                     brandRevision++
                 }
+            rsSyncCloudVisualAssetsV101(context,store)
+                .onSuccess{brandRevision++}
+            brandAssetsRestoring=false
+        }else{
+            brandAssetsRestoring=false
         }
     }
 
@@ -97,6 +103,12 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         key(brandRevision){
         Box(Modifier.fillMaxSize()) {
             when {
+                brandAssetsRestoring -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(10.dp)){
+                        CircularProgressIndicator()
+                        Text("RS KICKBOX",color=c.bright,fontWeight=FontWeight.Black)
+                    }
+                }
                 !introDone -> RsCinematicIntroV21(c, store) {
                     store.pb("intro_seen", true)
                     introDone = true
