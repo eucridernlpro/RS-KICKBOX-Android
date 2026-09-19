@@ -139,6 +139,17 @@ private fun sectionTitleV25(lang:RsLang,title:String)=when(title){
         "tr"->"Antrenör Yardımı"
         else->"Trainer Help"
     }
+    "Student Help"->when(lang.code){
+        "nl"->"Leerling Hulp"
+        "pt"->"Ajuda do Aluno"
+        "es"->"Ayuda del Alumno"
+        "fr"->"Aide Élève"
+        "de"->"Schüler-Hilfe"
+        "it"->"Aiuto Allievo"
+        "pl"->"Pomoc Ucznia"
+        "tr"->"Öğrenci Yardımı"
+        else->"Student Help"
+    }
     else->title
 }
 
@@ -196,6 +207,9 @@ private fun rsDashboardBadgeCountV55(store:RsStore,role:RsRole,route:String):Int
 private fun glyphV21(kind:String)=when(kind){"ai"->"AI";"music"->"♫";"payment"->"€";"progress"->"↗";"fight"->"FX";"training"->"TR";"technique"->"TK";"settings"->"⚙";"brand"->"♛";else->"RS"}
 
 private fun studentV21()=listOf(
+    SectionV21("Student Help",listOf(
+        DashV21("student_guide","App Guide","Learn every available feature step by step","brand")
+    )),
     SectionV21("Core Training",listOf(DashV21("voice","AI Technique Coach","Video · text · visuals · voice","ai"),DashV21("session","Session Player","Rounds · timer · cues","training"),DashV21("academy","RS Academy","Structured premium lessons","training"),DashV21("techniques","Technique Library","Moves · drills · details","technique"),DashV21("home_training","Home Training","Train anywhere","training"),DashV21("workout","Workout Generator","Build your session","training"))),
     SectionV21("Club & Coaching",listOf(DashV21("classes","Classes & Events","Book club training","training"),DashV21("events","RS Events","Seminars · club days","brand"),DashV21("coachchat","Private Coach Chat","Direct coach support","ai"),DashV21("community","Community","Club feed · connection","brand"),DashV21("groups","Groups","Team spaces","brand"),DashV21("private_lessons","Private Lessons","1-to-1 coaching","training"))),
     SectionV21("Member Services",listOf(
