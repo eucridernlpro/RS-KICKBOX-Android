@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 data class RsHomeworkV46(
     val id:String,val studentEmail:String,val title:String,val details:String,
@@ -221,6 +222,7 @@ fun rsStudentsV46(store:RsStore):List<Pair<String,String>> =
 
 @Composable
 fun RsStudentHomeworkV46(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudStudentHomeworkV80(c,lang);return}
     var revision by remember{mutableIntStateOf(0)}
     val email=store.s("session_student_email","alex@rskickbox.nl")
     val items=remember(revision){rsLoadHomeworkV46(store).filter{it.studentEmail.equals(email,true)}.sortedByDescending{it.createdAt}}
@@ -246,6 +248,7 @@ fun RsStudentHomeworkV46(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsHomeworkManagerV46(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudHomeworkManagerV80(c,lang);return}
     var revision by remember{mutableIntStateOf(0)}
     var selectedEmail by remember{mutableStateOf(rsStudentsV46(store).firstOrNull()?.first.orEmpty())}
     var title by remember{mutableStateOf("")}
@@ -294,6 +297,7 @@ fun RsHomeworkManagerV46(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsCoachNotesV46(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudCoachNotesV80(c,lang);return}
     var revision by remember{mutableIntStateOf(0)}
     var selectedEmail by remember{mutableStateOf(rsStudentsV46(store).firstOrNull()?.first.orEmpty())}
     var note by remember{mutableStateOf("")}
@@ -335,6 +339,7 @@ fun RsCoachNotesV46(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsAssessmentsV46(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudAssessmentsV80(c,lang);return}
     var revision by remember{mutableIntStateOf(0)}
     val students=rsStudentsV46(store)
     var selectedEmail by remember{mutableStateOf(students.firstOrNull()?.first.orEmpty())}
@@ -377,6 +382,7 @@ fun RsAssessmentsV46(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsStudentProgressV46(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudStudentProgressV80(c,lang);return}
     val email=store.s("session_student_email","alex@rskickbox.nl")
     val assessments=rsLoadAssessmentsV46(store).filter{it.studentEmail.equals(email,true)}.sortedByDescending{it.createdAt}
     val latest=assessments.firstOrNull()?:RsAssessmentV46("seed",email,84,71,67,62,76,69,"",0L)
@@ -400,6 +406,286 @@ fun RsStudentProgressV46(c:RsPalette,store:RsStore,lang:RsLang){
                 val avg=(x.punches+x.kicks+x.defense+x.footwork+x.combinations+x.conditioning)/6
                 Text(rsDateV46(x.createdAt)+" · "+avg+"/100",color=c.bright,fontWeight=FontWeight.Bold)
                 if(x.summary.isNotBlank())Text(x.summary,color=c.text)
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun RsCloudStudentHomeworkV80(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var items by remember{mutableStateOf<List<RsCloudHomeworkV80>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busyId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsHomeworkFeedV80()
+            .onSuccess{items=it}
+            .onFailure{status=it.message?:"Could not load homework."}
+        loading=false
+    }
+
+    RsScroll(c,rsDevUiV46(lang,"homework"),"Your live trainer assignments and completion state."){
+        RsPanel(c){
+            Text(if(loading)"Syncing homework…" else "Cloud homework connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        if(items.isEmpty()&&!loading)RsPanel(c){Text(rsDevUiV46(lang,"none"),color=c.muted)}
+        items.forEach{x->
+            RsPanel(c){
+                Text(x.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                Text(x.details,color=c.text)
+                if(x.dueLabel.isNotBlank())Text(rsDevUiV46(lang,"due")+" · "+x.dueLabel,color=c.muted)
+                Text(if(x.completed)rsDevUiV46(lang,"completed") else rsDevUiV46(lang,"open"),color=c.bright,fontWeight=FontWeight.Bold)
+                Button(
+                    onClick={
+                        busyId=x.id
+                        scope.launch{
+                            rsSetHomeworkCompletedV80(x.id,!x.completed)
+                                .onSuccess{revision++}
+                                .onFailure{status=it.message?:"Could not update homework."}
+                            busyId=null
+                        }
+                    },
+                    enabled=busyId==null,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(busyId==x.id)"Please wait…" else if(x.completed)rsDevUiV46(lang,"reopen") else rsDevUiV46(lang,"mark_done"))}
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudHomeworkManagerV80(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var students by remember{mutableStateOf<List<RsDevStudentV80>>(emptyList())}
+    var items by remember{mutableStateOf<List<RsCloudHomeworkV80>>(emptyList())}
+    var selectedId by remember{mutableStateOf("")}
+    var title by remember{mutableStateOf("")}
+    var details by remember{mutableStateOf("")}
+    var due by remember{mutableStateOf("")}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsDevelopmentStudentsV80().onSuccess{
+            students=it
+            if(selectedId.isBlank())selectedId=it.firstOrNull()?.id.orEmpty()
+        }.onFailure{status=it.message?:"Could not load students."}
+        rsHomeworkFeedV80().onSuccess{items=it}.onFailure{status=it.message?:"Could not load homework."}
+        loading=false
+    }
+
+    RsScroll(c,rsDevUiV46(lang,"manager"),"Assign synchronized homework to individual students."){
+        RsPanel(c){
+            Text(if(loading)"Syncing Homework Manager…" else "Cloud Homework Manager connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        RsPanel(c){
+            students.forEach{s->
+                FilterChip(selected=selectedId==s.id,onClick={selectedId=s.id},label={Text(s.displayName.ifBlank{s.email})},modifier=Modifier.fillMaxWidth())
+            }
+            OutlinedTextField(title,{title=it.take(100)},label={Text(rsDevUiV46(lang,"title"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            OutlinedTextField(details,{details=it.take(1000)},label={Text(rsDevUiV46(lang,"details"))},modifier=Modifier.fillMaxWidth(),minLines=3,enabled=!busy)
+            OutlinedTextField(due,{due=it.take(40)},label={Text(rsDevUiV46(lang,"due"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            Button(
+                onClick={
+                    busy=true
+                    scope.launch{
+                        rsAssignHomeworkV80(selectedId,title.trim(),details.trim(),due.trim())
+                            .onSuccess{title="";details="";due="";status="Homework assigned.";revision++}
+                            .onFailure{status=it.message?:"Could not assign homework."}
+                        busy=false
+                    }
+                },
+                enabled=!busy&&selectedId.isNotBlank()&&title.isNotBlank()&&details.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Saving…" else rsDevUiV46(lang,"assign"))}
+        }
+        items.forEach{x->
+            RsPanel(c){
+                Text(x.studentName.ifBlank{x.studentEmail}+" · "+x.title,color=c.bright,fontWeight=FontWeight.Bold)
+                Text(x.details,color=c.text)
+                Text((if(x.completed)rsDevUiV46(lang,"completed") else rsDevUiV46(lang,"open"))+" · "+x.dueLabel,color=c.muted)
+                OutlinedButton(
+                    onClick={
+                        if(pendingDelete==x.id){
+                            busy=true
+                            scope.launch{
+                                rsDeleteHomeworkV80(x.id).onSuccess{pendingDelete=null;revision++}.onFailure{status=it.message?:"Could not delete homework."}
+                                busy=false
+                            }
+                        }else pendingDelete=x.id
+                    },
+                    enabled=!busy,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(pendingDelete==x.id)rsDevUiV46(lang,"confirm") else rsDevUiV46(lang,"delete"))}
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudCoachNotesV80(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var students by remember{mutableStateOf<List<RsDevStudentV80>>(emptyList())}
+    var notes by remember{mutableStateOf<List<RsCloudCoachNoteV80>>(emptyList())}
+    var selectedId by remember{mutableStateOf("")}
+    var note by remember{mutableStateOf("")}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsDevelopmentStudentsV80().onSuccess{students=it;if(selectedId.isBlank())selectedId=it.firstOrNull()?.id.orEmpty()}
+        rsCoachNotesFeedV80().onSuccess{notes=it}.onFailure{status=it.message?:"Could not load coach notes."}
+        loading=false
+    }
+
+    RsScroll(c,rsDevUiV46(lang,"notes"),"Private staff-only cloud notes linked to student development."){
+        RsPanel(c){
+            Text(if(loading)"Syncing coach notes…" else "Private cloud coach notes connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            students.forEach{s->FilterChip(selected=selectedId==s.id,onClick={selectedId=s.id},label={Text(s.displayName.ifBlank{s.email})},modifier=Modifier.fillMaxWidth())}
+            OutlinedTextField(note,{note=it.take(1500)},label={Text(rsDevUiV46(lang,"new_note"))},modifier=Modifier.fillMaxWidth(),minLines=4,enabled=!busy)
+            Button(
+                onClick={
+                    busy=true
+                    scope.launch{
+                        rsAddCoachNoteV80(selectedId,note.trim())
+                            .onSuccess{note="";status="Private coach note saved.";revision++}
+                            .onFailure{status=it.message?:"Could not save coach note."}
+                        busy=false
+                    }
+                },
+                enabled=!busy&&selectedId.isNotBlank()&&note.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Saving…" else rsDevUiV46(lang,"save_note"))}
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        notes.filter{selectedId.isBlank()||it.studentId==selectedId}.forEach{x->
+            RsPanel(c){
+                Text(x.studentName.ifBlank{x.studentEmail},color=c.bright,fontWeight=FontWeight.Bold)
+                Text(x.note,color=c.text)
+                OutlinedButton(
+                    onClick={
+                        if(pendingDelete==x.id){
+                            busy=true
+                            scope.launch{
+                                rsDeleteCoachNoteV80(x.id).onSuccess{pendingDelete=null;revision++}.onFailure{status=it.message?:"Could not delete coach note."}
+                                busy=false
+                            }
+                        }else pendingDelete=x.id
+                    },
+                    enabled=!busy,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(pendingDelete==x.id)rsDevUiV46(lang,"confirm") else rsDevUiV46(lang,"delete"))}
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudAssessmentsV80(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var students by remember{mutableStateOf<List<RsDevStudentV80>>(emptyList())}
+    var selectedId by remember{mutableStateOf("")}
+    var punches by remember{mutableFloatStateOf(75f)}
+    var kicks by remember{mutableFloatStateOf(75f)}
+    var defense by remember{mutableFloatStateOf(75f)}
+    var footwork by remember{mutableFloatStateOf(75f)}
+    var combos by remember{mutableFloatStateOf(75f)}
+    var conditioning by remember{mutableFloatStateOf(75f)}
+    var summary by remember{mutableStateOf("")}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsDevelopmentStudentsV80().onSuccess{students=it;if(selectedId.isBlank())selectedId=it.firstOrNull()?.id.orEmpty()}
+        loading=false
+    }
+
+    @Composable fun metric(label:String,value:Float,onChange:(Float)->Unit){
+        Text(label+" · "+value.toInt(),color=c.text)
+        Slider(value,onValueChange=onChange,valueRange=0f..100f,enabled=!busy)
+    }
+
+    RsScroll(c,rsDevUiV46(lang,"assess"),"Record synchronized skill assessments for each student."){
+        RsPanel(c){
+            Text(if(loading)"Syncing students…" else "Cloud assessments connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            students.forEach{s->FilterChip(selected=selectedId==s.id,onClick={selectedId=s.id},label={Text(s.displayName.ifBlank{s.email})},modifier=Modifier.fillMaxWidth())}
+            metric("Punches",punches){punches=it};metric("Kicks",kicks){kicks=it};metric("Defense",defense){defense=it}
+            metric("Footwork",footwork){footwork=it};metric("Combinations",combos){combos=it};metric("Conditioning",conditioning){conditioning=it}
+            OutlinedTextField(summary,{summary=it.take(1200)},label={Text(rsDevUiV46(lang,"summary"))},modifier=Modifier.fillMaxWidth(),minLines=3,enabled=!busy)
+            Button(
+                onClick={
+                    busy=true
+                    scope.launch{
+                        rsAddAssessmentV80(selectedId,punches.toInt(),kicks.toInt(),defense.toInt(),footwork.toInt(),combos.toInt(),conditioning.toInt(),summary.trim())
+                            .onSuccess{summary="";status="Assessment saved.";revision++}
+                            .onFailure{status=it.message?:"Could not save assessment."}
+                        busy=false
+                    }
+                },
+                enabled=!busy&&selectedId.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Saving…" else rsDevUiV46(lang,"save_assessment"))}
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+    }
+}
+
+@Composable
+private fun RsCloudStudentProgressV80(c:RsPalette,lang:RsLang){
+    var assessments by remember{mutableStateOf<List<RsCloudAssessmentV80>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(Unit){
+        loading=true
+        rsAssessmentFeedV80().onSuccess{assessments=it}.onFailure{status=it.message?:"Could not load progress."}
+        loading=false
+    }
+
+    val latest=assessments.firstOrNull()
+    RsScroll(c,rsDevUiV46(lang,"progress"),"Your live assessed skill profile and development history."){
+        RsPanel(c){
+            Text(if(loading)"Syncing progress…" else "Cloud progress connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        if(latest==null&&!loading)RsPanel(c){Text(rsDevUiV46(lang,"none"),color=c.muted)}
+        if(latest!=null){
+            RsPanel(c){
+                Text(rsDevUiV46(lang,"latest"),color=c.bright,fontWeight=FontWeight.Black)
+                listOf(
+                    "Punches" to latest.punches,"Kicks" to latest.kicks,"Defense" to latest.defense,
+                    "Footwork" to latest.footwork,"Combinations" to latest.combinations,"Conditioning" to latest.conditioning
+                ).forEach{(name,value)->
+                    Text(name+" · "+value,color=c.text)
+                    LinearProgressIndicator(progress={value/100f},modifier=Modifier.fillMaxWidth())
+                }
+                if(latest.summary.isNotBlank())Text(latest.summary,color=c.muted)
+            }
+            Text(rsDevUiV46(lang,"history"),color=c.bright,fontWeight=FontWeight.Black)
+            assessments.forEach{x->
+                RsPanel(c){
+                    val avg=(x.punches+x.kicks+x.defense+x.footwork+x.combinations+x.conditioning)/6
+                    Text(avg.toString()+"/100",color=c.bright,fontWeight=FontWeight.Bold)
+                    if(x.summary.isNotBlank())Text(x.summary,color=c.text)
+                }
             }
         }
     }
