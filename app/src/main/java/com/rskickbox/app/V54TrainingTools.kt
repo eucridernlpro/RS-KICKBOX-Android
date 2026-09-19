@@ -8,6 +8,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.random.Random
+import kotlinx.coroutines.launch
 
 data class RsTechniqueV54(
     val id:String,val name:String,val category:String,val difficulty:String,
@@ -72,6 +73,10 @@ private fun rsTrainingUiV54(lang:RsLang,key:String):String{
 
 @Composable
 fun RsAcademyV54(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){
+        RsCloudAcademyV86(c,lang)
+        return
+    }
     var revision by remember{mutableIntStateOf(0)}
     RsScroll(c,rsTrainingUiV54(lang,"academy"),rsTrainingUiV54(lang,"academy_sub")){
         rsAcademyTracksV54.forEach{track->
@@ -243,6 +248,80 @@ fun RsTechniqueCompareV54(c:RsPalette,lang:RsLang){
             }
             Text(a.name+": "+a.notes,color=c.muted)
             Text(b.name+": "+b.notes,color=c.muted)
+        }
+    }
+}
+
+
+@Composable
+private fun RsCloudAcademyV86(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var progress by remember{mutableStateOf<Map<String,Int>>(emptyMap())}
+    var loading by remember{mutableStateOf(true)}
+    var busyTrack by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudAcademyProgressV86()
+            .onSuccess{progress=it}
+            .onFailure{status=it.message?:"Could not load Academy progress."}
+        loading=false
+    }
+
+    RsScroll(c,rsTrainingUiV54(lang,"academy"),"Your Academy progress is synchronized with your RS KICKBOX account."){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing Academy progress…" else "Cloud Academy progress connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        rsAcademyTracksV54.forEach{track->
+            val done=(progress[track.id]?:0).coerceIn(0,track.target)
+            RsPanel(c){
+                Text(track.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                Text(done.toString()+" / "+track.target+" "+rsTrainingUiV54(lang,"lessons"),color=c.muted)
+                LinearProgressIndicator(
+                    progress={if(track.target<=0)0f else done.toFloat()/track.target},
+                    modifier=Modifier.fillMaxWidth()
+                )
+                if(done<track.target){
+                    Button(
+                        onClick={
+                            busyTrack=track.id
+                            scope.launch{
+                                rsSetCloudAcademyProgressV86(track.id,done+1)
+                                    .onSuccess{status="Academy progress saved.";revision++}
+                                    .onFailure{status=it.message?:"Could not save Academy progress."}
+                                busyTrack=null
+                            }
+                        },
+                        enabled=busyTrack==null,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(if(busyTrack==track.id)"Saving…" else rsTrainingUiV54(lang,"continue"))}
+                }else{
+                    Text(rsTrainingUiV54(lang,"complete"),color=c.bright,fontWeight=FontWeight.Bold)
+                }
+                if(done>0){
+                    OutlinedButton(
+                        onClick={
+                            busyTrack=track.id
+                            scope.launch{
+                                rsSetCloudAcademyProgressV86(track.id,0)
+                                    .onSuccess{status="Academy track reset.";revision++}
+                                    .onFailure{status=it.message?:"Could not reset Academy progress."}
+                                busyTrack=null
+                            }
+                        },
+                        enabled=busyTrack==null,
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(rsTrainingUiV54(lang,"reset"))}
+                }
+            }
         }
     }
 }
