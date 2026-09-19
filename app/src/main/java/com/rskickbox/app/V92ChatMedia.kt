@@ -353,7 +353,7 @@ fun RsChatComposerV92(
                             onStatus("")
                             onSent()
                         }
-                        .onFailure{onStatus(it.message?:rsReleaseT98(lang,"save_failed"))}
+                        .onFailure{onStatus(rsReleaseT98(lang,"save_failed"))}
                     busy=false
                 }
             },
