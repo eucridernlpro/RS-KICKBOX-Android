@@ -368,7 +368,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                 FilterChip(selected=coachGender=="male",onClick={coachGender="male";store.ps("ai_coach_gender","male")},label={Text(coachStudentUiV105(lang,"male"))},modifier=Modifier.weight(1f))
                 FilterChip(selected=coachGender=="female",onClick={coachGender="female";store.ps("ai_coach_gender","female")},label={Text(coachStudentUiV105(lang,"female"))},modifier=Modifier.weight(1f))
             }
-            CoachAvatarV28(c,store,coachGender,speaking,selectedTechnique)
+            CoachAvatarV28(c,store,coachGender,speaking,selectedTechnique,lang)
             Text(coachStudentUiV105(lang,"trainer_desc"),color=c.muted,fontSize=10.sp)
         }
 
@@ -489,7 +489,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
 
 
 @Composable
-private fun CoachAvatarV28(c:RsPalette,store:RsStore,gender:String,speaking:Boolean,technique:String){
+private fun CoachAvatarV28(c:RsPalette,store:RsStore,gender:String,speaking:Boolean,technique:String,lang:RsLang){
     val custom=store.s(if(gender=="female")"visual_v21_ai_trainer_female" else "visual_v21_ai_trainer_male","")
     val pulse=rememberInfiniteTransition(label="coachPulse")
     val glow by pulse.animateFloat(.35f,1f,infiniteRepeatable(tween(850),RepeatMode.Reverse),label="coachGlow")
