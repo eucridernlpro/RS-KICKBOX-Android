@@ -143,13 +143,13 @@ fun RsStudentEventsV42(c:RsPalette,store:RsStore,lang:RsLang){
         loading=true
         rsCloudEventsV75()
             .onSuccess{items=it.filter{e->e.active}}
-            .onFailure{status=it.message?:"Could not load events."}
+            .onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
     RsScroll(c,rsEventUiV42(lang,"student_title"),"Live club events synchronized across devices."){
         RsPanel(c){
-            Text(if(loading)"Syncing events…" else "Cloud events connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            Text(if(loading)"Syncing events…" else rsReleaseT98(lang,"events_connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
         items.forEach{event->
@@ -166,13 +166,13 @@ fun RsStudentEventsV42(c:RsPalette,store:RsStore,lang:RsLang){
                         busyId=event.id
                         scope.launch{
                             val result=if(joined)rsCloudCancelEventRsvpV75(event.id) else rsCloudEventRsvpV75(event.id)
-                            result.onSuccess{revision++}.onFailure{status=it.message?:"Could not update RSVP."}
+                            result.onSuccess{revision++}.onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
                             busyId=null
                         }
                     },
                     enabled=busyId==null&&(joined||!full),
                     modifier=Modifier.fillMaxWidth()
-                ){Text(if(busyId==event.id)"Please wait…" else if(joined)rsEventUiV42(lang,"cancel") else rsEventUiV42(lang,"join"))}
+                ){Text(if(busyId==event.id)rsReleaseT98(lang,"please_wait") else if(joined)rsEventUiV42(lang,"cancel") else rsEventUiV42(lang,"join"))}
             }
         }
     }
@@ -236,13 +236,13 @@ fun RsEventManagerV42(c:RsPalette,store:RsStore,lang:RsLang){
 
     LaunchedEffect(revision){
         loading=true
-        rsCloudEventsV75().onSuccess{items=it}.onFailure{status=it.message?:"Could not load events."}
+        rsCloudEventsV75().onSuccess{items=it}.onFailure{status=it.message?:rsReleaseT98(lang,"load_failed")}
         loading=false
     }
 
-    RsScroll(c,rsEventUiV42(lang,"trainer_title"),"Create and manage shared club events with live RSVP capacity."){
+    RsScroll(c,rsEventUiV42(lang,"trainer_title"),rsReleaseT98(lang,"events_admin_sub")){
         RsPanel(c){
-            Text(if(loading)"Syncing events…" else "Cloud event manager connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            Text(if(loading)"Syncing events…" else rsReleaseT98(lang,"event_manager_connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
         Button(onClick={showCreate=!showCreate},enabled=!busy,modifier=Modifier.fillMaxWidth()){
@@ -260,11 +260,11 @@ fun RsEventManagerV42(c:RsPalette,store:RsStore,lang:RsLang){
                         .onSuccess{
                             title="";whenLabel="";location="";capacity="20";showCreate=false;status=rsCloudT93(lang,"event_created");revision++
                         }
-                        .onFailure{status=it.message?:"Could not create event."}
+                        .onFailure{status=it.message?:rsReleaseT98(lang,"save_failed")}
                     busy=false
                 }
             },enabled=!busy&&title.isNotBlank()&&whenLabel.isNotBlank()&&location.isNotBlank(),modifier=Modifier.fillMaxWidth()){
-                Text(if(busy)"Saving…" else rsEventUiV42(lang,"save"))
+                Text(if(busy)rsReleaseT98(lang,"saving") else rsEventUiV42(lang,"save"))
             }
         }
         items.forEach{event->
@@ -277,7 +277,7 @@ fun RsEventManagerV42(c:RsPalette,store:RsStore,lang:RsLang){
                     Switch(event.active,{v->
                         busy=true
                         scope.launch{
-                            rsCloudSetEventActiveV75(event.id,v).onSuccess{revision++}.onFailure{status=it.message?:"Could not update event."}
+                            rsCloudSetEventActiveV75(event.id,v).onSuccess{revision++}.onFailure{status=it.message?:rsReleaseT98(lang,"update_failed")}
                             busy=false
                         }
                     },enabled=!busy)
@@ -286,7 +286,7 @@ fun RsEventManagerV42(c:RsPalette,store:RsStore,lang:RsLang){
                     if(pendingDelete==event.id){
                         busy=true
                         scope.launch{
-                            rsCloudDeleteEventV75(event.id).onSuccess{pendingDelete=null;revision++}.onFailure{status=it.message?:"Could not delete event."}
+                            rsCloudDeleteEventV75(event.id).onSuccess{pendingDelete=null;revision++}.onFailure{status=it.message?:rsReleaseT98(lang,"delete_failed")}
                             busy=false
                         }
                     }else pendingDelete=event.id
