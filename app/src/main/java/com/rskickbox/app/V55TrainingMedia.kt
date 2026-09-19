@@ -34,7 +34,9 @@ data class RsTrainingMediaItemV55(
     val uri:String,
     val kind:String,
     val accessTier:String,
-    val published:Boolean
+    val published:Boolean,
+    val techniqueTags:List<String> = emptyList(),
+    val aiReference:Boolean = false
 )
 
 private fun rsTrainingMediaDirV55(context:android.content.Context)=
@@ -97,7 +99,12 @@ private fun rsLoadTrainingMediaV55(store:RsStore):List<RsTrainingMediaItemV55>{
                 add(RsTrainingMediaItemV55(
                     o.optString("id"),o.optString("title"),o.optString("category"),
                     o.optString("description"),o.optString("uri"),o.optString("kind","VIDEO"),
-                    o.optString("tier","ALL"),o.optBoolean("published",true)
+                    o.optString("tier","ALL"),o.optBoolean("published",true),
+                    buildList{
+                        val tags=o.optJSONArray("techniqueTags")?:JSONArray()
+                        for(j in 0 until tags.length())add(tags.optString(j))
+                    },
+                    o.optBoolean("aiReference",false)
                 ))
             }
         }
@@ -109,6 +116,7 @@ private fun rsSaveTrainingMediaV55(store:RsStore,items:List<RsTrainingMediaItemV
     items.forEach{x->a.put(JSONObject().apply{
         put("id",x.id);put("title",x.title);put("category",x.category);put("description",x.description)
         put("uri",x.uri);put("kind",x.kind);put("tier",x.accessTier);put("published",x.published)
+        put("techniqueTags",JSONArray(x.techniqueTags));put("aiReference",x.aiReference)
     })}
     store.ps("training_media_v55",a.toString())
 }
