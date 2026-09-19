@@ -2,10 +2,15 @@ package com.rskickbox.app
 
 import org.json.JSONArray
 import org.json.JSONObject
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -13,6 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 data class RsProfileV50(
     val email:String,val displayName:String,val bio:String,val goal:String,val publicProfile:Boolean
@@ -154,23 +160,116 @@ private fun rsSocialUiV50(lang:RsLang,key:String):String{
 
 @Composable
 fun RsProfileV50(c:RsPalette,store:RsStore,lang:RsLang){
+    val context=LocalContext.current
+    val scope=rememberCoroutineScope()
     val email=store.s("session_student_email","alex@rskickbox.nl")
     val sessionName=store.s("session_student_name","Alex de Vries")
     var profile by remember(email){mutableStateOf(rsLoadProfileV50(store,email,sessionName))}
     var saved by remember{mutableStateOf(false)}
+    var avatarBusy by remember{mutableStateOf(false)}
+    var avatarStatus by remember{mutableStateOf("")}
+    var avatarRefresh by remember{mutableIntStateOf(0)}
+
+    val photoPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
+        if(uri!=null && !avatarBusy){
+            avatarBusy=true
+            avatarStatus="Uploading profile photo…"
+            scope.launch{
+                rsUploadMyAvatarV68(context,uri)
+                    .onSuccess{
+                        avatarRefresh++
+                        avatarStatus="✓ Profile photo updated"
+                    }
+                    .onFailure{
+                        avatarStatus=it.message?:"Could not upload profile photo."
+                    }
+                avatarBusy=false
+            }
+        }
+    }
 
     RsScroll(c,rsSocialUiV50(lang,"profile"),rsSocialUiV50(lang,"profile_sub")){
         RsPanel(c){
-            Text(email,color=c.muted,fontSize=10.sp)
-            OutlinedTextField(profile.displayName,{profile=profile.copy(displayName=it.take(80));saved=false},label={Text(rsSocialUiV50(lang,"display"))},modifier=Modifier.fillMaxWidth())
-            OutlinedTextField(profile.bio,{profile=profile.copy(bio=it.take(500));saved=false},label={Text(rsSocialUiV50(lang,"bio"))},modifier=Modifier.fillMaxWidth(),minLines=3)
-            OutlinedTextField(profile.goal,{profile=profile.copy(goal=it.take(300));saved=false},label={Text(rsSocialUiV50(lang,"goal"))},modifier=Modifier.fillMaxWidth(),minLines=2)
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement=Arrangement.spacedBy(14.dp),
+                verticalAlignment=Alignment.CenterVertically
+            ){
+                RsMemberAvatarV68(
+                    c=c,
+                    email=email,
+                    name=profile.displayName.ifBlank{sessionName},
+                    size=88.dp,
+                    refreshKey=avatarRefresh
+                )
+                Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(6.dp)){
+                    Text(
+                        profile.displayName.ifBlank{sessionName},
+                        color=c.bright,
+                        fontWeight=FontWeight.Black,
+                        fontSize=20.sp
+                    )
+                    Text(email,color=c.muted,fontSize=10.sp)
+                    OutlinedButton(
+                        onClick={
+                            photoPicker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        enabled=!avatarBusy,
+                        modifier=Modifier.fillMaxWidth()
+                    ){
+                        Text(if(avatarBusy)"Uploading…" else "Upload / change profile photo",fontSize=10.sp)
+                    }
+                }
+            }
+            if(avatarStatus.isNotBlank()){
+                Text(
+                    avatarStatus,
+                    color=if(avatarStatus.startsWith("✓"))c.bright else c.muted,
+                    fontSize=10.sp
+                )
+            }
+
+            OutlinedTextField(
+                profile.displayName,
+                {profile=profile.copy(displayName=it.take(80));saved=false},
+                label={Text(rsSocialUiV50(lang,"display"))},
+                modifier=Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                profile.bio,
+                {profile=profile.copy(bio=it.take(500));saved=false},
+                label={Text(rsSocialUiV50(lang,"bio"))},
+                modifier=Modifier.fillMaxWidth(),
+                minLines=3
+            )
+            OutlinedTextField(
+                profile.goal,
+                {profile=profile.copy(goal=it.take(300));saved=false},
+                label={Text(rsSocialUiV50(lang,"goal"))},
+                modifier=Modifier.fillMaxWidth(),
+                minLines=2
+            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement=Arrangement.SpaceBetween,
+                verticalAlignment=Alignment.CenterVertically
+            ){
                 Text(rsSocialUiV50(lang,"public"),color=c.text)
                 Switch(profile.publicProfile,{profile=profile.copy(publicProfile=it);saved=false})
             }
+            Text(
+                "Your profile photo is visible to your trainer and in member areas where your profile is allowed to be shown.",
+                color=c.muted,
+                fontSize=9.sp
+            )
             Button(
-                onClick={rsSaveProfileV50(store,profile);store.ps("session_student_name",profile.displayName);saved=true},
+                onClick={
+                    rsSaveProfileV50(store,profile)
+                    store.ps("session_student_name",profile.displayName)
+                    saved=true
+                },
                 enabled=profile.displayName.isNotBlank(),
                 modifier=Modifier.fillMaxWidth()
             ){Text(rsSocialUiV50(lang,"save"))}
@@ -178,7 +277,6 @@ fun RsProfileV50(c:RsPalette,store:RsStore,lang:RsLang){
         }
     }
 }
-
 @Composable
 fun RsCommunityV50(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
     var revision by remember{mutableIntStateOf(0)}
@@ -211,7 +309,14 @@ fun RsCommunityV50(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
         if(visible.isEmpty())RsPanel(c){Text(rsSocialUiV50(lang,"none"),color=c.muted)}
         visible.forEach{x->
             RsPanel(c){
-                Text(x.authorName,color=c.bright,fontWeight=FontWeight.Black)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(10.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    RsMemberAvatarV68(c,x.authorEmail,x.authorName,size=38.dp)
+                    Text(x.authorName,color=c.bright,fontWeight=FontWeight.Black)
+                }
                 Text(x.body,color=c.text)
                 Text(SimpleDateFormat("dd MMM · HH:mm",Locale.getDefault()).format(Date(x.createdAt)),color=c.muted,fontSize=9.sp)
                 if(role==RsRole.TRAINER){
