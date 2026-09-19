@@ -132,7 +132,7 @@ fun RsPrivacyRequestsAdminV107(c:RsPalette,lang:RsLang){
             var staffNote by remember(request.id,request.staffNote){mutableStateOf(request.staffNote)}
             var saving by remember(request.id){mutableStateOf(false)}
             RsPanel(c){
-                Text(request.displayName?.ifBlank{null} ?: request.email ?: request.userId,color=c.bright,fontWeight=FontWeight.Black,fontSize=17.sp)
+                Text(request.displayName?.takeIf{it.isNotBlank()} ?: request.email ?: request.userId,color=c.bright,fontWeight=FontWeight.Black,fontSize=17.sp)
                 if(!request.email.isNullOrBlank())Text(request.email,color=c.muted,fontSize=10.sp)
                 Text(rsPrivacyAdminT107(lang,"type")+": "+rsRequestTypeLabelV107(lang,request.requestType),color=c.text)
                 Text(rsPrivacyAdminT107(lang,"requested")+": "+request.requestedAt,color=c.muted,fontSize=10.sp)
