@@ -355,7 +355,7 @@ private fun RsCloudContentBrowserV79(c:RsPalette,lang:RsLang,mode:String){
     RsScroll(c,title,subtitle){
         RsPanel(c){
             Text(
-                if(loading)"Syncing training library…" else "Cloud content library connected",
+                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -415,7 +415,7 @@ private fun RsCloudContentManagerV79(c:RsPalette,lang:RsLang){
     RsScroll(c,rsContentUiV48(lang,"manager"),"Create and publish shared training content by membership level."){
         RsPanel(c){
             Text(
-                if(loading)"Syncing Content Manager…" else "Supabase Content Manager connected",
+                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -463,7 +463,7 @@ private fun RsCloudContentManagerV79(c:RsPalette,lang:RsLang){
                 },
                 enabled=!busy&&title.isNotBlank()&&body.isNotBlank(),
                 modifier=Modifier.fillMaxWidth()
-            ){Text(if(busy)"Saving…" else rsContentUiV48(lang,"save"))}
+            ){Text(if(busy)rsCloudT93(lang,"saving") else rsContentUiV48(lang,"save"))}
         }
 
         items.forEach{item->
