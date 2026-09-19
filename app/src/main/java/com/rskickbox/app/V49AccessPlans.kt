@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
 data class RsPlanV49(
     val code:String,val name:String,val monthlyCents:Int,val active:Boolean,val description:String
@@ -75,11 +76,37 @@ private fun rsPlanUiV49(lang:RsLang,key:String):String{
 
 @Composable
 fun RsMembershipPlansV49(c:RsPalette,store:RsStore,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    val cloudMode=RsSupabaseV60.configured
     var revision by remember{mutableIntStateOf(0)}
-    val plans=remember(revision){rsLoadPlansV49(store)}
-    var edited by remember(revision){mutableStateOf(plans)}
+    var loading by remember{mutableStateOf(cloudMode)}
+    var saving by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var edited by remember{mutableStateOf(rsLoadPlansV49(store))}
+
+    LaunchedEffect(cloudMode,revision){
+        if(cloudMode){
+            loading=true
+            rsCloudPlansV71()
+                .onSuccess{edited=it}
+                .onFailure{status=it.message?:"Could not load membership plans."}
+            loading=false
+        }else{
+            edited=rsLoadPlansV49(store)
+        }
+    }
 
     RsScroll(c,rsPlanUiV49(lang,"plans"),rsPlanUiV49(lang,"plans_sub")){
+        if(cloudMode)RsPanel(c){
+            Text(
+                if(loading)"Syncing membership plans…" else "Cloud membership plans connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
         edited.forEachIndexed{index,plan->
             RsPanel(c){
                 Text(plan.name,color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp)
@@ -91,31 +118,152 @@ fun RsMembershipPlansV49(c:RsPalette,store:RsStore,lang:RsLang){
                     },
                     label={Text(rsPlanUiV49(lang,"price"))},
                     modifier=Modifier.fillMaxWidth(),
-                    singleLine=true
+                    singleLine=true,
+                    enabled=!saving
                 )
                 OutlinedTextField(
                     value=plan.description,
                     onValueChange={v->edited=edited.toMutableList().also{it[index]=plan.copy(description=v.take(500))}},
                     label={Text(rsPlanUiV49(lang,"description"))},
                     modifier=Modifier.fillMaxWidth(),
-                    minLines=2
+                    minLines=2,
+                    enabled=!saving
                 )
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
                     Text(if(plan.active)rsPlanUiV49(lang,"active") else rsPlanUiV49(lang,"inactive"),color=c.muted)
-                    Switch(plan.active,{v->edited=edited.toMutableList().also{it[index]=plan.copy(active=v)}})
+                    Switch(plan.active,{v->edited=edited.toMutableList().also{it[index]=plan.copy(active=v)}},enabled=!saving)
                 }
             }
         }
+
         Button(
-            onClick={rsSavePlansV49(store,edited);revision++},
+            onClick={
+                if(cloudMode){
+                    saving=true
+                    status=""
+                    scope.launch{
+                        var failure:String?=null
+                        for(plan in edited){
+                            rsUpdateCloudPlanV71(plan).onFailure{failure=it.message?:"Could not save plans."}
+                            if(failure!=null)break
+                        }
+                        if(failure==null){
+                            status="Membership plans saved to Supabase."
+                            revision++
+                        }else status=failure!!
+                        saving=false
+                    }
+                }else{
+                    rsSavePlansV49(store,edited)
+                    revision++
+                }
+            },
+            enabled=!saving&&!loading,
             modifier=Modifier.fillMaxWidth()
-        ){Text(rsPlanUiV49(lang,"save"))}
+        ){Text(if(saving)"Saving…" else rsPlanUiV49(lang,"save"))}
     }
 }
 
 @Composable
 fun RsAccessControlV49(c:RsPalette,store:RsStore,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    val cloudMode=RsSupabaseV60.configured
     var revision by remember{mutableIntStateOf(0)}
+    var loading by remember{mutableStateOf(cloudMode)}
+    var busyStudentId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+    var cloudStudents by remember{mutableStateOf<List<RsCloudStudentAccessV71>>(emptyList())}
+    var cloudPlans by remember{mutableStateOf<List<RsPlanV49>>(emptyList())}
+
+    LaunchedEffect(cloudMode,revision){
+        if(cloudMode){
+            loading=true
+            val plansResult=rsCloudPlansV71()
+            val studentsResult=rsCloudStudentAccessV71()
+            plansResult.onSuccess{cloudPlans=it}.onFailure{status=it.message?:"Could not load plans."}
+            studentsResult.onSuccess{cloudStudents=it}.onFailure{status=it.message?:"Could not load students."}
+            loading=false
+        }
+    }
+
+    if(cloudMode){
+        val activePlans=cloudPlans.filter{it.active}
+        RsScroll(c,rsPlanUiV49(lang,"access"),rsPlanUiV49(lang,"access_sub")){
+            RsPanel(c){
+                Text(
+                    if(loading)"Syncing student access…" else "Live student access connected",
+                    color=if(loading)c.muted else c.bright,
+                    fontWeight=FontWeight.Bold,
+                    fontSize=10.sp
+                )
+                if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+            }
+            if(cloudStudents.isEmpty()&&!loading)RsPanel(c){Text(rsPlanUiV49(lang,"empty_students"),color=c.muted)}
+            cloudStudents.forEach{student->
+                RsPanel(c){
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement=Arrangement.spacedBy(10.dp),
+                        verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+                    ){
+                        RsMemberAvatarV68(c,student.email,student.displayName,size=48.dp)
+                        Column(Modifier.weight(1f)){
+                            Text(student.displayName.ifBlank{student.email},color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                            Text(student.email,color=c.muted,fontSize=10.sp)
+                            Text(
+                                rsPlanUiV49(lang,"current")+" · "+student.plan+" · "+student.membershipStatus.uppercase(),
+                                color=c.text,
+                                fontSize=10.sp
+                            )
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
+                        activePlans.forEach{plan->
+                            FilterChip(
+                                selected=student.plan.equals(plan.code,true),
+                                onClick={
+                                    busyStudentId=student.id
+                                    scope.launch{
+                                        rsSetCloudStudentAccessV71(student.id,plan.code,student.active,student.membershipStatus)
+                                            .onSuccess{status="Plan updated for "+student.displayName;revision++}
+                                            .onFailure{status=it.message?:"Could not change plan."}
+                                        busyStudentId=null
+                                    }
+                                },
+                                enabled=busyStudentId==null,
+                                label={Text(plan.code,fontSize=9.sp)},
+                                modifier=Modifier.weight(1f)
+                            )
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                        Text(if(student.active)rsPlanUiV49(lang,"active") else rsPlanUiV49(lang,"inactive"),color=c.muted)
+                        Switch(
+                            student.active,
+                            {v->
+                                busyStudentId=student.id
+                                scope.launch{
+                                    rsSetCloudStudentAccessV71(
+                                        student.id,
+                                        student.plan,
+                                        v,
+                                        if(v && student.membershipStatus=="cancelled")"active" else student.membershipStatus
+                                    )
+                                        .onSuccess{status=if(v)"Student access activated." else "Student access deactivated.";revision++}
+                                        .onFailure{status=it.message?:"Could not update student access."}
+                                    busyStudentId=null
+                                }
+                            },
+                            enabled=busyStudentId==null
+                        )
+                    }
+                    if(busyStudentId==student.id)LinearProgressIndicator(modifier=Modifier.fillMaxWidth())
+                }
+            }
+        }
+        return
+    }
+
     val students=remember(revision){rsLoadStudentsV33(store)}
     val plans=rsLoadPlansV49(store).filter{it.active}
     RsScroll(c,rsPlanUiV49(lang,"access"),rsPlanUiV49(lang,"access_sub")){
