@@ -197,7 +197,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                             }
                                         }
                                     }
-                                    "backgrounds" -> RsVisualAssetStudioV21(c, store)
+                                    "backgrounds" -> RsVisualAssetStudioV21(c, store, lang)
                                     "branding" -> RsBrandSiteSettingsV21(c, store, lang)
                                     "intro_settings" -> RsIntroSettingsV21(c, store, lang)
                                     "voice" -> RsTechniqueCoachV27(c, lang, store, active)
