@@ -212,7 +212,11 @@ private fun rsMediaUiV55(lang:RsLang,key:String):String{
 }
 
 @Composable
-fun RsTrainingMediaPlayerV55(c:RsPalette,lang:RsLang,item:RsTrainingMediaItemV55,onClose:()->Unit){
+fun RsTrainingMediaPreviewV55(
+    c:RsPalette,
+    item:RsTrainingMediaItemV55,
+    modifier:Modifier=Modifier.fillMaxWidth().heightIn(min=240.dp,max=520.dp)
+){
     val context=LocalContext.current
     val player=if(item.kind=="VIDEO")remember(item.uri){
         ExoPlayer.Builder(context).build().apply{
@@ -222,22 +226,31 @@ fun RsTrainingMediaPlayerV55(c:RsPalette,lang:RsLang,item:RsTrainingMediaItemV55
         }
     }else null
     DisposableEffect(player){onDispose{player?.release()}}
+    Surface(shape=MaterialTheme.shapes.large,color=c.panel,modifier=modifier){
+        if(item.kind=="VIDEO"){
+            AndroidView(
+                factory={ctx->PlayerView(ctx).apply{
+                    useController=true
+                    resizeMode=androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    this.player=player
+                }},
+                update={it.player=player},
+                modifier=Modifier.fillMaxWidth().height(360.dp)
+            )
+        }else{
+            RsUriPreviewV21(item.uri,Modifier.fillMaxWidth().heightIn(min=220.dp,max=520.dp),"CENTER")
+        }
+    }
+}
+
+@Composable
+fun RsTrainingMediaPlayerV55(c:RsPalette,lang:RsLang,item:RsTrainingMediaItemV55,onClose:()->Unit){
     RsScroll(c,item.title,item.category+" · "+item.accessTier){
         OutlinedButton(onClick=onClose,modifier=Modifier.fillMaxWidth()){Text(rsMediaUiV55(lang,"close"))}
         RsPanel(c){
             Text(item.description,color=c.text)
         }
-        Surface(shape=MaterialTheme.shapes.large,color=c.panel,modifier=Modifier.fillMaxWidth().heightIn(min=240.dp,max=520.dp)){
-            if(item.kind=="VIDEO"){
-                AndroidView(
-                    factory={ctx->PlayerView(ctx).apply{useController=true;resizeMode=androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT;this.player=player}},
-                    update={it.player=player},
-                    modifier=Modifier.fillMaxWidth().height(360.dp)
-                )
-            }else{
-                RsUriPreviewV21(item.uri,Modifier.fillMaxWidth().heightIn(min=260.dp,max=520.dp),"CENTER")
-            }
-        }
+        RsTrainingMediaPreviewV55(c,item)
     }
 }
 
