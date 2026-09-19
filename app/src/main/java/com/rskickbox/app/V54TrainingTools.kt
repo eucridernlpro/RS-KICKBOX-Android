@@ -295,7 +295,7 @@ private fun RsCloudAcademyV86(c:RsPalette,lang:RsLang){
                             busyTrack=track.id
                             scope.launch{
                                 rsSetCloudAcademyProgressV86(track.id,done+1)
-                                    .onSuccess{status="Academy progress saved.";revision++}
+                                    .onSuccess{status=rsCloudT93(lang,"academy_saved");revision++}
                                     .onFailure{status=it.message?:"Could not save Academy progress."}
                                 busyTrack=null
                             }
@@ -312,7 +312,7 @@ private fun RsCloudAcademyV86(c:RsPalette,lang:RsLang){
                             busyTrack=track.id
                             scope.launch{
                                 rsSetCloudAcademyProgressV86(track.id,0)
-                                    .onSuccess{status="Academy track reset.";revision++}
+                                    .onSuccess{status=rsCloudT93(lang,"academy_reset");revision++}
                                     .onFailure{status=it.message?:"Could not reset Academy progress."}
                                 busyTrack=null
                             }
