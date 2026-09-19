@@ -60,12 +60,12 @@ private fun rsGuideItemsV54():List<RsGuideItemV54> = listOf(
         "CHAT"
     ),
     RsGuideItemV54(
-        "COACHING","Homework","homework_admin",
-        "Assign specific training work to an individual student.",
-        "Create homework with title, instructions and due label, then track completion.",
-        "Student sees assigned homework and can mark it completed or reopen it.",
-        "Example: assign 5 rounds of jab-only shadowboxing before Friday.",
-        listOf("Open Homework Manager","Select student","Add title and instructions","Set due label","Assign","Review completion later"),
+        "COACHING","Homework & Training Plans","homework_admin",
+        "Assign simple homework or reusable guided training plans to an individual student.",
+        "Create a plan once, add ordered exercises with sets/reps/time, and attach trainer-approved Training Media images or videos without uploading duplicate copies. The same plan can then be assigned to different students.",
+        "Student sees the assignment, follows each exercise step, studies the included visual/video examples and can mark steps plus the overall homework complete.",
+        "Example: create a defense plan with footwork, guard recovery and a reference clip, then assign it to several students with separate due dates.",
+        listOf("Open Homework Manager","Select student","Create or select a reusable training plan","Add ordered exercise steps","Attach existing Training Media where useful","Set due label","Assign plan","Review step and homework completion","Check trainer-only storage usage"),
         "HOMEWORK"
     ),
     RsGuideItemV54(
