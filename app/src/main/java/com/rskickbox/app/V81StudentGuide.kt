@@ -87,7 +87,7 @@ private fun rsStudentGuideItemsV81()=listOf(
         "See personal training assignments with ordered exercises, written instructions, sets/reps/time and trainer-selected demonstration images or videos.",
         "Your trainer assigns a defense plan with three steps: footwork drill, guard recovery drill and a short reference video.",
         listOf("Open Homework","Read the plan and due label","Open each exercise step","Study the trainer's image/video example when included","Complete the prescribed sets, reps or time","Mark each step done","Mark the overall homework complete when finished"),
-        "Instruction media is reused from the trainer library, so the same safe example can support multiple assignments without duplicate uploads."
+        "Instruction media is reused from the trainer library, so the same safe example can support multiple assignments without duplicate uploads. Personal media space is managed by the trainer and can scale with the club's backend plan."
     ),
     RsStudentGuideItemV81("COACHING","Private Lessons","private_lessons",
         "Request one-to-one coaching from available trainer time slots and receive a preparation or follow-up training plan when your trainer assigns one.",
