@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -173,7 +174,8 @@ private fun rsTrainingPlanT110(lang:RsLang,key:String):String{
         "storage" to "Student Storage","storage_sub" to "Trainer-only soft limits. Shared trainer instruction media is stored once and is not charged to every student.",
         "used" to "used","files" to "files","limit" to "soft limit","save_limit" to "Save limit",
         "media_reuse" to "Media is referenced from Training Media, not duplicated.",
-        "steps" to "TRAINING STEPS","done" to "Done","mark_done" to "Mark done","reopen" to "Reopen"
+        "steps" to "TRAINING STEPS","done" to "Done","mark_done" to "Mark done","reopen" to "Reopen",
+        "open_example" to "Open example","close_example" to "Close example","loading_example" to "Loading protected example…"
     )
     val nl=en+mapOf(
         "templates" to "Herbruikbare Trainingsplannen","templates_sub" to "Bouw één keer en wijs hetzelfde begeleide plan toe zonder media opnieuw te uploaden.",
@@ -182,7 +184,8 @@ private fun rsTrainingPlanT110(lang:RsLang,key:String):String{
         "media" to "Instructiemedia","no_media" to "Geen media","add_step" to "Stap toevoegen","assign" to "Geselecteerd plan toewijzen","due" to "Deadline",
         "no_plans" to "Nog geen trainingsplannen.","storage" to "Opslag per leerling","storage_sub" to "Alleen voor trainer. Gedeelde instructiemedia wordt één keer opgeslagen.",
         "used" to "gebruikt","files" to "bestanden","limit" to "zachte limiet","save_limit" to "Limiet opslaan","media_reuse" to "Media wordt gekoppeld vanuit Trainingsmedia, niet gedupliceerd.",
-        "steps" to "TRAININGSSTAPPEN","done" to "Klaar","mark_done" to "Markeer klaar","reopen" to "Heropenen"
+        "steps" to "TRAININGSSTAPPEN","done" to "Klaar","mark_done" to "Markeer klaar","reopen" to "Heropenen",
+        "open_example" to "Voorbeeld openen","close_example" to "Voorbeeld sluiten","loading_example" to "Beveiligd voorbeeld laden…"
     )
     val pt=en+mapOf(
         "templates" to "Planos de Treino Reutilizáveis","templates_sub" to "Cria uma vez e atribui o mesmo plano guiado a vários alunos sem voltar a carregar a media.",
@@ -191,7 +194,8 @@ private fun rsTrainingPlanT110(lang:RsLang,key:String):String{
         "media" to "Media de instrução","no_media" to "Sem media","add_step" to "Adicionar passo","assign" to "Atribuir plano selecionado","due" to "Prazo",
         "no_plans" to "Ainda não existem planos.","storage" to "Armazenamento por Aluno","storage_sub" to "Limites internos apenas para o treinador. Media partilhada é guardada só uma vez.",
         "used" to "usado","files" to "ficheiros","limit" to "limite flexível","save_limit" to "Guardar limite","media_reuse" to "A media é referenciada da Media de Treino, sem duplicação.",
-        "steps" to "PASSOS DO TREINO","done" to "Concluído","mark_done" to "Marcar concluído","reopen" to "Reabrir"
+        "steps" to "PASSOS DO TREINO","done" to "Concluído","mark_done" to "Marcar concluído","reopen" to "Reabrir",
+        "open_example" to "Abrir exemplo","close_example" to "Fechar exemplo","loading_example" to "A carregar exemplo protegido…"
     )
     val es=en+mapOf("templates" to "Planes de Entrenamiento Reutilizables","new_plan" to "NUEVO PLAN","plan_title" to "Título del plan","description" to "Descripción","category" to "Categoría","create" to "Crear plan","step" to "AÑADIR EJERCICIO","step_title" to "Título del ejercicio","instructions" to "Instrucciones","sets" to "Series / repeticiones / tiempo","media" to "Media de instrucción","no_media" to "Sin media","add_step" to "Añadir paso","assign" to "Asignar plan seleccionado","due" to "Fecha límite","storage" to "Almacenamiento del Alumno","used" to "usado","files" to "archivos","limit" to "límite flexible","save_limit" to "Guardar límite","steps" to "PASOS DE ENTRENAMIENTO","done" to "Hecho","mark_done" to "Marcar hecho","reopen" to "Reabrir")
     val fr=en+mapOf("templates" to "Plans d’Entraînement Réutilisables","new_plan" to "NOUVEAU PLAN","plan_title" to "Titre du plan","description" to "Description","category" to "Catégorie","create" to "Créer le plan","step" to "AJOUTER UN EXERCICE","step_title" to "Titre de l’exercice","instructions" to "Instructions","sets" to "Séries / répétitions / temps","media" to "Média d’instruction","no_media" to "Aucun média","add_step" to "Ajouter l’étape","assign" to "Attribuer le plan","due" to "Échéance","storage" to "Stockage Élève","used" to "utilisé","files" to "fichiers","limit" to "limite souple","save_limit" to "Enregistrer la limite","steps" to "ÉTAPES D’ENTRAÎNEMENT","done" to "Terminé","mark_done" to "Marquer terminé","reopen" to "Rouvrir")
@@ -342,15 +346,23 @@ fun RsTrainingPlanManagerPanelV110(
 @Composable
 fun RsHomeworkStepsPanelV110(c:RsPalette,lang:RsLang,homeworkId:String){
     val scope=rememberCoroutineScope()
+    val context=LocalContext.current
     var revision by remember{mutableIntStateOf(0)}
     var steps by remember{mutableStateOf<List<RsHomeworkStepV110>>(emptyList())}
+    var mediaCatalog by remember{mutableStateOf<List<RsTrainingMediaItemV55>>(emptyList())}
     var supported by remember{mutableStateOf(true)}
     var busyId by remember{mutableStateOf<String?>(null)}
+    var openMediaId by remember{mutableStateOf<String?>(null)}
+    var openMediaLocalUri by remember{mutableStateOf("")}
+    var mediaLoading by remember{mutableStateOf(false)}
 
     LaunchedEffect(homeworkId,revision){
         rsHomeworkStepsV110(homeworkId)
             .onSuccess{steps=it;supported=true}
             .onFailure{supported=false}
+        if(mediaCatalog.isEmpty()){
+            rsCloudTrainingMediaV73().onSuccess{mediaCatalog=it}
+        }
     }
     if(!supported || steps.isEmpty())return
 
@@ -363,6 +375,41 @@ fun RsHomeworkStepsPanelV110(c:RsPalette,lang:RsLang,homeworkId:String){
                 if(s.instructions.isNotBlank())Text(s.instructions,color=c.text)
                 if(!s.mediaTitle.isNullOrBlank()){
                     Text((if(s.mediaKind=="VIDEO")"▶ " else "▣ ")+s.mediaTitle,color=c.bright,fontSize=10.sp)
+                    val source=mediaCatalog.firstOrNull{it.id==s.mediaId}
+                    if(openMediaId==s.mediaId){
+                        if(mediaLoading){
+                            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                                CircularProgressIndicator(modifier=Modifier.size(20.dp),strokeWidth=2.dp)
+                                Text(rsTrainingPlanT110(lang,"loading_example"),color=c.muted,fontSize=10.sp)
+                            }
+                        }else if(source!=null&&openMediaLocalUri.isNotBlank()){
+                            RsTrainingMediaPreviewV55(
+                                c,
+                                source.copy(uri=openMediaLocalUri),
+                                Modifier.fillMaxWidth().heightIn(min=220.dp,max=420.dp)
+                            )
+                        }
+                        OutlinedButton(
+                            onClick={openMediaId=null;openMediaLocalUri="";mediaLoading=false},
+                            modifier=Modifier.fillMaxWidth()
+                        ){Text(rsTrainingPlanT110(lang,"close_example"))}
+                    }else if(source!=null){
+                        OutlinedButton(
+                            onClick={
+                                openMediaId=s.mediaId
+                                openMediaLocalUri=""
+                                mediaLoading=true
+                                scope.launch{
+                                    rsCloudTrainingMediaLocalUriV73(context,source)
+                                        .onSuccess{openMediaLocalUri=it}
+                                        .onFailure{openMediaId=null}
+                                    mediaLoading=false
+                                }
+                            },
+                            enabled=!mediaLoading,
+                            modifier=Modifier.fillMaxWidth()
+                        ){Text(rsTrainingPlanT110(lang,"open_example"))}
+                    }
                 }
                 OutlinedButton(
                     onClick={
