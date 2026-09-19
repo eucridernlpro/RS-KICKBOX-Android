@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 data class RsChallengeV47(
     val id:String,val studentEmail:String,val title:String,val target:Int,
@@ -99,6 +100,7 @@ private fun rsPerformanceUiV47(lang:RsLang,key:String):String{
 
 @Composable
 fun RsStudentChallengesV47(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudStudentChallengesV83(c,lang);return}
     var revision by remember{mutableIntStateOf(0)}
     val email=store.s("session_student_email","alex@rskickbox.nl")
     val items=remember(revision){rsLoadChallengesV47(store).filter{it.studentEmail.equals(email,true)&&it.active}}
@@ -127,6 +129,7 @@ fun RsStudentChallengesV47(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsChallengeManagerV47(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudChallengeManagerV83(c,lang);return}
     var revision by remember{mutableIntStateOf(0)}
     val students=rsStudentsV46(store)
     var email by remember{mutableStateOf(students.firstOrNull()?.first.orEmpty())}
@@ -175,6 +178,7 @@ fun RsChallengeManagerV47(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsStudentFightCampV47(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudStudentFightCampV83(c,lang);return}
     val email=store.s("session_student_email","alex@rskickbox.nl")
     val camp=rsLoadFightCampsV47(store).firstOrNull{it.studentEmail.equals(email,true)&&it.active}
         ?:RsFightCampV47(email,3,8,"Technique · Conditioning · Recovery",true)
@@ -202,6 +206,7 @@ fun RsStudentFightCampV47(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsFightCampManagerV47(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudFightCampManagerV83(c,lang);return}
     var revision by remember{mutableIntStateOf(0)}
     val students=rsStudentsV46(store)
     var email by remember{mutableStateOf(students.firstOrNull()?.first.orEmpty())}
@@ -239,6 +244,7 @@ fun RsFightCampManagerV47(c:RsPalette,store:RsStore,lang:RsLang){
 
 @Composable
 fun RsBadgesV47(c:RsPalette,store:RsStore,lang:RsLang){
+    if(RsSupabaseV60.configured){RsCloudBadgesV83(c,lang);return}
     val email=store.s("session_student_email","alex@rskickbox.nl")
     val challenges=rsLoadChallengesV47(store).filter{it.studentEmail.equals(email,true)}
     val completed=challenges.count{it.current>=it.target}
@@ -255,6 +261,306 @@ fun RsBadgesV47(c:RsPalette,store:RsStore,lang:RsLang){
         Triple("Camp Finisher","Reach week 8 of Fight Camp",(camp?.currentWeek?:0)>=8)
     )
     RsScroll(c,rsPerformanceUiV47(lang,"badges"),rsPerformanceUiV47(lang,"badges_sub")){
+        badges.forEach{(name,desc,earned)->
+            RsPanel(c){
+                Text((if(earned)"★ " else "☆ ")+name,color=if(earned)c.bright else c.muted,fontWeight=FontWeight.Black,fontSize=18.sp)
+                Text(desc,color=c.text)
+                Text(if(earned)rsPerformanceUiV47(lang,"earned") else rsPerformanceUiV47(lang,"locked"),color=c.muted)
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun RsCloudStudentChallengesV83(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var items by remember{mutableStateOf<List<RsCloudChallengeV83>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busyId by remember{mutableStateOf<String?>(null)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudChallengesV83()
+            .onSuccess{items=it.filter{row->row.active}}
+            .onFailure{status=it.message?:"Could not load challenges."}
+        loading=false
+    }
+
+    RsScroll(c,rsPerformanceUiV47(lang,"challenges"),"Live trainer-assigned goals synchronized with your account."){
+        RsPanel(c){
+            Text(if(loading)"Syncing challenges…" else "Cloud challenges connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        if(items.isEmpty()&&!loading)RsPanel(c){Text(rsPerformanceUiV47(lang,"none"),color=c.muted)}
+        items.forEach{x->
+            val current=x.current.coerceAtMost(x.target)
+            RsPanel(c){
+                Text(x.title,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                Text(current.toString()+" / "+x.target+" "+x.unit,color=c.text)
+                LinearProgressIndicator(progress={current.toFloat()/x.target},modifier=Modifier.fillMaxWidth())
+                Text(if(current>=x.target)rsPerformanceUiV47(lang,"complete") else rsPerformanceUiV47(lang,"progress"),color=c.muted)
+                if(current<x.target)Button(
+                    onClick={
+                        busyId=x.id
+                        scope.launch{
+                            rsIncreaseCloudChallengeV83(x.id)
+                                .onSuccess{revision++}
+                                .onFailure{status=it.message?:"Could not update challenge."}
+                            busyId=null
+                        }
+                    },
+                    enabled=busyId==null,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(busyId==x.id)"Saving…" else rsPerformanceUiV47(lang,"increase"))}
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudChallengeManagerV83(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var students by remember{mutableStateOf<List<RsDevStudentV80>>(emptyList())}
+    var items by remember{mutableStateOf<List<RsCloudChallengeV83>>(emptyList())}
+    var selectedId by remember{mutableStateOf("")}
+    var title by remember{mutableStateOf("")}
+    var target by remember{mutableStateOf("10")}
+    var unit by remember{mutableStateOf("sessions")}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var pendingDelete by remember{mutableStateOf<String?>(null)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsDevelopmentStudentsV80()
+            .onSuccess{students=it;if(selectedId.isBlank())selectedId=it.firstOrNull()?.id.orEmpty()}
+            .onFailure{status=it.message?:"Could not load students."}
+        rsCloudChallengesV83()
+            .onSuccess{items=it}
+            .onFailure{status=it.message?:"Could not load challenges."}
+        loading=false
+    }
+
+    RsScroll(c,rsPerformanceUiV47(lang,"challenge_admin"),"Assign and manage cloud challenges for every student."){
+        RsPanel(c){
+            Text(if(loading)"Syncing Challenge Manager…" else "Cloud Challenge Manager connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        RsPanel(c){
+            students.forEach{s->
+                FilterChip(
+                    selected=selectedId==s.id,
+                    onClick={selectedId=s.id},
+                    label={Text(s.displayName.ifBlank{s.email})},
+                    modifier=Modifier.fillMaxWidth()
+                )
+            }
+            OutlinedTextField(title,{title=it.take(100)},label={Text(rsPerformanceUiV47(lang,"title"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            OutlinedTextField(target,{target=it.filter(Char::isDigit).take(5)},label={Text(rsPerformanceUiV47(lang,"target"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            OutlinedTextField(unit,{unit=it.take(30)},label={Text(rsPerformanceUiV47(lang,"unit"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            Button(
+                onClick={
+                    busy=true
+                    scope.launch{
+                        rsAssignCloudChallengeV83(selectedId,title.trim(),target.toIntOrNull()?.coerceIn(1,10000)?:10,unit.trim().ifBlank{"sessions"})
+                            .onSuccess{title="";target="10";unit="sessions";status="Challenge assigned.";revision++}
+                            .onFailure{status=it.message?:"Could not assign challenge."}
+                        busy=false
+                    }
+                },
+                enabled=!busy&&selectedId.isNotBlank()&&title.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Saving…" else rsPerformanceUiV47(lang,"assign"))}
+        }
+
+        items.forEach{x->
+            RsPanel(c){
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
+                    RsMemberAvatarV68(c,x.studentEmail,x.studentName,size=42.dp)
+                    Column(Modifier.weight(1f)){
+                        Text(x.studentName.ifBlank{x.studentEmail},color=c.bright,fontWeight=FontWeight.Bold)
+                        Text(x.title+" · "+x.current+"/"+x.target+" "+x.unit,color=c.text)
+                    }
+                }
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                    Text(if(x.active)rsPerformanceUiV47(lang,"active") else rsPerformanceUiV47(lang,"inactive"),color=c.muted)
+                    Switch(
+                        x.active,
+                        {value->
+                            busy=true
+                            scope.launch{
+                                rsSetCloudChallengeActiveV83(x.id,value)
+                                    .onSuccess{revision++}
+                                    .onFailure{status=it.message?:"Could not update challenge."}
+                                busy=false
+                            }
+                        },
+                        enabled=!busy
+                    )
+                }
+                OutlinedButton(
+                    onClick={
+                        if(pendingDelete==x.id){
+                            busy=true
+                            scope.launch{
+                                rsDeleteCloudChallengeV83(x.id)
+                                    .onSuccess{pendingDelete=null;status="Challenge deleted.";revision++}
+                                    .onFailure{status=it.message?:"Could not delete challenge."}
+                                busy=false
+                            }
+                        }else pendingDelete=x.id
+                    },
+                    enabled=!busy,
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(pendingDelete==x.id)rsPerformanceUiV47(lang,"confirm") else rsPerformanceUiV47(lang,"delete"))}
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudStudentFightCampV83(c:RsPalette,lang:RsLang){
+    var camp by remember{mutableStateOf<RsCloudFightCampV83?>(null)}
+    var loading by remember{mutableStateOf(true)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(Unit){
+        loading=true
+        rsCloudFightCampsV83()
+            .onSuccess{camp=it.firstOrNull{row->row.active}}
+            .onFailure{status=it.message?:"Could not load Fight Camp."}
+        loading=false
+    }
+
+    RsScroll(c,rsPerformanceUiV47(lang,"fightcamp"),"Your trainer-managed Fight Camp synced from the club backend."){
+        RsPanel(c){
+            Text(if(loading)"Syncing Fight Camp…" else "Cloud Fight Camp connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        val active=camp
+        if(active==null&&!loading)RsPanel(c){Text(rsPerformanceUiV47(lang,"none"),color=c.muted)}
+        if(active!=null){
+            RsPanel(c){
+                Text(rsPerformanceUiV47(lang,"week_label").uppercase()+" "+active.currentWeek+" / "+active.totalWeeks,color=c.bright,fontSize=28.sp,fontWeight=FontWeight.Black)
+                LinearProgressIndicator(progress={active.currentWeek.toFloat()/active.totalWeeks},modifier=Modifier.fillMaxWidth())
+                Text(active.focus,color=c.text)
+            }
+            (1..active.totalWeeks).forEach{week->
+                RsPanel(c){
+                    Text(rsPerformanceUiV47(lang,"week_label")+" "+week,color=if(week<=active.currentWeek)c.bright else c.muted,fontWeight=FontWeight.Bold)
+                    Text(
+                        when{
+                            week<active.currentWeek->rsPerformanceUiV47(lang,"completed_block")
+                            week==active.currentWeek->rsPerformanceUiV47(lang,"current_block")
+                            else->rsPerformanceUiV47(lang,"upcoming_block")
+                        },
+                        color=c.muted
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsCloudFightCampManagerV83(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var students by remember{mutableStateOf<List<RsDevStudentV80>>(emptyList())}
+    var camps by remember{mutableStateOf<List<RsCloudFightCampV83>>(emptyList())}
+    var selectedId by remember{mutableStateOf("")}
+    var week by remember{mutableFloatStateOf(1f)}
+    var focus by remember{mutableStateOf("Technique · Conditioning · Recovery")}
+    var active by remember{mutableStateOf(true)}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsDevelopmentStudentsV80().onSuccess{
+            students=it
+            if(selectedId.isBlank())selectedId=it.firstOrNull()?.id.orEmpty()
+        }.onFailure{status=it.message?:"Could not load students."}
+        rsCloudFightCampsV83().onSuccess{camps=it}.onFailure{status=it.message?:"Could not load Fight Camps."}
+        loading=false
+    }
+
+    val selectedCamp=camps.firstOrNull{it.studentId==selectedId}
+    LaunchedEffect(selectedId,selectedCamp?.currentWeek,selectedCamp?.focus,selectedCamp?.active){
+        week=(selectedCamp?.currentWeek?:1).toFloat()
+        focus=selectedCamp?.focus?:"Technique · Conditioning · Recovery"
+        active=selectedCamp?.active?:true
+    }
+
+    RsScroll(c,rsPerformanceUiV47(lang,"fightcamp_admin"),"Create and update the same Fight Camp students see on their devices."){
+        RsPanel(c){
+            Text(if(loading)"Syncing Fight Camp Manager…" else "Cloud Fight Camp Manager connected",color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+        RsPanel(c){
+            students.forEach{s->
+                FilterChip(selected=selectedId==s.id,onClick={selectedId=s.id},label={Text(s.displayName.ifBlank{s.email})},modifier=Modifier.fillMaxWidth())
+            }
+            Text(rsPerformanceUiV47(lang,"week")+" · "+week.toInt()+"/8",color=c.text)
+            Slider(week,{week=it},valueRange=1f..8f,steps=6,enabled=!busy)
+            OutlinedTextField(focus,{focus=it.take(500)},label={Text(rsPerformanceUiV47(lang,"focus"))},modifier=Modifier.fillMaxWidth(),minLines=3,enabled=!busy)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                Text(if(active)rsPerformanceUiV47(lang,"active") else rsPerformanceUiV47(lang,"inactive"),color=c.muted)
+                Switch(active,{active=it},enabled=!busy)
+            }
+            Button(
+                onClick={
+                    busy=true
+                    scope.launch{
+                        rsSetCloudFightCampV83(selectedId,week.toInt(),focus.trim(),active)
+                            .onSuccess{status="Fight Camp saved.";revision++}
+                            .onFailure{status=it.message?:"Could not save Fight Camp."}
+                        busy=false
+                    }
+                },
+                enabled=!busy&&selectedId.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Saving…" else rsPerformanceUiV47(lang,"save"))}
+        }
+    }
+}
+
+@Composable
+private fun RsCloudBadgesV83(c:RsPalette,lang:RsLang){
+    var challenges by remember{mutableStateOf<List<RsCloudChallengeV83>>(emptyList())}
+    var assessments by remember{mutableStateOf<List<RsCloudAssessmentV80>>(emptyList())}
+    var camps by remember{mutableStateOf<List<RsCloudFightCampV83>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+
+    LaunchedEffect(Unit){
+        loading=true
+        rsCloudChallengesV83().onSuccess{challenges=it}
+        rsAssessmentFeedV80().onSuccess{assessments=it}
+        rsCloudFightCampsV83().onSuccess{camps=it}
+        loading=false
+    }
+
+    val completed=challenges.count{it.current>=it.target}
+    val latest=assessments.firstOrNull()
+    val avg=latest?.let{(it.punches+it.kicks+it.defense+it.footwork+it.combinations+it.conditioning)/6}?:0
+    val camp=camps.firstOrNull()
+    val badges=listOf(
+        Triple("First Challenge","Complete 1 trainer challenge",completed>=1),
+        Triple("Challenge Hunter","Complete 3 trainer challenges",completed>=3),
+        Triple("Technical 70","Reach 70+ average assessment",avg>=70),
+        Triple("Technical 80","Reach 80+ average assessment",avg>=80),
+        Triple("Fight Camp","Reach week 4 of Fight Camp",(camp?.currentWeek?:0)>=4),
+        Triple("Camp Finisher","Reach week 8 of Fight Camp",(camp?.currentWeek?:0)>=8)
+    )
+
+    RsScroll(c,rsPerformanceUiV47(lang,"badges"),"Achievements calculated from your synchronized RS training records."){
+        if(loading)RsPanel(c){Text("Syncing badges…",color=c.muted)}
         badges.forEach{(name,desc,earned)->
             RsPanel(c){
                 Text((if(earned)"★ " else "☆ ")+name,color=if(earned)c.bright else c.muted,fontWeight=FontWeight.Black,fontSize=18.sp)
