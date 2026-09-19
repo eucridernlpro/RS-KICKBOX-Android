@@ -221,7 +221,7 @@ private fun RsCloudTrainerNotificationsV74(c:RsPalette,lang:RsLang){
     RsScroll(c,rsNotificationUiV41(lang,"trainer_title"),rsReleaseT98(lang,"notifications_admin_sub")){
         RsPanel(c){
             Text(
-                if(loading)"Syncing notifications…" else rsReleaseT98(lang,"notification_center_connected"),
+                if(loading)rsCloudT93(lang,"syncing") else rsReleaseT98(lang,"notification_center_connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
@@ -335,7 +335,7 @@ private fun RsCloudStudentNotificationsV74(c:RsPalette,lang:RsLang){
     RsScroll(c,rsNotificationUiV41(lang,"student_title"),rsReleaseT98(lang,"notifications_student_sub")){
         RsPanel(c){
             Text(
-                if(loading)"Syncing notifications…" else rsReleaseT98(lang,"notifications_connected"),
+                if(loading)rsCloudT93(lang,"syncing") else rsReleaseT98(lang,"notifications_connected"),
                 color=if(loading)c.muted else c.bright,
                 fontWeight=FontWeight.Bold,
                 fontSize=10.sp
