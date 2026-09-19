@@ -147,9 +147,9 @@ fun RsStudentEventsV42(c:RsPalette,store:RsStore,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsEventUiV42(lang,"student_title"),"Live club events synchronized across devices."){
+    RsScroll(c,rsEventUiV42(lang,"student_title"),rsEventUiV42(lang,"student_sub")){
         RsPanel(c){
-            Text(if(loading)"Syncing events…" else rsReleaseT98(lang,"events_connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            Text(if(loading)rsCloudT93(lang,"syncing") else rsReleaseT98(lang,"events_connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
         items.forEach{event->
@@ -242,7 +242,7 @@ fun RsEventManagerV42(c:RsPalette,store:RsStore,lang:RsLang){
 
     RsScroll(c,rsEventUiV42(lang,"trainer_title"),rsReleaseT98(lang,"events_admin_sub")){
         RsPanel(c){
-            Text(if(loading)"Syncing events…" else rsReleaseT98(lang,"event_manager_connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            Text(if(loading)rsCloudT93(lang,"syncing") else rsReleaseT98(lang,"event_manager_connected"),color=if(loading)c.muted else c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
         Button(onClick={showCreate=!showCreate},enabled=!busy,modifier=Modifier.fillMaxWidth()){
