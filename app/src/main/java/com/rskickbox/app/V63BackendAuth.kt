@@ -119,6 +119,27 @@ suspend fun rsCloudLogoutV63():Result<Unit> = runCatching {
     rsSupabaseClientV60()?.auth?.signOut()
 }
 
+suspend fun rsCloudRequestPasswordResetV87(email:String):Result<Unit> = runCatching {
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    val clean=email.trim()
+    require(clean.contains("@")){"Enter a valid email address."}
+    client.auth.resetPasswordForEmail(
+        email=clean,
+        redirectUrl="rskickbox://auth-callback"
+    )
+}
+
+suspend fun rsCloudUpdatePasswordV87(newPassword:String):Result<Unit> = runCatching {
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    require(newPassword.length>=10){"Choose a password with at least 10 characters."}
+    require(client.auth.currentUserOrNull()!=null){"Open the password reset link from your email first."}
+    client.auth.updateUser {
+        password=newPassword
+    }
+    client.auth.signOut()
+}
+
+
 suspend fun rsCreateStudentInviteV63(
     name:String,
     email:String,
