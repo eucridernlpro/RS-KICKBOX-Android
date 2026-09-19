@@ -54,10 +54,10 @@ private fun rsStudentGuideItemsV81()=listOf(
         "Keep the phone where the timer is visible but does not interfere with training."
     ),
     RsStudentGuideItemV81("TRAINING","AI Technique Coach","voice",
-        "Upload a short technique video, receive structured coaching feedback and save the result to your history.",
-        "Upload a roundhouse kick clip and review feedback about balance, guard, rotation and recovery.",
-        listOf("Open AI Technique Coach","Choose trainer voice/persona","Upload a video up to 20 seconds","Choose the technique","Analyze","Listen/read feedback","Save to history"),
-        "Use a clear full-body angle with enough space around you."
+        "Upload a short technique video, receive structured coaching feedback and use trainer-approved visual examples when a matching reference exists.",
+        "Upload a roundhouse kick clip and review feedback about balance, guard, rotation and recovery. A trainer-approved pivot or guard example can support the correction.",
+        listOf("Open AI Technique Coach","Choose trainer voice/persona","Upload a video up to 20 seconds","Choose the technique","Analyze","Listen/read feedback","Study a matching trainer-approved example when available","Save to history"),
+        "Use a clear full-body angle with enough space around you. Visual examples come from media approved by your trainer."
     ),
     RsStudentGuideItemV81("TRAINING","Technique Library","techniques",
         "Study kickboxing techniques, key coaching points and drills before practicing.",
@@ -90,10 +90,10 @@ private fun rsStudentGuideItemsV81()=listOf(
         "Instruction media is reused from the trainer library, so the same safe example can support multiple assignments without duplicate uploads."
     ),
     RsStudentGuideItemV81("COACHING","Private Lessons","private_lessons",
-        "Request one-to-one coaching from available trainer time slots.",
-        "Request Saturday at 12:00 and add a note that you want to work on defense.",
-        listOf("Open Private Lessons","Choose an available slot","Add a short note","Send request","Wait for Confirmed or Declined status","Cancel if necessary"),
-        "A request is not final until the trainer confirms it."
+        "Request one-to-one coaching from available trainer time slots and receive a preparation or follow-up training plan when your trainer assigns one.",
+        "Request Saturday at 12:00 for defense work. After confirmation, your trainer can attach a Defense Fundamentals plan with exercise steps and visual/video examples.",
+        listOf("Open Private Lessons","Choose an available slot","Add a short note","Send request","Wait for Confirmed or Declined status","If a training plan is shown, open Homework and follow its steps","Cancel the lesson request if necessary"),
+        "A request is not final until the trainer confirms it. Training media is reused from the trainer library rather than uploaded again."
     ),
     RsStudentGuideItemV81("PERFORMANCE","Progress","progress",
         "See your latest trainer assessment and your development history.",
