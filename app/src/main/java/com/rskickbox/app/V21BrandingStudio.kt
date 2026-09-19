@@ -37,6 +37,28 @@ private fun posKeyV21(slot:String)="visual_v21_pos_$slot"
 private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 
 
+private fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
+    val drawableName=when(slot){
+        "login"->"rs_bg_login"
+        "student_home"->"rs_bg_student_home"
+        "trainer_home"->"rs_bg_trainer_home"
+        "header","footer"->"rs_bg_header"
+        "voice","techniques","compare"->"rs_bg_technique"
+        "session","home_training","workout","fightcamp","challenges"->"rs_bg_kicks"
+        "academy","media","content","lesson_editor"->"rs_bg_training_landscape"
+        "coachchat","community","groups","homework","homework_admin","private_lessons"->"rs_bg_coaching_landscape"
+        else->""
+    }
+    if(drawableName.isBlank())return ""
+    val id=context.resources.getIdentifier(drawableName,"drawable",context.packageName)
+    return if(id==0)"" else "android.resource://"+context.packageName+"/"+id
+}
+
+private fun rsVisualUriWithBundledFallbackV113(context:android.content.Context,store:RsStore,slot:String):String{
+    return store.s(visualKeyV21(slot),"").ifBlank{rsBundledVisualUriV113(context,slot)}
+}
+
+
 private fun rsVisualStudioT109(lang:RsLang,key:String):String{
     val en=mapOf(
         "title" to "VISUAL PLACEMENT EDITOR","sub" to "Choose one place. Only that visual is loaded and edited.",
@@ -204,7 +226,8 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore,lang:RsLang){
 
     var pos by remember(selected.key,refresh){mutableStateOf(store.s(posKeyV21(selected.key),"CENTER"))}
     var opacity by remember(selected.key,refresh){mutableFloatStateOf(store.s(opacityKeyV21(selected.key),"0.55").toFloatOrNull()?:.55f)}
-    val uri=store.s(visualKeyV21(selected.key),"")
+    val customUri=store.s(visualKeyV21(selected.key),"")
+    val uri=customUri.ifBlank{rsBundledVisualUriV113(context,selected.key)}
 
     fun saveVisual(picked:Uri,persist:Boolean){
         if(persist)runCatching{context.contentResolver.takePersistableUriPermission(picked,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
@@ -346,7 +369,7 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore,lang:RsLang){
                         }
                     }
                     Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=opacity.coerceIn(0f,.85f))))
-                    Text(if(uri.isBlank())rsVisualStudioT109(lang,"default_visual") else rsVisualStudioT109(lang,"custom_saved"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=9.sp,modifier=Modifier.align(Alignment.BottomStart).padding(10.dp))
+                    Text(if(customUri.isBlank())rsVisualStudioT109(lang,"default_visual") else rsVisualStudioT109(lang,"custom_saved"),color=c.bright,fontWeight=FontWeight.Bold,fontSize=9.sp,modifier=Modifier.align(Alignment.BottomStart).padding(10.dp))
                 }
 
                 if(uri.isNotBlank()){
@@ -677,13 +700,22 @@ fun RsUriPreviewV21(uri:String,modifier:Modifier=Modifier,position:String="CENTE
 
 @Composable
 fun RsPerPageBackgroundV21(store:RsStore,route:String,content:@Composable ()->Unit){
-    val key=when(route){"home"->"student_home";"trainer"->"trainer_home";else->route};val uri=store.s(visualKeyV21(key),"");val opacity=store.s(opacityKeyV21(key),"0.60").toFloatOrNull()?:.60f;val pos=store.s(posKeyV21(key),"CENTER")
-    Box(Modifier.fillMaxSize()){if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.fillMaxSize(),pos);if(uri.isNotBlank())Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=opacity.coerceIn(0f,.88f))));content()}
+    val context=LocalContext.current
+    val key=when(route){"home"->"student_home";"trainer"->"trainer_home";else->route}
+    val uri=rsVisualUriWithBundledFallbackV113(context,store,key)
+    val opacity=store.s(opacityKeyV21(key),"0.60").toFloatOrNull()?:.60f
+    val pos=store.s(posKeyV21(key),"CENTER")
+    Box(Modifier.fillMaxSize()){
+        if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.fillMaxSize(),pos)
+        if(uri.isNotBlank())Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=opacity.coerceIn(0f,.88f))))
+        content()
+    }
 }
 
 @Composable
 fun RsBrandedHeaderV21(c:RsPalette,store:RsStore,content:@Composable ColumnScope.()->Unit){
-    val uri=store.s(visualKeyV21("header"),"")
+    val context=LocalContext.current
+    val uri=rsVisualUriWithBundledFallbackV113(context,store,"header")
     val compactLogo=store.s("brand_asset_header_letters_logo","")
     Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.panel)){
         if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.matchParentSize(),store.s(posKeyV21("header"),"CENTER"))
@@ -697,6 +729,7 @@ fun RsBrandedHeaderV21(c:RsPalette,store:RsStore,content:@Composable ColumnScope
 
 @Composable
 fun RsBrandedFooterV21(c:RsPalette,store:RsStore){
-    val uri=store.s(visualKeyV21("footer"),"")
+    val context=LocalContext.current
+    val uri=rsVisualUriWithBundledFallbackV113(context,store,"footer")
     Box(Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(16.dp)).background(c.panel),contentAlignment=Alignment.Center){if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.matchParentSize(),store.s(posKeyV21("footer"),"CENTER"));Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=.55f)));Text(store.s("brand_footer_text","RS KICKBOXING · TRAIN · LEARN · CONNECT · GROW"),color=c.muted,fontSize=9.sp,maxLines=1)}
 }
