@@ -233,7 +233,7 @@ private fun LoginV21(
         store.ps("session_plan",session.plan)
         store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
         statusIsError=false
-        status="✓ Login successful. Welcome "+session.displayName
+        status="✓ "+rsEnrollMsg(lang,"welcome",name=session.displayName)
         onLogin(session.role)
     }
 
@@ -331,7 +331,7 @@ private fun LoginV21(
         if(busy)return
         if(pass.length<10){
             statusIsError=true
-            status="Choose a password with at least 10 characters."
+            status=rsLoginT94(lang,"new_password_min")
             return
         }
         busy=true
@@ -372,7 +372,7 @@ private fun LoginV21(
             pendingInviteToken=invite.activationCode
             pass=""
             statusIsError=false
-            status="Invitation loaded for "+invite.name.ifBlank{rsT(lang,"student")}+". Choose a password with at least 10 characters."
+            status=rsLoginT94(lang,"invite_loaded")
         }
     }
 
@@ -510,7 +510,7 @@ private fun LoginV21(
                             when{
                                 recoveryMode->rsLoginT94(lang,"new_password")
                                 pendingInviteToken.isNotBlank()->rsLoginT94(lang,"create_password")
-                                else->"Password"
+                                else->rsT(lang,"password")
                             }
                         )},
                         colors=fieldColors,
@@ -523,7 +523,7 @@ private fun LoginV21(
                                 enabled=!busy,
                                 contentPadding=PaddingValues(horizontal=8.dp,vertical=0.dp)
                             ){
-                                Text(if(showPassword)"HIDE" else "👁",color=Color.White,fontSize=13.sp)
+                                Text(if(showPassword)rsCommonT95(lang,"hide") else "👁",color=Color.White,fontSize=13.sp)
                             }
                         },
                         modifier=Modifier.fillMaxWidth()
