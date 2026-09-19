@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 data class RsCoachMessageV44(
     val id:String,
@@ -126,8 +127,13 @@ private fun rsCoachUiV44(lang:RsLang,key:String):String{
 
 @Composable
 fun RsCoachChatV44(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
-    if(role==RsRole.TRAINER)RsTrainerCoachInboxV44(c,store,lang)
-    else RsStudentCoachThreadV44(c,store,lang)
+    if(RsSupabaseV60.configured){
+        if(role==RsRole.TRAINER)RsCloudTrainerCoachInboxV72(c,lang)
+        else RsCloudStudentCoachThreadV72(c,lang)
+    }else{
+        if(role==RsRole.TRAINER)RsTrainerCoachInboxV44(c,store,lang)
+        else RsStudentCoachThreadV44(c,store,lang)
+    }
 }
 
 @Composable
@@ -332,6 +338,251 @@ private fun RsTrainerCoachInboxV44(c:RsPalette,store:RsStore,lang:RsLang){
                     },
                     modifier=Modifier.fillMaxWidth()
                 ){Text(if(pendingDelete==email)rsCoachUiV44(lang,"confirm") else rsCoachUiV44(lang,"delete"))}
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun RsCloudCoachBubbleV72(
+    c:RsPalette,
+    lang:RsLang,
+    message:RsCloudCoachMessageV72
+){
+    val trainer=message.senderRole=="trainer" || message.senderRole=="admin"
+    Surface(
+        color=if(trainer)c.gold.copy(alpha=.18f) else c.panel,
+        shape=MaterialTheme.shapes.large,
+        modifier=Modifier.fillMaxWidth()
+    ){
+        Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(4.dp)){
+            if(trainer){
+                Text(
+                    rsCoachUiV44(lang,"trainer"),
+                    color=c.bright,
+                    fontWeight=FontWeight.Black,
+                    fontSize=10.sp
+                )
+            }else{
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(8.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    RsMemberAvatarV68(c,message.studentEmail,message.studentName,size=32.dp)
+                    Text(
+                        message.studentName.ifBlank{rsCoachUiV44(lang,"student")},
+                        color=c.bright,
+                        fontWeight=FontWeight.Black,
+                        fontSize=11.sp
+                    )
+                }
+            }
+            Text(message.body,color=c.text)
+            Text(rsCoachTimeV44(message.createdAtMillis()),color=c.muted,fontSize=9.sp)
+        }
+    }
+}
+
+@Composable
+private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var studentId by remember{mutableStateOf("")}
+    var messages by remember{mutableStateOf<List<RsCloudCoachMessageV72>>(emptyList())}
+    var draft by remember{mutableStateOf("")}
+    var status by remember{mutableStateOf("")}
+    var loading by remember{mutableStateOf(true)}
+    var sending by remember{mutableStateOf(false)}
+    var revision by remember{mutableIntStateOf(0)}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsCloudMyStudentIdV72()
+            .onSuccess{id->
+                studentId=id
+                rsCloudCoachMessagesV72(id)
+                    .onSuccess{messages=it}
+                    .onFailure{status=it.message?:"Could not load coach messages."}
+                rsCloudMarkCoachReadV72(id)
+            }
+            .onFailure{status=it.message?:"Could not resolve student account."}
+        loading=false
+    }
+
+    RsScroll(c,rsCoachUiV44(lang,"student_title"),rsCoachUiV44(lang,"student_sub")){
+        RsPanel(c){
+            Text(
+                if(loading)"Syncing private coach chat…" else "Private cloud chat connected",
+                color=if(loading)c.muted else c.bright,
+                fontWeight=FontWeight.Bold,
+                fontSize=10.sp
+            )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        }
+
+        if(messages.isEmpty()&&!loading)RsPanel(c){
+            Text(rsCoachUiV44(lang,"no_messages"),color=c.bright,fontWeight=FontWeight.Bold)
+            Text(rsCoachUiV44(lang,"start"),color=c.muted)
+        }
+
+        messages.forEach{RsCloudCoachBubbleV72(c,lang,it)}
+
+        RsPanel(c){
+            OutlinedTextField(
+                value=draft,
+                onValueChange={draft=it.take(1200)},
+                label={Text(rsCoachUiV44(lang,"message"))},
+                modifier=Modifier.fillMaxWidth(),
+                minLines=3,
+                maxLines=8,
+                enabled=!sending
+            )
+            Button(
+                onClick={
+                    if(studentId.isBlank())return@Button
+                    sending=true
+                    status=""
+                    val clean=draft.trim()
+                    scope.launch{
+                        rsCloudSendCoachMessageV72(studentId,clean)
+                            .onSuccess{
+                                draft=""
+                                status="Message sent."
+                                revision++
+                            }
+                            .onFailure{status=it.message?:"Could not send message."}
+                        sending=false
+                    }
+                },
+                enabled=!sending&&draft.trim().isNotBlank()&&studentId.isNotBlank(),
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(sending)"Sending…" else rsCoachUiV44(lang,"send"))}
+        }
+    }
+}
+
+@Composable
+private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang){
+    val scope=rememberCoroutineScope()
+    var threads by remember{mutableStateOf<List<RsCloudCoachThreadV72>>(emptyList())}
+    var selected by remember{mutableStateOf<RsCloudCoachThreadV72?>(null)}
+    var messages by remember{mutableStateOf<List<RsCloudCoachMessageV72>>(emptyList())}
+    var draft by remember{mutableStateOf("")}
+    var status by remember{mutableStateOf("")}
+    var loading by remember{mutableStateOf(true)}
+    var sending by remember{mutableStateOf(false)}
+    var revision by remember{mutableIntStateOf(0)}
+
+    LaunchedEffect(revision,selected?.studentId){
+        loading=true
+        if(selected==null){
+            rsCloudCoachThreadsV72()
+                .onSuccess{threads=it}
+                .onFailure{status=it.message?:"Could not load coach inbox."}
+        }else{
+            val id=selected!!.studentId
+            rsCloudCoachMessagesV72(id)
+                .onSuccess{messages=it}
+                .onFailure{status=it.message?:"Could not load conversation."}
+            rsCloudMarkCoachReadV72(id)
+        }
+        loading=false
+    }
+
+    if(selected==null){
+        RsScroll(c,rsCoachUiV44(lang,"trainer_title"),rsCoachUiV44(lang,"trainer_sub")){
+            RsPanel(c){
+                Text(
+                    if(loading)"Syncing coach inbox…" else "Cloud coach inbox connected",
+                    color=if(loading)c.muted else c.bright,
+                    fontWeight=FontWeight.Bold,
+                    fontSize=10.sp
+                )
+                if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+            }
+            Text(rsCoachUiV44(lang,"students"),color=c.bright,fontWeight=FontWeight.Black)
+            if(threads.isEmpty()&&!loading)RsPanel(c){Text(rsCoachUiV44(lang,"no_students"),color=c.muted)}
+            threads.forEach{thread->
+                RsPanel(c){
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement=Arrangement.spacedBy(10.dp),
+                        verticalAlignment=Alignment.CenterVertically
+                    ){
+                        RsMemberAvatarV68(c,thread.studentEmail,thread.studentName,size=48.dp)
+                        Column(Modifier.weight(1f)){
+                            Text(thread.studentName.ifBlank{thread.studentEmail},color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                            Text(thread.studentEmail,color=c.muted,fontSize=9.sp)
+                            Text(
+                                if(thread.unreadCount>0)thread.unreadCount.toString()+" "+rsCoachUiV44(lang,"unread")
+                                else thread.lastMessage?.take(90)?:rsCoachUiV44(lang,"no_messages"),
+                                color=if(thread.unreadCount>0)c.bright else c.text,
+                                fontWeight=if(thread.unreadCount>0)FontWeight.Bold else FontWeight.Normal,
+                                fontSize=10.sp
+                            )
+                        }
+                    }
+                    Button(
+                        onClick={selected=thread;status="";revision++},
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(rsRouteTitle(lang,"coachchat","Private Coach Chat"))}
+                }
+            }
+        }
+    }else{
+        val thread=selected!!
+        RsScroll(c,thread.studentName.ifBlank{thread.studentEmail},thread.studentEmail){
+            RsPanel(c){
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(10.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    RsMemberAvatarV68(c,thread.studentEmail,thread.studentName,size=54.dp)
+                    Column(Modifier.weight(1f)){
+                        Text(thread.studentName.ifBlank{thread.studentEmail},color=c.bright,fontWeight=FontWeight.Black,fontSize=19.sp)
+                        Text(thread.studentEmail,color=c.muted,fontSize=10.sp)
+                    }
+                }
+            }
+            OutlinedButton(
+                onClick={selected=null;draft="";status="";messages=emptyList();revision++},
+                modifier=Modifier.fillMaxWidth()
+            ){Text(rsCoachUiV44(lang,"back"))}
+
+            if(status.isNotBlank())RsPanel(c){Text(status,color=c.muted,fontSize=10.sp)}
+            if(messages.isEmpty()&&!loading)RsPanel(c){Text(rsCoachUiV44(lang,"no_messages"),color=c.muted)}
+            messages.forEach{RsCloudCoachBubbleV72(c,lang,it)}
+
+            RsPanel(c){
+                OutlinedTextField(
+                    value=draft,
+                    onValueChange={draft=it.take(1200)},
+                    label={Text(rsCoachUiV44(lang,"message"))},
+                    modifier=Modifier.fillMaxWidth(),
+                    minLines=3,
+                    maxLines=8,
+                    enabled=!sending
+                )
+                Button(
+                    onClick={
+                        sending=true
+                        status=""
+                        scope.launch{
+                            rsCloudSendCoachMessageV72(thread.studentId,draft.trim())
+                                .onSuccess{
+                                    draft=""
+                                    status="Message sent."
+                                    revision++
+                                }
+                                .onFailure{status=it.message?:"Could not send message."}
+                            sending=false
+                        }
+                    },
+                    enabled=!sending&&draft.trim().isNotBlank(),
+                    modifier=Modifier.fillMaxWidth()
+                ){Text(if(sending)"Sending…" else rsCoachUiV44(lang,"send"))}
             }
         }
     }
