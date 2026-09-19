@@ -49,7 +49,6 @@ private fun rsLanguageSettingsT111(lang:RsLang,key:String):String{
     return pack[key]?:en[key]?:key
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RsLanguageSettingsPanelV111(
     c:RsPalette,
@@ -57,7 +56,8 @@ fun RsLanguageSettingsPanelV111(
     current:RsLang,
     onSelect:(RsLang)->Unit
 ){
-    var manual by remember(current.code){mutableStateOf(store.b("lang_manual_override_v111",false))}
+    var open by remember{mutableStateOf(false)}
+    val manual=store.b("lang_manual_override_v111",false)
     RsPanel(c){
         Text(rsLanguageSettingsT111(current,"title"),color=c.bright,fontWeight=FontWeight.Black)
         Text(rsLanguageSettingsT111(current,"sub"),color=c.muted)
@@ -67,28 +67,34 @@ fun RsLanguageSettingsPanelV111(
                 store.pb("lang_manual_override_v111",false)
                 val detected=rsDeviceLanguageV111()
                 store.ps("lang",detected.code)
-                manual=false
+                open=false
                 onSelect(detected)
             },
             modifier=Modifier.fillMaxWidth()
         ){Text(rsLanguageSettingsT111(current,"phone"))}
         Text(rsLanguageSettingsT111(current,"manual"),color=c.muted,fontSize=10.sp)
-        FlowRow(
-            modifier=Modifier.fillMaxWidth(),
-            horizontalArrangement=Arrangement.spacedBy(6.dp),
-            verticalArrangement=Arrangement.spacedBy(6.dp)
-        ){
-            rsLangs.forEach{language->
-                FilterChip(
-                    selected=manual&&current.code==language.code,
-                    onClick={
-                        store.pb("lang_manual_override_v111",true)
-                        store.ps("lang",language.code)
-                        manual=true
-                        onSelect(language)
-                    },
-                    label={Text(language.name)}
-                )
+        Box(Modifier.fillMaxWidth()){
+            OutlinedButton(
+                onClick={open=true},
+                modifier=Modifier.fillMaxWidth()
+            ){
+                Text(if(manual)current.name else rsLanguageSettingsT111(current,"phone"))
+            }
+            DropdownMenu(
+                expanded=open,
+                onDismissRequest={open=false}
+            ){
+                rsLangs.forEach{language->
+                    DropdownMenuItem(
+                        text={Text(language.name)},
+                        onClick={
+                            store.pb("lang_manual_override_v111",true)
+                            store.ps("lang",language.code)
+                            open=false
+                            onSelect(language)
+                        }
+                    )
+                }
             }
         }
     }
