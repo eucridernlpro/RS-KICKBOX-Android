@@ -454,7 +454,7 @@ private fun RsCloudContentManagerV79(c:RsPalette,lang:RsLang){
                                 body=""
                                 tier="ALL"
                                 published=true
-                                status="Training content saved."
+                                status=rsCloudT93(lang,"content_saved")
                                 revision++
                             }
                             .onFailure{status=it.message?:"Could not save training content."}
@@ -495,7 +495,7 @@ private fun RsCloudContentManagerV79(c:RsPalette,lang:RsLang){
                                 rsDeleteCloudContentV79(item.id)
                                     .onSuccess{
                                         pendingDelete=null
-                                        status="Training content deleted."
+                                        status=rsCloudT93(lang,"content_deleted")
                                         revision++
                                     }
                                     .onFailure{status=it.message?:"Could not delete content."}
