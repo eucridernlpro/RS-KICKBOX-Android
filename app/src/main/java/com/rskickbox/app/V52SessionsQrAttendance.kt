@@ -396,14 +396,14 @@ private fun RsCloudSessionBuilderV85(c:RsPalette,lang:RsLang){
             Button(
                 onClick={
                     busy=true
-                    status="Publishing session…"
+                    status=rsCloudT93(lang,"publishing_session")
                     scope.launch{
                         rsCreateCloudTrainingSessionV85(sessionTitle,draftBlocks)
                             .onSuccess{
                                 sessionTitle=""
                                 draftBlocks=emptyList()
                                 showCreate=false
-                                status="✓ Session published and set active."
+                                status=rsCloudT93(lang,"session_published")
                                 revision++
                             }
                             .onFailure{status=it.message?:"Could not create training session."}
@@ -447,7 +447,7 @@ private fun RsCloudSessionBuilderV85(c:RsPalette,lang:RsLang){
                                 rsDeleteCloudTrainingSessionV85(s.id)
                                     .onSuccess{
                                         pendingDelete=null
-                                        status="Session deleted."
+                                        status=rsCloudT93(lang,"session_deleted")
                                         revision++
                                     }
                                     .onFailure{status=it.message?:"Could not delete session."}
@@ -586,13 +586,13 @@ private fun RsCloudQrAttendanceTrainerV85(c:RsPalette,lang:RsLang){
             Button(
                 onClick={
                     busy=true
-                    status="Creating secure attendance QR…"
+                    status=rsCloudT93(lang,"creating_qr")
                     scope.launch{
                         rsCreateAttendanceQrV85(selected.id,15)
                             .onSuccess{
                                 qrToken=it.token
                                 expiry=it.expiresAt
-                                status="✓ QR ready. It expires automatically."
+                                status=rsCloudT93(lang,"qr_ready")
                             }
                             .onFailure{status=it.message?:"Could not create attendance QR."}
                         busy=false
@@ -603,7 +603,7 @@ private fun RsCloudQrAttendanceTrainerV85(c:RsPalette,lang:RsLang){
             ){Text(if(busy)"Generating…" else rsOpsUiV52(lang,"generate"))}
             if(qr!=null){
                 Image(qr.asImageBitmap(),"Attendance QR",modifier=Modifier.fillMaxWidth().aspectRatio(1f))
-                Text("Valid for about 15 minutes · "+expiry,color=c.muted,fontSize=9.sp)
+                Text(rsCloudT93(lang,"qr_valid")+" · "+expiry,color=c.muted,fontSize=9.sp)
             }
         }
     }
@@ -619,7 +619,7 @@ private fun RsCloudStudentCheckInV85(c:RsPalette,lang:RsLang){
 
     RsScroll(c,rsOpsUiV52(lang,"student_qr"),"Scan the secure trainer QR to record your attendance in the cloud."){
         RsPanel(c){
-            Text("Your check-in is tied to your signed-in student account.",color=c.muted,fontSize=10.sp)
+            Text(rsCloudT93(lang,"checkin_identity"),color=c.muted,fontSize=10.sp)
             Button(
                 onClick={
                     if(busy)return@Button
@@ -630,7 +630,7 @@ private fun RsCloudStudentCheckInV85(c:RsPalette,lang:RsLang){
                                 status=rsOpsUiV52(lang,"invalid")
                             }else{
                                 busy=true
-                                status="Checking in…"
+                                status=rsCloudT93(lang,"checking_in")
                                 scope.launch{
                                     rsCloudAttendanceCheckInV85(pair.first,pair.second)
                                         .onSuccess{status="✓ "+rsOpsUiV52(lang,"checked")}
