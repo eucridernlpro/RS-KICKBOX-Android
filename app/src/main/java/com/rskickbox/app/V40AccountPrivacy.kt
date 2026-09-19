@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.io.File
 import java.io.FileOutputStream
+import kotlinx.coroutines.launch
 
 private fun rsAccountUiV40(lang:RsLang,key:String):String{
     val en=mapOf(
@@ -88,6 +89,10 @@ private fun rsShareLocalExportV40(context:android.content.Context,store:RsStore)
 
 @Composable
 fun RsStudentPrivacyV40(c:RsPalette,store:RsStore,lang:RsLang,onLocalAccountDisabled:()->Unit){
+    if(RsSupabaseV60.configured){
+        RsCloudStudentPrivacyV78(c,store,lang)
+        return
+    }
     val context=androidx.compose.ui.platform.LocalContext.current
     var status by remember{mutableStateOf("")}
     var showDelete by remember{mutableStateOf(false)}
@@ -161,6 +166,148 @@ fun RsStudentPrivacyV40(c:RsPalette,store:RsStore,lang:RsLang,onLocalAccountDisa
                     },
                     enabled=deleteText=="DELETE"
                 ){Text(rsAccountUiV40(lang,"confirm"))}
+            },
+            dismissButton={
+                TextButton(onClick={showDelete=false;deleteText=""}){Text(rsAccountUiV40(lang,"cancel"))}
+            }
+        )
+    }
+}
+
+
+@Composable
+private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
+    val context=androidx.compose.ui.platform.LocalContext.current
+    val scope=rememberCoroutineScope()
+    var revision by remember{mutableIntStateOf(0)}
+    var requests by remember{mutableStateOf<List<RsAccountRequestV78>>(emptyList())}
+    var loading by remember{mutableStateOf(true)}
+    var busy by remember{mutableStateOf(false)}
+    var status by remember{mutableStateOf("")}
+    var showDelete by remember{mutableStateOf(false)}
+    var deleteText by remember{mutableStateOf("")}
+
+    LaunchedEffect(revision){
+        loading=true
+        rsMyAccountRequestsV78()
+            .onSuccess{requests=it}
+            .onFailure{status=it.message?:"Could not load privacy requests."}
+        loading=false
+    }
+
+    RsScroll(c,rsAccountUiV40(lang,"title"),"Preferences, privacy and secure account requests connected to RS KICKBOX cloud."){
+        RsPanel(c){
+            Text(rsAccountUiV40(lang,"prefs"),color=c.bright,fontWeight=FontWeight.Bold)
+            listOf(
+                rsAccountUiV40(lang,"push"),
+                rsAccountUiV40(lang,"booking"),
+                rsAccountUiV40(lang,"training"),
+                rsAccountUiV40(lang,"private_profile"),
+                rsAccountUiV40(lang,"voice")
+            ).forEachIndexed{i,label->
+                var enabled by remember{mutableStateOf(store.b("student_setting_v16_"+i,i<3||i==4))}
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                    Text(label,color=c.text,modifier=Modifier.weight(1f))
+                    Switch(enabled,{v->enabled=v;store.pb("student_setting_v16_"+i,v)})
+                }
+            }
+        }
+
+        RsPanel(c){
+            Text(rsAccountUiV40(lang,"data"),color=c.bright,fontWeight=FontWeight.Bold)
+            Text(
+                "You can share an immediate export of local app data or submit a secure request for your account data held in the RS KICKBOX backend.",
+                color=c.muted
+            )
+            Button(
+                onClick={
+                    rsShareLocalExportV40(context,store)
+                    status=rsAccountUiV40(lang,"export_ready")
+                },
+                modifier=Modifier.fillMaxWidth()
+            ){Text("Share local app data export")}
+
+            OutlinedButton(
+                onClick={
+                    busy=true
+                    status=""
+                    scope.launch{
+                        rsCreateAccountRequestV78("data_export")
+                            .onSuccess{
+                                status="Cloud data-export request submitted."
+                                revision++
+                            }
+                            .onFailure{status=it.message?:"Could not submit data-export request."}
+                        busy=false
+                    }
+                },
+                enabled=!busy,
+                modifier=Modifier.fillMaxWidth()
+            ){Text(if(busy)"Please wait…" else "Request cloud data export")}
+
+            OutlinedButton(
+                onClick={showDelete=true},
+                enabled=!busy,
+                modifier=Modifier.fillMaxWidth()
+            ){Text(rsAccountUiV40(lang,"delete"))}
+
+            if(status.isNotBlank())Text(status,color=c.muted)
+        }
+
+        RsPanel(c){
+            Text("ACCOUNT REQUESTS",color=c.bright,fontWeight=FontWeight.Bold)
+            Text(
+                if(loading)"Syncing request status…" else "Requests are tracked securely in Supabase.",
+                color=c.muted,
+                fontSize=10.sp
+            )
+            if(requests.isEmpty()&&!loading)Text("No privacy/account requests yet.",color=c.muted)
+            requests.take(10).forEach{request->
+                Text(
+                    request.requestType.replace('_',' ').uppercase()+" · "+request.status.uppercase(),
+                    color=c.bright,
+                    fontWeight=FontWeight.Bold
+                )
+                Text(request.requestedLabel(),color=c.muted,fontSize=9.sp)
+                if(request.staffNote.isNotBlank())Text(request.staffNote,color=c.text,fontSize=10.sp)
+            }
+        }
+    }
+
+    if(showDelete){
+        AlertDialog(
+            onDismissRequest={showDelete=false;deleteText=""},
+            title={Text(rsAccountUiV40(lang,"delete_title"))},
+            text={
+                Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    Text(
+                        "Type DELETE to submit a real account-deletion request. Your account is not immediately erased: RS KICKBOX can process the request safely while preserving records that must legally be retained."
+                    )
+                    OutlinedTextField(
+                        deleteText,
+                        {deleteText=it},
+                        label={Text(rsAccountUiV40(lang,"type_delete"))}
+                    )
+                }
+            },
+            confirmButton={
+                Button(
+                    onClick={
+                        busy=true
+                        scope.launch{
+                            rsCreateAccountRequestV78("account_deletion")
+                                .onSuccess{
+                                    status="Account-deletion request submitted."
+                                    revision++
+                                    showDelete=false
+                                    deleteText=""
+                                }
+                                .onFailure{status=it.message?:"Could not submit deletion request."}
+                            busy=false
+                        }
+                    },
+                    enabled=deleteText=="DELETE"&&!busy
+                ){Text(if(busy)"Submitting…" else rsAccountUiV40(lang,"confirm"))}
             },
             dismissButton={
                 TextButton(onClick={showDelete=false;deleteText=""}){Text(rsAccountUiV40(lang,"cancel"))}
