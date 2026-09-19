@@ -196,7 +196,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsAccountUiV40(lang,"title"),"Preferences, privacy and secure account requests connected to RS KICKBOX cloud."){
+    RsScroll(c,rsAccountUiV40(lang,"title"),rsAccountUiV40(lang,"sub")){
         RsPanel(c){
             Text(rsAccountUiV40(lang,"prefs"),color=c.bright,fontWeight=FontWeight.Bold)
             listOf(
