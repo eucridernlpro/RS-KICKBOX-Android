@@ -468,7 +468,7 @@ fun RsVisualAssetStudioV21(c:RsPalette,store:RsStore,lang:RsLang){
                         modifier=Modifier.align(Alignment.TopEnd).padding(8.dp)
                     ){Text(rsVisualStudioT109(lang,"close_preview"),color=Color.White)}
                     Text(
-                        "FULL-SCREEN BACKGROUND TEST",
+                        rsVisualStudioT109(lang,"full_test"),
                         color=Color.White.copy(alpha=.72f),
                         fontSize=9.sp,
                         fontWeight=FontWeight.Bold,
