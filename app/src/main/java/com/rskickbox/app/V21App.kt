@@ -389,13 +389,13 @@ private fun LoginV21(
                         }
                         .onFailure{
                             statusIsError=true
-                            status=it.message?:rsLoginT94(lang,"account_signin_failed")
+                            status=rsLoginT94(lang,"account_signin_failed")
                             clearLoginFields(clearEmail=true)
                         }
                 }
                 .onFailure{
                     statusIsError=true
-                    status=it.message?:rsLoginT94(lang,"activate_failed")
+                    status=rsLoginT94(lang,"activate_failed")
                     pass=""
                 }
             busy=false
