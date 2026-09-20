@@ -35,6 +35,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
@@ -625,11 +627,11 @@ fun RsChatComposerV92(
     }
 
     Surface(
-        color=c.panel.copy(alpha=.78f),
+        color=androidx.compose.ui.graphics.Color.Black.copy(alpha=.82f),
         contentColor=c.text,
-        shape=RoundedCornerShape(28.dp),
-        border=BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
-        tonalElevation=8.dp,
+        shape=RoundedCornerShape(30.dp),
+        border=BorderStroke(1.dp,c.gold.copy(alpha=.52f)),
+        tonalElevation=14.dp,
         modifier=Modifier.fillMaxWidth()
     ){
         Column(
@@ -678,31 +680,11 @@ fun RsChatComposerV92(
                     OutlinedButton(
                         onClick={attachmentMenu=true},
                         enabled=enabled&&!busy&&!recording,
-                        modifier=Modifier.size(44.dp),
+                        modifier=Modifier.size(46.dp),
                         shape=CircleShape,
-                        border=BorderStroke(1.dp,c.gold.copy(alpha=.54f)),
+                        border=BorderStroke(1.dp,c.gold.copy(alpha=.72f)),
                         contentPadding=PaddingValues(0.dp)
-                    ){Text("+",fontSize=23.sp,color=c.bright)}
-                    DropdownMenu(
-                        expanded=attachmentMenu,
-                        onDismissRequest={attachmentMenu=false},
-                        containerColor=c.panel
-                    ){
-                        DropdownMenuItem(
-                            text={Text("▣  "+rsChatMediaT(lang,"photo"))},
-                            onClick={
-                                attachmentMenu=false
-                                imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                            }
-                        )
-                        DropdownMenuItem(
-                            text={Text("▶  "+rsChatMediaT(lang,"video"))},
-                            onClick={
-                                attachmentMenu=false
-                                videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
-                            }
-                        )
-                    }
+                    ){Text("+",fontSize=24.sp,color=c.bright,fontWeight=FontWeight.Black)}
                 }
 
                 OutlinedTextField(
@@ -745,6 +727,110 @@ fun RsChatComposerV92(
                         contentColor=androidx.compose.ui.graphics.Color.Black
                     )
                 ){Text(if(busy)"…" else "➤",fontWeight=FontWeight.Black,fontSize=16.sp)}
+            }
+        }
+    }
+
+    if(attachmentMenu){
+        Dialog(
+            onDismissRequest={attachmentMenu=false},
+            properties=DialogProperties(usePlatformDefaultWidth=false)
+        ){
+            Box(Modifier.fillMaxSize(),contentAlignment=Alignment.BottomCenter){
+                Surface(
+                    color=androidx.compose.ui.graphics.Color.Black.copy(alpha=.96f),
+                    shape=RoundedCornerShape(topStart=30.dp,topEnd=30.dp),
+                    border=BorderStroke(1.dp,c.gold.copy(alpha=.56f)),
+                    tonalElevation=18.dp,
+                    modifier=Modifier.fillMaxWidth().navigationBarsPadding()
+                ){
+                    Column(
+                        Modifier.fillMaxWidth().padding(18.dp),
+                        verticalArrangement=Arrangement.spacedBy(14.dp)
+                    ){
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment=Alignment.CenterVertically
+                        ){
+                            Column(Modifier.weight(1f)){
+                                Text("RS MEDIA COMMAND",color=c.bright,fontWeight=FontWeight.Black,fontSize=16.sp,letterSpacing=.8.sp)
+                                Text("Choose what you want to send",color=c.muted,fontSize=9.sp)
+                            }
+                            TextButton(onClick={attachmentMenu=false}){Text("×",color=c.bright,fontSize=25.sp)}
+                        }
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement=Arrangement.spacedBy(12.dp)
+                        ){
+                            Surface(
+                                color=c.gold.copy(alpha=.09f),
+                                shape=RoundedCornerShape(24.dp),
+                                border=BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
+                                modifier=Modifier.weight(1f).clickable{
+                                    attachmentMenu=false
+                                    imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                }
+                            ){
+                                Column(
+                                    Modifier.padding(vertical=22.dp,horizontal=12.dp),
+                                    horizontalAlignment=Alignment.CenterHorizontally,
+                                    verticalArrangement=Arrangement.spacedBy(8.dp)
+                                ){
+                                    Surface(
+                                        color=c.gold.copy(alpha=.12f),
+                                        shape=CircleShape,
+                                        border=BorderStroke(1.dp,c.gold.copy(alpha=.50f)),
+                                        modifier=Modifier.size(54.dp)
+                                    ){
+                                        Box(contentAlignment=Alignment.Center){Text("▣",color=c.bright,fontSize=23.sp)}
+                                    }
+                                    Text(rsChatMediaT(lang,"photo").uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                                    Text("Gallery · camera image",color=c.muted,fontSize=8.sp)
+                                }
+                            }
+                            Surface(
+                                color=c.gold.copy(alpha=.09f),
+                                shape=RoundedCornerShape(24.dp),
+                                border=BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
+                                modifier=Modifier.weight(1f).clickable{
+                                    attachmentMenu=false
+                                    videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+                                }
+                            ){
+                                Column(
+                                    Modifier.padding(vertical=22.dp,horizontal=12.dp),
+                                    horizontalAlignment=Alignment.CenterHorizontally,
+                                    verticalArrangement=Arrangement.spacedBy(8.dp)
+                                ){
+                                    Surface(
+                                        color=c.gold.copy(alpha=.12f),
+                                        shape=CircleShape,
+                                        border=BorderStroke(1.dp,c.gold.copy(alpha=.50f)),
+                                        modifier=Modifier.size(54.dp)
+                                    ){
+                                        Box(contentAlignment=Alignment.Center){Text("▶",color=c.bright,fontSize=21.sp)}
+                                    }
+                                    Text(rsChatMediaT(lang,"video").uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                                    Text("Training clip · technique",color=c.muted,fontSize=8.sp)
+                                }
+                            }
+                        }
+                        Surface(
+                            color=androidx.compose.ui.graphics.Color(0xFF58C9FF).copy(alpha=.06f),
+                            shape=RoundedCornerShape(16.dp),
+                            border=BorderStroke(1.dp,androidx.compose.ui.graphics.Color(0xFF58C9FF).copy(alpha=.18f)),
+                            modifier=Modifier.fillMaxWidth()
+                        ){
+                            Text(
+                                "AI TRAINER READY · media can be used for technique coaching",
+                                color=androidx.compose.ui.graphics.Color(0xFF58C9FF),
+                                fontWeight=FontWeight.Bold,
+                                fontSize=8.sp,
+                                modifier=Modifier.padding(horizontal=12.dp,vertical=9.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
