@@ -322,11 +322,11 @@ fun rsChatBackendFriendlyErrorV121(lang:RsLang,t:Throwable?):String{
 
 fun rsChatMediaT(lang:RsLang,key:String):String{
     val en=mapOf(
-        "image" to "Image","video" to "Short video","voice" to "Voice message","remove" to "Remove attachment",
+        "image" to "Image","photo" to "Photo","video" to "Short video","voice" to "Voice message","file" to "File","remove" to "Remove attachment",
         "send" to "Send","sending" to "Sending…","uploading" to "Uploading attachment…",
         "attachment_ready" to "Attachment ready","open_video" to "Play short video","play_voice" to "Play voice message",
-        "download_error" to "Could not load attachment.","upload_error" to "Could not upload attachment.","message_or_media" to "Write a message or add photo, video or voice.",
-        "max_video" to "Short videos: maximum 30 seconds / 30 MB.","max_voice" to "Voice messages: maximum 2 minutes / 30 MB.","voice_unavailable" to "No audio recorder is available on this phone.",
+        "download_error" to "Could not load attachment.","upload_error" to "Could not upload attachment.","file_open_error" to "No compatible app could open this file.","message" to "Message…","message_or_media" to "Write a message or add an attachment.",
+        "max_video" to "Short videos: maximum 30 seconds / 30 MB.","max_voice" to "Voice messages: maximum 2 minutes / 30 MB.","voice_unavailable" to "Voice recording could not start.","recording" to "Recording… tap stop when finished.","mic_permission" to "Microphone permission is required for voice messages.","voice_too_short" to "Voice message was too short. Try again.",
         "backend_missing" to "Chat media backend update is required. Ask the trainer/admin to run the latest RS KICKBOXING Supabase repair.",
         "permission_error" to "Chat media permission was not accepted by the server."
     )
