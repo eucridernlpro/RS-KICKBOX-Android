@@ -195,6 +195,19 @@ using (
     )
 );
 
+-- Compatibility cleanup: PostgreSQL cannot CREATE OR REPLACE a function
+-- when its RETURNS TABLE / OUT parameter structure changed.
+-- Dropping these API functions first is safe; they are recreated immediately below.
+drop function if exists public.rs_coach_thread_messages(uuid);
+drop function if exists public.rs_send_coach_message_v2(uuid,text,text,text,text);
+drop function if exists public.rs_group_message_feed(uuid);
+drop function if exists public.rs_send_group_message(uuid,text,text,text,text);
+drop function if exists public.rs_staff_delete_coach_message(uuid);
+drop function if exists public.rs_staff_clear_coach_thread(uuid);
+drop function if exists public.rs_staff_delete_group_message(uuid);
+drop function if exists public.rs_staff_clear_group_chat(uuid);
+drop function if exists public.rs_remove_student_media_asset_by_path(text,text);
+
 -- 4) Attachment-aware private coach chat feed + send.
 create or replace function public.rs_coach_thread_messages(p_student_id uuid)
 returns table (
