@@ -39,7 +39,7 @@ private fun posKeyV21(slot:String)="visual_v21_pos_$slot"
 private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 
 
-private fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
+fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
     // v0.119: every active route has a packaged RS fallback.
     val drawableName=when(slot){
         "login","profile","settings","finance","book","payments","invoices","support","release",
@@ -60,7 +60,7 @@ private fun rsBundledVisualUriV113(context:android.content.Context,slot:String):
     return if(id==0)"" else "android.resource://"+context.packageName+"/"+id
 }
 
-private fun rsVisualUriUsableV116(context:android.content.Context,value:String):Boolean{
+fun rsVisualUriUsableV116(context:android.content.Context,value:String):Boolean{
     if(value.isBlank())return false
     return runCatching{
         val uri=Uri.parse(value)
@@ -94,7 +94,7 @@ private fun rsVisualUriUsableV116(context:android.content.Context,value:String):
     }.getOrDefault(false)
 }
 
-private fun rsVisualUriWithBundledFallbackV113(context:android.content.Context,store:RsStore,slot:String):String{
+fun rsVisualUriWithBundledFallbackV113(context:android.content.Context,store:RsStore,slot:String):String{
     val key=visualKeyV21(slot)
     val saved=store.s(key,"")
     if(rsVisualUriUsableV116(context,saved))return saved
