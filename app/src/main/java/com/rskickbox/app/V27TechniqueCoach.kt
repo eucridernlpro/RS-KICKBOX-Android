@@ -312,9 +312,34 @@ private fun coachAiReferenceUiV114(lang:RsLang,key:String):String{
 @Composable
 fun RsTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore,role:RsRole){
     if(role==RsRole.TRAINER){
-        if(RsSupabaseV60.configured)RsCloudTrainerTechniqueHistoryV78(c,lang)
+        if(RsSupabaseV60.configured)RsTrainerAiHubV125(c,lang)
         else TrainerTechniqueHistoryV27(c,store,lang)
     }else StudentTechniqueCoachV27(c,lang,store)
+}
+
+@Composable
+private fun RsTrainerAiHubV125(c:RsPalette,lang:RsLang){
+    var section by remember{mutableStateOf("references")}
+    Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(8.dp)){
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+            FilterChip(
+                selected=section=="references",
+                onClick={section="references"},
+                label={Text("AI Reference Library")},
+                modifier=Modifier.weight(1f)
+            )
+            FilterChip(
+                selected=section=="reviews",
+                onClick={section="reviews"},
+                label={Text("Student Reviews")},
+                modifier=Modifier.weight(1f)
+            )
+        }
+        Box(Modifier.fillMaxWidth().weight(1f)){
+            if(section=="references")RsTrainerAiReferenceChatV125(c,lang)
+            else RsCloudTrainerTechniqueHistoryV78(c,lang)
+        }
+    }
 }
 
 @Composable
