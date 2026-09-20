@@ -31,7 +31,6 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.launch
 import java.io.File
-import java.util.zip.ZipInputStream
 
 private data class VisualSlotV21(val key:String,val title:String,val group:String,val size:String,val hint:String)
 private fun visualKeyV21(slot:String)="visual_v21_$slot"
@@ -63,42 +62,25 @@ private fun rsVisualPackFileV115(context:android.content.Context,fileName:String
 }
 
 private fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
-    val packName=when(slot){
-        "login"->"rs_bg_v115_login.webp"
-        "student_home"->"rs_bg_v115_student.webp"
-        "trainer_home"->"rs_bg_v115_trainer.webp"
-        "header"->"rs_bg_v115_header.webp"
-        "footer"->"rs_bg_v115_footer.webp"
-        "voice"->"rs_bg_v115_ai.webp"
-        "techniques","compare"->"rs_bg_v115_technique.webp"
-        "session","home_training","workout","session_builder"->"rs_bg_v115_training.webp"
-        "private_lessons","homework","homework_admin"->"rs_bg_v115_private.webp"
-        "coachchat"->"rs_bg_v115_chat.webp"
-        "community","groups"->"rs_bg_v115_community.webp"
-        "academy","media","content","lesson_editor","vault","favorites","search"->"rs_bg_v115_library.webp"
-        "music","music_admin"->"rs_bg_v115_music.webp"
-        "progress","challenges","badges","fightcamp","progress_admin","challenge_admin","fightcamp_admin","assessments"->"rs_bg_v115_performance.webp"
-        "classes","events","events_admin","attendance","qr_attendance","schedule","notifications","documents","referrals"->"rs_bg_v115_club.webp"
-        "profile","settings","finance","book","payments","invoices","analytics","support","release"->"rs_bg_v115_account.webp"
-        "members","access","plans_admin","notes"->"rs_bg_v115_trainer.webp"
-        "themes","backgrounds","branding","intro_settings","landing_admin"->"rs_bg_v115_header.webp"
-        else->""
-    }
-    val packed=rsVisualPackFileV115(context,packName)
-    if(packed.isNotBlank())return packed
-
+    // v0.116: packaged Android resources are the reliable fallback.
+    // Do not depend on runtime ZIP extraction for page backgrounds.
     val drawableName=when(slot){
         "login"->"rs_bg_login"
         "student_home"->"rs_bg_student_home"
         "trainer_home"->"rs_bg_trainer_home"
-        "header","footer"->"rs_bg_header"
+        "header","footer","themes","backgrounds","branding","intro_settings","landing_admin"->"rs_bg_header"
         "voice","techniques","compare"->"rs_bg_technique"
-        "session","home_training","workout","fightcamp","challenges"->"rs_bg_kicks"
-        "academy","media","content","lesson_editor"->"rs_bg_training_landscape"
-        "coachchat","community","groups","homework","homework_admin","private_lessons"->"rs_bg_coaching_landscape"
-        else->""
+        "session","home_training","workout","session_builder",
+        "progress","challenges","badges","fightcamp","progress_admin","challenge_admin","fightcamp_admin","assessments"->"rs_bg_kicks"
+        "private_lessons","homework","homework_admin",
+        "coachchat","community","groups"->"rs_bg_coaching_landscape"
+        "academy","media","content","lesson_editor","vault","favorites","search",
+        "music","music_admin",
+        "classes","events","events_admin","attendance","qr_attendance","schedule","notifications","documents","referrals",
+        "profile","settings","finance","book","payments","invoices","analytics","support","release",
+        "members","access","plans_admin","notes"->"rs_bg_training_landscape"
+        else->"rs_bg_header"
     }
-    if(drawableName.isBlank())return ""
     val id=context.resources.getIdentifier(drawableName,"drawable",context.packageName)
     return if(id==0)"" else "android.resource://"+context.packageName+"/"+id
 }
