@@ -370,39 +370,86 @@ fun RsChatAttachmentPreviewV92(
         return
     }
 
-    if(mediaKind=="IMAGE"){
-        val bitmap=remember(localUri){
-            runCatching{
-                val uri=Uri.parse(localUri)
-                BitmapFactory.decodeFile(uri.path)?.asImageBitmap()
-            }.getOrNull()
-        }
-        if(bitmap!=null){
-            Image(
-                bitmap=bitmap,
-                contentDescription=mediaName?:rsChatMediaT(lang,"image"),
-                contentScale=ContentScale.Crop,
-                modifier=Modifier.fillMaxWidth().heightIn(min=120.dp,max=280.dp)
-            )
-        }
-    }else{
-        val audio=mediaKind=="AUDIO"
-        OutlinedButton(
-            onClick={
-                val file=File(Uri.parse(localUri).path?:return@OutlinedButton)
-                val uri=FileProvider.getUriForFile(context,context.packageName+".fileprovider",file)
-                val intent=Intent(Intent.ACTION_VIEW).apply{
-                    setDataAndType(uri,if(audio)"audio/*" else "video/*")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    when(mediaKind){
+        "IMAGE"->{
+            val bitmap=remember(localUri){
+                runCatching{
+                    val uri=Uri.parse(localUri)
+                    BitmapFactory.decodeFile(uri.path)?.asImageBitmap()
+                }.getOrNull()
+            }
+            if(bitmap!=null){
+                Surface(
+                    shape=RoundedCornerShape(18.dp),
+                    color=c.panel.copy(alpha=.72f),
+                    border=BorderStroke(1.dp,c.gold.copy(alpha=.22f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Image(
+                        bitmap=bitmap,
+                        contentDescription=mediaName?:rsChatMediaT(lang,"image"),
+                        contentScale=ContentScale.Crop,
+                        modifier=Modifier.fillMaxWidth().heightIn(min=160.dp,max=340.dp)
+                    )
                 }
-                runCatching{context.startActivity(intent)}
-            },
-            modifier=Modifier.fillMaxWidth()
-        ){
-            Text(
-                (if(audio)"🎙 " else "▶ ")+rsChatMediaT(lang,if(audio)"play_voice" else "open_video")+" · "+(mediaName?:if(audio)"voice" else "video"),
-                maxLines=1,overflow=TextOverflow.Ellipsis
-            )
+            }else Text(rsChatMediaT(lang,"download_error"),color=c.muted,fontSize=9.sp)
+        }
+        "VIDEO","AUDIO"->{
+            val player=remember(localUri){
+                ExoPlayer.Builder(context).build().apply{
+                    setMediaItem(MediaItem.fromUri(Uri.parse(localUri)))
+                    repeatMode=Player.REPEAT_MODE_OFF
+                    prepare()
+                }
+            }
+            DisposableEffect(player){onDispose{player.release()}}
+            Surface(
+                shape=RoundedCornerShape(18.dp),
+                color=androidx.compose.ui.graphics.Color.Black.copy(alpha=.72f),
+                border=BorderStroke(1.dp,c.gold.copy(alpha=.24f)),
+                modifier=Modifier.fillMaxWidth()
+            ){
+                AndroidView(
+                    factory={ctx->
+                        PlayerView(ctx).apply{
+                            this.player=player
+                            useController=true
+                        }
+                    },
+                    update={it.player=player},
+                    modifier=if(mediaKind=="VIDEO")
+                        Modifier.fillMaxWidth().heightIn(min=190.dp,max=360.dp)
+                    else Modifier.fillMaxWidth().height(86.dp)
+                )
+            }
+            if(!mediaName.isNullOrBlank()){
+                Text(mediaName,color=c.muted,fontSize=9.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
+            }
+        }
+        else->{
+            OutlinedButton(
+                onClick={
+                    val file=File(Uri.parse(localUri).path?:return@OutlinedButton)
+                    val uri=FileProvider.getUriForFile(context,context.packageName+".fileprovider",file)
+                    val lower=mediaName.orEmpty().lowercase()
+                    val mime=when{
+                        lower.endsWith(".pdf")->"application/pdf"
+                        lower.endsWith(".txt")->"text/plain"
+                        lower.endsWith(".doc")->"application/msword"
+                        lower.endsWith(".docx")->"application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        else->"*/*"
+                    }
+                    val intent=Intent(Intent.ACTION_VIEW).apply{
+                        setDataAndType(uri,mime)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    runCatching{context.startActivity(intent)}
+                        .onFailure{error=rsChatMediaT(lang,"file_open_error")}
+                },
+                modifier=Modifier.fillMaxWidth()
+            ){
+                Text("⌑ "+(mediaName?:rsChatMediaT(lang,"file")),maxLines=1,overflow=TextOverflow.Ellipsis)
+            }
         }
     }
 }
@@ -424,30 +471,87 @@ fun RsChatComposerV92(
     var picked by remember(scopeId){mutableStateOf<Uri?>(null)}
     var pickedKind by remember(scopeId){mutableStateOf("")}
     var busy by remember{mutableStateOf(false)}
+    var attachmentMenu by remember{mutableStateOf(false)}
+    var recording by remember{mutableStateOf(false)}
+    var voiceFile by remember{mutableStateOf<File?>(null)}
+    var recorder by remember{mutableStateOf<MediaRecorder?>(null)}
 
-    val imagePicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+    val imagePicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
         if(uri!=null){
-            runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
             picked=uri
             pickedKind="IMAGE"
             onStatus("")
         }
     }
-    val videoPicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+    val videoPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
         if(uri!=null){
-            runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
             picked=uri
             pickedKind="VIDEO"
             onStatus("")
         }
     }
-    val voiceRecorder=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
-        if(result.resultCode==Activity.RESULT_OK){
-            result.data?.data?.let{uri->
-                picked=uri
-                pickedKind="AUDIO"
-                onStatus("")
+    val filePicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null){
+            runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
+            picked=uri
+            pickedKind="FILE"
+            onStatus("")
+        }
+    }
+
+    val startVoice:()->Unit = start@{
+        if(recording||busy)return@start
+        runCatching{
+            val dir=File(context.cacheDir,"rs_voice_messages").apply{mkdirs()}
+            val file=File(dir,"voice_"+UUID.randomUUID()+".m4a")
+            val next=MediaRecorder().apply{
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioEncodingBitRate(128000)
+                setAudioSamplingRate(44100)
+                setOutputFile(file.absolutePath)
+                prepare()
+                start()
             }
+            voiceFile=file
+            recorder=next
+            recording=true
+            onStatus(rsChatMediaT(lang,"recording"))
+        }.onFailure{
+            recorder?.release()
+            recorder=null
+            recording=false
+            onStatus(rsChatMediaT(lang,"voice_unavailable"))
+        }
+    }
+
+    val micPermission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->
+        if(granted)startVoice() else onStatus(rsChatMediaT(lang,"mic_permission"))
+    }
+
+    fun stopVoice(){
+        if(!recording)return
+        val file=voiceFile
+        val ok=runCatching{recorder?.stop()}.isSuccess
+        runCatching{recorder?.release()}
+        recorder=null
+        recording=false
+        if(ok&&file!=null&&file.exists()&&file.length()>0){
+            picked=Uri.fromFile(file)
+            pickedKind="AUDIO"
+            onStatus("")
+        }else{
+            runCatching{file?.delete()}
+            onStatus(rsChatMediaT(lang,"voice_too_short"))
+        }
+    }
+
+    DisposableEffect(Unit){
+        onDispose{
+            if(recording)runCatching{recorder?.stop()}
+            runCatching{recorder?.release()}
+            recorder=null
         }
     }
 
@@ -456,7 +560,7 @@ fun RsChatComposerV92(
             onStatus(rsChatMediaT(lang,"message_or_media"))
             return
         }
-        if(busy)return
+        if(busy||recording)return
         busy=true
         val body=draft.trim()
         val source=picked
@@ -477,6 +581,7 @@ fun RsChatComposerV92(
                     draft=""
                     picked=null
                     pickedKind=""
+                    voiceFile=null
                     onStatus("")
                     onSent()
                 }
@@ -489,39 +594,22 @@ fun RsChatComposerV92(
     }
 
     Surface(
-        color=c.panel.copy(alpha=.90f),
+        color=c.panel.copy(alpha=.78f),
         contentColor=c.text,
-        shape=RoundedCornerShape(26.dp),
-        border=BorderStroke(1.dp,c.gold.copy(alpha=.62f)),
-        tonalElevation=6.dp,
+        shape=RoundedCornerShape(28.dp),
+        border=BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
+        tonalElevation=8.dp,
         modifier=Modifier.fillMaxWidth()
     ){
         Column(
-            Modifier.fillMaxWidth().padding(12.dp),
-            verticalArrangement=Arrangement.spacedBy(9.dp)
+            Modifier.fillMaxWidth().padding(9.dp),
+            verticalArrangement=Arrangement.spacedBy(7.dp)
         ){
-            OutlinedTextField(
-                value=draft,
-                onValueChange={draft=it.take(1200)},
-                placeholder={Text(rsChatMediaT(lang,"message_or_media"),fontSize=12.sp)},
-                modifier=Modifier.fillMaxWidth(),
-                minLines=1,
-                maxLines=4,
-                enabled=enabled&&!busy,
-                shape=RoundedCornerShape(20.dp),
-                colors=OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor=c.gold,
-                    unfocusedBorderColor=c.gold.copy(alpha=.32f),
-                    focusedContainerColor=c.panel.copy(alpha=.78f),
-                    unfocusedContainerColor=c.panel.copy(alpha=.68f)
-                )
-            )
-
             if(picked!=null){
                 Surface(
-                    color=c.gold.copy(alpha=.12f),
-                    shape=RoundedCornerShape(15.dp),
-                    border=BorderStroke(1.dp,c.gold.copy(alpha=.34f)),
+                    color=c.gold.copy(alpha=.09f),
+                    shape=RoundedCornerShape(17.dp),
+                    border=BorderStroke(1.dp,c.gold.copy(alpha=.20f)),
                     modifier=Modifier.fillMaxWidth()
                 ){
                     Row(
@@ -530,24 +618,19 @@ fun RsChatComposerV92(
                         horizontalArrangement=Arrangement.spacedBy(8.dp)
                     ){
                         Text(
-                            when(pickedKind){"VIDEO"->"▶";"AUDIO"->"🎙";else->"▣"},
-                            color=c.bright,
-                            fontSize=16.sp
+                            when(pickedKind){"VIDEO"->"▶";"AUDIO"->"🎙";"FILE"->"⌑";else->"▣"},
+                            color=c.bright,fontSize=15.sp
                         )
-                        Column(Modifier.weight(1f)){
-                            Text(
-                                rsChatMediaT(lang,"attachment_ready")+" · "+pickedKind,
-                                color=c.bright,
-                                fontWeight=FontWeight.Bold,
-                                fontSize=10.sp
-                            )
-                            when(pickedKind){
-                                "VIDEO"->Text(rsChatMediaT(lang,"max_video"),color=c.muted,fontSize=8.sp)
-                                "AUDIO"->Text(rsChatMediaT(lang,"max_voice"),color=c.muted,fontSize=8.sp)
-                            }
-                        }
+                        Text(
+                            rsChatMediaT(lang,"attachment_ready")+" · "+pickedKind,
+                            color=c.text,fontWeight=FontWeight.Bold,fontSize=10.sp,
+                            modifier=Modifier.weight(1f)
+                        )
                         TextButton(
-                            onClick={picked=null;pickedKind=""},
+                            onClick={
+                                if(pickedKind=="AUDIO")runCatching{voiceFile?.delete()}
+                                picked=null;pickedKind="";voiceFile=null
+                            },
                             enabled=!busy,
                             contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)
                         ){Text("×",fontSize=20.sp,color=c.muted)}
@@ -558,57 +641,90 @@ fun RsChatComposerV92(
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment=Alignment.CenterVertically,
-                horizontalArrangement=Arrangement.spacedBy(8.dp)
+                horizontalArrangement=Arrangement.spacedBy(7.dp)
             ){
-                OutlinedButton(
-                    onClick={imagePicker.launch(arrayOf("image/*"))},
-                    enabled=enabled&&!busy,
-                    modifier=Modifier.size(46.dp),
-                    shape=CircleShape,
-                    border=BorderStroke(1.dp,c.gold.copy(alpha=.68f)),
-                    contentPadding=PaddingValues(0.dp)
-                ){Text("▣",fontSize=16.sp,color=c.bright)}
+                Box{
+                    OutlinedButton(
+                        onClick={attachmentMenu=true},
+                        enabled=enabled&&!busy&&!recording,
+                        modifier=Modifier.size(44.dp),
+                        shape=CircleShape,
+                        border=BorderStroke(1.dp,c.gold.copy(alpha=.54f)),
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text("+",fontSize=23.sp,color=c.bright)}
+                    DropdownMenu(
+                        expanded=attachmentMenu,
+                        onDismissRequest={attachmentMenu=false},
+                        containerColor=c.panel
+                    ){
+                        DropdownMenuItem(
+                            text={Text("▣  "+rsChatMediaT(lang,"photo"))},
+                            onClick={
+                                attachmentMenu=false
+                                imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text={Text("▶  "+rsChatMediaT(lang,"video"))},
+                            onClick={
+                                attachmentMenu=false
+                                videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text={Text("⌑  "+rsChatMediaT(lang,"file"))},
+                            onClick={
+                                attachmentMenu=false
+                                filePicker.launch(arrayOf(
+                                    "application/pdf","text/plain","application/msword",
+                                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                    "image/*","video/*","audio/*"
+                                ))
+                            }
+                        )
+                    }
+                }
 
-                OutlinedButton(
-                    onClick={videoPicker.launch(arrayOf("video/*"))},
-                    enabled=enabled&&!busy,
-                    modifier=Modifier.size(46.dp),
-                    shape=CircleShape,
-                    border=BorderStroke(1.dp,c.gold.copy(alpha=.68f)),
-                    contentPadding=PaddingValues(0.dp)
-                ){Text("▶",fontSize=15.sp,color=c.bright)}
+                OutlinedTextField(
+                    value=draft,
+                    onValueChange={draft=it.take(1200)},
+                    placeholder={Text(if(recording)rsChatMediaT(lang,"recording") else rsChatMediaT(lang,"message"),fontSize=11.sp)},
+                    modifier=Modifier.weight(1f),
+                    minLines=1,maxLines=4,
+                    enabled=enabled&&!busy&&!recording,
+                    shape=RoundedCornerShape(22.dp),
+                    colors=OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor=c.gold.copy(alpha=.55f),
+                        unfocusedBorderColor=c.gold.copy(alpha=.18f),
+                        focusedContainerColor=c.panel.copy(alpha=.52f),
+                        unfocusedContainerColor=c.panel.copy(alpha=.42f)
+                    )
+                )
 
                 OutlinedButton(
                     onClick={
-                        val intent=Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION)
-                        if(intent.resolveActivity(context.packageManager)!=null)voiceRecorder.launch(intent)
-                        else onStatus(rsChatMediaT(lang,"voice_unavailable"))
+                        if(recording)stopVoice()
+                        else if(ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED)startVoice()
+                        else micPermission.launch(Manifest.permission.RECORD_AUDIO)
                     },
                     enabled=enabled&&!busy,
-                    modifier=Modifier.size(46.dp),
+                    modifier=Modifier.size(44.dp),
                     shape=CircleShape,
-                    border=BorderStroke(1.dp,c.gold.copy(alpha=.68f)),
+                    border=BorderStroke(1.dp,if(recording)c.bright else c.gold.copy(alpha=.54f)),
                     contentPadding=PaddingValues(0.dp)
-                ){Text("🎙",fontSize=16.sp)}
-
-                Spacer(Modifier.weight(1f))
+                ){Text(if(recording)"■" else "🎙",fontSize=15.sp,color=c.bright)}
 
                 Button(
                     onClick={sendMessage()},
-                    enabled=enabled&&!busy&&(draft.trim().isNotBlank()||picked!=null),
-                    modifier=Modifier.height(46.dp).widthIn(min=86.dp),
-                    shape=RoundedCornerShape(23.dp),
+                    enabled=enabled&&!busy&&!recording&&(draft.trim().isNotBlank()||picked!=null),
+                    modifier=Modifier.size(44.dp),
+                    shape=CircleShape,
+                    contentPadding=PaddingValues(0.dp),
                     colors=ButtonDefaults.buttonColors(
                         containerColor=c.bright,
                         contentColor=androidx.compose.ui.graphics.Color.Black
                     )
-                ){
-                    Text(
-                        if(busy)"…" else "➤",
-                        fontWeight=FontWeight.Black,
-                        fontSize=18.sp
-                    )
-                }
+                ){Text(if(busy)"…" else "➤",fontWeight=FontWeight.Black,fontSize=16.sp)}
             }
         }
     }
