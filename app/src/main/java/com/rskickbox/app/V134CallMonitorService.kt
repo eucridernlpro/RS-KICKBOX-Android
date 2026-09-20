@@ -47,7 +47,7 @@ class RsCallMonitorServiceV134:Service(){
     }
 
     private suspend fun monitorLoop(){
-        while(isActive){
+        while(scope.isActive){
             val client=rsSupabaseClientV60()
             val uid=client?.auth?.currentUserOrNull()?.id.orEmpty()
             if(uid.isNotBlank()){
