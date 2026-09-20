@@ -5,7 +5,9 @@ import org.json.JSONObject
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -726,29 +728,47 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
 
             val currentUserId=rsCurrentCloudUserIdV111()
             messages.forEach{m->
-                RsPanel(c){
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement=Arrangement.spacedBy(8.dp),
-                        verticalAlignment=Alignment.CenterVertically
-                    ){
-                        RsMemberAvatarV68(c,m.senderEmail,m.senderName,size=34.dp)
-                        Text(m.senderName.ifBlank{m.senderEmail},color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                val mine=m.senderId==currentUserId
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=if(mine)Arrangement.End else Arrangement.Start,
+                    verticalAlignment=Alignment.Bottom
+                ){
+                    if(!mine){
+                        RsMemberAvatarV68(c,m.senderEmail,m.senderName,size=30.dp)
+                        Spacer(Modifier.width(7.dp))
                     }
-                    if(m.body.isNotBlank())Text(m.body,color=c.text)
-                    RsChatAttachmentPreviewV92(c,lang,m.mediaPath,m.mediaKind,m.mediaName)
-                    if(role==RsRole.TRAINER){
-                        RsTrainerMessageAdminV111(
-                            c=c,
-                            lang=lang,
-                            body=m.body,
-                            canEdit=m.senderId==currentUserId,
-                            busy=loading,
-                            onEdit={body->rsStaffEditGroupMessageV111(m.id,body)},
-                            onDelete={rsStaffDeleteGroupMessageV111(m.id,m.mediaPath)},
-                            onChanged={revision++},
-                            onStatus={status=it}
-                        )
+                    Surface(
+                        color=if(mine)c.gold.copy(alpha=.16f) else c.panel.copy(alpha=.70f),
+                        shape=RoundedCornerShape(
+                            topStart=20.dp,topEnd=20.dp,
+                            bottomStart=if(mine)20.dp else 6.dp,
+                            bottomEnd=if(mine)6.dp else 20.dp
+                        ),
+                        border=BorderStroke(1.dp,if(mine)c.gold.copy(alpha=.25f) else c.gold.copy(alpha=.10f)),
+                        modifier=Modifier.fillMaxWidth(.84f)
+                    ){
+                        Column(Modifier.padding(11.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
+                            Text(
+                                m.senderName.ifBlank{m.senderEmail},
+                                color=c.bright,fontWeight=FontWeight.Black,fontSize=9.sp
+                            )
+                            if(m.body.isNotBlank())Text(m.body,color=c.text,fontSize=13.sp,lineHeight=18.sp)
+                            RsChatAttachmentPreviewV92(c,lang,m.mediaPath,m.mediaKind,m.mediaName)
+                            if(role==RsRole.TRAINER){
+                                RsTrainerMessageAdminV111(
+                                    c=c,
+                                    lang=lang,
+                                    body=m.body,
+                                    canEdit=mine,
+                                    busy=loading,
+                                    onEdit={body->rsStaffEditGroupMessageV111(m.id,body)},
+                                    onDelete={rsStaffDeleteGroupMessageV111(m.id,m.mediaPath)},
+                                    onChanged={revision++},
+                                    onStatus={status=it}
+                                )
+                            }
+                        }
                     }
                 }
             }
