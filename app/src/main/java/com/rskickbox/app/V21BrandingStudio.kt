@@ -46,6 +46,8 @@ fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
         "student_home","session","home_training","classes","academy",
         "tile_student_session","tile_student_home_training","tile_student_classes","tile_student_academy",
         "tile_trainer_session_builder","tile_trainer_classes"->"rs_training_session_v127"
+        "fightcamp","fightcamp_admin","challenges",
+        "tile_student_fightcamp","tile_student_challenges","tile_trainer_fightcamp_admin","tile_trainer_challenge_admin"->"rs_fight_camp_v127"
 
         "login","profile","settings","finance","book","payments","invoices","support","release",
         "privacy_admin","promotions","referrals","documents","notifications"->"rs_bg_v117_login"
