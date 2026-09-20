@@ -504,6 +504,9 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                         Column(Modifier.padding(10.dp),verticalArrangement=Arrangement.spacedBy(4.dp)){
                             Text(item.title,color=c.bright,fontWeight=FontWeight.Bold)
                             Text(item.category+" · "+item.techniqueTags.joinToString(", "),color=c.muted,fontSize=9.sp,maxLines=2)
+                            if(item.description.isNotBlank()){
+                                Text(item.description,color=c.text,fontSize=11.sp,lineHeight=15.sp,maxLines=4)
+                            }
                             OutlinedButton(
                                 onClick={
                                     referenceLoading=true
