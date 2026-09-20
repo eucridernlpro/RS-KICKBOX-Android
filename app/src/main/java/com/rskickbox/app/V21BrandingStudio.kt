@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.graphics.ImageDecoder
+import android.graphics.BitmapFactory
 import android.graphics.drawable.AnimatedImageDrawable
 import android.widget.ImageView
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -40,23 +41,21 @@ private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 
 private fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
     val drawableName=when(slot){
-        "login"->"rs_bg_v116_login"
-        "student_home"->"rs_bg_v116_student"
-        "trainer_home"->"rs_bg_v116_trainer"
-        "header","footer","themes","backgrounds","branding","intro_settings","landing_admin"->"rs_bg_v116_header"
-        "voice"->"rs_bg_v116_ai"
-        "techniques","compare"->"rs_bg_v116_technique"
-        "session","home_training","workout","session_builder"->"rs_bg_v116_training"
-        "private_lessons","homework","homework_admin"->"rs_bg_v116_private"
-        "coachchat"->"rs_bg_v116_chat"
-        "community","groups"->"rs_bg_v116_community"
-        "academy","media","content","lesson_editor","vault","favorites","search"->"rs_bg_v116_library"
-        "music","music_admin"->"rs_bg_v116_music"
-        "progress","challenges","badges","fightcamp","progress_admin","challenge_admin","fightcamp_admin","assessments"->"rs_bg_v116_performance"
-        "classes","events","events_admin","attendance","qr_attendance","schedule","notifications","documents","referrals"->"rs_bg_v116_club"
+        "login"->"rs_bg_login"
+        "student_home"->"rs_bg_student_home"
+        "trainer_home"->"rs_bg_trainer_home"
+        "header","footer","themes","backgrounds","branding","intro_settings","landing_admin"->"rs_bg_header"
+        "voice","techniques","compare"->"rs_bg_technique"
+        "session","home_training","workout","session_builder",
+        "progress","challenges","badges","fightcamp","progress_admin","challenge_admin","fightcamp_admin","assessments"->"rs_bg_kicks"
+        "private_lessons","homework","homework_admin",
+        "coachchat","community","groups"->"rs_bg_coaching_landscape"
+        "academy","media","content","lesson_editor","vault","favorites","search",
+        "music","music_admin",
+        "classes","events","events_admin","attendance","qr_attendance","schedule","notifications","documents","referrals",
         "profile","settings","finance","book","payments","invoices","analytics","support","release",
-        "members","access","plans_admin","notes"->"rs_bg_v116_account"
-        else->"rs_bg_v116_header"
+        "members","access","plans_admin","notes"->"rs_bg_training_landscape"
+        else->"rs_bg_header"
     }
     val id=context.resources.getIdentifier(drawableName,"drawable",context.packageName)
     return if(id==0)"" else "android.resource://"+context.packageName+"/"+id
@@ -69,7 +68,20 @@ private fun rsVisualUriUsableV116(context:android.content.Context,value:String):
         when(uri.scheme?.lowercase()){
             "file"->{
                 val path=uri.path?:return@runCatching false
-                File(path).exists() && File(path).length()>0L
+                val file=File(path)
+                if(!file.exists() || file.length()<=0L)return@runCatching false
+                // Old v0.115 visual-pack extracts could exist on disk but contain
+                // truncated/corrupt image bytes. Never let them override the APK fallback.
+                if(path.contains("rs_visual_pack_v115") || path.contains("rs_visual_pack_v116")){
+                    return@runCatching false
+                }
+                val ext=file.extension.lowercase()
+                if(ext in setOf("mp4","webm","mov","3gp"))true
+                else{
+                    val opts=BitmapFactory.Options().apply{inJustDecodeBounds=true}
+                    BitmapFactory.decodeFile(path,opts)
+                    opts.outWidth>0 && opts.outHeight>0
+                }
             }
             "content"->context.contentResolver.openInputStream(uri)?.use{input->
                 input.read()!=-1
