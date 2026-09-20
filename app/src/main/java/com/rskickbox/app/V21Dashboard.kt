@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -61,10 +62,22 @@ private fun TileV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,item:DashV
     val titleLine=tileTitleLineV25(localizedTitle)
     val hintSize=tileHintFontV25(localizedHint)
     val shape=RoundedCornerShape(26.dp)
+    val context=LocalContext.current
     val custom=store.s("visual_v21_tile_${item.route}","")
+    val roleKey=if(role==RsRole.TRAINER)"trainer" else "student"
+    // Named bundled artwork can now target the exact dashboard tile. This keeps
+    // trainer/student dashboard art separate even when both use the same route.
+    val bundledRoleTile=rsBundledVisualUriV113(context,"tile_${roleKey}_${item.route}")
+    val bundledRouteTile=rsBundledVisualUriV113(context,"tile_${item.route}")
+    val tileVisual=when{
+        rsVisualUriUsableV116(context,custom)->custom
+        bundledRoleTile.isNotBlank()->bundledRoleTile
+        bundledRouteTile.isNotBlank()->bundledRouteTile
+        else->""
+    }
     val overlay=store.s("visual_v21_opacity_tile_${item.route}","0.52").toFloatOrNull()?:.52f
     Box(Modifier.fillMaxWidth().height(220.dp).clip(shape).background(Brush.linearGradient(listOf(c.panel2,c.gold.copy(alpha=.20f),c.panel))).clickable{onRoute(item.route)}){
-        if(custom.isNotBlank())RsUriPreviewV21(custom,Modifier.fillMaxSize(),store.s("visual_v21_pos_tile_${item.route}","CENTER"))
+        if(tileVisual.isNotBlank())RsUriPreviewV21(tileVisual,Modifier.fillMaxSize(),store.s("visual_v21_pos_tile_${item.route}","CENTER"))
         else DefaultTileArtworkV21(c,item.kind)
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha=.10f),Color.Black.copy(alpha=.28f),Color.Black.copy(alpha=overlay.coerceIn(.35f,.82f))))))
         Surface(modifier=Modifier.align(Alignment.TopStart).padding(14.dp),shape=RoundedCornerShape(13.dp),color=Color.Black.copy(alpha=.46f),border=androidx.compose.foundation.BorderStroke(1.dp,c.bright.copy(alpha=.45f))){
