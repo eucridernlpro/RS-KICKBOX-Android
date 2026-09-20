@@ -190,3 +190,40 @@ suspend fun rsSetCloudTrainingMediaAiReferenceV110(
     )
     Unit
 }
+
+
+private fun rsAiMatchTextV114(value:String):String =
+    value.lowercase()
+        .replace(Regex("[^a-z0-9à-ÿ]+")," ")
+        .trim()
+
+suspend fun rsAiReferenceMatchesV114(
+    technique:String,
+    analysis:String
+):Result<List<RsTrainingMediaItemV55>> = runCatching{
+    val haystack=rsAiMatchTextV114(technique+" "+analysis)
+    val words=haystack.split(" ").filter{it.length>=3}.toSet()
+
+    rsCloudTrainingMediaV73().getOrThrow()
+        .asSequence()
+        .filter{it.published && it.aiReference && it.techniqueTags.isNotEmpty()}
+        .map{item->
+            val tagScore=item.techniqueTags.sumOf{rawTag->
+                val tag=rsAiMatchTextV114(rawTag)
+                when{
+                    tag.isBlank()->0
+                    haystack.contains(tag)->8
+                    tag.split(" ").filter{it.length>=3}.any{it in words}->3
+                    else->0
+                }
+            }
+            val title=rsAiMatchTextV114(item.title+" "+item.category)
+            val titleScore=title.split(" ").filter{it.length>=3}.count{it in words}
+            item to (tagScore+titleScore)
+        }
+        .filter{it.second>0}
+        .sortedWith(compareByDescending<Pair<RsTrainingMediaItemV55,Int>>{it.second}.thenBy{it.first.title.lowercase()})
+        .take(3)
+        .map{it.first}
+        .toList()
+}
