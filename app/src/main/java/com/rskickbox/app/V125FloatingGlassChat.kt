@@ -18,12 +18,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
-private enum class RsChatHubTabV125{ALL,PRIVATE,GROUPS,AI,MEDIA}
+private enum class RsChatHubTabV125{ALL,PRIVATE,GROUPS,AI}
 
 private fun rsInitialChatTabV125(route:String)=when(route){
     "groups"->RsChatHubTabV125.GROUPS
     "voice"->RsChatHubTabV125.AI
-    "media"->RsChatHubTabV125.MEDIA
     else->RsChatHubTabV125.ALL
 }
 
@@ -117,10 +116,11 @@ fun RsFloatingGlassChatHubV125(
         }
     }
 
-    Column(Modifier.fillMaxSize()){
+    Column(Modifier.fillMaxSize().padding(6.dp)){
         Surface(
             color=Color.Black.copy(alpha=.56f),
             border=BorderStroke(0.5.dp,c.gold.copy(alpha=.18f)),
+            shape=RoundedCornerShape(22.dp),
             modifier=Modifier.fillMaxWidth()
         ){
             Row(
@@ -137,7 +137,7 @@ fun RsFloatingGlassChatHubV125(
                 ){Text("‹",color=c.bright,fontSize=25.sp)}
                 Column(Modifier.weight(1f)){
                     Text("RS CHAT",color=c.bright,fontWeight=FontWeight.Black,fontSize=19.sp,letterSpacing=.8.sp)
-                    Text("Private · Groups · AI Coach · Media",color=c.muted,fontSize=9.sp)
+                    Text("Private · Groups · AI Coach · Voice · Media",color=c.muted,fontSize=9.sp)
                 }
                 Surface(
                     color=c.gold.copy(alpha=.10f),
@@ -149,8 +149,14 @@ fun RsFloatingGlassChatHubV125(
             }
         }
 
+        Surface(
+            color=c.panel.copy(alpha=.48f),
+            shape=RoundedCornerShape(20.dp),
+            border=BorderStroke(1.dp,c.gold.copy(alpha=.12f)),
+            modifier=Modifier.fillMaxWidth().padding(top=7.dp)
+        ){
         Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=10.dp,vertical=8.dp),
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=9.dp,vertical=7.dp),
             horizontalArrangement=Arrangement.spacedBy(7.dp)
         ){
             listOf(
@@ -158,7 +164,6 @@ fun RsFloatingGlassChatHubV125(
                 RsChatHubTabV125.PRIVATE to "Private",
                 RsChatHubTabV125.GROUPS to "Groups",
                 RsChatHubTabV125.AI to "AI Coach",
-                RsChatHubTabV125.MEDIA to "Media"
             ).forEach{(item,label)->
                 FilterChip(
                     selected=tab==item,
@@ -168,7 +173,8 @@ fun RsFloatingGlassChatHubV125(
             }
         }
 
-        Box(Modifier.fillMaxWidth().weight(1f).padding(horizontal=8.dp,vertical=2.dp)){
+        }
+        Box(Modifier.fillMaxWidth().weight(1f).padding(top=7.dp)){
             when(tab){
                 RsChatHubTabV125.ALL->{
                     Column(
@@ -178,7 +184,7 @@ fun RsFloatingGlassChatHubV125(
                         if(role==RsRole.TRAINER){
                             RsFloatingGlassPanelV125(c){
                                 Text("STUDENTS",color=c.gold,fontSize=10.sp,fontWeight=FontWeight.Black,letterSpacing=1.1.sp)
-                                Text("Online and offline chat contacts. Student management remains in the Trainer Dashboard.",color=c.muted,fontSize=9.sp)
+                                Text("Chat contacts only. Green = online · red = offline. Student management stays in the Trainer Dashboard.",color=c.muted,fontSize=9.sp)
                             }
                             if(presenceError){
                                 RsFloatingGlassPanelV125(c){
@@ -219,13 +225,7 @@ fun RsFloatingGlassChatHubV125(
                                 item{
                                     RsFloatingGlassPanelV125(c,Modifier.clickable{tab=RsChatHubTabV125.AI}){
                                         Text("RS AI TRAINER",color=c.bright,fontWeight=FontWeight.Black,fontSize=16.sp)
-                                        Text("Technique video analysis · spoken feedback · trainer references",color=c.muted,fontSize=10.sp)
-                                    }
-                                }
-                                item{
-                                    RsFloatingGlassPanelV125(c,Modifier.clickable{tab=RsChatHubTabV125.MEDIA}){
-                                        Text("SHARED MEDIA",color=c.bright,fontWeight=FontWeight.Black,fontSize=16.sp)
-                                        Text("Trainer reference images and videos",color=c.muted,fontSize=10.sp)
+                                        Text("Upload technique video · spoken AI coaching · trainer reference examples",color=c.muted,fontSize=10.sp)
                                     }
                                 }
                             }
@@ -234,8 +234,7 @@ fun RsFloatingGlassChatHubV125(
                 }
                 RsChatHubTabV125.PRIVATE->RsCoachChatV44(c,store,lang,role,privateStudentId)
                 RsChatHubTabV125.GROUPS->RsGroupsV50(c,store,lang,role)
-                RsChatHubTabV125.AI->RsTechniqueCoachV27(c,lang,store,role)
-                RsChatHubTabV125.MEDIA->RsTrainingMediaV55(c,store,lang,role)
+                RsChatHubTabV125.AI->if(role==RsRole.TRAINER) RsTrainerAiReferenceChatV125(c,lang) else RsTechniqueCoachV27(c,lang,store,role)
             }
         }
     }
