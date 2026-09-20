@@ -1,11 +1,13 @@
 package com.rskickbox.app
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -69,7 +71,7 @@ private fun rsChatFileNameV92(context:Context,uri:Uri):String{
     return result.take(120)
 }
 
-private fun rsChatVideoDurationMsV92(context:Context,uri:Uri):Long{
+private fun rsChatMediaDurationMsV122(context:Context,uri:Uri):Long{
     val r=MediaMetadataRetriever()
     return try{
         r.setDataSource(context,uri)
@@ -146,12 +148,19 @@ suspend fun rsUploadChatMediaV92(
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     require(scopeType=="coach"||scopeType=="group"){"Invalid chat scope."}
     val mime=context.contentResolver.getType(uri)?.lowercase().orEmpty()
-    val kind=if(mime.startsWith("video/"))"VIDEO" else "IMAGE"
+    val kind=when{
+        mime.startsWith("video/")->"VIDEO"
+        mime.startsWith("audio/")->"AUDIO"
+        else->"IMAGE"
+    }
     val name=rsChatFileNameV92(context,uri)
 
     if(kind=="VIDEO"){
-        val duration=rsChatVideoDurationMsV92(context,uri)
+        val duration=rsChatMediaDurationMsV122(context,uri)
         require(duration in 1..30_000){"Short videos can be up to 30 seconds."}
+    }else if(kind=="AUDIO"){
+        val duration=rsChatMediaDurationMsV122(context,uri)
+        require(duration in 1..120_000){"Voice messages can be up to 2 minutes."}
     }
 
     val bytes=try{
@@ -164,14 +173,21 @@ suspend fun rsUploadChatMediaV92(
 
     val ext=when{
         kind=="IMAGE"->"jpg"
+        kind=="AUDIO" && mime.contains("mpeg")->"mp3"
+        kind=="AUDIO" && mime.contains("ogg")->"ogg"
+        kind=="AUDIO" && mime.contains("wav")->"wav"
+        kind=="AUDIO"->"m4a"
         mime=="video/webm"->"webm"
         mime=="video/quicktime"->"mov"
         mime=="video/3gpp"->"3gp"
         else->"mp4"
     }
     val path=scopeType+"/"+scopeId+"/"+UUID.randomUUID().toString()+"."+ext
-    val contentType=if(kind=="IMAGE")ContentType.Image.JPEG
-        else runCatching{ContentType.parse(if(mime.isBlank())"video/mp4" else mime)}.getOrDefault(ContentType.Video.MP4)
+    val contentType=when{
+        kind=="IMAGE"->ContentType.Image.JPEG
+        kind=="AUDIO"->runCatching{ContentType.parse(if(mime.isBlank())"audio/mp4" else mime)}.getOrDefault(ContentType.parse("audio/mp4"))
+        else->runCatching{ContentType.parse(if(mime.isBlank())"video/mp4" else mime)}.getOrDefault(ContentType.Video.MP4)
+    }
 
     val currentUser=client.auth.currentUserOrNull()
     val sessionRole=rsCloudCurrentSessionV67().getOrNull()?.role
@@ -289,11 +305,11 @@ fun rsChatBackendFriendlyErrorV121(lang:RsLang,t:Throwable?):String{
 
 fun rsChatMediaT(lang:RsLang,key:String):String{
     val en=mapOf(
-        "image" to "Image","video" to "Short video","remove" to "Remove attachment",
+        "image" to "Image","video" to "Short video","voice" to "Voice message","remove" to "Remove attachment",
         "send" to "Send","sending" to "Sending…","uploading" to "Uploading attachment…",
-        "attachment_ready" to "Attachment ready","open_video" to "Play short video",
-        "download_error" to "Could not load attachment.","upload_error" to "Could not upload attachment.","message_or_media" to "Write a message or add an image/video.",
-        "max_video" to "Short videos: maximum 30 seconds / 30 MB.",
+        "attachment_ready" to "Attachment ready","open_video" to "Play short video","play_voice" to "Play voice message",
+        "download_error" to "Could not load attachment.","upload_error" to "Could not upload attachment.","message_or_media" to "Write a message or add photo, video or voice.",
+        "max_video" to "Short videos: maximum 30 seconds / 30 MB.","max_voice" to "Voice messages: maximum 2 minutes / 30 MB.","voice_unavailable" to "No audio recorder is available on this phone.",
         "backend_missing" to "Chat media backend update is required. Ask the trainer/admin to run the latest RS KICKBOXING Supabase repair.",
         "permission_error" to "Chat media permission was not accepted by the server."
     )
@@ -353,19 +369,23 @@ fun RsChatAttachmentPreviewV92(
             )
         }
     }else{
+        val audio=mediaKind=="AUDIO"
         OutlinedButton(
             onClick={
                 val file=File(Uri.parse(localUri).path?:return@OutlinedButton)
                 val uri=FileProvider.getUriForFile(context,context.packageName+".fileprovider",file)
                 val intent=Intent(Intent.ACTION_VIEW).apply{
-                    setDataAndType(uri,"video/*")
+                    setDataAndType(uri,if(audio)"audio/*" else "video/*")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 runCatching{context.startActivity(intent)}
             },
             modifier=Modifier.fillMaxWidth()
         ){
-            Text("▶ "+rsChatMediaT(lang,"open_video")+" · "+(mediaName?:"video"),maxLines=1,overflow=TextOverflow.Ellipsis)
+            Text(
+                (if(audio)"🎙 " else "▶ ")+rsChatMediaT(lang,if(audio)"play_voice" else "open_video")+" · "+(mediaName?:if(audio)"voice" else "video"),
+                maxLines=1,overflow=TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -405,6 +425,16 @@ fun RsChatComposerV92(
         }
     }
 
+    val voiceRecorder=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
+        if(result.resultCode==Activity.RESULT_OK){
+            result.data?.data?.let{uri->
+                picked=uri
+                pickedKind="AUDIO"
+                onStatus("")
+            }
+        }
+    }
+
     RsPanel(c){
         OutlinedTextField(
             draft,
@@ -420,12 +450,21 @@ fun RsChatComposerV92(
                 onClick={imagePicker.launch(arrayOf("image/*"))},
                 enabled=enabled&&!busy,
                 modifier=Modifier.weight(1f)
-            ){Text("▣ "+rsChatMediaT(lang,"image"),fontSize=10.sp)}
+            ){Text("▣",fontSize=15.sp)}
             OutlinedButton(
                 onClick={videoPicker.launch(arrayOf("video/*"))},
                 enabled=enabled&&!busy,
                 modifier=Modifier.weight(1f)
-            ){Text("▶ "+rsChatMediaT(lang,"video"),fontSize=10.sp)}
+            ){Text("▶",fontSize=15.sp)}
+            OutlinedButton(
+                onClick={
+                    val intent=Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION)
+                    if(intent.resolveActivity(context.packageManager)!=null)voiceRecorder.launch(intent)
+                    else onStatus(rsChatMediaT(lang,"voice_unavailable"))
+                },
+                enabled=enabled&&!busy,
+                modifier=Modifier.weight(1f)
+            ){Text("🎙",fontSize=15.sp)}
         }
         if(picked!=null){
             Text(
@@ -435,6 +474,7 @@ fun RsChatComposerV92(
                 fontSize=10.sp
             )
             if(pickedKind=="VIDEO")Text(rsChatMediaT(lang,"max_video"),color=c.muted,fontSize=9.sp)
+            if(pickedKind=="AUDIO")Text(rsChatMediaT(lang,"max_voice"),color=c.muted,fontSize=9.sp)
             TextButton(onClick={picked=null;pickedKind=""},enabled=!busy){
                 Text(rsChatMediaT(lang,"remove"))
             }
