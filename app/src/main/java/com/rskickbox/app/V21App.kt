@@ -41,10 +41,24 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     val context = LocalContext.current
     val store = remember { RsStore(context) }
     val appScope = rememberCoroutineScope()
-    var role by remember { mutableStateOf<RsRole?>(null) }
-    var route by remember { mutableStateOf("home") }
+    val localSessionAuthMs=remember{
+        store.s("session_password_auth_ms","0").toLongOrNull()?:0L
+    }
+    val localSessionFresh=remember(localSessionAuthMs){
+        localSessionAuthMs>0L && System.currentTimeMillis()-localSessionAuthMs<=12L*60L*60L*1000L
+    }
+    val localSessionRole=remember(localSessionFresh){
+        if(!localSessionFresh)null
+        else when(store.s("session_role","")){
+            "trainer"->RsRole.TRAINER
+            "student"->RsRole.STUDENT
+            else->null
+        }
+    }
+    var role by remember { mutableStateOf<RsRole?>(localSessionRole) }
+    var route by remember { mutableStateOf(if(localSessionRole==RsRole.TRAINER)"trainer" else "home") }
     var authRestoreAttempted by remember { mutableStateOf(false) }
-    var authRestoring by remember { mutableStateOf(false) }
+    var authRestoring by remember { mutableStateOf(localSessionRole==null && RsSupabaseV60.configured) }
     var cloudControlsRevision by remember { mutableIntStateOf(0) }
     var brandRevision by remember { mutableIntStateOf(0) }
     var brandAssetsRestoring by remember { mutableStateOf(RsSupabaseV60.configured) }
@@ -78,16 +92,32 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
             if(passwordRecoveryLaunch){
                 role=null
                 route="home"
+                authRestoring=false
             }else if(RsSupabaseV60.configured){
-                authRestoring=true
                 val lastPasswordAuth=store.s("session_password_auth_ms","0").toLongOrNull()?:0L
                 val now=System.currentTimeMillis()
                 val reauthWindowMs=12L*60L*60L*1000L
+                val localFresh=lastPasswordAuth>0L && now-lastPasswordAuth<=reauthWindowMs
+                val savedRole=when(store.s("session_role","")){
+                    "trainer"->RsRole.TRAINER
+                    "student"->RsRole.STUDENT
+                    else->null
+                }
+
+                // Restore the accepted local 12-hour session immediately.
+                // Supabase validation follows in the background so Android process
+                // recreation / returning from background music never flashes Login.
+                if(localFresh && savedRole!=null){
+                    role=savedRole
+                    route=if(savedRole==RsRole.TRAINER)"trainer" else "home"
+                    authRestoring=false
+                }else{
+                    authRestoring=true
+                }
+
                 rsCloudCurrentSessionV67()
                     .onSuccess{session->
                         if(session!=null){
-                            // Existing installs may not yet have the timestamp. Seed it once
-                            // from a valid persisted cloud session, then enforce 12 hours.
                             val effectiveAuthAt=if(lastPasswordAuth>0L)lastPasswordAuth else now
                             if(now-effectiveAuthAt<=reauthWindowMs){
                                 if(lastPasswordAuth<=0L)store.ps("session_password_auth_ms",effectiveAuthAt.toString())
@@ -100,10 +130,27 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                 route=if(session.role==RsRole.TRAINER)"trainer" else "home"
                             }else{
                                 store.ps("session_password_auth_ms","0")
+                                role=null
+                                route="home"
                                 appScope.launch{rsCloudLogoutV63()}
                             }
+                        }else if(!localFresh){
+                            role=null
+                            route="home"
+                        }
+                        // If cloud restoration is temporarily late but local session is
+                        // still inside the 12-hour window, keep the local UI session.
+                    }
+                    .onFailure{
+                        // Network/auth restore failures must not destroy a fresh local
+                        // session. Backend calls can recover when connectivity returns.
+                        if(!localFresh){
+                            role=null
+                            route="home"
                         }
                     }
+                authRestoring=false
+            }else{
                 authRestoring=false
             }
         }
