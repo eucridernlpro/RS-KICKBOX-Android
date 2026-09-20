@@ -295,7 +295,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                     "backgrounds" -> RsVisualAssetStudioV21(c, store, lang)
                                     "branding" -> RsBrandSiteSettingsV21(c, store, lang)
                                     "intro_settings" -> RsIntroSettingsV21(c, store, lang)
-                                    "voice" -> RsCommunicationHubV122(c,store,lang,active,"voice")
+                                    "voice" -> RsFloatingGlassChatHubV125(c,store,lang,active,"voice"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
                                     "session" -> if(active==RsRole.TRAINER) RsSessionBuilderV52(c,store,lang) else RsSessionPlayerV52(c,store,lang)
                                     "access" -> RsAccessControlV49(c,store,lang)
                                     "payments" -> RsTrainerPaymentCenterV39(c,store,lang)
@@ -315,7 +315,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                     "fightcamp" -> RsStudentFightCampV47(c,store,lang)
                                     "finance" -> RsStudentFinanceV39(c,store,lang)
                                     "community" -> RsCommunityV50(c,store,lang,active)
-                                    "media" -> RsCommunicationHubV122(c,store,lang,active,"media")
+                                    "media" -> RsFloatingGlassChatHubV125(c,store,lang,active,"media"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
                                     "music", "music_admin" -> RsPersistentMusicCenterV90(c, store, active, lang)
                                     "techniques" -> RsTechniqueLibraryV54(c,lang)
                                     "home_training" -> RsWorkoutHomeHubV89(c,store,lang)
@@ -323,7 +323,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                     "badges" -> RsBadgesV47(c,store,lang)
                                     "vault" -> RsKnowledgeHubV89(c,store,lang)
                                     "compare" -> RsTechniqueCompareV54(c,lang)
-                                    "coachchat" -> RsCommunicationHubV122(c,store,lang,active,"coachchat")
+                                    "coachchat" -> RsFloatingGlassChatHubV125(c,store,lang,active,"coachchat"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
                                     "events" -> RsStudentEventsV42(c,store,lang)
                                     "promotions" -> RsPromotionPageV45(c,store,lang){route="book"}
                                     "notifications" -> RsNotificationsV41(c,store,lang,active)
@@ -341,7 +341,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                     "history" -> RsHistoryV48(c,store,lang)
                                     "private_lessons" -> RsStudentPrivateLessonsV43(c,store,lang)
                                     "profile" -> RsProfileV50(c,store,lang)
-                                    "groups" -> RsCommunicationHubV122(c,store,lang,active,"groups")
+                                    "groups" -> RsFloatingGlassChatHubV125(c,store,lang,active,"groups"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
                                     "search" -> RsSearchV48(c,store,lang)
                                     "homework_admin" -> RsHomeworkManagerV46(c,store,lang)
                                     "lesson_editor" -> RsContentManagerV48(c,store,lang)
@@ -847,6 +847,7 @@ private fun ShellV21(
     val scope=rememberCoroutineScope()
     val context=LocalContext.current
     var lastBackPressMs by remember{mutableLongStateOf(0L)}
+    val chatFullScreen=route in setOf("coachchat","groups","voice","media")
 
     BackHandler {
         when{
@@ -863,16 +864,24 @@ private fun ShellV21(
             }
         }
     }
+
+    if(chatFullScreen){
+        Box(
+            Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
+        ){
+            content()
+        }
+        return
+    }
+
     val rawDrawerItems=if(role==RsRole.TRAINER) listOf(
         "trainer" to "Trainer Dashboard",
         "guide" to "App Guide",
         "members" to "Student Manager",
         "access" to "Access & Subscriptions",
         "plans_admin" to "Membership Plans",
-        "voice" to "AI Technique Coach",
         "session_builder" to "Session Builder",
         "content" to "Content Manager",
-        "media" to "Training Media Manager",
         "classes" to "Class Manager",
         "attendance" to "Attendance Center",
         "backgrounds" to "Visual Asset Studio",
@@ -889,17 +898,15 @@ private fun ShellV21(
         "documents" to "Documents Manager",
         "support" to "Support Inbox",
         "community" to "Community Moderation",
-        "groups" to "Groups Manager",
         "landing_admin" to "Promotion Manager",
         "book" to "Book Manager",
-        "coachchat" to "Coach Inbox",
+        "coachchat" to "RS Chat",
         "schedule" to "Trainer Schedule",
         "release" to "Release & Legal Center",
         "privacy_admin" to "Privacy Requests",
         "settings" to "App Settings"
     ) else listOf(
         "home" to "RS Live Dashboard",
-        "voice" to "AI Technique Coach",
         "session" to "Session Player",
         "academy" to "RS Academy",
         "techniques" to "Technique Library",
@@ -913,8 +920,6 @@ private fun ShellV21(
         "fightcamp" to "Fight Camp",
         "badges" to "Badges",
         "community" to "Community",
-        "groups" to "Groups",
-        "media" to "Training Media",
         "vault" to "Knowledge Vault",
 
         "music" to "My RS Music",
@@ -925,7 +930,7 @@ private fun ShellV21(
         "documents" to "Club Documents",
         "support" to "Support",
         "referrals" to "Referrals",
-        "coachchat" to "Private Coach Chat",
+        "coachchat" to "RS Chat",
         "private_lessons" to "Private Lessons",
         "profile" to "My Profile",
         "settings" to "Settings & Privacy"
