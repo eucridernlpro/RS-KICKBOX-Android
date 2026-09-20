@@ -288,6 +288,27 @@ private fun coachAiStatusV106(lang:RsLang,key:String):String{
     return pack[key]?:packs["en"]!![key]?:key
 }
 
+
+private fun coachAiReferenceUiV114(lang:RsLang,key:String):String{
+    val en=mapOf(
+        "title" to "TRAINER-APPROVED CORRECTION EXAMPLES",
+        "sub" to "Matched from Training Media using the technique and the AI review.",
+        "open" to "Open correction example",
+        "loading" to "Loading protected trainer example…"
+    )
+    val packs=mapOf(
+        "nl" to mapOf("title" to "DOOR TRAINER GOEDGEKEURDE CORRECTIEVOORBEELDEN","sub" to "Gekoppeld vanuit Trainingsmedia op basis van techniek en AI-review.","open" to "Correctievoorbeeld openen","loading" to "Beveiligd trainervoorbeeld laden…"),
+        "pt" to mapOf("title" to "EXEMPLOS DE CORREÇÃO APROVADOS PELO TREINADOR","sub" to "Correspondência feita a partir da Media de Treino usando a técnica e a análise IA.","open" to "Abrir exemplo de correção","loading" to "A carregar exemplo protegido…"),
+        "es" to mapOf("title" to "EJEMPLOS DE CORRECCIÓN APROBADOS POR EL ENTRENADOR","sub" to "Coincidencias de Media de Entrenamiento según la técnica y el análisis IA.","open" to "Abrir ejemplo de corrección","loading" to "Cargando ejemplo protegido…"),
+        "fr" to mapOf("title" to "EXEMPLES DE CORRECTION APPROUVÉS PAR L’ENTRAÎNEUR","sub" to "Correspondances depuis les Médias d’Entraînement selon la technique et l’analyse IA.","open" to "Ouvrir l’exemple de correction","loading" to "Chargement de l’exemple protégé…"),
+        "de" to mapOf("title" to "VOM TRAINER FREIGEGEBENE KORREKTURBEISPIELE","sub" to "Aus Trainingsmedien anhand von Technik und KI-Auswertung abgeglichen.","open" to "Korrekturbeispiel öffnen","loading" to "Geschütztes Trainerbeispiel wird geladen…"),
+        "it" to mapOf("title" to "ESEMPI DI CORREZIONE APPROVATI DAL TRAINER","sub" to "Abbinati dai Media di Allenamento usando tecnica e analisi IA.","open" to "Apri esempio di correzione","loading" to "Caricamento esempio protetto…"),
+        "pl" to mapOf("title" to "PRZYKŁADY KOREKTY ZATWIERDZONE PRZEZ TRENERA","sub" to "Dopasowane z Mediów Treningowych na podstawie techniki i analizy AI.","open" to "Otwórz przykład korekty","loading" to "Ładowanie chronionego przykładu…"),
+        "tr" to mapOf("title" to "ANTRENÖR ONAYLI DÜZELTME ÖRNEKLERİ","sub" to "Teknik ve yapay zekâ incelemesine göre Antrenman Medyasından eşleştirildi.","open" to "Düzeltme örneğini aç","loading" to "Korumalı antrenör örneği yükleniyor…")
+    )
+    return packs[lang.code]?.get(key)?:en[key]?:key
+}
+
 @Composable
 fun RsTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore,role:RsRole){
     if(role==RsRole.TRAINER){
@@ -317,6 +338,9 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
     var cloudSaving by remember{mutableStateOf(false)}
     var analyzingAi by remember{mutableStateOf(false)}
     var aiSummary by remember{mutableStateOf("")}
+    var aiReferences by remember{mutableStateOf<List<RsTrainingMediaItemV55>>(emptyList())}
+    var referencePreviewUri by remember{mutableStateOf("")}
+    var referenceLoading by remember{mutableStateOf(false)}
     val scope=rememberCoroutineScope()
 
     DisposableEffect(Unit){
@@ -397,7 +421,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                 OutlinedButton(onClick={techniqueMenu=true},modifier=Modifier.fillMaxWidth()){Text(selectedTechnique)}
                 DropdownMenu(expanded=techniqueMenu,onDismissRequest={techniqueMenu=false}){
                     listOf("Jab","Cross","Jab · Cross","Roundhouse Kick","Low Kick","Front Kick","Knee","Defense & Counter","Custom Combination").forEach{t->
-                        DropdownMenuItem(text={Text(t)},onClick={selectedTechnique=t;techniqueMenu=false;analysisReady=false;aiSummary=""})
+                        DropdownMenuItem(text={Text(t)},onClick={selectedTechnique=t;techniqueMenu=false;analysisReady=false;aiSummary="";aiReferences=emptyList();referencePreviewUri=""})
                     }
                 }
             }
@@ -424,17 +448,21 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                             analyzingAi=true
                             feedback=coachAiStatusV106(lang,"analyzing")
                             scope.launch{
-                                rsAnalyzeTechniqueVisionV106(context,videoUri,selectedTechnique,lang)
-                                    .onSuccess{
-                                        aiSummary=it
-                                        analysisReady=true
-                                        feedback=coachAiStatusV106(lang,"active")
-                                    }
-                                    .onFailure{
-                                        aiSummary=""
-                                        analysisReady=true
-                                        feedback=coachAiStatusV106(lang,"fallback")
-                                    }
+                                val result=rsAnalyzeTechniqueVisionV106(context,videoUri,selectedTechnique,lang)
+                                if(result.isSuccess){
+                                    val analysis=result.getOrThrow()
+                                    aiSummary=analysis
+                                    aiReferences=rsAiReferenceMatchesV114(selectedTechnique,analysis).getOrDefault(emptyList())
+                                    referencePreviewUri=""
+                                    analysisReady=true
+                                    feedback=coachAiStatusV106(lang,"active")
+                                }else{
+                                    aiSummary=""
+                                    aiReferences=emptyList()
+                                    referencePreviewUri=""
+                                    analysisReady=true
+                                    feedback=coachAiStatusV106(lang,"fallback")
+                                }
                                 analyzingAi=false
                             }
                         }else{
@@ -446,7 +474,7 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                     enabled=!analyzingAi,
                     modifier=Modifier.fillMaxWidth()
                 ){Text(if(analyzingAi)rsReleaseT98(lang,"please_wait") else coachStudentUiV105(lang,"analyze"))}
-                OutlinedButton(onClick={val previous=videoUri;videoUri="";videoName="";durationMs=0L;analysisReady=false;aiSummary="";rsDeleteTechniqueVideoIfUnusedV36(context,store,previous)},modifier=Modifier.fillMaxWidth()){Text(coachStudentUiV105(lang,"remove"))}
+                OutlinedButton(onClick={val previous=videoUri;videoUri="";videoName="";durationMs=0L;analysisReady=false;aiSummary="";aiReferences=emptyList();referencePreviewUri="";rsDeleteTechniqueVideoIfUnusedV36(context,store,previous)},modifier=Modifier.fillMaxWidth()){Text(coachStudentUiV105(lang,"remove"))}
             }
             if(feedback.isNotBlank())Text(feedback,color=c.muted,fontSize=10.sp)
         }
@@ -465,6 +493,35 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
                         Text(title,color=c.bright,fontWeight=FontWeight.Bold)
                         Text(body,color=c.muted,fontSize=11.sp)
                     }
+                }
+            }
+            if(aiReferences.isNotEmpty()){
+                HorizontalDivider(color=c.gold.copy(alpha=.25f))
+                Text(coachAiReferenceUiV114(lang,"title"),color=c.bright,fontWeight=FontWeight.Black,fontSize=13.sp)
+                Text(coachAiReferenceUiV114(lang,"sub"),color=c.muted,fontSize=9.sp)
+                aiReferences.forEach{item->
+                    Surface(color=c.gold.copy(alpha=.07f),shape=RoundedCornerShape(12.dp),modifier=Modifier.fillMaxWidth()){
+                        Column(Modifier.padding(10.dp),verticalArrangement=Arrangement.spacedBy(4.dp)){
+                            Text(item.title,color=c.bright,fontWeight=FontWeight.Bold)
+                            Text(item.category+" · "+item.techniqueTags.joinToString(", "),color=c.muted,fontSize=9.sp,maxLines=2)
+                            OutlinedButton(
+                                onClick={
+                                    referenceLoading=true
+                                    scope.launch{
+                                        rsCloudTrainingMediaLocalUriV73(context,item)
+                                            .onSuccess{referencePreviewUri=it}
+                                            .onFailure{feedback=rsReleaseT98(lang,"load_failed")}
+                                        referenceLoading=false
+                                    }
+                                },
+                                enabled=!referenceLoading,
+                                modifier=Modifier.fillMaxWidth()
+                            ){Text(if(referenceLoading)coachAiReferenceUiV114(lang,"loading") else coachAiReferenceUiV114(lang,"open"),fontSize=9.sp)}
+                        }
+                    }
+                }
+                if(referencePreviewUri.isNotBlank()){
+                    RsUriPreviewV21(referencePreviewUri,Modifier.fillMaxWidth().height(220.dp),"CENTER")
                 }
             }
             Button(onClick={
