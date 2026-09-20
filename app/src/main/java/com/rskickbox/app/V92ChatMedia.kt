@@ -136,10 +136,14 @@ suspend fun rsUploadChatMediaV92(
         else->currentUser?.id.orEmpty()
     }
     if(studentId.isNotBlank()){
-        val capacity=rsStudentStorageCapacityV114(studentId,bytes.size.toLong()).getOrThrow()
-        require(capacity.allowed){
-            capacity.warningMessage.ifBlank{
-                "Student storage limit reached. Free some space or increase the student's storage allowance."
+        // Backward-compatible rollout: if the v0.114 capacity RPC is not installed yet,
+        // continue with the existing upload/registration flow. Once migration 0048 is
+        // live, this preflight blocks over-quota uploads before bytes are sent.
+        rsStudentStorageCapacityV114(studentId,bytes.size.toLong()).getOrNull()?.let{capacity->
+            require(capacity.allowed){
+                capacity.warningMessage.ifBlank{
+                    "Student storage limit reached. Free some space or increase the student's storage allowance."
+                }
             }
         }
     }
