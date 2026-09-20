@@ -216,7 +216,6 @@ private fun studentV21()=listOf(
         DashV21("student_guide","App Guide","Learn every available feature step by step","brand")
     )),
     SectionV21("Core Training",listOf(
-        DashV21("voice","AI Technique Coach","Video review · feedback · history","ai"),
         DashV21("session","Session Player","Rounds · timer · trainer cues","training"),
         DashV21("academy","RS Academy","Structured premium lessons","training"),
         DashV21("techniques","Technique Library","Moves · drills · details","technique"),
@@ -225,9 +224,8 @@ private fun studentV21()=listOf(
     SectionV21("Club & Coaching",listOf(
         DashV21("classes","Classes & Training","Book club training","training"),
         DashV21("events","Club Events & Seminars","Special events · seminars","brand"),
-        DashV21("coachchat","Private Coach Chat","Text · images · short videos","ai"),
+        DashV21("coachchat","RS Communication Hub","Private · groups · voice · AI coach · media","ai"),
         DashV21("community","Community","Club feed · connection","brand"),
-        DashV21("groups","Groups","Team spaces · group chat","brand"),
         DashV21("private_lessons","Private Lessons","1-to-1 coaching","training")
     )),
     SectionV21("Member Services",listOf(
@@ -270,7 +268,7 @@ private fun trainerV21()=listOf(
         DashV21("book","Book Manager","Trainer book experience","brand")
     )),
     SectionV21("Coaching, Content & Music",listOf(
-        DashV21("voice","AI Technique Coach","Video review · voice coach","ai"),
+        DashV21("coachchat","RS Communication Hub","Students · groups · voice · AI coach · moderation","ai"),
         DashV21("content","Content Manager","Lessons · articles · Academy content","brand"),
         DashV21("media","Training Media Manager","Videos · images · access tiers","training"),
         DashV21("homework_admin","Homework Manager","Assign · review","training"),
