@@ -224,7 +224,7 @@ private fun studentV21()=listOf(
     SectionV21("Club & Coaching",listOf(
         DashV21("classes","Classes & Training","Book club training","training"),
         DashV21("events","Club Events & Seminars","Special events · seminars","brand"),
-        DashV21("coachchat","RS Communication Hub","Private · groups · voice · AI coach · media","ai"),
+        DashV21("coachchat","RS Chat","Private · groups · voice · AI coach · media","ai"),
         DashV21("community","Community","Club feed · connection","brand"),
         DashV21("private_lessons","Private Lessons","1-to-1 coaching","training")
     )),
@@ -267,7 +267,7 @@ private fun trainerV21()=listOf(
         DashV21("book","Book Manager","Trainer book experience","brand")
     )),
     SectionV21("Coaching, Content & Music",listOf(
-        DashV21("coachchat","RS Communication Hub","Students · groups · voice · AI coach · moderation","ai"),
+        DashV21("coachchat","RS Chat","Students · groups · voice · AI coach · moderation","ai"),
         DashV21("content","Content Manager","Lessons · articles · Academy content","brand"),
         DashV21("homework_admin","Homework Manager","Assign · review","training"),
         DashV21("session_builder","Session Builder","Create active training sessions","training"),
