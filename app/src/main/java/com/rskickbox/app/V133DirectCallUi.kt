@@ -1,0 +1,343 @@
+package com.rskickbox.app
+
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import org.webrtc.SurfaceViewRenderer
+
+private fun rsCallT133(lang:RsLang,key:String):String{
+    val en=mapOf(
+        "audio" to "Audio call","video" to "Video call","calling" to "Calling…",
+        "incoming_audio" to "Incoming audio call","incoming_video" to "Incoming video call",
+        "accept" to "Accept","decline" to "Decline","cancel" to "Cancel",
+        "connecting" to "Connecting…","connected" to "Connected","reconnecting" to "Reconnecting…",
+        "failed" to "Connection failed","ended" to "Call ended","end" to "End call",
+        "mic" to "Mic","camera" to "Camera","switch" to "Switch camera",
+        "permission" to "Microphone/camera permission is required.",
+        "unavailable" to "Call service is not available yet. Run the latest Supabase call update."
+    )
+    val nl=en+mapOf(
+        "audio" to "Audiogesprek","video" to "Videogesprek","calling" to "Bellen…",
+        "incoming_audio" to "Inkomend audiogesprek","incoming_video" to "Inkomend videogesprek",
+        "accept" to "Opnemen","decline" to "Weigeren","cancel" to "Annuleren",
+        "connecting" to "Verbinden…","connected" to "Verbonden","reconnecting" to "Opnieuw verbinden…",
+        "failed" to "Verbinding mislukt","ended" to "Gesprek beëindigd","end" to "Gesprek stoppen",
+        "mic" to "Microfoon","camera" to "Camera","switch" to "Camera wisselen",
+        "permission" to "Toegang tot microfoon/camera is vereist.",
+        "unavailable" to "Belservice is nog niet beschikbaar. Voer de nieuwste Supabase-callupdate uit."
+    )
+    val pt=en+mapOf(
+        "audio" to "Chamada de áudio","video" to "Videochamada","calling" to "A chamar…",
+        "incoming_audio" to "Chamada de áudio recebida","incoming_video" to "Videochamada recebida",
+        "accept" to "Atender","decline" to "Recusar","cancel" to "Cancelar",
+        "connecting" to "A ligar…","connected" to "Ligado","reconnecting" to "A reconectar…",
+        "failed" to "Ligação falhou","ended" to "Chamada terminada","end" to "Terminar chamada",
+        "mic" to "Microfone","camera" to "Câmara","switch" to "Trocar câmara",
+        "permission" to "É necessária permissão para microfone/câmara.",
+        "unavailable" to "O serviço de chamadas ainda não está disponível. Executa a atualização Supabase mais recente."
+    )
+    val es=en+mapOf(
+        "audio" to "Llamada de audio","video" to "Videollamada","calling" to "Llamando…",
+        "incoming_audio" to "Llamada de audio entrante","incoming_video" to "Videollamada entrante",
+        "accept" to "Aceptar","decline" to "Rechazar","cancel" to "Cancelar",
+        "connecting" to "Conectando…","connected" to "Conectado","reconnecting" to "Reconectando…",
+        "failed" to "Falló la conexión","ended" to "Llamada finalizada","end" to "Finalizar llamada",
+        "mic" to "Micrófono","camera" to "Cámara","switch" to "Cambiar cámara",
+        "permission" to "Se requiere permiso de micrófono/cámara.",
+        "unavailable" to "El servicio de llamadas aún no está disponible. Ejecuta la última actualización de Supabase."
+    )
+    val fr=en+mapOf(
+        "audio" to "Appel audio","video" to "Appel vidéo","calling" to "Appel…",
+        "incoming_audio" to "Appel audio entrant","incoming_video" to "Appel vidéo entrant",
+        "accept" to "Accepter","decline" to "Refuser","cancel" to "Annuler",
+        "connecting" to "Connexion…","connected" to "Connecté","reconnecting" to "Reconnexion…",
+        "failed" to "Échec de connexion","ended" to "Appel terminé","end" to "Terminer l’appel",
+        "mic" to "Micro","camera" to "Caméra","switch" to "Changer caméra",
+        "permission" to "L’autorisation micro/caméra est requise.",
+        "unavailable" to "Le service d’appel n’est pas encore disponible. Exécute la dernière mise à jour Supabase."
+    )
+    val de=en+mapOf("audio" to "Audioanruf","video" to "Videoanruf","accept" to "Annehmen","decline" to "Ablehnen","cancel" to "Abbrechen","end" to "Anruf beenden")
+    val it=en+mapOf("audio" to "Chiamata audio","video" to "Videochiamata","accept" to "Accetta","decline" to "Rifiuta","cancel" to "Annulla","end" to "Termina chiamata")
+    val pl=en+mapOf("audio" to "Połączenie audio","video" to "Połączenie wideo","accept" to "Odbierz","decline" to "Odrzuć","cancel" to "Anuluj","end" to "Zakończ połączenie")
+    val tr=en+mapOf("audio" to "Sesli arama","video" to "Görüntülü arama","accept" to "Kabul et","decline" to "Reddet","cancel" to "İptal","end" to "Aramayı bitir")
+    val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
+    return pack[key]?:en[key]?:key
+}
+
+@Composable
+fun RsDirectCallControlsV133(
+    c:RsPalette,
+    lang:RsLang,
+    role:RsRole,
+    peerId:String,
+    peerName:String
+){
+    val context=LocalContext.current
+    val scope=rememberCoroutineScope()
+    val myId=remember{rsSupabaseClientV60()?.auth?.currentUserOrNull()?.id.orEmpty()}
+    var resolvedPeerId by remember(peerId){mutableStateOf(peerId)}
+    var resolvedPeerName by remember(peerName){mutableStateOf(peerName)}
+    var active by remember{mutableStateOf<RsCallV131?>(null)}
+    var status by remember{mutableStateOf("")}
+    var pendingType by remember{mutableStateOf<String?>(null)}
+    var callDialog by remember{mutableStateOf<RsCallV131?>(null)}
+    var refresh by remember{mutableIntStateOf(0)}
+
+    LaunchedEffect(role,peerId){
+        if(role==RsRole.STUDENT&&resolvedPeerId.isBlank()){
+            rsStudentCallPeerV131()
+                .onSuccess{peer->
+                    if(peer!=null){
+                        resolvedPeerId=peer.userId
+                        resolvedPeerName=peer.displayName.ifBlank{peer.email}
+                    }
+                }
+        }
+    }
+
+    LaunchedEffect(resolvedPeerId,refresh){
+        while(isActive){
+            rsCallInboxV131()
+                .onSuccess{list->
+                    val now=list.firstOrNull{
+                        it.peerId==resolvedPeerId && it.status in setOf("RINGING","ACCEPTED")
+                    }
+                    active=now
+                    if(now?.status=="ACCEPTED")callDialog=now
+                }
+                .onFailure{
+                    if(status.isBlank())status=rsCallT133(lang,"unavailable")
+                }
+            delay(1500)
+        }
+    }
+
+    fun beginCall(type:String){
+        if(resolvedPeerId.isBlank())return
+        scope.launch{
+            status=rsCallT133(lang,"calling")
+            rsStartDirectCallV131(resolvedPeerId,type)
+                .onSuccess{refresh++}
+                .onFailure{status=it.message?:rsCallT133(lang,"unavailable")}
+        }
+    }
+
+    val permissionLauncher=rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ){result->
+        val type=pendingType
+        pendingType=null
+        if(type!=null&&result.values.all{it}){
+            beginCall(type)
+        }else if(type!=null){
+            status=rsCallT133(lang,"permission")
+        }
+    }
+
+    fun requestAndCall(type:String){
+        val needs=buildList{
+            if(ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)add(Manifest.permission.RECORD_AUDIO)
+            if(type=="VIDEO"&&ContextCompat.checkSelfPermission(context,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED)add(Manifest.permission.CAMERA)
+        }
+        if(needs.isEmpty())beginCall(type)
+        else{
+            pendingType=type
+            permissionLauncher.launch(needs.toTypedArray())
+        }
+    }
+
+    val call=active
+    Surface(
+        color=c.panel.copy(alpha=.55f),
+        shape=RoundedCornerShape(20.dp),
+        border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.24f)),
+        modifier=Modifier.fillMaxWidth()
+    ){
+        Column(Modifier.padding(10.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+            if(call==null){
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                    OutlinedButton(
+                        onClick={requestAndCall("AUDIO")},
+                        enabled=resolvedPeerId.isNotBlank(),
+                        modifier=Modifier.weight(1f)
+                    ){Text("☎  "+rsCallT133(lang,"audio"),fontSize=10.sp)}
+                    OutlinedButton(
+                        onClick={requestAndCall("VIDEO")},
+                        enabled=resolvedPeerId.isNotBlank(),
+                        modifier=Modifier.weight(1f)
+                    ){Text("▣  "+rsCallT133(lang,"video"),fontSize=10.sp)}
+                }
+            }else if(call.status=="RINGING"){
+                val incoming=call.calleeId==myId
+                Text(
+                    if(incoming){
+                        if(call.callType=="VIDEO")rsCallT133(lang,"incoming_video") else rsCallT133(lang,"incoming_audio")
+                    }else rsCallT133(lang,"calling")+" "+resolvedPeerName,
+                    color=c.bright,fontWeight=FontWeight.Black
+                )
+                if(incoming){
+                    val type=call.callType
+                    val acceptNeeds=buildList{
+                        if(ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)add(Manifest.permission.RECORD_AUDIO)
+                        if(type=="VIDEO"&&ContextCompat.checkSelfPermission(context,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED)add(Manifest.permission.CAMERA)
+                    }
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                        Button(
+                            onClick={
+                                if(acceptNeeds.isEmpty()){
+                                    scope.launch{
+                                        rsSetCallStatusV131(call.id,"ACCEPTED")
+                                        refresh++
+                                    }
+                                }else{
+                                    pendingType=null
+                                    permissionLauncher.launch(acceptNeeds.toTypedArray())
+                                }
+                            },
+                            modifier=Modifier.weight(1f)
+                        ){Text(rsCallT133(lang,"accept"))}
+                        OutlinedButton(
+                            onClick={scope.launch{rsSetCallStatusV131(call.id,"DECLINED");refresh++}},
+                            modifier=Modifier.weight(1f)
+                        ){Text(rsCallT133(lang,"decline"))}
+                    }
+                }else{
+                    OutlinedButton(
+                        onClick={scope.launch{rsSetCallStatusV131(call.id,"CANCELLED");refresh++}},
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text(rsCallT133(lang,"cancel"))}
+                }
+            }
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=9.sp)
+        }
+    }
+
+    callDialog?.let{accepted->
+        RsActiveCallDialogV133(c,lang,accepted,myId){
+            callDialog=null
+            active=null
+            refresh++
+        }
+    }
+}
+
+@Composable
+private fun RsActiveCallDialogV133(
+    c:RsPalette,
+    lang:RsLang,
+    call:RsCallV131,
+    myId:String,
+    onClosed:()->Unit
+){
+    val context=LocalContext.current
+    val scope=rememberCoroutineScope()
+    val isCaller=call.callerId==myId
+    val isVideo=call.callType=="VIDEO"
+    var engineState by remember(call.id){mutableStateOf("CONNECTING")}
+    var micOn by remember(call.id){mutableStateOf(true)}
+    var cameraOn by remember(call.id){mutableStateOf(isVideo)}
+    val engine=remember(call.id){
+        RsWebRtcEngineV132(context,call.id,isCaller,isVideo,scope){engineState=it}
+    }
+
+    LaunchedEffect(engine){
+        engine.start()
+    }
+    LaunchedEffect(call.id){
+        while(isActive){
+            rsCallInboxV131().onSuccess{list->
+                val current=list.firstOrNull{it.id==call.id}
+                if(current==null||current.status in setOf("ENDED","DECLINED","MISSED","CANCELLED")){
+                    onClosed()
+                }
+            }
+            delay(1500)
+        }
+    }
+    DisposableEffect(engine){onDispose{engine.dispose()}}
+
+    Dialog(
+        onDismissRequest={},
+        properties=DialogProperties(usePlatformDefaultWidth=false)
+    ){
+        Box(Modifier.fillMaxSize().background(Color.Black)){
+            if(isVideo){
+                var remoteRenderer by remember{mutableStateOf<SurfaceViewRenderer?>(null)}
+                var localRenderer by remember{mutableStateOf<SurfaceViewRenderer?>(null)}
+                AndroidView(
+                    factory={ctx->SurfaceViewRenderer(ctx).also{remoteRenderer=it;engine.attachRenderers(localRenderer,it)}},
+                    modifier=Modifier.fillMaxSize()
+                )
+                AndroidView(
+                    factory={ctx->SurfaceViewRenderer(ctx).also{localRenderer=it;engine.attachRenderers(it,remoteRenderer)}},
+                    modifier=Modifier.align(Alignment.TopEnd).padding(14.dp).width(116.dp).height(164.dp)
+                )
+            }else{
+                Column(
+                    Modifier.align(Alignment.Center),
+                    horizontalAlignment=Alignment.CenterHorizontally,
+                    verticalArrangement=Arrangement.spacedBy(12.dp)
+                ){
+                    Surface(shape=CircleShape,color=c.gold.copy(alpha=.18f),modifier=Modifier.size(116.dp)){
+                        Box(contentAlignment=Alignment.Center){Text("RS",color=c.bright,fontSize=42.sp,fontWeight=FontWeight.Black)}
+                    }
+                    Text(call.peerName,color=Color.White,fontSize=22.sp,fontWeight=FontWeight.Black)
+                }
+            }
+
+            Column(
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color.Black.copy(alpha=.72f)).padding(18.dp),
+                horizontalAlignment=Alignment.CenterHorizontally,
+                verticalArrangement=Arrangement.spacedBy(10.dp)
+            ){
+                Text(
+                    when(engineState){
+                        "CONNECTED"->rsCallT133(lang,"connected")
+                        "RECONNECTING"->rsCallT133(lang,"reconnecting")
+                        "FAILED"->rsCallT133(lang,"failed")
+                        "ENDED"->rsCallT133(lang,"ended")
+                        else->rsCallT133(lang,"connecting")
+                    },
+                    color=Color.White,fontWeight=FontWeight.Bold
+                )
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly){
+                    OutlinedButton(onClick={micOn=!micOn;engine.setMicEnabled(micOn)}){
+                        Text(if(micOn)"🎙" else "🔇")
+                    }
+                    if(isVideo)OutlinedButton(onClick={cameraOn=!cameraOn;engine.setCameraEnabled(cameraOn)}){
+                        Text(if(cameraOn)"▣" else "□")
+                    }
+                    if(isVideo)OutlinedButton(onClick={engine.switchCamera()}){Text("↻")}
+                    Button(
+                        onClick={
+                            scope.launch{rsSetCallStatusV131(call.id,"ENDED")}
+                            onClosed()
+                        }
+                    ){Text(rsCallT133(lang,"end"))}
+                }
+            }
+        }
+    }
+}
