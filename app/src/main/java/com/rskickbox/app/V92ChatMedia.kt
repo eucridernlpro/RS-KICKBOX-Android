@@ -172,6 +172,8 @@ suspend fun rsUploadChatMediaV92(
 suspend fun rsDeleteChatMediaV108(path:String):Result<Unit> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     client.storage.from(RS_CHAT_MEDIA_BUCKET_V92).delete(path)
+    // Migration 0049 keeps quota usage accurate after the file is removed.
+    rsRemoveStudentMediaAssetByPathV115(RS_CHAT_MEDIA_BUCKET_V92,path).getOrNull()
     Unit
 }
 
