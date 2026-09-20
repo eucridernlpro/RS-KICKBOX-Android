@@ -14,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -26,6 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -379,7 +382,13 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
         tts=engine
         onDispose{engine.stop();engine.shutdown()}
     }
-    LaunchedEffect(lang.code,ready){if(ready)tts?.language=lang.locale}
+    LaunchedEffect(lang.code,ready,coachGender){
+        if(ready){
+            tts?.language=lang.locale
+            tts?.setSpeechRate(if(coachGender=="female")1.01f else .96f)
+            tts?.setPitch(if(coachGender=="female")1.08f else .90f)
+        }
+    }
 
     fun acceptVideo(uri:Uri,persist:Boolean){
         val d=videoDurationV27(context,uri)
@@ -433,8 +442,8 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
         RsPanel(c){
             Text(coachStudentUiV105(lang,"trainer"),color=c.bright,fontWeight=FontWeight.Bold)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                FilterChip(selected=coachGender=="male",onClick={coachGender="male";store.ps("ai_coach_gender","male")},label={Text(coachStudentUiV105(lang,"male"))},modifier=Modifier.weight(1f))
-                FilterChip(selected=coachGender=="female",onClick={coachGender="female";store.ps("ai_coach_gender","female")},label={Text(coachStudentUiV105(lang,"female"))},modifier=Modifier.weight(1f))
+                FilterChip(selected=coachGender=="male",onClick={coachGender="male";store.ps("ai_coach_gender","male")},label={Text("Marcus · "+coachStudentUiV105(lang,"male"))},modifier=Modifier.weight(1f))
+                FilterChip(selected=coachGender=="female",onClick={coachGender="female";store.ps("ai_coach_gender","female")},label={Text("Sofia · "+coachStudentUiV105(lang,"female"))},modifier=Modifier.weight(1f))
             }
             CoachAvatarV28(c,store,coachGender,speaking,selectedTechnique,lang)
             Text(coachStudentUiV105(lang,"trainer_desc"),color=c.muted,fontSize=10.sp)
@@ -625,29 +634,63 @@ private fun CoachAvatarV28(c:RsPalette,store:RsStore,gender:String,speaking:Bool
     val custom=store.s(if(gender=="female")"visual_v21_ai_trainer_female" else "visual_v21_ai_trainer_male","")
     val pulse=rememberInfiniteTransition(label="coachPulse")
     val glow by pulse.animateFloat(.35f,1f,infiniteRepeatable(tween(850),RepeatMode.Reverse),label="coachGlow")
+    val bundledPainter=painterResource(id=R.drawable.rs_training_session_v127)
+    val trainerName=if(gender=="female")"AI Coach Sofia" else "AI Coach Marcus"
+    val trainerRole=if(gender=="female")coachStudentUiV105(lang,"female") else coachStudentUiV105(lang,"male")
     Box(
-        Modifier.fillMaxWidth().height(230.dp).background(Color.Black,RoundedCornerShape(18.dp)),
+        Modifier.fillMaxWidth().height(260.dp).background(Color.Black,RoundedCornerShape(18.dp)),
         contentAlignment=Alignment.Center
     ){
-        if(custom.isNotBlank())RsUriPreviewV21(custom,Modifier.fillMaxSize(), "CENTER")
-        Canvas(Modifier.fillMaxSize()){
-            val w=size.width; val h=size.height
-            drawCircle(c.bright.copy(alpha=.08f+.08f*glow),w*.34f,Offset(w*.5f,h*.44f))
-            if(custom.isBlank()){
-                val head=Offset(w*.50f,h*.28f)
-                drawCircle(Color(0xFF111111),w*.055f,head)
-                drawLine(Color(0xFF111111),Offset(w*.50f,h*.34f),Offset(w*.48f,h*.62f),w*.05f)
-                drawLine(Color(0xFF111111),Offset(w*.48f,h*.43f),Offset(w*.30f,h*.51f),w*.035f)
-                drawLine(Color(0xFF111111),Offset(w*.48f,h*.43f),Offset(w*.70f,h*.35f),w*.035f)
-                drawLine(Color(0xFF111111),Offset(w*.48f,h*.61f),Offset(w*.31f,h*.82f),w*.042f)
-                drawLine(Color(0xFF111111),Offset(w*.48f,h*.61f),Offset(w*.70f,h*.75f),w*.042f)
-            }
-            if(speaking)drawCircle(c.bright.copy(alpha=.35f*glow),w*.075f,Offset(w*.5f,h*.31f),style=Stroke(4f))
+        if(custom.isNotBlank()){
+            RsUriPreviewV21(custom,Modifier.fillMaxSize(),"CENTER")
+        }else{
+            Image(
+                painter=bundledPainter,
+                contentDescription=trainerName,
+                contentScale=ContentScale.Crop,
+                alignment=if(gender=="female")Alignment.CenterEnd else Alignment.CenterStart,
+                modifier=Modifier.fillMaxSize()
+            )
         }
-        Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=if(custom.isNotBlank()).32f else .08f)))
+        Box(
+            Modifier.matchParentSize().background(
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(
+                        Color.Black.copy(alpha=.06f),
+                        Color.Transparent,
+                        Color.Black.copy(alpha=.64f)
+                    )
+                )
+            )
+        )
+        if(speaking){
+            Canvas(Modifier.fillMaxSize()){
+                drawCircle(
+                    c.bright.copy(alpha=.22f+.24f*glow),
+                    size.minDimension*.08f,
+                    Offset(size.width*.88f,size.height*.14f),
+                    style=Stroke(5f)
+                )
+            }
+            Surface(
+                modifier=Modifier.align(Alignment.TopEnd).padding(12.dp),
+                shape=RoundedCornerShape(20.dp),
+                color=Color.Black.copy(alpha=.72f),
+                border=androidx.compose.foundation.BorderStroke(1.dp,c.bright.copy(alpha=.55f))
+            ){
+                Text(
+                    "●  SPEAKING",
+                    color=c.bright,
+                    fontWeight=FontWeight.Black,
+                    fontSize=9.sp,
+                    modifier=Modifier.padding(horizontal=10.dp,vertical=6.dp)
+                )
+            }
+        }
         Column(Modifier.align(Alignment.BottomStart).padding(14.dp)){
-            Text(if(gender=="female")"RS AI FEMALE TRAINER" else "RS AI MALE TRAINER",color=c.bright,fontWeight=FontWeight.Black,fontSize=14.sp)
-            Text(coachStudentUiV105(lang,"focus")+" · "+technique,color=Color.White.copy(alpha=.76f),fontSize=10.sp)
+            Text(trainerName,color=Color.White,fontWeight=FontWeight.Black,fontSize=18.sp)
+            Text("RS KICKBOXING · "+trainerRole,color=c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            Text(coachStudentUiV105(lang,"focus")+" · "+technique,color=Color.White.copy(alpha=.80f),fontSize=10.sp)
         }
     }
 }
