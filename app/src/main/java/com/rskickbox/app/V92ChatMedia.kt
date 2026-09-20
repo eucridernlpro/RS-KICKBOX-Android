@@ -77,21 +77,64 @@ private fun rsChatVideoDurationMsV92(context:Context,uri:Uri):Long{
     }finally{runCatching{r.release()}}
 }
 
+private fun rsChatSourceSizeV115(context:Context,uri:Uri):Long{
+    return runCatching{
+        context.contentResolver.query(uri,arrayOf(OpenableColumns.SIZE),null,null,null)?.use{cur->
+            if(cur.moveToFirst())cur.getLong(0) else -1L
+        } ?: -1L
+    }.getOrDefault(-1L)
+}
+
 private fun rsChatImageBytesV92(context:Context,uri:Uri):ByteArray{
-    val original=context.contentResolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it)}
+    val bounds=BitmapFactory.Options().apply{inJustDecodeBounds=true}
+    context.contentResolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it,null,bounds)}
         ?:error("Could not read image.")
-    val maxSide=max(original.width,original.height).coerceAtLeast(1)
-    val scale=(1600f/maxSide).coerceAtMost(1f)
-    val width=(original.width*scale).toInt().coerceAtLeast(1)
-    val height=(original.height*scale).toInt().coerceAtLeast(1)
-    val bitmap=if(width!=original.width||height!=original.height)
-        Bitmap.createScaledBitmap(original,width,height,true)
-    else original
-    val out=ByteArrayOutputStream()
-    bitmap.compress(Bitmap.CompressFormat.JPEG,86,out)
-    if(bitmap!==original)bitmap.recycle()
-    original.recycle()
-    return out.toByteArray()
+    require(bounds.outWidth>0&&bounds.outHeight>0){"Could not decode image."}
+
+    var sample=1
+    while(bounds.outWidth/sample>1800 || bounds.outHeight/sample>1800)sample*=2
+    val opts=BitmapFactory.Options().apply{
+        inSampleSize=sample
+        inPreferredConfig=Bitmap.Config.RGB_565
+    }
+    val original=context.contentResolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it,null,opts)}
+        ?:error("Could not decode image.")
+    try{
+        val maxSide=max(original.width,original.height).coerceAtLeast(1)
+        val scale=(1440f/maxSide).coerceAtMost(1f)
+        val width=(original.width*scale).toInt().coerceAtLeast(1)
+        val height=(original.height*scale).toInt().coerceAtLeast(1)
+        val bitmap=if(width!=original.width||height!=original.height)
+            Bitmap.createScaledBitmap(original,width,height,true)
+        else original
+        try{
+            return ByteArrayOutputStream().use{out->
+                bitmap.compress(Bitmap.CompressFormat.JPEG,82,out)
+                out.toByteArray()
+            }
+        }finally{
+            if(bitmap!==original)bitmap.recycle()
+        }
+    }finally{
+        original.recycle()
+    }
+}
+
+private fun rsChatVideoBytesV115(context:Context,uri:Uri):ByteArray{
+    val size=rsChatSourceSizeV115(context,uri)
+    require(size in 1..(30L*1024L*1024L)){"Chat video must be 30 MB or smaller."}
+    require(size<=Int.MAX_VALUE){"Video is too large."}
+    val result=ByteArray(size.toInt())
+    context.contentResolver.openInputStream(uri)?.use{input->
+        var offset=0
+        while(offset<result.size){
+            val read=input.read(result,offset,result.size-offset)
+            if(read<0)break
+            offset+=read
+        }
+        require(offset==result.size){"Could not read the complete video."}
+    } ?: error("Could not read video.")
+    return result
 }
 
 suspend fun rsUploadChatMediaV92(
@@ -111,11 +154,11 @@ suspend fun rsUploadChatMediaV92(
         require(duration in 1..30_000){"Short videos can be up to 30 seconds."}
     }
 
-    val bytes=if(kind=="IMAGE"){
-        rsChatImageBytesV92(context,uri)
-    }else{
-        context.contentResolver.openInputStream(uri)?.use{it.readBytes()}
-            ?:error("Could not read video.")
+    val bytes=try{
+        if(kind=="IMAGE")rsChatImageBytesV92(context,uri)
+        else rsChatVideoBytesV115(context,uri)
+    }catch(t:OutOfMemoryError){
+        throw IllegalStateException("This media file is too large for the device. Choose a smaller image or video.")
     }
     require(bytes.size<=30*1024*1024){"Chat attachment must be 30 MB or smaller."}
 
