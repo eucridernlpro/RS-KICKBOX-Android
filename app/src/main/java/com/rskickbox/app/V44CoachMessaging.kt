@@ -126,9 +126,9 @@ private fun rsCoachUiV44(lang:RsLang,key:String):String{
 }
 
 @Composable
-fun RsCoachChatV44(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
+fun RsCoachChatV44(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole,initialStudentId:String?=null){
     if(RsSupabaseV60.configured){
-        if(role==RsRole.TRAINER)RsCloudTrainerCoachInboxV72(c,lang)
+        if(role==RsRole.TRAINER)RsCloudTrainerCoachInboxV72(c,lang,initialStudentId)
         else RsCloudStudentCoachThreadV72(c,lang)
     }else{
         if(role==RsRole.TRAINER)RsTrainerCoachInboxV44(c,store,lang)
@@ -445,7 +445,7 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
 }
 
 @Composable
-private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang){
+private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang,initialStudentId:String?=null){
     val scope=rememberCoroutineScope()
     var threads by remember{mutableStateOf<List<RsCloudCoachThreadV72>>(emptyList())}
     var selected by remember{mutableStateOf<RsCloudCoachThreadV72?>(null)}
@@ -456,11 +456,16 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang){
     var sending by remember{mutableStateOf(false)}
     var revision by remember{mutableIntStateOf(0)}
 
-    LaunchedEffect(revision,selected?.studentId){
+    LaunchedEffect(revision,selected?.studentId,initialStudentId){
         loading=true
         if(selected==null){
             rsCloudCoachThreadsV72()
-                .onSuccess{threads=it}
+                .onSuccess{loaded->
+                    threads=loaded
+                    initialStudentId?.takeIf{it.isNotBlank()}?.let{id->
+                        loaded.firstOrNull{it.studentId==id}?.let{selected=it}
+                    }
+                }
                 .onFailure{status=rsChatBackendFriendlyErrorV121(lang,it)}
         }else{
             val id=selected!!.studentId
