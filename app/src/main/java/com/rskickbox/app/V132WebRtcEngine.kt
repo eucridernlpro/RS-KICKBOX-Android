@@ -97,13 +97,31 @@ class RsWebRtcEngineV132(
         started=true
         onState("CONNECTING")
 
+        // Prefer direct P2P through STUN. If NAT/firewall traversal fails,
+        // WebRTC can fall back to TURN relay. The OpenRelay entries are for
+        // preview/device testing; production can later swap to dedicated RS
+        // credentials without changing the call architecture.
         val iceServers=listOf(
             PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
-            PeerConnection.IceServer.builder("stun:stun1.l.google.com:19302").createIceServer()
+            PeerConnection.IceServer.builder("stun:stun1.l.google.com:19302").createIceServer(),
+            PeerConnection.IceServer.builder("stun:openrelay.metered.ca:80").createIceServer(),
+            PeerConnection.IceServer.builder("turn:openrelay.metered.ca:80")
+                .setUsername("openrelayproject")
+                .setPassword("openrelayproject")
+                .createIceServer(),
+            PeerConnection.IceServer.builder("turn:openrelay.metered.ca:443")
+                .setUsername("openrelayproject")
+                .setPassword("openrelayproject")
+                .createIceServer(),
+            PeerConnection.IceServer.builder("turn:openrelay.metered.ca:443?transport=tcp")
+                .setUsername("openrelayproject")
+                .setPassword("openrelayproject")
+                .createIceServer()
         )
         val rtcConfig=PeerConnection.RTCConfiguration(iceServers).apply{
             sdpSemantics=PeerConnection.SdpSemantics.UNIFIED_PLAN
             continualGatheringPolicy=PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
+            iceCandidatePoolSize=4
         }
 
         peerConnection=factory.createPeerConnection(rtcConfig,object:PeerConnection.Observer{
