@@ -153,7 +153,10 @@ suspend fun rsStaffDeleteCoachMessageV111(messageId:String,mediaPath:String?):Re
         "rs_staff_delete_coach_message",
         buildJsonObject{put("p_message_id",messageId)}
     )
-    if(!mediaPath.isNullOrBlank())runCatching{client.storage.from("rs-chat-media").delete(mediaPath)}
+    if(!mediaPath.isNullOrBlank()){
+        runCatching{client.storage.from("rs-chat-media").delete(mediaPath)}
+        rsRemoveStudentMediaAssetByPathV115("rs-chat-media",mediaPath).getOrNull()
+    }
     Unit
 }
 
@@ -165,6 +168,7 @@ suspend fun rsStaffClearCoachThreadV111(studentId:String,mediaPaths:List<String>
     )
     mediaPaths.filter{it.isNotBlank()}.distinct().forEach{path->
         runCatching{client.storage.from("rs-chat-media").delete(path)}
+        rsRemoveStudentMediaAssetByPathV115("rs-chat-media",path).getOrNull()
     }
     Unit
 }
