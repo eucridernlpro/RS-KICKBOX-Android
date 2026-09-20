@@ -19,6 +19,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -387,6 +388,7 @@ fun RsChatAttachmentPreviewV92(
 
     when(mediaKind){
         "IMAGE"->{
+            var fullImage by remember(localUri){mutableStateOf(false)}
             val bitmap=remember(localUri){
                 runCatching{
                     val uri=Uri.parse(localUri)
@@ -398,7 +400,7 @@ fun RsChatAttachmentPreviewV92(
                     shape=RoundedCornerShape(18.dp),
                     color=c.panel.copy(alpha=.72f),
                     border=BorderStroke(1.dp,c.gold.copy(alpha=.22f)),
-                    modifier=Modifier.fillMaxWidth()
+                    modifier=Modifier.fillMaxWidth().clickable{fullImage=true}
                 ){
                     Image(
                         bitmap=bitmap,
@@ -406,6 +408,28 @@ fun RsChatAttachmentPreviewV92(
                         contentScale=ContentScale.Crop,
                         modifier=Modifier.fillMaxWidth().heightIn(min=160.dp,max=340.dp)
                     )
+                }
+                if(fullImage){
+                    androidx.compose.ui.window.Dialog(onDismissRequest={fullImage=false}){
+                        Surface(
+                            color=androidx.compose.ui.graphics.Color.Black,
+                            shape=RoundedCornerShape(18.dp),
+                            modifier=Modifier.fillMaxWidth().fillMaxHeight(.90f)
+                        ){
+                            Box(Modifier.fillMaxSize()){
+                                Image(
+                                    bitmap=bitmap,
+                                    contentDescription=mediaName?:rsChatMediaT(lang,"image"),
+                                    contentScale=ContentScale.Fit,
+                                    modifier=Modifier.fillMaxSize()
+                                )
+                                TextButton(
+                                    onClick={fullImage=false},
+                                    modifier=Modifier.align(Alignment.TopEnd).padding(8.dp)
+                                ){Text("×",fontSize=26.sp,color=androidx.compose.ui.graphics.Color.White)}
+                            }
+                        }
+                    }
                 }
             }else Text(rsChatMediaT(lang,"download_error"),color=c.muted,fontSize=9.sp)
         }
