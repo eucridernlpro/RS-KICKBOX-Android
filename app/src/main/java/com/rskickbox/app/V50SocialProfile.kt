@@ -759,9 +759,9 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                     lang=lang,
                     enabled=!loading,
                     onClear={
-                        rsStaffClearGroupChatV111(
+                        rsStaffClearGroupChatRobustV116(
                             activeGroup.id,
-                            messages.mapNotNull{it.mediaPath}
+                            messages
                         )
                     },
                     onChanged={messages=emptyList();revision++},
