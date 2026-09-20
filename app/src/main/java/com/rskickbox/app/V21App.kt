@@ -195,6 +195,15 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         }
     }
 
+    LaunchedEffect(role){
+        if(role!=null && RsSupabaseV60.configured){
+            while(true){
+                rsTouchPresenceV125()
+                delay(45_000)
+            }
+        }
+    }
+
     val lifecycleOwner=LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner){
         val observer=LifecycleEventObserver{_,event->
@@ -247,7 +256,17 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                     val scope = if(active==RsRole.TRAINER) BgScope.TRAINER_TRAINING else BgScope.STUDENT_TRAINING
                     RsLiveBackground(c, store, scope) {
                         RsPerPageBackgroundV21(store, route) {
-                            ShellV21(c, store, active, lang, route, { selected -> store.pb("lang_manual_override_v111",true);lang=selected;store.ps("lang",selected.code) }, { route=it }, {
+                            val chatRoute=route in setOf("coachchat","groups","voice","media")
+                            if(chatRoute){
+                                RsFloatingGlassChatHubV125(
+                                    c=c,
+                                    store=store,
+                                    lang=lang,
+                                    role=active,
+                                    initialRoute=route,
+                                    onBack={route=if(active==RsRole.TRAINER)"trainer" else "home"}
+                                )
+                            }else ShellV21(c, store, active, lang, route, { selected -> store.pb("lang_manual_override_v111",true);lang=selected;store.ps("lang",selected.code) }, { route=it }, {
                                 passwordRecoveryLaunch=false
                                 role=null
                                 route="home"
@@ -280,7 +299,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                     "session" -> if(active==RsRole.TRAINER) RsSessionBuilderV52(c,store,lang) else RsSessionPlayerV52(c,store,lang)
                                     "access" -> RsAccessControlV49(c,store,lang)
                                     "payments" -> RsTrainerPaymentCenterV39(c,store,lang)
-                                    "members" -> RsCommunicationHubV122(c,store,lang,active,"members")
+                                    "members" -> RsMemberManager(c,store,lang)
                                     "classes" -> if(active==RsRole.TRAINER) RsClassManagerV38(c,store,lang) else RsStudentClassesV38(c,store,lang)
                                     "attendance" -> RsAttendanceCenterV89(c,store,lang)
                                     "checkin" -> RsStudentCheckInV52(c,store,lang)
