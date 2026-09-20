@@ -140,15 +140,17 @@ suspend fun rsUploadChatMediaV92(
         else->currentUser?.id.orEmpty()
     }
     if(studentId.isNotBlank()){
-        runCatching{
-            rsRegisterStudentMediaAssetV111(
-                studentId=studentId,
-                bucket=RS_CHAT_MEDIA_BUCKET_V92,
-                path=path,
-                kind=kind,
-                sourceArea="CHAT",
-                byteSize=bytes.size.toLong()
-            )
+        val registration=rsRegisterStudentMediaAssetV111(
+            studentId=studentId,
+            bucket=RS_CHAT_MEDIA_BUCKET_V92,
+            path=path,
+            kind=kind,
+            sourceArea="CHAT",
+            byteSize=bytes.size.toLong()
+        )
+        if(registration.isFailure){
+            runCatching{client.storage.from(RS_CHAT_MEDIA_BUCKET_V92).delete(path)}
+            throw registration.exceptionOrNull() ?: IllegalStateException("Could not register chat media storage.")
         }
     }
     RsChatAttachmentV92(path,kind,name)
