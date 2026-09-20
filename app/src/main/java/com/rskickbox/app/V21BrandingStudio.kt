@@ -40,22 +40,17 @@ private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 
 
 private fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
-    // v0.116 reliable visual map: only reference resources verified in the APK.
-    // The three richer backgrounds below came from the approved generated RS visual batches.
+    // v0.117: direct artwork from the user's approved ZIP.
+    // These are real Android drawable-nodpi resources, so no runtime extraction is required.
     val drawableName=when(slot){
-        "login"->"rs_bg_login"
-        "student_home"->"rs_bg_student_home"
-        "trainer_home"->"rs_bg_trainer_home"
-        "header","footer","themes","backgrounds","branding","intro_settings","landing_admin"->"rs_bg_header"
-        "voice","techniques","compare"->"rs_bg_technique"
-        "session","home_training","workout","session_builder",
-        "progress","challenges","badges","fightcamp","progress_admin","challenge_admin","fightcamp_admin","assessments"->"rs_bg_kicks"
-        "private_lessons","homework","homework_admin","coachchat","community","groups"->"rs_bg_coaching_landscape"
-        "academy","media","content","lesson_editor","vault","favorites","search",
-        "music","music_admin","classes","events","events_admin","attendance","qr_attendance","schedule",
-        "notifications","documents","referrals","profile","settings","finance","book","payments","invoices",
-        "analytics","support","release","members","access","plans_admin","notes"->"rs_bg_training_landscape"
-        else->"rs_bg_header"
+        "login","profile","settings","finance","book","payments","invoices","support","release"->"rs_bg_v117_login"
+        "student_home","community","groups","academy","media","content","lesson_editor","vault","favorites","search",
+        "music","music_admin","classes","events","events_admin","attendance","qr_attendance","schedule","notifications",
+        "documents","referrals","progress","challenges","badges","fightcamp","assessments"->"rs_bg_v117_student"
+        "trainer_home","header","footer","voice","techniques","compare","session","home_training","workout","session_builder",
+        "private_lessons","homework","homework_admin","coachchat","progress_admin","challenge_admin","fightcamp_admin",
+        "members","access","plans_admin","notes","analytics","themes","backgrounds","branding","intro_settings","landing_admin"->"rs_bg_v117_trainer"
+        else->"rs_bg_v117_student"
     }
     val id=context.resources.getIdentifier(drawableName,"drawable",context.packageName)
     return if(id==0)"" else "android.resource://"+context.packageName+"/"+id
@@ -770,7 +765,7 @@ fun RsBrandedHeaderV21(c:RsPalette,store:RsStore,content:@Composable ColumnScope
     val compactLogo=store.s("brand_asset_header_letters_logo","")
     Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.panel)){
         if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.matchParentSize(),store.s(posKeyV21("header"),"CENTER"))
-        Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=store.s(opacityKeyV21("header"),"0.42").toFloatOrNull()?:.42f)))
+        Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=store.s(opacityKeyV21("header"),"0.34").toFloatOrNull()?:.34f)))
         Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
             if(compactLogo.isNotBlank())RsUriPreviewV21(compactLogo,Modifier.height(42.dp).width(82.dp),"CENTER")
             content()
