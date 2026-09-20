@@ -186,7 +186,7 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
     var duration by remember{mutableLongStateOf(controller?.duration?.coerceAtLeast(0L)?:0L)}
 
     LaunchedEffect(controller,volume){
-        controller?.volume=volume
+        runCatching{controller?.volume=volume}
     }
 
 
@@ -205,10 +205,14 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
         onDispose{controller.removeListener(listener)}
     }
 
-    LaunchedEffect(controller,playing,index){
-        while(controller!=null){
-            position=controller.currentPosition.coerceAtLeast(0L)
-            duration=controller.duration.coerceAtLeast(0L)
+    LaunchedEffect(controller){
+        while(true){
+            val p=controller?:break
+            val ok=runCatching{
+                position=p.currentPosition.coerceAtLeast(0L)
+                duration=p.duration.coerceAtLeast(0L)
+            }.isSuccess
+            if(!ok)break
             kotlinx.coroutines.delay(500)
         }
     }
@@ -221,9 +225,11 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
     fun playTrack(i:Int){
         val p=controller?:return
         if(visibleTracks.isEmpty())return
-        p.setMediaItems(rsMediaItemsV90(visibleTracks),i.coerceIn(0,visibleTracks.lastIndex),0L)
-        p.prepare()
-        p.play()
+        runCatching{
+            p.setMediaItems(rsMediaItemsV90(visibleTracks),i.coerceIn(0,visibleTracks.lastIndex),0L)
+            p.prepare()
+            p.play()
+        }.onFailure{feedback=rsMusicBgT90(lang,"player_error")}
     }
 
     RsScroll(
@@ -313,7 +319,7 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
                     onValueChange={v->
                         volume=v
                         store.ps("music_volume_v108",v.toString())
-                        controller?.volume=v
+                        runCatching{controller?.volume=v}
                     },
                     valueRange=0f..1f,
                     modifier=Modifier.weight(1f)
@@ -337,23 +343,27 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
                 Slider(
                     value=if(duration>0)position.toFloat()/duration else 0f,
                     onValueChange={fraction->
-                        controller?.seekTo((duration*fraction).toLong())
+                        runCatching{controller?.seekTo((duration*fraction).toLong())}
                     },
                     modifier=Modifier.fillMaxWidth()
                 )
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=Alignment.CenterVertically){
-                    FilledTonalButton(onClick={controller?.seekToPreviousMediaItem()}){Text("⏮")}
+                    FilledTonalButton(onClick={runCatching{controller?.seekToPreviousMediaItem()}}){Text("⏮")}
                     Button(onClick={
                         val p=controller?:return@Button
-                        if(p.mediaItemCount==0)playTrack(safeIndex)
-                        else if(p.isPlaying)p.pause() else p.play()
+                        runCatching{
+                            if(p.mediaItemCount==0)playTrack(safeIndex)
+                            else if(p.isPlaying)p.pause() else p.play()
+                        }.onFailure{feedback=rsMusicBgT90(lang,"player_error")}
                     }){Text(if(playing)"⏸ "+rsMusicT(lang,"pause") else "▶ "+rsMusicT(lang,"play"))}
-                    FilledTonalButton(onClick={controller?.seekToNextMediaItem()}){Text("⏭")}
+                    FilledTonalButton(onClick={runCatching{controller?.seekToNextMediaItem()}}){Text("⏭")}
                 }
                 OutlinedButton(
                     onClick={
-                        controller?.stop()
-                        controller?.clearMediaItems()
+                        runCatching{
+                            controller?.stop()
+                            controller?.clearMediaItems()
+                        }
                     },
                     modifier=Modifier.fillMaxWidth()
                 ){Text(rsMusicBgT90(lang,"stop_close"))}
@@ -383,11 +393,11 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
                                 rsSavePersistentTracksV90(store,next)
                                 playlists=playlists.map{p->p.copy(uris=p.uris-targetUri)}
                                 rsSaveNamedPlaylistsV108(store,playlists)
-                                if(controller?.mediaItemCount?:0>i)controller?.removeMediaItem(i)
+                                runCatching{if((controller?.mediaItemCount?:0)>i)controller?.removeMediaItem(i)}
                             }else{
                                 playlists=playlists.map{p->if(p.name==activePlaylist)p.copy(uris=p.uris-track.uri) else p}
                                 rsSaveNamedPlaylistsV108(store,playlists)
-                                if(controller?.mediaItemCount?:0>i)controller?.removeMediaItem(i)
+                                runCatching{if((controller?.mediaItemCount?:0)>i)controller?.removeMediaItem(i)}
                             }
                             revision++
                         }){Text(rsMusicT(lang,"remove"))}
@@ -455,12 +465,14 @@ fun RsMiniMusicPlayerV90(
             )
             TextButton(onClick={
                 val p=controller?:return@TextButton
-                if(p.isPlaying)p.pause() else p.play()
+                runCatching{if(p.isPlaying)p.pause() else p.play()}
             }){Text(if(playing)"⏸" else "▶")}
             TextButton(onClick=onOpenMusic){Text(rsMusicBgT90(lang,"open"),fontSize=9.sp)}
             TextButton(onClick={
-                controller?.stop()
-                controller?.clearMediaItems()
+                runCatching{
+                    controller?.stop()
+                    controller?.clearMediaItems()
+                }
             }){Text("✕")}
         }
     }
@@ -475,7 +487,8 @@ fun rsMusicBgT90(lang:RsLang,key:String):String{
         "background_desc" to "Playback stays active while you open other RS KICKBOXING pages or minimize the app. Android media controls appear in the notification area.",
         "none" to "No music added yet.","none_desc" to "Add audio from the device to create your RS training playlist.",
         "now_playing" to "NOW PLAYING","stop_close" to "Stop & close player","open" to "OPEN",
-        "playlists" to "PLAYLISTS","playlist_name" to "Playlist name","create" to "Create","all_music" to "All music","choose_playlist" to "Choose a playlist","delete_playlist" to "Delete","playlist_help_all" to "Choose a named playlist before adding audio to place new tracks inside it.","playlist_help_named" to "New audio files are added to the selected playlist.","volume" to "VOLUME"
+        "playlists" to "PLAYLISTS","playlist_name" to "Playlist name","create" to "Create","all_music" to "All music","choose_playlist" to "Choose a playlist","delete_playlist" to "Delete","playlist_help_all" to "Choose a named playlist before adding audio to place new tracks inside it.","playlist_help_named" to "New audio files are added to the selected playlist.","volume" to "VOLUME",
+        "player_error" to "The audio player was reset safely. Reopen the track and try again."
     )
     val nl=en+mapOf("track" to "Trainingstrack","added" to "audiobestand(en) toegevoegd.","subtitle" to "Muziek blijft spelen in de app en daarbuiten totdat je stopt.","background_player" to "ACHTERGRONDSPELER","background_desc" to "Muziek blijft spelen terwijl je andere RS KICKBOXING-pagina's opent of de app minimaliseert. Android-mediabediening verschijnt in de meldingsbalk.","none" to "Nog geen muziek toegevoegd.","none_desc" to "Voeg audio van je apparaat toe om je RS-trainingsplaylist te maken.","now_playing" to "NU AAN HET SPELEN","stop_close" to "Stoppen & speler sluiten","open" to "OPENEN","playlists" to "PLAYLISTS","playlist_name" to "Naam playlist","create" to "Maken","all_music" to "Alle muziek","choose_playlist" to "Kies playlist","delete_playlist" to "Verwijder","playlist_help_all" to "Kies eerst een playlist om nieuwe audio daarin toe te voegen.","playlist_help_named" to "Nieuwe audiobestanden worden aan de gekozen playlist toegevoegd.","volume" to "VOLUME")
     val pt=en+mapOf("track" to "Faixa de treino","added" to "ficheiro(s) de áudio adicionado(s).","subtitle" to "A música continua dentro e fora da app até parares.","background_player" to "LEITOR EM SEGUNDO PLANO","background_desc" to "A música continua enquanto abres outras páginas RS KICKBOXING ou minimizas a app. Os controlos aparecem na barra de notificações Android.","none" to "Ainda não adicionaste música.","none_desc" to "Adiciona áudio do dispositivo para criar a tua playlist RS.","now_playing" to "A TOCAR AGORA","stop_close" to "Parar & fechar leitor","open" to "ABRIR","playlists" to "PLAYLISTS","playlist_name" to "Nome da playlist","create" to "Criar","all_music" to "Toda a música","choose_playlist" to "Escolher playlist","delete_playlist" to "Eliminar","playlist_help_all" to "Escolhe uma playlist antes de adicionar áudio para colocar as novas faixas nela.","playlist_help_named" to "Novos ficheiros de áudio são adicionados à playlist selecionada.","volume" to "VOLUME")
