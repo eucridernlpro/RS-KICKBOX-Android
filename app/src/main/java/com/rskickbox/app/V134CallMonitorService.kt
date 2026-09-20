@@ -48,15 +48,12 @@ class RsCallMonitorServiceV134:Service(){
 
     private suspend fun monitorLoop(){
         while(isActive){
-            runCatching{
-                val client=rsSupabaseClientV60()
-                val uid=client?.auth?.currentUserOrNull()?.id.orEmpty()
-                if(uid.isBlank()){
-                    delay(5000)
-                    continue
-                }
-                rsTouchPresenceV125()
-                rsCallInboxV131().onSuccess{calls->
+            val client=rsSupabaseClientV60()
+            val uid=client?.auth?.currentUserOrNull()?.id.orEmpty()
+            if(uid.isNotBlank()){
+                runCatching{
+                    rsTouchPresenceV125()
+                    rsCallInboxV131().onSuccess{calls->
                     val incoming=calls.firstOrNull{
                         it.calleeId==uid && it.status=="RINGING"
                     }
@@ -65,6 +62,7 @@ class RsCallMonitorServiceV134:Service(){
                         showIncomingCall(incoming)
                     }
                     if(incoming==null)lastNotifiedCallId=null
+                    }
                 }
             }
             delay(5000)
