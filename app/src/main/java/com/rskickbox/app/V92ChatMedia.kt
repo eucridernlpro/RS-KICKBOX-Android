@@ -267,7 +267,7 @@ suspend fun rsSendCloudGroupMessageV92(
     Unit
 }
 
-private fun rsChatUploadFriendlyErrorV116(lang:RsLang,t:Throwable?):String{
+fun rsChatBackendFriendlyErrorV121(lang:RsLang,t:Throwable?):String{
     val raw=t?.message.orEmpty()
     return when{
         raw.contains("Bucket not found",ignoreCase=true) ||
@@ -454,7 +454,7 @@ fun RsChatComposerV92(
                         onStatus(rsChatMediaT(lang,"uploading"))
                         val result=rsUploadChatMediaV92(context,source,scopeType,scopeId)
                         if(result.isFailure){
-                            onStatus(rsChatUploadFriendlyErrorV116(lang,result.exceptionOrNull()))
+                            onStatus(rsChatBackendFriendlyErrorV121(lang,result.exceptionOrNull()))
                             busy=false
                             return@launch
                         }
@@ -470,7 +470,7 @@ fun RsChatComposerV92(
                         }
                         .onFailure{error->
                             if(uploaded!=null)rsDeleteChatMediaV108(uploaded.path)
-                            onStatus(rsChatUploadFriendlyErrorV116(lang,error))
+                            onStatus(rsChatBackendFriendlyErrorV121(lang,error))
                         }
                     busy=false
                 }
