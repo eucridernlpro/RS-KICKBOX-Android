@@ -30,7 +30,7 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.launch
 
-private const val RS_INTRO_VIDEO_MAX_MS = 15_000L
+private const val RS_INTRO_VIDEO_MAX_MS = 17_000L
 
 private fun localSplashUriV31(context:android.content.Context,source:String,target:String):String?{
     if(source.isBlank())return null
