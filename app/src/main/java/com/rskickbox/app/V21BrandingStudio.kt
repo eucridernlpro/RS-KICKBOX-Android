@@ -40,16 +40,20 @@ private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 
 
 private fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
-    // v0.117: direct artwork from the user's approved ZIP.
-    // These are real Android drawable-nodpi resources, so no runtime extraction is required.
+    // v0.119: every active route has a packaged RS fallback.
     val drawableName=when(slot){
-        "login","profile","settings","finance","book","payments","invoices","support","release"->"rs_bg_v117_login"
-        "student_home","community","groups","academy","media","content","lesson_editor","vault","favorites","search",
-        "music","music_admin","classes","events","events_admin","attendance","qr_attendance","schedule","notifications",
-        "documents","referrals","progress","challenges","badges","fightcamp","assessments"->"rs_bg_v117_student"
-        "trainer_home","header","footer","voice","techniques","compare","session","home_training","workout","session_builder",
-        "private_lessons","homework","homework_admin","coachchat","progress_admin","challenge_admin","fightcamp_admin",
-        "members","access","plans_admin","notes","analytics","themes","backgrounds","branding","intro_settings","landing_admin"->"rs_bg_v117_trainer"
+        "login","profile","settings","finance","book","payments","invoices","support","release",
+        "privacy_admin","promotions","referrals","documents","notifications"->"rs_bg_v117_login"
+
+        "student_home","academy","media","vault","favorites","search","music","classes","events",
+        "checkin","progress","challenges","badges","fightcamp","community","groups","homework",
+        "private_lessons","coachchat","techniques","compare","session","home_training","workout"->"rs_bg_v117_student"
+
+        "trainer_home","header","footer","voice","session_builder","content","lesson_editor","homework_admin",
+        "music_admin","progress_admin","challenge_admin","fightcamp_admin","members","access","plans_admin",
+        "notes","analytics","themes","backgrounds","branding","intro_settings","landing_admin","attendance",
+        "qr_attendance","events_admin","schedule","assessments","guide"->"rs_bg_v117_trainer"
+
         else->"rs_bg_v117_student"
     }
     val id=context.resources.getIdentifier(drawableName,"drawable",context.packageName)
@@ -745,11 +749,11 @@ fun RsPerPageBackgroundV21(store:RsStore,route:String,content:@Composable ()->Un
     val saved=store.s(visualKeyV21(key),"")
     val customVisual=rsVisualUriUsableV116(context,saved)
     val uri=if(customVisual)saved else rsBundledVisualUriV113(context,key)
-    val configuredOpacity=store.s(opacityKeyV21(key),"0.60").toFloatOrNull()?:.60f
+    val configuredOpacity=store.s(opacityKeyV21(key),"0.34").toFloatOrNull()?:.34f
     // Keep bundled art clearly visible. Custom Visual Studio backgrounds still use
     // the trainer-selected opacity without being overridden here.
-    val opacity=if(customVisual)configuredOpacity.coerceIn(0f,.88f)
-        else configuredOpacity.coerceIn(0f,.42f)
+    val opacity=if(customVisual)configuredOpacity.coerceIn(0f,.78f)
+        else configuredOpacity.coerceIn(0f,.34f)
     val pos=store.s(posKeyV21(key),"CENTER")
     Box(Modifier.fillMaxSize()){
         if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.fillMaxSize(),pos)
