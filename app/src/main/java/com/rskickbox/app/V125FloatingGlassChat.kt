@@ -2,6 +2,7 @@ package com.rskickbox.app
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -13,7 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -33,10 +37,10 @@ private fun RsFloatingGlassPanelV125(
     content:@Composable ColumnScope.()->Unit
 ){
     Surface(
-        color=c.panel.copy(alpha=.72f),
+        color=Color.Black.copy(alpha=.72f),
         shape=RoundedCornerShape(26.dp),
-        border=BorderStroke(1.dp,c.gold.copy(alpha=.18f)),
-        tonalElevation=8.dp,
+        border=BorderStroke(1.dp,c.gold.copy(alpha=.30f)),
+        tonalElevation=12.dp,
         modifier=modifier
     ){
         Column(
@@ -54,9 +58,9 @@ private fun RsContactPresenceV125(
     onClick:()->Unit
 ){
     Surface(
-        color=if(contact.online)c.gold.copy(alpha=.075f) else c.panel.copy(alpha=.50f),
-        shape=RoundedCornerShape(20.dp),
-        border=BorderStroke(1.dp,c.gold.copy(alpha=if(contact.online).24f else .10f)),
+        color=if(contact.online)c.gold.copy(alpha=.10f) else Color.Black.copy(alpha=.58f),
+        shape=RoundedCornerShape(22.dp),
+        border=BorderStroke(1.dp,c.gold.copy(alpha=if(contact.online).42f else .16f)),
         modifier=Modifier.fillMaxWidth().clickable(onClick=onClick)
     ){
         Row(
@@ -77,11 +81,93 @@ private fun RsContactPresenceV125(
                 Text(contact.displayName.ifBlank{contact.email},color=c.bright,fontWeight=FontWeight.Black,fontSize=14.sp)
                 Text(if(contact.online)"Online" else "Offline",color=if(contact.online)Color(0xFF36D27F) else Color(0xFFE65B63),fontSize=10.sp,fontWeight=FontWeight.Bold)
             }
-            Text("›",color=c.gold,fontSize=23.sp,fontWeight=FontWeight.Black)
+            Surface(
+                shape=CircleShape,
+                color=c.gold.copy(alpha=.10f),
+                border=BorderStroke(1.dp,c.gold.copy(alpha=.28f)),
+                modifier=Modifier.size(34.dp)
+            ){
+                Box(contentAlignment=Alignment.Center){
+                    Text("›",color=c.gold,fontSize=22.sp,fontWeight=FontWeight.Black)
+                }
+            }
         }
     }
 }
 
+@Composable
+private fun RsRoyalChatTabV135(
+    c:RsPalette,
+    selected:Boolean,
+    label:String,
+    symbol:String,
+    onClick:()->Unit
+){
+    Surface(
+        color=if(selected)c.gold.copy(alpha=.18f) else Color.Black.copy(alpha=.48f),
+        shape=RoundedCornerShape(18.dp),
+        border=BorderStroke(1.dp,if(selected)c.gold.copy(alpha=.68f) else c.gold.copy(alpha=.18f)),
+        tonalElevation=if(selected)8.dp else 2.dp,
+        modifier=Modifier.clickable(onClick=onClick)
+    ){
+        Row(
+            Modifier.padding(horizontal=12.dp,vertical=8.dp),
+            verticalAlignment=Alignment.CenterVertically,
+            horizontalArrangement=Arrangement.spacedBy(6.dp)
+        ){
+            Text(symbol,color=if(selected)c.bright else c.gold,fontSize=11.sp,fontWeight=FontWeight.Black)
+            Text(label,color=if(selected)c.bright else c.text,fontSize=10.sp,fontWeight=FontWeight.Black)
+        }
+    }
+}
+
+@Composable
+private fun RsRoyalChatMenuCardV135(
+    c:RsPalette,
+    symbol:String,
+    title:String,
+    subtitle:String,
+    badge:String,
+    ai:Boolean=false,
+    onClick:()->Unit
+){
+    val accent=if(ai)Color(0xFF58C9FF) else c.gold
+    Surface(
+        color=Color.Black.copy(alpha=.62f),
+        shape=RoundedCornerShape(24.dp),
+        border=BorderStroke(1.dp,accent.copy(alpha=.34f)),
+        tonalElevation=10.dp,
+        modifier=Modifier.fillMaxWidth().clickable(onClick=onClick)
+    ){
+        Row(
+            Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment=Alignment.CenterVertically,
+            horizontalArrangement=Arrangement.spacedBy(12.dp)
+        ){
+            Surface(
+                shape=RoundedCornerShape(18.dp),
+                color=accent.copy(alpha=.10f),
+                border=BorderStroke(1.dp,accent.copy(alpha=.34f)),
+                modifier=Modifier.size(54.dp)
+            ){
+                Box(contentAlignment=Alignment.Center){
+                    Text(symbol,color=accent,fontSize=21.sp,fontWeight=FontWeight.Black)
+                }
+            }
+            Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)){
+                Text(title,color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp,letterSpacing=.35.sp)
+                Text(subtitle,color=c.muted,fontSize=9.sp,lineHeight=13.sp)
+            }
+            Surface(
+                shape=RoundedCornerShape(12.dp),
+                color=accent.copy(alpha=.10f),
+                border=BorderStroke(1.dp,accent.copy(alpha=.22f))
+            ){
+                Text(badge,color=accent,fontSize=8.sp,fontWeight=FontWeight.Black,modifier=Modifier.padding(horizontal=7.dp,vertical=5.dp))
+            }
+        }
+    }
+}
 @Composable
 fun RsFloatingGlassChatHubV125(
     c:RsPalette,
