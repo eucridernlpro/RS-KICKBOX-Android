@@ -2,6 +2,7 @@ package com.rskickbox.app
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -324,11 +325,16 @@ fun RsActiveCallDialogV133(
     var engineState by remember(call.id){mutableStateOf("CONNECTING")}
     var micOn by remember(call.id){mutableStateOf(true)}
     var cameraOn by remember(call.id){mutableStateOf(isVideo)}
+    var speakerOn by remember(call.id){mutableStateOf(isVideo)}
+    val audioManager=remember{context.getSystemService(Context.AUDIO_SERVICE) as AudioManager}
     val engine=remember(call.id){
         RsWebRtcEngineV132(context,call.id,isCaller,isVideo,scope){engineState=it}
     }
 
     LaunchedEffect(engine){
+        audioManager.mode=AudioManager.MODE_IN_COMMUNICATION
+        @Suppress("DEPRECATION")
+        audioManager.isSpeakerphoneOn=speakerOn
         engine.start()
     }
     LaunchedEffect(call.id){
@@ -342,7 +348,16 @@ fun RsActiveCallDialogV133(
             delay(1500)
         }
     }
-    DisposableEffect(engine){onDispose{engine.dispose()}}
+    DisposableEffect(engine){
+        onDispose{
+            engine.dispose()
+            runCatching{
+                @Suppress("DEPRECATION")
+                audioManager.isSpeakerphoneOn=false
+                audioManager.mode=AudioManager.MODE_NORMAL
+            }
+        }
+    }
 
     Dialog(
         onDismissRequest={},
@@ -366,10 +381,14 @@ fun RsActiveCallDialogV133(
                     horizontalAlignment=Alignment.CenterHorizontally,
                     verticalArrangement=Arrangement.spacedBy(12.dp)
                 ){
-                    Surface(shape=CircleShape,color=c.gold.copy(alpha=.18f),modifier=Modifier.size(116.dp)){
-                        Box(contentAlignment=Alignment.Center){Text("RS",color=c.bright,fontSize=42.sp,fontWeight=FontWeight.Black)}
-                    }
-                    Text(call.peerName,color=Color.White,fontSize=22.sp,fontWeight=FontWeight.Black)
+                    RsMemberAvatarV68(
+                        c,
+                        call.peerEmail,
+                        call.peerName.ifBlank{call.peerEmail},
+                        size=138.dp
+                    )
+                    Text(call.peerName.ifBlank{call.peerEmail},color=Color.White,fontSize=22.sp,fontWeight=FontWeight.Black)
+                    Text("RS AUDIO CALL",color=c.gold,fontSize=11.sp,fontWeight=FontWeight.Black)
                 }
             }
 
@@ -391,6 +410,13 @@ fun RsActiveCallDialogV133(
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly){
                     OutlinedButton(onClick={micOn=!micOn;engine.setMicEnabled(micOn)}){
                         Text(if(micOn)"🎙" else "🔇")
+                    }
+                    OutlinedButton(onClick={
+                        speakerOn=!speakerOn
+                        @Suppress("DEPRECATION")
+                        audioManager.isSpeakerphoneOn=speakerOn
+                    }){
+                        Text(if(speakerOn)"🔊" else "🔈")
                     }
                     if(isVideo)OutlinedButton(onClick={cameraOn=!cameraOn;engine.setCameraEnabled(cameraOn)}){
                         Text(if(cameraOn)"▣" else "□")
