@@ -112,7 +112,6 @@ fun RsDirectCallControlsV133(
     var status by remember{mutableStateOf("")}
     var pendingType by remember{mutableStateOf<String?>(null)}
     var pendingAcceptCallId by remember{mutableStateOf<String?>(null)}
-    var callDialog by remember{mutableStateOf<RsCallV131?>(null)}
     var refresh by remember{mutableIntStateOf(0)}
 
     LaunchedEffect(role,peerId){
@@ -158,7 +157,6 @@ fun RsDirectCallControlsV133(
                         it.peerId==resolvedPeerId && it.status in setOf("RINGING","ACCEPTED")
                     }
                     active=now
-                    if(now?.status=="ACCEPTED")callDialog=now
                 }
                 .onFailure{
                     if(status.isBlank())status=rsCallT133(lang,"unavailable")
@@ -309,17 +307,10 @@ fun RsDirectCallControlsV133(
         }
     }
 
-    callDialog?.let{accepted->
-        RsActiveCallDialogV133(c,lang,accepted,myId){
-            callDialog=null
-            active=null
-            refresh++
-        }
-    }
 }
 
 @Composable
-private fun RsActiveCallDialogV133(
+fun RsActiveCallDialogV133(
     c:RsPalette,
     lang:RsLang,
     call:RsCallV131,
