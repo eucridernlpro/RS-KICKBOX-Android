@@ -49,6 +49,7 @@ fun RsTrainerAiReferenceChatV125(c:RsPalette,lang:RsLang){
     var saving by remember{mutableStateOf(false)}
     var confirmed by remember{mutableStateOf(false)}
     var lastSaved by remember{mutableStateOf<RsTrainingMediaItemV55?>(null)}
+    var attachmentMenu by remember{mutableStateOf(false)}
 
     fun accept(uri:Uri?){
         if(uri==null)return
@@ -62,7 +63,8 @@ fun RsTrainerAiReferenceChatV125(c:RsPalette,lang:RsLang){
         status=""
     }
 
-    val gallery=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){accept(it)}
+    val imagePicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){accept(it)}
+    val videoPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){accept(it)}
     val files=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
         if(uri!=null){
             runCatching{context.contentResolver.takePersistableUriPermission(uri,android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)}
@@ -94,17 +96,41 @@ fun RsTrainerAiReferenceChatV125(c:RsPalette,lang:RsLang){
             border=BorderStroke(1.dp,c.gold.copy(alpha=.16f))
         ){
             Column(Modifier.padding(13.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
-                    Button(
-                        onClick={gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))},
-                        enabled=!saving&&!classifying,
-                        modifier=Modifier.weight(1f)
-                    ){Text("＋ Gallery",fontSize=10.sp)}
+                Box{
                     OutlinedButton(
-                        onClick={files.launch(arrayOf("image/*","video/*"))},
+                        onClick={attachmentMenu=true},
                         enabled=!saving&&!classifying,
-                        modifier=Modifier.weight(1f)
-                    ){Text("Files",fontSize=10.sp)}
+                        modifier=Modifier.fillMaxWidth()
+                    ){
+                        Text("＋  Add trainer reference",fontSize=10.sp,fontWeight=FontWeight.Bold)
+                    }
+                    DropdownMenu(
+                        expanded=attachmentMenu,
+                        onDismissRequest={attachmentMenu=false},
+                        containerColor=c.panel
+                    ){
+                        DropdownMenuItem(
+                            text={Text("▣  Photo")},
+                            onClick={
+                                attachmentMenu=false
+                                imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text={Text("▶  Video")},
+                            onClick={
+                                attachmentMenu=false
+                                videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text={Text("⌑  File")},
+                            onClick={
+                                attachmentMenu=false
+                                files.launch(arrayOf("image/*","video/*"))
+                            }
+                        )
+                    }
                 }
 
                 val selected=source
