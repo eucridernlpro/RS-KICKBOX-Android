@@ -84,7 +84,7 @@ suspend fun rsUploadCloudTrainingMediaV73(
     description:String,
     accessTier:String,
     published:Boolean=true
-):Result<Unit> = runCatching{
+):Result<String> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     val mime=rsCloudMediaMimeV73(context,source)
     val kind=rsCloudMediaKindV73(mime)
@@ -117,7 +117,7 @@ suspend fun rsUploadCloudTrainingMediaV73(
         throw t
     }
 
-    Unit
+    path
 }
 
 suspend fun rsCloudTrainingMediaLocalUriV73(
