@@ -7,6 +7,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
+import android.os.Build
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
 import android.net.Uri
@@ -104,37 +106,47 @@ private fun rsChatSourceSizeV115(context:Context,uri:Uri):Long{
 }
 
 private fun rsChatImageBytesV92(context:Context,uri:Uri):ByteArray{
-    val bounds=BitmapFactory.Options().apply{inJustDecodeBounds=true}
-    context.contentResolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it,null,bounds)}
-        ?:error("Could not read image.")
-    require(bounds.outWidth>0&&bounds.outHeight>0){"Could not decode image."}
-
-    var sample=1
-    while(bounds.outWidth/sample>1800 || bounds.outHeight/sample>1800)sample*=2
-    val opts=BitmapFactory.Options().apply{
-        inSampleSize=sample
-        inPreferredConfig=Bitmap.Config.RGB_565
-    }
-    val original=context.contentResolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it,null,opts)}
-        ?:error("Could not decode image.")
-    try{
-        val maxSide=max(original.width,original.height).coerceAtLeast(1)
-        val scale=(1440f/maxSide).coerceAtMost(1f)
-        val width=(original.width*scale).toInt().coerceAtLeast(1)
-        val height=(original.height*scale).toInt().coerceAtLeast(1)
-        val bitmap=if(width!=original.width||height!=original.height)
-            Bitmap.createScaledBitmap(original,width,height,true)
-        else original
-        try{
-            return ByteArrayOutputStream().use{out->
-                bitmap.compress(Bitmap.CompressFormat.JPEG,82,out)
-                out.toByteArray()
+    // Photo Picker can return very large HEIC/JPEG/PNG images. Decode them to a
+    // bounded software bitmap before compression so selecting/sending a photo
+    // cannot exhaust the app process while video/audio continue using binary IO.
+    val bitmap:Bitmap=if(Build.VERSION.SDK_INT>=28){
+        val source=ImageDecoder.createSource(context.contentResolver,uri)
+        ImageDecoder.decodeBitmap(source){decoder,info,_->
+            val sourceW=info.size.width.coerceAtLeast(1)
+            val sourceH=info.size.height.coerceAtLeast(1)
+            val maxSide=max(sourceW,sourceH)
+            if(maxSide>1440){
+                val scale=1440f/maxSide.toFloat()
+                decoder.setTargetSize(
+                    (sourceW*scale).toInt().coerceAtLeast(1),
+                    (sourceH*scale).toInt().coerceAtLeast(1)
+                )
             }
-        }finally{
-            if(bitmap!==original)bitmap.recycle()
+            decoder.allocator=ImageDecoder.ALLOCATOR_SOFTWARE
+            decoder.isMutableRequired=false
+        }
+    }else{
+        val bounds=BitmapFactory.Options().apply{inJustDecodeBounds=true}
+        context.contentResolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it,null,bounds)}
+            ?:error("Could not read image.")
+        require(bounds.outWidth>0&&bounds.outHeight>0){"Could not decode image."}
+        var sample=1
+        while(bounds.outWidth/sample>1440 || bounds.outHeight/sample>1440)sample*=2
+        val opts=BitmapFactory.Options().apply{
+            inSampleSize=sample
+            inPreferredConfig=Bitmap.Config.RGB_565
+        }
+        context.contentResolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it,null,opts)}
+            ?:error("Could not decode image.")
+    }
+    try{
+        require(bitmap.width>0&&bitmap.height>0){"Could not decode image."}
+        return ByteArrayOutputStream().use{out->
+            require(bitmap.compress(Bitmap.CompressFormat.JPEG,82,out)){"Could not prepare image."}
+            out.toByteArray()
         }
     }finally{
-        original.recycle()
+        runCatching{bitmap.recycle()}
     }
 }
 
