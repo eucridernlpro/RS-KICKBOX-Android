@@ -102,6 +102,7 @@ fun RsDirectCallControlsV133(
     var active by remember{mutableStateOf<RsCallV131?>(null)}
     var status by remember{mutableStateOf("")}
     var pendingType by remember{mutableStateOf<String?>(null)}
+    var pendingAcceptCallId by remember{mutableStateOf<String?>(null)}
     var callDialog by remember{mutableStateOf<RsCallV131?>(null)}
     var refresh by remember{mutableIntStateOf(0)}
 
@@ -148,10 +149,19 @@ fun RsDirectCallControlsV133(
         ActivityResultContracts.RequestMultiplePermissions()
     ){result->
         val type=pendingType
+        val acceptCallId=pendingAcceptCallId
         pendingType=null
-        if(type!=null&&result.values.all{it}){
-            beginCall(type)
-        }else if(type!=null){
+        pendingAcceptCallId=null
+        if(result.values.all{it}){
+            when{
+                type!=null->beginCall(type)
+                acceptCallId!=null->scope.launch{
+                    rsSetCallStatusV131(acceptCallId,"ACCEPTED")
+                        .onSuccess{refresh++}
+                        .onFailure{status=it.message?:rsCallT133(lang,"unavailable")}
+                }
+            }
+        }else if(type!=null||acceptCallId!=null){
             status=rsCallT133(lang,"permission")
         }
     }
@@ -213,6 +223,7 @@ fun RsDirectCallControlsV133(
                                     }
                                 }else{
                                     pendingType=null
+                                    pendingAcceptCallId=call.id
                                     permissionLauncher.launch(acceptNeeds.toTypedArray())
                                 }
                             },
