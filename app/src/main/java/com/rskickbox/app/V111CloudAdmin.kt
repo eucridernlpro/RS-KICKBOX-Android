@@ -80,6 +80,23 @@ suspend fun rsRegisterStudentMediaAssetV111(
     Unit
 }
 
+
+
+suspend fun rsRemoveStudentMediaAssetByPathV115(
+    bucket:String,
+    path:String
+):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("Cloud backend is not configured.")
+    client.postgrest.rpc(
+        "rs_remove_student_media_asset_by_path",
+        buildJsonObject{
+            put("p_storage_bucket",bucket)
+            put("p_storage_path",path)
+        }
+    )
+    Unit
+}
+
 suspend fun rsStudentMediaAssetsV111(studentId:String):Result<List<RsStudentMediaAssetV111>> = runCatching{
     val client=rsSupabaseClientV60() ?: error("Cloud backend is not configured.")
     client.postgrest.rpc(
