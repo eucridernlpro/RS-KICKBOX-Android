@@ -4,7 +4,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.graphics.ImageDecoder
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.LruCache
 import android.graphics.drawable.AnimatedImageDrawable
 import android.widget.ImageView
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -40,28 +42,37 @@ private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 
 
 fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
-    // v0.119: every active route has a packaged RS fallback.
-    val drawableName=when(slot){
-        "coachchat","tile_student_coachchat","tile_trainer_coachchat"->"rs_chat_experience_v127"
-        "student_home","session","home_training","classes","academy",
-        "tile_student_session","tile_student_home_training","tile_student_classes","tile_student_academy",
-        "tile_trainer_session_builder","tile_trainer_classes"->"rs_training_session_v127"
-        "fightcamp","fightcamp_admin","challenges",
-        "tile_student_fightcamp","tile_student_challenges","tile_trainer_fightcamp_admin","tile_trainer_challenge_admin"->"rs_fight_camp_v127"
-
+    // v0.129: use several packaged RS artworks across dashboard tiles and pages
+    // instead of collapsing most surfaces to one student/trainer image.
+    val route=slot
+        .removePrefix("tile_student_")
+        .removePrefix("tile_trainer_")
+        .removePrefix("tile_")
+    val drawableName=when(route){
+        "coachchat","media","voice","notifications","groups"->"rs_chat_experience_v127"
+        "session","session_builder","home_training","workout","classes","academy","homework","homework_admin"->"rs_training_session_v127"
+        "fightcamp","fightcamp_admin","challenges","challenge_admin"->"rs_fight_camp_v127"
+        "techniques","compare","progress","progress_admin","assessments","badges"->"rs_bg_v117_student"
+        "community","events","events_admin","members","attendance","checkin","private_lessons","schedule"->"rs_bg_v117_trainer"
+        "student_home"->"rs_training_session_v127"
+        "trainer_home"->"rs_bg_v117_trainer"
         "login","profile","settings","finance","book","payments","invoices","support","release",
-        "privacy_admin","promotions","referrals","documents","notifications"->"rs_bg_v117_login"
-
-        "student_home","academy","media","vault","favorites","search","music","classes","events",
-        "checkin","progress","challenges","badges","fightcamp","community","groups","homework",
-        "private_lessons","coachchat","techniques","compare","session","home_training","workout"->"rs_bg_v117_student"
-
-        "trainer_home","header","footer","voice","session_builder","content","lesson_editor","homework_admin",
-        "music_admin","progress_admin","challenge_admin","fightcamp_admin","members","access","plans_admin",
-        "notes","analytics","themes","backgrounds","branding","intro_settings","landing_admin","attendance",
-        "qr_attendance","events_admin","schedule","assessments","guide"->"rs_bg_v117_trainer"
-
-        else->"rs_bg_v117_student"
+        "privacy_admin","promotions","referrals","documents","themes","backgrounds","branding",
+        "intro_settings","landing_admin","access","plans_admin","notes","analytics","guide",
+        "student_guide","content","music","music_admin","vault","favorites","history"->"rs_bg_v117_login"
+        "header","footer"->"rs_bg_v117_trainer"
+        else->{
+            // Deterministic spread so unknown/new routes also do not all look identical.
+            val pack=listOf(
+                "rs_training_session_v127",
+                "rs_fight_camp_v127",
+                "rs_chat_experience_v127",
+                "rs_bg_v117_student",
+                "rs_bg_v117_trainer",
+                "rs_bg_v117_login"
+            )
+            pack[(route.hashCode() and Int.MAX_VALUE)%pack.size]
+        }
     }
     val id=context.resources.getIdentifier(drawableName,"drawable",context.packageName)
     return if(id==0)"" else "android.resource://"+context.packageName+"/"+id
@@ -695,6 +706,30 @@ fun RsBrandSiteSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
     }
 }
 
+private val rsPreviewBitmapCacheV129=object:LruCache<String,Bitmap>(12*1024*1024){
+    override fun sizeOf(key:String,value:Bitmap)=value.allocationByteCount
+}
+
+private fun rsCachedPreviewBitmapV129(context:android.content.Context,uri:Uri):Bitmap?{
+    val key=uri.toString()
+    rsPreviewBitmapCacheV129.get(key)?.let{return it}
+    return runCatching{
+        val resolver=context.contentResolver
+        val bounds=BitmapFactory.Options().apply{inJustDecodeBounds=true}
+        resolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it,null,bounds)}
+        if(bounds.outWidth<=0||bounds.outHeight<=0)return@runCatching null
+        var sample=1
+        while(bounds.outWidth/sample>720 || bounds.outHeight/sample>720)sample*=2
+        val opts=BitmapFactory.Options().apply{
+            inSampleSize=sample
+            inPreferredConfig=Bitmap.Config.RGB_565
+        }
+        val bitmap=resolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it,null,opts)}
+        if(bitmap!=null)rsPreviewBitmapCacheV129.put(key,bitmap)
+        bitmap
+    }.getOrNull()
+}
+
 @Composable
 fun RsUriPreviewV21(uri:String,modifier:Modifier=Modifier,position:String="CENTER"){
     val context=LocalContext.current
@@ -729,23 +764,35 @@ fun RsUriPreviewV21(uri:String,modifier:Modifier=Modifier,position:String="CENTE
                 }
             )
         }
-        else->AndroidView(
+        "GIF"->AndroidView(
             factory={ctx->ImageView(ctx).apply{adjustViewBounds=true;scaleType=ImageView.ScaleType.CENTER_CROP}},
             modifier=modifier,
             update={view->
-                runCatching{
-                    if(kind=="GIF" && Build.VERSION.SDK_INT>=28){
-                        val src=ImageDecoder.createSource(context.contentResolver,parsed)
-                        val drawable=ImageDecoder.decodeDrawable(src)
-                        view.setImageDrawable(drawable)
-                        (drawable as? AnimatedImageDrawable)?.apply{
-                            repeatCount=AnimatedImageDrawable.REPEAT_INFINITE
-                            start()
-                        }
-                    }else view.setImageURI(parsed)
+                if(Build.VERSION.SDK_INT>=28)runCatching{
+                    val src=ImageDecoder.createSource(context.contentResolver,parsed)
+                    val drawable=ImageDecoder.decodeDrawable(src)
+                    view.setImageDrawable(drawable)
+                    (drawable as? AnimatedImageDrawable)?.apply{
+                        repeatCount=AnimatedImageDrawable.REPEAT_INFINITE
+                        start()
+                    }
                 }
             }
         )
+        else->{
+            val bitmap=remember(uri){rsCachedPreviewBitmapV129(context,parsed)}
+            AndroidView(
+                factory={ctx->ImageView(ctx).apply{adjustViewBounds=true;scaleType=ImageView.ScaleType.CENTER_CROP}},
+                modifier=modifier,
+                update={view->
+                    view.scaleType=when(position){
+                        "LEFT","RIGHT","TOP","BOTTOM"->ImageView.ScaleType.CENTER_CROP
+                        else->ImageView.ScaleType.CENTER_CROP
+                    }
+                    view.setImageBitmap(bitmap)
+                }
+            )
+        }
     }
 }
 
