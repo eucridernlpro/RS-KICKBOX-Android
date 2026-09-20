@@ -2,6 +2,7 @@ package com.rskickbox.app
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -151,8 +152,12 @@ fun RsCommunicationHubV122(
             }
         }
 
+        Box(Modifier.fillMaxWidth().weight(1f)){
         when(selected){
-            RsCommunicationTabV122.ALL->{
+            RsCommunicationTabV122.ALL->Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                verticalArrangement=Arrangement.spacedBy(10.dp)
+            ){
                 Text(rsCommT122(lang,"quick"),color=c.gold,fontWeight=FontWeight.Black,fontSize=11.sp)
                 RsCommunicationQuickCardV122(c,rsCommT122(lang,"private"),rsCommT122(lang,"private_desc"),"💬"){selected=RsCommunicationTabV122.PRIVATE}
                 RsCommunicationQuickCardV122(c,rsCommT122(lang,"groups"),rsCommT122(lang,"groups_desc"),"👥"){selected=RsCommunicationTabV122.GROUPS}
@@ -181,6 +186,7 @@ fun RsCommunicationHubV122(
             RsCommunicationTabV122.AI->RsTechniqueCoachV27(c,lang,store,role)
             RsCommunicationTabV122.MEDIA->RsTrainingMediaV55(c,store,lang,role)
             RsCommunicationTabV122.STUDENTS->if(role==RsRole.TRAINER)RsMemberManager(c,store,lang)
+        }
         }
     }
 }
