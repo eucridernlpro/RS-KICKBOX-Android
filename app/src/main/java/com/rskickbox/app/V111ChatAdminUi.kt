@@ -60,7 +60,7 @@ fun RsTrainerMessageAdminV111(
                     scope.launch{
                         onEdit(draft)
                             .onSuccess{editing=false;onStatus(rsChatAdminT111(lang,"updated"));onChanged()}
-                            .onFailure{onStatus(it.message.orEmpty())}
+                            .onFailure{onStatus(rsChatBackendFriendlyErrorV121(lang,it))}
                     }
                 },
                 enabled=!busy&&(draft.isNotBlank()),
@@ -87,7 +87,7 @@ fun RsTrainerMessageAdminV111(
                         scope.launch{
                             onDelete()
                                 .onSuccess{pendingDelete=false;onStatus(rsChatAdminT111(lang,"deleted"));onChanged()}
-                                .onFailure{onStatus(it.message.orEmpty())}
+                                .onFailure{onStatus(rsChatBackendFriendlyErrorV121(lang,it))}
                         }
                     }else pendingDelete=true
                 },
@@ -117,7 +117,7 @@ fun RsTrainerClearConversationV111(
                     scope.launch{
                         onClear()
                             .onSuccess{confirm=false;onStatus(rsChatAdminT111(lang,"cleared"));onChanged()}
-                            .onFailure{onStatus(it.message.orEmpty())}
+                            .onFailure{onStatus(rsChatBackendFriendlyErrorV121(lang,it))}
                     }
                 }else confirm=true
             },
