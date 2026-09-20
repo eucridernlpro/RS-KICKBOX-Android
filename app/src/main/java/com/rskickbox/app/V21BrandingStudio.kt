@@ -38,48 +38,25 @@ private fun posKeyV21(slot:String)="visual_v21_pos_$slot"
 private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 
 
-private fun rsVisualPackFileV115(context:android.content.Context,fileName:String):String{
-    if(fileName.isBlank())return ""
-    return runCatching{
-        val dir=File(context.filesDir,"rs_visual_pack_v116").apply{mkdirs()}
-        val wanted=File(dir,fileName)
-        if(!wanted.exists()||wanted.length()==0L){
-            ZipInputStream(context.assets.open("rs_visual_pack_v115.zip")).use{zip->
-                var entry=zip.nextEntry
-                while(entry!=null){
-                    val safeName=File(entry.name).name
-                    if(!entry.isDirectory && safeName.startsWith("rs_bg_v115_") && safeName.endsWith(".webp")){
-                        val target=File(dir,safeName)
-                        target.outputStream().use{out->zip.copyTo(out)}
-                    }
-                    zip.closeEntry()
-                    entry=zip.nextEntry
-                }
-            }
-        }
-        if(wanted.exists()&&wanted.length()>0L)Uri.fromFile(wanted).toString() else ""
-    }.getOrDefault("")
-}
-
 private fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
-    // v0.116: packaged Android resources are the reliable fallback.
-    // Do not depend on runtime ZIP extraction for page backgrounds.
     val drawableName=when(slot){
-        "login"->"rs_bg_login"
-        "student_home"->"rs_bg_student_home"
-        "trainer_home"->"rs_bg_trainer_home"
-        "header","footer","themes","backgrounds","branding","intro_settings","landing_admin"->"rs_bg_header"
-        "voice","techniques","compare"->"rs_bg_technique"
-        "session","home_training","workout","session_builder",
-        "progress","challenges","badges","fightcamp","progress_admin","challenge_admin","fightcamp_admin","assessments"->"rs_bg_kicks"
-        "private_lessons","homework","homework_admin",
-        "coachchat","community","groups"->"rs_bg_coaching_landscape"
-        "academy","media","content","lesson_editor","vault","favorites","search",
-        "music","music_admin",
-        "classes","events","events_admin","attendance","qr_attendance","schedule","notifications","documents","referrals",
+        "login"->"rs_bg_v116_login"
+        "student_home"->"rs_bg_v116_student"
+        "trainer_home"->"rs_bg_v116_trainer"
+        "header","footer","themes","backgrounds","branding","intro_settings","landing_admin"->"rs_bg_v116_header"
+        "voice"->"rs_bg_v116_ai"
+        "techniques","compare"->"rs_bg_v116_technique"
+        "session","home_training","workout","session_builder"->"rs_bg_v116_training"
+        "private_lessons","homework","homework_admin"->"rs_bg_v116_private"
+        "coachchat"->"rs_bg_v116_chat"
+        "community","groups"->"rs_bg_v116_community"
+        "academy","media","content","lesson_editor","vault","favorites","search"->"rs_bg_v116_library"
+        "music","music_admin"->"rs_bg_v116_music"
+        "progress","challenges","badges","fightcamp","progress_admin","challenge_admin","fightcamp_admin","assessments"->"rs_bg_v116_performance"
+        "classes","events","events_admin","attendance","qr_attendance","schedule","notifications","documents","referrals"->"rs_bg_v116_club"
         "profile","settings","finance","book","payments","invoices","analytics","support","release",
-        "members","access","plans_admin","notes"->"rs_bg_training_landscape"
-        else->"rs_bg_header"
+        "members","access","plans_admin","notes"->"rs_bg_v116_account"
+        else->"rs_bg_v116_header"
     }
     val id=context.resources.getIdentifier(drawableName,"drawable",context.packageName)
     return if(id==0)"" else "android.resource://"+context.packageName+"/"+id
@@ -107,8 +84,11 @@ private fun rsVisualUriUsableV116(context:android.content.Context,value:String):
 }
 
 private fun rsVisualUriWithBundledFallbackV113(context:android.content.Context,store:RsStore,slot:String):String{
-    val saved=store.s(visualKeyV21(slot),"")
-    return if(rsVisualUriUsableV116(context,saved)) saved else rsBundledVisualUriV113(context,slot)
+    val key=visualKeyV21(slot)
+    val saved=store.s(key,"")
+    if(rsVisualUriUsableV116(context,saved))return saved
+    if(saved.isNotBlank())store.ps(key,"")
+    return rsBundledVisualUriV113(context,slot)
 }
 
 
