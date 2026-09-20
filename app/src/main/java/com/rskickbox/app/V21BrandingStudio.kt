@@ -30,6 +30,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.launch
+import java.io.File
+import java.util.zip.ZipInputStream
 
 private data class VisualSlotV21(val key:String,val title:String,val group:String,val size:String,val hint:String)
 private fun visualKeyV21(slot:String)="visual_v21_$slot"
@@ -37,7 +39,54 @@ private fun posKeyV21(slot:String)="visual_v21_pos_$slot"
 private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 
 
+private fun rsVisualPackFileV115(context:android.content.Context,fileName:String):String{
+    if(fileName.isBlank())return ""
+    return runCatching{
+        val dir=File(context.filesDir,"rs_visual_pack_v115").apply{mkdirs()}
+        val wanted=File(dir,fileName)
+        if(!wanted.exists()||wanted.length()==0L){
+            ZipInputStream(context.assets.open("rs_visual_pack_v115.zip")).use{zip->
+                var entry=zip.nextEntry
+                while(entry!=null){
+                    val safeName=File(entry.name).name
+                    if(!entry.isDirectory && safeName.startsWith("rs_bg_v115_") && safeName.endsWith(".webp")){
+                        val target=File(dir,safeName)
+                        target.outputStream().use{out->zip.copyTo(out)}
+                    }
+                    zip.closeEntry()
+                    entry=zip.nextEntry
+                }
+            }
+        }
+        if(wanted.exists()&&wanted.length()>0L)Uri.fromFile(wanted).toString() else ""
+    }.getOrDefault("")
+}
+
 private fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
+    val packName=when(slot){
+        "login"->"rs_bg_v115_login.webp"
+        "student_home"->"rs_bg_v115_student.webp"
+        "trainer_home"->"rs_bg_v115_trainer.webp"
+        "header"->"rs_bg_v115_header.webp"
+        "footer"->"rs_bg_v115_footer.webp"
+        "voice"->"rs_bg_v115_ai.webp"
+        "techniques","compare"->"rs_bg_v115_technique.webp"
+        "session","home_training","workout","session_builder"->"rs_bg_v115_training.webp"
+        "private_lessons","homework","homework_admin"->"rs_bg_v115_private.webp"
+        "coachchat"->"rs_bg_v115_chat.webp"
+        "community","groups"->"rs_bg_v115_community.webp"
+        "academy","media","content","lesson_editor","vault","favorites","search"->"rs_bg_v115_library.webp"
+        "music","music_admin"->"rs_bg_v115_music.webp"
+        "progress","challenges","badges","fightcamp","progress_admin","challenge_admin","fightcamp_admin","assessments"->"rs_bg_v115_performance.webp"
+        "classes","events","events_admin","attendance","qr_attendance","schedule","notifications","documents","referrals"->"rs_bg_v115_club.webp"
+        "profile","settings","finance","book","payments","invoices","analytics","support","release"->"rs_bg_v115_account.webp"
+        "members","access","plans_admin","notes"->"rs_bg_v115_trainer.webp"
+        "themes","backgrounds","branding","intro_settings","landing_admin"->"rs_bg_v115_header.webp"
+        else->""
+    }
+    val packed=rsVisualPackFileV115(context,packName)
+    if(packed.isNotBlank())return packed
+
     val drawableName=when(slot){
         "login"->"rs_bg_login"
         "student_home"->"rs_bg_student_home"
