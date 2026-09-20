@@ -42,6 +42,8 @@ private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 fun rsBundledVisualUriV113(context:android.content.Context,slot:String):String{
     // v0.119: every active route has a packaged RS fallback.
     val drawableName=when(slot){
+        "coachchat","tile_student_coachchat","tile_trainer_coachchat"->"rs_chat_experience_v127"
+
         "login","profile","settings","finance","book","payments","invoices","support","release",
         "privacy_admin","promotions","referrals","documents","notifications"->"rs_bg_v117_login"
 
