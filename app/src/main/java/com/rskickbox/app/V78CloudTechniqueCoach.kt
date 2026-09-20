@@ -73,10 +73,13 @@ suspend fun rsUploadTechniqueSubmissionV78(
     val bytes=rsTechniqueBytesV78(context,uri)
     require(bytes.size<=50*1024*1024){"Technique video is larger than 50 MB."}
 
-    val capacity=rsStudentStorageCapacityV114(user.id,bytes.size.toLong()).getOrThrow()
-    require(capacity.allowed){
-        capacity.warningMessage.ifBlank{
-            "Student storage limit reached. Free some space or increase the student's storage allowance."
+    // Backward-compatible rollout: the app still works against the already-live
+    // 0045-0047 backend. Migration 0048 adds the preflight check when available.
+    rsStudentStorageCapacityV114(user.id,bytes.size.toLong()).getOrNull()?.let{capacity->
+        require(capacity.allowed){
+            capacity.warningMessage.ifBlank{
+                "Student storage limit reached. Free some space or increase the student's storage allowance."
+            }
         }
     }
 
