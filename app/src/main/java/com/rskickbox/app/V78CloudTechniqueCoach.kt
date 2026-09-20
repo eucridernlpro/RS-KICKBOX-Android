@@ -73,6 +73,13 @@ suspend fun rsUploadTechniqueSubmissionV78(
     val bytes=rsTechniqueBytesV78(context,uri)
     require(bytes.size<=50*1024*1024){"Technique video is larger than 50 MB."}
 
+    val capacity=rsStudentStorageCapacityV114(user.id,bytes.size.toLong()).getOrThrow()
+    require(capacity.allowed){
+        capacity.warningMessage.ifBlank{
+            "Student storage limit reached. Free some space or increase the student's storage allowance."
+        }
+    }
+
     client.storage.from(RS_TECHNIQUE_BUCKET_V78).upload(path,bytes){
         upsert=false
         contentType=runCatching{ContentType.parse(mime)}.getOrDefault(ContentType.Video.MP4)
