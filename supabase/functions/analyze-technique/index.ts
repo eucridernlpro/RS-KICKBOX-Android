@@ -37,6 +37,11 @@ Deno.serve(async(req)=>{
   if(!OPENAI_API_KEY) return json({error:"Technique AI is not configured yet"},503)
 
   const body=await req.json().catch(()=>({}))
+  const mode=String(body.mode || "student").trim().toLowerCase()
+  const referenceMode=mode==="reference"
+  if(referenceMode && !["trainer","admin"].includes(profile.role)){
+    return json({error:"Trainer/admin access required for AI reference classification"},403)
+  }
   const technique=String(body.technique || "Kickboxing technique").trim().slice(0,120)
   const language=String(body.language || "English").trim().slice(0,80)
   const rawFrames=Array.isArray(body.frames)?body.frames:[]
@@ -47,11 +52,11 @@ Deno.serve(async(req)=>{
     .filter((x:string)=>x.length>0 && x.length<=MAX_FRAME_BASE64)
     .slice(0,MAX_FRAMES)
 
-  if(frames.length<2) return json({error:"At least two valid technique frames are required"},400)
+  if(frames.length<(referenceMode?1:2)) return json({error:referenceMode?"At least one valid reference frame is required":"At least two valid technique frames are required"},400)
 
   const {error:quotaError}=await client.rpc("rs_consume_ai_quota",{
-    p_feature:"technique_vision",
-    p_limit:20
+    p_feature:referenceMode?"technique_reference":"technique_vision",
+    p_limit:referenceMode?60:20
   })
   if(quotaError){
     const message=String(quotaError.message || "")
@@ -65,14 +70,24 @@ Deno.serve(async(req)=>{
   const content:any[]=[
     {
       type:"input_text",
-      text:
-        "You are the RS KICKBOX technique coach. Analyze only visible kickboxing mechanics from the supplied sampled frames. "+
-        "Do not claim certainty about motion occurring between frames. Avoid medical diagnosis, injury assessment, or unsafe advice. "+
-        "Focus on stance, balance, guard, alignment, rotation, recovery, and obvious technique-specific details. "+
-        "Reply in "+language+". Give a concise practical coaching response of 90-160 words. "+
-        "Start with one sentence describing what is visibly good, then list the 3 most useful corrections in priority order, "+
-        "then one short safe drill suggestion. Mention that this is a sampled-frame review, not a full biomechanical measurement. "+
-        "Technique selected by the athlete: "+technique+"."
+      text: referenceMode
+        ? (
+            "You are organizing the trusted trainer reference library for RS KICKBOXING. "+
+            "Identify the most likely kickboxing move or combination visible in the supplied trainer reference frame(s). "+
+            "Do not invent details that are not visible. Return ONLY valid JSON with this exact shape: "+
+            "{\"move\":\"short canonical move or combination name\",\"tags\":[\"lowercase useful tag\"],\"coach_note\":\"one short practical trainer-style instruction in "+language+"\"}. "+
+            "Use 4 to 10 useful tags covering the move name and visible mechanics such as pivot, guard, hip rotation, stance, recovery or timing. "+
+            "If uncertain, use a broad but honest move label rather than pretending certainty."
+          )
+        : (
+            "You are the RS KICKBOX technique coach. Analyze only visible kickboxing mechanics from the supplied sampled frames. "+
+            "Do not claim certainty about motion occurring between frames. Avoid medical diagnosis, injury assessment, or unsafe advice. "+
+            "Focus on stance, balance, guard, alignment, rotation, recovery, and obvious technique-specific details. "+
+            "Reply in "+language+". Give a concise practical coaching response of 90-160 words. "+
+            "Start with one sentence describing what is visibly good, then list the 3 most useful corrections in priority order, "+
+            "then one short safe drill suggestion. Mention that this is a sampled-frame review, not a full biomechanical measurement. "+
+            "Technique selected by the athlete: "+technique+"."
+          )
     }
   ]
 
@@ -117,6 +132,23 @@ Deno.serve(async(req)=>{
 
   const analysis=extractOutputText(payload)
   if(!analysis) return json({error:"Technique AI returned an empty response"},502)
+
+  if(referenceMode){
+    try{
+      const cleaned=analysis.replace(/^\`\`\`json\s*/i,"").replace(/\`\`\`$/,"").trim()
+      const parsed=JSON.parse(cleaned)
+      const move=String(parsed?.move || "").trim().slice(0,120)
+      const tags=Array.isArray(parsed?.tags)
+        ? parsed.tags.map((x:any)=>String(x).trim().toLowerCase()).filter(Boolean).slice(0,20)
+        : []
+      const coachNote=String(parsed?.coach_note || "").trim().slice(0,500)
+      if(!move) return json({error:"AI could not identify a reference move"},422)
+      return json({move,tags,coach_note:coachNote,model:MODEL,sampled_frames:frames.length})
+    }catch(error){
+      console.error("reference classification parse failed",analysis.slice(0,600),error)
+      return json({error:"AI reference classification returned an invalid structure"},502)
+    }
+  }
 
   return json({
     analysis,
