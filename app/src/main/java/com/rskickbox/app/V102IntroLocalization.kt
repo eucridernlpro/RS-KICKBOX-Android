@@ -11,7 +11,7 @@ fun rsIntroT102(lang:RsLang,key:String):String{
         "phone" to "PHONE SPLASH VIDEO","tablet" to "TABLET SPLASH VIDEO","phone_format" to "Recommended: portrait 9:16 · 1080×1920 or similar · MP4 H.264 · 15 sec max","tablet_format" to "Recommended: tablet 16:10 or 4:3 · minimum 1600px long edge · MP4 H.264 · 15 sec max. Auto-crops to screen.",
         "gallery" to "Gallery","replace" to "Replace","files" to "Files",
         "pending" to "PENDING PREVIEW — NOT SAVED","saved" to "SAVED SPLASH VIDEO",
-        "duration" to "Duration","max" to "15.00 sec max",
+        "duration" to "Duration","max" to "17.00 sec max",
         "test" to "▶ Test full-screen splash","optimizing" to "Optimizing video for reliable playback…",
         "save" to "✓ Save / Accept splash","cancel" to "Cancel edit","delete" to "Delete saved splash",
         "auto" to "AUTO DEVICE SELECTION",
