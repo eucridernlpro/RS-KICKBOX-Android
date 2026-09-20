@@ -137,7 +137,7 @@ fun RsFloatingGlassChatHubV125(
                 ){Text("‹",color=c.bright,fontSize=25.sp)}
                 Column(Modifier.weight(1f)){
                     Text("RS CHAT",color=c.bright,fontWeight=FontWeight.Black,fontSize=19.sp,letterSpacing=.8.sp)
-                    Text("Private · Groups · AI Coach · Voice · Media",color=c.muted,fontSize=9.sp)
+                    Text("Private · Groups · AI Coach · Voice",color=c.muted,fontSize=9.sp)
                 }
                 Surface(
                     color=c.gold.copy(alpha=.10f),
@@ -234,7 +234,7 @@ fun RsFloatingGlassChatHubV125(
                 }
                 RsChatHubTabV125.PRIVATE->RsCoachChatV44(c,store,lang,role,privateStudentId)
                 RsChatHubTabV125.GROUPS->RsGroupsV50(c,store,lang,role)
-                RsChatHubTabV125.AI->if(role==RsRole.TRAINER) RsTrainerAiReferenceChatV125(c,lang) else RsTechniqueCoachV27(c,lang,store,role)
+                RsChatHubTabV125.AI->RsTechniqueCoachV27(c,lang,store,role)
             }
         }
     }
