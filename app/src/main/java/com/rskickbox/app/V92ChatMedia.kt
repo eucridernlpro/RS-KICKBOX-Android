@@ -131,10 +131,11 @@ suspend fun rsUploadChatMediaV92(
         else runCatching{ContentType.parse(if(mime.isBlank())"video/mp4" else mime)}.getOrDefault(ContentType.Video.MP4)
 
     val currentUser=client.auth.currentUserOrNull()
-    val studentId=when(scopeType){
-        "coach"->scopeId
-        else->currentUser?.id.orEmpty()
-    }
+    val sessionRole=rsCloudCurrentSessionV67().getOrNull()?.role
+    // Personal storage quota belongs to the student who uploads the media.
+    // Trainer/admin uploads are shared coaching content and must not consume
+    // an individual student's allowance.
+    val studentId=if(sessionRole==RsRole.TRAINER)"" else currentUser?.id.orEmpty()
     if(studentId.isNotBlank()){
         // Backward-compatible rollout: if the v0.114 capacity RPC is not installed yet,
         // continue with the existing upload/registration flow. Once migration 0048 is
