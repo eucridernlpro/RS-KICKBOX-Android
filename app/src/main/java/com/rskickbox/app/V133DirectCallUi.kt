@@ -36,6 +36,7 @@ private fun rsCallT133(lang:RsLang,key:String):String{
         "failed" to "Connection failed","ended" to "Call ended","end" to "End call",
         "mic" to "Mic","camera" to "Camera","switch" to "Switch camera",
         "permission" to "Microphone/camera permission is required.",
+        "online" to "Online","offline" to "Offline","offline_call" to "Both trainer and student must be online to call.",
         "unavailable" to "Call service is not available yet. Run the latest Supabase call update."
     )
     val nl=en+mapOf(
@@ -46,6 +47,7 @@ private fun rsCallT133(lang:RsLang,key:String):String{
         "failed" to "Verbinding mislukt","ended" to "Gesprek beëindigd","end" to "Gesprek stoppen",
         "mic" to "Microfoon","camera" to "Camera","switch" to "Camera wisselen",
         "permission" to "Toegang tot microfoon/camera is vereist.",
+        "online" to "Online","offline" to "Offline","offline_call" to "Trainer en student moeten allebei online zijn om te bellen.",
         "unavailable" to "Belservice is nog niet beschikbaar. Voer de nieuwste Supabase-callupdate uit."
     )
     val pt=en+mapOf(
@@ -56,6 +58,7 @@ private fun rsCallT133(lang:RsLang,key:String):String{
         "failed" to "Ligação falhou","ended" to "Chamada terminada","end" to "Terminar chamada",
         "mic" to "Microfone","camera" to "Câmara","switch" to "Trocar câmara",
         "permission" to "É necessária permissão para microfone/câmara.",
+        "online" to "Online","offline" to "Offline","offline_call" to "Treinador e aluno têm de estar online para ligar.",
         "unavailable" to "O serviço de chamadas ainda não está disponível. Executa a atualização Supabase mais recente."
     )
     val es=en+mapOf(
@@ -66,6 +69,7 @@ private fun rsCallT133(lang:RsLang,key:String):String{
         "failed" to "Falló la conexión","ended" to "Llamada finalizada","end" to "Finalizar llamada",
         "mic" to "Micrófono","camera" to "Cámara","switch" to "Cambiar cámara",
         "permission" to "Se requiere permiso de micrófono/cámara.",
+        "online" to "Online","offline" to "Offline","offline_call" to "Entrenador y alumno deben estar conectados para llamar.",
         "unavailable" to "El servicio de llamadas aún no está disponible. Ejecuta la última actualización de Supabase."
     )
     val fr=en+mapOf(
@@ -76,6 +80,7 @@ private fun rsCallT133(lang:RsLang,key:String):String{
         "failed" to "Échec de connexion","ended" to "Appel terminé","end" to "Terminer l’appel",
         "mic" to "Micro","camera" to "Caméra","switch" to "Changer caméra",
         "permission" to "L’autorisation micro/caméra est requise.",
+        "online" to "En ligne","offline" to "Hors ligne","offline_call" to "Le trainer et l’élève doivent être en ligne pour appeler.",
         "unavailable" to "Le service d’appel n’est pas encore disponible. Exécute la dernière mise à jour Supabase."
     )
     val de=en+mapOf("audio" to "Audioanruf","video" to "Videoanruf","accept" to "Annehmen","decline" to "Ablehnen","cancel" to "Abbrechen","end" to "Anruf beenden")
@@ -92,13 +97,17 @@ fun RsDirectCallControlsV133(
     lang:RsLang,
     role:RsRole,
     peerId:String,
-    peerName:String
+    peerName:String,
+    peerEmail:String=""
 ){
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     val myId=remember{rsSupabaseClientV60()?.auth?.currentUserOrNull()?.id.orEmpty()}
     var resolvedPeerId by remember(peerId){mutableStateOf(peerId)}
     var resolvedPeerName by remember(peerName){mutableStateOf(peerName)}
+    var resolvedPeerEmail by remember(peerEmail){mutableStateOf(peerEmail)}
+    var peerOnline by remember{mutableStateOf(false)}
+    var selfOnline by remember{mutableStateOf(false)}
     var active by remember{mutableStateOf<RsCallV131?>(null)}
     var status by remember{mutableStateOf("")}
     var pendingType by remember{mutableStateOf<String?>(null)}
@@ -113,8 +122,31 @@ fun RsDirectCallControlsV133(
                     if(peer!=null){
                         resolvedPeerId=peer.userId
                         resolvedPeerName=peer.displayName.ifBlank{peer.email}
+                        resolvedPeerEmail=peer.email
                     }
                 }
+        }
+    }
+
+    LaunchedEffect(resolvedPeerId){
+        while(isActive){
+            if(resolvedPeerId.isNotBlank()){
+                rsTouchPresenceV125()
+                rsCallPeerStatusV132(resolvedPeerId)
+                    .onSuccess{presence->
+                        selfOnline=presence?.selfOnline==true
+                        peerOnline=presence?.peerOnline==true
+                        if(presence!=null){
+                            if(presence.peerName.isNotBlank())resolvedPeerName=presence.peerName
+                            if(presence.peerEmail.isNotBlank())resolvedPeerEmail=presence.peerEmail
+                        }
+                    }
+                    .onFailure{
+                        selfOnline=false
+                        peerOnline=false
+                    }
+            }
+            delay(5000)
         }
     }
 
@@ -137,6 +169,7 @@ fun RsDirectCallControlsV133(
 
     fun beginCall(type:String){
         if(resolvedPeerId.isBlank())return
+        if(!selfOnline||!peerOnline){status=rsCallT133(lang,"offline_call");return}
         scope.launch{
             status=rsCallT133(lang,"calling")
             rsStartDirectCallV131(resolvedPeerId,type)
@@ -186,19 +219,50 @@ fun RsDirectCallControlsV133(
         modifier=Modifier.fillMaxWidth()
     ){
         Column(Modifier.padding(10.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement=Arrangement.spacedBy(12.dp),
+                verticalAlignment=Alignment.CenterVertically
+            ){
+                Column(horizontalAlignment=Alignment.CenterHorizontally){
+                    RsMemberAvatarV68(
+                        c,
+                        resolvedPeerEmail,
+                        resolvedPeerName.ifBlank{resolvedPeerEmail.ifBlank{"RS Member"}},
+                        size=54.dp
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        if(peerOnline)rsCallT133(lang,"online") else rsCallT133(lang,"offline"),
+                        color=if(peerOnline)Color(0xFF45D483) else c.muted,
+                        fontSize=9.sp,
+                        fontWeight=FontWeight.Black
+                    )
+                }
+                Column(Modifier.weight(1f)){
+                    Text(
+                        resolvedPeerName.ifBlank{resolvedPeerEmail.ifBlank{"RS Member"}},
+                        color=c.bright,
+                        fontWeight=FontWeight.Black,
+                        fontSize=14.sp
+                    )
+                    if(resolvedPeerEmail.isNotBlank())Text(resolvedPeerEmail,color=c.muted,fontSize=9.sp)
+                }
+            }
             if(call==null){
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                     OutlinedButton(
                         onClick={requestAndCall("AUDIO")},
-                        enabled=resolvedPeerId.isNotBlank(),
+                        enabled=resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline,
                         modifier=Modifier.weight(1f)
                     ){Text("☎  "+rsCallT133(lang,"audio"),fontSize=10.sp)}
                     OutlinedButton(
                         onClick={requestAndCall("VIDEO")},
-                        enabled=resolvedPeerId.isNotBlank(),
+                        enabled=resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline,
                         modifier=Modifier.weight(1f)
                     ){Text("▣  "+rsCallT133(lang,"video"),fontSize=10.sp)}
                 }
+                if(!selfOnline||!peerOnline)Text(rsCallT133(lang,"offline_call"),color=c.muted,fontSize=9.sp)
             }else if(call.status=="RINGING"){
                 val incoming=call.calleeId==myId
                 Text(
