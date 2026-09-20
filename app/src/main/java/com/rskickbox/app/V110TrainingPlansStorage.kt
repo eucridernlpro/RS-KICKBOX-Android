@@ -205,7 +205,8 @@ private fun rsTrainingPlanT110(lang:RsLang,key:String):String{
         "inherited" to "plan default","custom" to "custom override",
         "media_reuse" to "Media is referenced from Training Media, not duplicated.",
         "steps" to "TRAINING STEPS","done" to "Done","mark_done" to "Mark done","reopen" to "Reopen",
-        "open_example" to "Open example","close_example" to "Close example","loading_example" to "Loading protected example…"
+        "open_example" to "Open example","close_example" to "Close example","loading_example" to "Loading protected example…",
+        "backend_unavailable" to "Cloud training data is unavailable. Check the connection or trainer permissions."
     )
     val nl=en+mapOf(
         "templates" to "Herbruikbare Trainingsplannen","templates_sub" to "Bouw één keer en wijs hetzelfde begeleide plan toe zonder media opnieuw te uploaden.",
@@ -240,7 +241,53 @@ private fun rsTrainingPlanT110(lang:RsLang,key:String):String{
     val pl=en+mapOf("templates" to "Wielorazowe Plany Treningowe","new_plan" to "NOWY PLAN","plan_title" to "Tytuł planu","description" to "Opis","category" to "Kategoria","create" to "Utwórz plan","step" to "DODAJ ĆWICZENIE","step_title" to "Tytuł ćwiczenia","instructions" to "Instrukcje","sets" to "Serie / powtórzenia / czas","media" to "Media instruktażowe","no_media" to "Brak mediów","add_step" to "Dodaj krok","assign" to "Przypisz plan","due" to "Termin","storage" to "Pamięć Ucznia","used" to "użyto","files" to "plików","limit" to "miękki limit","save_limit" to "Zapisz limit","steps" to "KROKI TRENINGU","done" to "Gotowe","mark_done" to "Oznacz gotowe","reopen" to "Otwórz ponownie")
     val tr=en+mapOf("templates" to "Yeniden Kullanılabilir Antrenman Planları","new_plan" to "YENİ PLAN","plan_title" to "Plan başlığı","description" to "Açıklama","category" to "Kategori","create" to "Plan oluştur","step" to "EGZERSİZ EKLE","step_title" to "Egzersiz başlığı","instructions" to "Talimatlar","sets" to "Set / tekrar / süre","media" to "Eğitim medyası","no_media" to "Medya yok","add_step" to "Adım ekle","assign" to "Planı ata","due" to "Son tarih","storage" to "Öğrenci Depolaması","used" to "kullanıldı","files" to "dosya","limit" to "esnek limit","save_limit" to "Limiti kaydet","steps" to "ANTRENMAN ADIMLARI","done" to "Tamam","mark_done" to "Tamamlandı işaretle","reopen" to "Yeniden aç")
     val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
-    return pack[key]?:en[key]?:key
+    val extra=mapOf(
+        "nl" to mapOf("backend_unavailable" to "Cloud-trainingsgegevens zijn niet beschikbaar. Controleer de verbinding of trainerrechten."),
+        "pt" to mapOf("backend_unavailable" to "Os dados de treino na cloud não estão disponíveis. Verifica a ligação ou as permissões do treinador."),
+        "es" to mapOf(
+            "templates_sub" to "Créalo una vez y asigna el mismo plan guiado a distintos alumnos sin volver a subir media.","select_plan" to "ELEGIR PLAN","no_plans" to "Todavía no hay planes de entrenamiento.",
+            "storage_sub" to "Límites internos del entrenador. La media de instrucción compartida se guarda una sola vez y no se cobra a cada alumno.","backend_tier" to "Perfil de almacenamiento Supabase","free_tier" to "Gratis","pro_tier" to "Pro",
+            "quota_note" to "El espacio predeterminado depende del plan Supabase y de la membresía BASIC / PRO / ELITE. Los límites individuales siguen disponibles.","inherited" to "valor del plan","custom" to "límite personalizado",
+            "media_reuse" to "La media se referencia desde Media de Entrenamiento, sin duplicarla.","open_example" to "Abrir ejemplo","close_example" to "Cerrar ejemplo","loading_example" to "Cargando ejemplo protegido…",
+            "backend_unavailable" to "Los datos de entrenamiento en la nube no están disponibles. Comprueba la conexión o los permisos del entrenador."
+        ),
+        "fr" to mapOf(
+            "templates_sub" to "Crée-le une fois puis attribue le même plan guidé à plusieurs élèves sans réimporter les médias.","select_plan" to "CHOISIR UN PLAN","no_plans" to "Aucun plan d’entraînement pour le moment.",
+            "storage_sub" to "Limites internes du coach. Les médias d’instruction partagés sont stockés une seule fois et ne sont pas facturés à chaque élève.","backend_tier" to "Profil de stockage Supabase","free_tier" to "Gratuit","pro_tier" to "Pro",
+            "quota_note" to "L’espace par défaut dépend du forfait Supabase et de l’adhésion BASIC / PRO / ELITE. Les limites individuelles restent possibles.","inherited" to "valeur du forfait","custom" to "limite personnalisée",
+            "media_reuse" to "Les médias sont référencés depuis les Médias d’Entraînement, sans duplication.","open_example" to "Ouvrir l’exemple","close_example" to "Fermer l’exemple","loading_example" to "Chargement de l’exemple protégé…",
+            "backend_unavailable" to "Les données d’entraînement cloud sont indisponibles. Vérifie la connexion ou les autorisations de l’entraîneur."
+        ),
+        "de" to mapOf(
+            "templates_sub" to "Einmal erstellen und denselben geführten Plan mehreren Schülern zuweisen, ohne Medien erneut hochzuladen.","select_plan" to "PLAN AUSWÄHLEN","no_plans" to "Noch keine Trainingspläne vorhanden.",
+            "storage_sub" to "Interne Trainerlimits. Geteilte Anleitungsmedien werden einmal gespeichert und nicht jedem Schüler berechnet.","backend_tier" to "Supabase-Speicherprofil","free_tier" to "Kostenlos","pro_tier" to "Pro",
+            "quota_note" to "Der Standardspeicher richtet sich nach Supabase-Tarif und BASIC / PRO / ELITE. Individuelle Limits bleiben möglich.","inherited" to "Planstandard","custom" to "eigenes Limit",
+            "media_reuse" to "Medien werden aus Trainingsmedien referenziert und nicht dupliziert.","open_example" to "Beispiel öffnen","close_example" to "Beispiel schließen","loading_example" to "Geschütztes Beispiel wird geladen…",
+            "backend_unavailable" to "Cloud-Trainingsdaten sind nicht verfügbar. Prüfe Verbindung oder Trainerberechtigungen."
+        ),
+        "it" to mapOf(
+            "templates_sub" to "Crealo una volta e assegna lo stesso piano guidato a più allievi senza ricaricare i media.","select_plan" to "SCEGLI PIANO","no_plans" to "Nessun piano di allenamento disponibile.",
+            "storage_sub" to "Limiti interni del trainer. I media didattici condivisi vengono salvati una sola volta e non conteggiati per ogni allievo.","backend_tier" to "Profilo di archiviazione Supabase","free_tier" to "Gratis","pro_tier" to "Pro",
+            "quota_note" to "Lo spazio predefinito dipende dal piano Supabase e dall’abbonamento BASIC / PRO / ELITE. Restano possibili limiti individuali.","inherited" to "valore del piano","custom" to "limite personalizzato",
+            "media_reuse" to "I media vengono collegati dalla Media di Allenamento, senza duplicazione.","open_example" to "Apri esempio","close_example" to "Chiudi esempio","loading_example" to "Caricamento esempio protetto…",
+            "backend_unavailable" to "I dati di allenamento cloud non sono disponibili. Controlla la connessione o i permessi dell’allenatore."
+        ),
+        "pl" to mapOf(
+            "templates_sub" to "Utwórz raz, a potem przypisuj ten sam plan różnym uczniom bez ponownego przesyłania mediów.","select_plan" to "WYBIERZ PLAN","no_plans" to "Brak planów treningowych.",
+            "storage_sub" to "Wewnętrzne limity trenera. Wspólne media instruktażowe są przechowywane raz i nie są naliczane każdemu uczniowi.","backend_tier" to "Profil pamięci Supabase","free_tier" to "Darmowy","pro_tier" to "Pro",
+            "quota_note" to "Domyślna przestrzeń zależy od planu Supabase i członkostwa BASIC / PRO / ELITE. Indywidualne limity nadal są możliwe.","inherited" to "domyślny plan","custom" to "własny limit",
+            "media_reuse" to "Media są odwoływane z Mediów Treningowych, bez duplikowania.","open_example" to "Otwórz przykład","close_example" to "Zamknij przykład","loading_example" to "Ładowanie chronionego przykładu…",
+            "backend_unavailable" to "Dane treningowe w chmurze są niedostępne. Sprawdź połączenie lub uprawnienia trenera."
+        ),
+        "tr" to mapOf(
+            "templates_sub" to "Bir kez oluştur, medyayı tekrar yüklemeden aynı rehberli planı farklı öğrencilere ata.","select_plan" to "PLAN SEÇ","no_plans" to "Henüz antrenman planı yok.",
+            "storage_sub" to "Antrenöre özel dahili limitler. Paylaşılan eğitim medyası bir kez saklanır ve her öğrenciye ayrı yazılmaz.","backend_tier" to "Supabase depolama profili","free_tier" to "Ücretsiz","pro_tier" to "Pro",
+            "quota_note" to "Varsayılan alan Supabase paketi ile BASIC / PRO / ELITE üyeliğine göre belirlenir. Bireysel limitler kullanılabilir.","inherited" to "plan varsayılanı","custom" to "özel limit",
+            "media_reuse" to "Medya, Antrenman Medyasından referanslanır; kopyalanmaz.","open_example" to "Örneği aç","close_example" to "Örneği kapat","loading_example" to "Korumalı örnek yükleniyor…",
+            "backend_unavailable" to "Bulut antrenman verileri kullanılamıyor. Bağlantıyı veya antrenör izinlerini kontrol et."
+        )
+    )[lang.code]
+    return extra?.get(key)?:pack[key]?:en[key]?:key
 }
 
 private fun rsMbV110(bytes:Long):String = String.format(java.util.Locale.US,"%.1f MB",bytes/1048576.0)
@@ -274,7 +321,7 @@ fun RsTrainingPlanManagerPanelV110(
             templates=it
             if(selectedTemplateId.isBlank())selectedTemplateId=it.firstOrNull()?.id.orEmpty()
         }.onFailure{
-            status="Training-plan backend update is not installed yet."
+            status=rsTrainingPlanT110(lang,"backend_unavailable")
         }
         rsCloudTrainingMediaV73().onSuccess{media=it.filter{m->m.published}}
     }
