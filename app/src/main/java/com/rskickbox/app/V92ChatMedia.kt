@@ -271,7 +271,11 @@ private fun rsChatUploadFriendlyErrorV116(lang:RsLang,t:Throwable?):String{
     val raw=t?.message.orEmpty()
     return when{
         raw.contains("Bucket not found",ignoreCase=true) ||
-        raw.contains("rs-chat-media",ignoreCase=true) && raw.contains("not found",ignoreCase=true) ->
+        raw.contains("rs-chat-media",ignoreCase=true) && raw.contains("not found",ignoreCase=true) ||
+        raw.contains("media_path",ignoreCase=true) && raw.contains("does not exist",ignoreCase=true) ||
+        raw.contains("42703",ignoreCase=true) ||
+        raw.contains("rs_send_coach_message_v2",ignoreCase=true) && raw.contains("not found",ignoreCase=true) ||
+        raw.contains("rs_send_group_message",ignoreCase=true) && raw.contains("not found",ignoreCase=true) ->
             rsChatMediaT(lang,"backend_missing")
         raw.contains("row-level security",ignoreCase=true) ||
         raw.contains("permission",ignoreCase=true) ||
@@ -290,7 +294,7 @@ fun rsChatMediaT(lang:RsLang,key:String):String{
         "attachment_ready" to "Attachment ready","open_video" to "Play short video",
         "download_error" to "Could not load attachment.","upload_error" to "Could not upload attachment.","message_or_media" to "Write a message or add an image/video.",
         "max_video" to "Short videos: maximum 30 seconds / 30 MB.",
-        "backend_missing" to "Chat media storage is not ready on the server yet.",
+        "backend_missing" to "Chat media backend update is required. Ask the trainer/admin to run the latest RS KICKBOXING Supabase repair.",
         "permission_error" to "Chat media permission was not accepted by the server."
     )
     val nl=en+mapOf("image" to "Afbeelding","video" to "Korte video","remove" to "Bijlage verwijderen","send" to "Versturen","sending" to "Versturen…","uploading" to "Bijlage uploaden…","attachment_ready" to "Bijlage klaar","open_video" to "Korte video afspelen","download_error" to "Bijlage kon niet worden geladen.","upload_error" to "Bijlage kon niet worden geüpload.","message_or_media" to "Schrijf een bericht of voeg een afbeelding/video toe.","max_video" to "Korte video's: maximaal 30 seconden / 30 MB.")
@@ -464,9 +468,9 @@ fun RsChatComposerV92(
                             onStatus("")
                             onSent()
                         }
-                        .onFailure{
+                        .onFailure{error->
                             if(uploaded!=null)rsDeleteChatMediaV108(uploaded.path)
-                            onStatus(rsReleaseT98(lang,"save_failed"))
+                            onStatus(rsChatUploadFriendlyErrorV116(lang,error))
                         }
                     busy=false
                 }
