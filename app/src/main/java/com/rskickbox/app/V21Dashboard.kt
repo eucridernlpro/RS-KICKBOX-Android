@@ -246,7 +246,6 @@ private fun studentV21()=listOf(
     SectionV21("Library, Music & Account",listOf(
         DashV21("vault","Knowledge Vault","Browse · Search · Favorites · History","brand"),
         DashV21("homework","Homework","Coach assignments","training"),
-        DashV21("media","Training Media","Videos · images","training"),
         DashV21("music","My RS Music","Persistent background player","music"),
         DashV21("finance","Membership & Payments","Plan · payments · history","payment"),
         DashV21("book","Trainer Book","Van Stilte Naar Strijd","brand"),
@@ -270,7 +269,6 @@ private fun trainerV21()=listOf(
     SectionV21("Coaching, Content & Music",listOf(
         DashV21("coachchat","RS Communication Hub","Students · groups · voice · AI coach · moderation","ai"),
         DashV21("content","Content Manager","Lessons · articles · Academy content","brand"),
-        DashV21("media","Training Media Manager","Videos · images · access tiers","training"),
         DashV21("homework_admin","Homework Manager","Assign · review","training"),
         DashV21("session_builder","Session Builder","Create active training sessions","training"),
         DashV21("music_admin","RS Music Manager","Persistent background player","music"),
