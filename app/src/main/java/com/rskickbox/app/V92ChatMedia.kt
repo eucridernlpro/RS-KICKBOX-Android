@@ -529,14 +529,6 @@ fun RsChatComposerV92(
             onStatus("")
         }
     }
-    val filePicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
-        if(uri!=null){
-            runCatching{context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)}
-            picked=uri
-            pickedKind="FILE"
-            onStatus("")
-        }
-    }
 
     val startVoice:()->Unit = start@{
         if(recording||busy)return@start
@@ -657,7 +649,7 @@ fun RsChatComposerV92(
                         horizontalArrangement=Arrangement.spacedBy(8.dp)
                     ){
                         Text(
-                            when(pickedKind){"VIDEO"->"▶";"AUDIO"->"🎙";"FILE"->"⌑";else->"▣"},
+                            when(pickedKind){"VIDEO"->"▶";"AUDIO"->"🎙";else->"▣"},
                             color=c.bright,fontSize=15.sp
                         )
                         Text(
@@ -708,17 +700,6 @@ fun RsChatComposerV92(
                             onClick={
                                 attachmentMenu=false
                                 videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
-                            }
-                        )
-                        DropdownMenuItem(
-                            text={Text("⌑  "+rsChatMediaT(lang,"file"))},
-                            onClick={
-                                attachmentMenu=false
-                                filePicker.launch(arrayOf(
-                                    "application/pdf","text/plain","application/msword",
-                                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                                    "image/*","video/*","audio/*"
-                                ))
                             }
                         )
                     }
