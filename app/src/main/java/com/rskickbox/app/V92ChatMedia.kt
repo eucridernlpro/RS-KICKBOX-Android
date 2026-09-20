@@ -267,13 +267,31 @@ suspend fun rsSendCloudGroupMessageV92(
     Unit
 }
 
+private fun rsChatUploadFriendlyErrorV116(lang:RsLang,t:Throwable?):String{
+    val raw=t?.message.orEmpty()
+    return when{
+        raw.contains("Bucket not found",ignoreCase=true) ||
+        raw.contains("rs-chat-media",ignoreCase=true) && raw.contains("not found",ignoreCase=true) ->
+            rsChatMediaT(lang,"backend_missing")
+        raw.contains("row-level security",ignoreCase=true) ||
+        raw.contains("permission",ignoreCase=true) ||
+        raw.contains("unauthorized",ignoreCase=true) ->
+            rsChatMediaT(lang,"permission_error")
+        raw.contains("30 MB",ignoreCase=true) || raw.contains("30 seconds",ignoreCase=true) -> raw
+        raw.contains("too large for the device",ignoreCase=true) -> raw
+        else->rsChatMediaT(lang,"upload_error")
+    }
+}
+
 fun rsChatMediaT(lang:RsLang,key:String):String{
     val en=mapOf(
         "image" to "Image","video" to "Short video","remove" to "Remove attachment",
         "send" to "Send","sending" to "Sending…","uploading" to "Uploading attachment…",
         "attachment_ready" to "Attachment ready","open_video" to "Play short video",
         "download_error" to "Could not load attachment.","upload_error" to "Could not upload attachment.","message_or_media" to "Write a message or add an image/video.",
-        "max_video" to "Short videos: maximum 30 seconds / 30 MB."
+        "max_video" to "Short videos: maximum 30 seconds / 30 MB.",
+        "backend_missing" to "Chat media storage is not ready on the server yet.",
+        "permission_error" to "Chat media permission was not accepted by the server."
     )
     val nl=en+mapOf("image" to "Afbeelding","video" to "Korte video","remove" to "Bijlage verwijderen","send" to "Versturen","sending" to "Versturen…","uploading" to "Bijlage uploaden…","attachment_ready" to "Bijlage klaar","open_video" to "Korte video afspelen","download_error" to "Bijlage kon niet worden geladen.","upload_error" to "Bijlage kon niet worden geüpload.","message_or_media" to "Schrijf een bericht of voeg een afbeelding/video toe.","max_video" to "Korte video's: maximaal 30 seconden / 30 MB.")
     val pt=en+mapOf("image" to "Imagem","video" to "Vídeo curto","remove" to "Remover anexo","send" to "Enviar","sending" to "A enviar…","uploading" to "A carregar anexo…","attachment_ready" to "Anexo pronto","open_video" to "Reproduzir vídeo curto","download_error" to "Não foi possível carregar o anexo.","upload_error" to "Não foi possível enviar o anexo.","message_or_media" to "Escreve uma mensagem ou adiciona imagem/vídeo.","max_video" to "Vídeos curtos: máximo 30 segundos / 30 MB.")
@@ -432,8 +450,7 @@ fun RsChatComposerV92(
                         onStatus(rsChatMediaT(lang,"uploading"))
                         val result=rsUploadChatMediaV92(context,source,scopeType,scopeId)
                         if(result.isFailure){
-                            val detail=result.exceptionOrNull()?.message.orEmpty().take(140)
-                            onStatus(rsChatMediaT(lang,"upload_error")+(if(detail.isBlank())"" else " · "+detail))
+                            onStatus(rsChatUploadFriendlyErrorV116(lang,result.exceptionOrNull()))
                             busy=false
                             return@launch
                         }
