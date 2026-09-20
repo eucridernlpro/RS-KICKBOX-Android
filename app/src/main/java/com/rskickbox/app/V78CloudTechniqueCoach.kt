@@ -107,7 +107,18 @@ suspend fun rsUploadTechniqueSubmissionV78(
             byteSize=bytes.size.toLong()
         ).getOrThrow()
     }catch(t:Throwable){
+        // Full rollback: never leave a submission row pointing to a deleted or
+        // untracked video when quota registration or a later step fails.
+        runCatching{
+            client.from("rs_technique_submissions").delete{
+                filter{
+                    eq("student_id",user.id)
+                    eq("media_path",path)
+                }
+            }
+        }
         runCatching{client.storage.from(RS_TECHNIQUE_BUCKET_V78).delete(path)}
+        rsRemoveStudentMediaAssetByPathV115(RS_TECHNIQUE_BUCKET_V78,path).getOrNull()
         throw t
     }
 }
