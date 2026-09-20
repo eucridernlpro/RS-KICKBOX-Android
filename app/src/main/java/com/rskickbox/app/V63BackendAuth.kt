@@ -86,7 +86,7 @@ suspend fun rsCloudCurrentSessionV67():Result<RsCloudSessionV63?> = runCatching 
     // Auth restores persisted Android sessions asynchronously. Do not read
     // currentUserOrNull() while the plugin is still Initializing or a valid
     // stored session can be mistaken for a logged-out user.
-    withTimeoutOrNull(12_000){
+    withTimeoutOrNull(30_000){
         client.auth.sessionStatus.first{it !is SessionStatus.Initializing}
     }
 
