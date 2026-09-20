@@ -171,7 +171,7 @@ private val routeTitlesV25=mapOf(
     "workout" to listOf("Workout Generator","Workout Generator","Gerador de Treino","Generador de Entreno","Générateur d'Entraînement","Workout-Generator","Generatore Allenamento","Generator Treningu","Antrenman Oluşturucu"),
     "classes" to listOf("Classes & Training","Lessen & Training","Aulas & Treino","Clases & Entrenamiento","Cours & Entraînement","Kurse & Training","Lezioni & Allenamento","Zajęcia & Trening","Dersler & Antrenman"),
     "events" to listOf("Club Events & Seminars","Clubevents & Seminars","Eventos & Seminários","Eventos & Seminarios","Événements & Séminaires","Club-Events & Seminare","Eventi & Seminari","Wydarzenia & Seminaria","Kulüp Etkinlikleri & Seminerler"),
-    "coachchat" to listOf("Private Coach Chat","Privé Coach Chat","Chat Privado Coach","Chat Privado Coach","Chat Coach Privé","Privater Coach-Chat","Chat Coach Privato","Prywatny Chat Trenera","Özel Koç Sohbeti"),
+    "coachchat" to listOf("RS Communication Hub","RS Communicatiehub","Centro de Comunicação RS","Centro de Comunicación RS","Hub Communication RS","RS Kommunikations-Hub","Hub Comunicazione RS","Centrum Komunikacji RS","RS İletişim Merkezi"),
     "community" to listOf("Community","Community","Comunidade","Comunidad","Communauté","Community","Community","Społeczność","Topluluk"),
     "groups" to listOf("Groups","Groepen","Grupos","Grupos","Groupes","Gruppen","Gruppi","Grupy","Gruplar"),
     "private_lessons" to listOf("Private Lessons","Privélessen","Aulas Privadas","Clases Privadas","Cours Privés","Privatstunden","Lezioni Private","Lekcje Prywatne","Özel Dersler"),
