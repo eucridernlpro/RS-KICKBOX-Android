@@ -97,6 +97,7 @@ fun RsFloatingGlassChatHubV125(
     var presenceError by remember{mutableStateOf(false)}
     var privateStudentId by remember{mutableStateOf<String?>(null)}
     var presenceRevision by remember{mutableIntStateOf(0)}
+    var searchQuery by remember{mutableStateOf("")}
 
     LaunchedEffect(role,presenceRevision){
         if(RsSupabaseV60.configured){
@@ -113,6 +114,13 @@ fun RsFloatingGlassChatHubV125(
                 rsTouchPresenceV125()
                 rsChatContactsV125().onSuccess{contacts=it}
             }
+        }
+    }
+
+    val filteredContacts=remember(contacts,searchQuery){
+        val q=searchQuery.trim().lowercase()
+        if(q.isBlank())contacts else contacts.filter{
+            it.displayName.lowercase().contains(q) || it.email.lowercase().contains(q)
         }
     }
 
@@ -185,6 +193,20 @@ fun RsFloatingGlassChatHubV125(
                             RsFloatingGlassPanelV125(c){
                                 Text("STUDENTS",color=c.gold,fontSize=10.sp,fontWeight=FontWeight.Black,letterSpacing=1.1.sp)
                                 Text("Chat contacts only. Green = online · red = offline. Student management stays in the Trainer Dashboard.",color=c.muted,fontSize=9.sp)
+                                OutlinedTextField(
+                                    value=searchQuery,
+                                    onValueChange={searchQuery=it.take(80)},
+                                    placeholder={Text("Search students…",fontSize=11.sp)},
+                                    singleLine=true,
+                                    shape=RoundedCornerShape(18.dp),
+                                    modifier=Modifier.fillMaxWidth(),
+                                    colors=OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor=c.gold.copy(alpha=.55f),
+                                        unfocusedBorderColor=c.gold.copy(alpha=.16f),
+                                        focusedContainerColor=c.panel.copy(alpha=.40f),
+                                        unfocusedContainerColor=c.panel.copy(alpha=.32f)
+                                    )
+                                )
                             }
                             if(presenceError){
                                 RsFloatingGlassPanelV125(c){
@@ -196,8 +218,15 @@ fun RsFloatingGlassChatHubV125(
                                 verticalArrangement=Arrangement.spacedBy(7.dp),
                                 contentPadding=PaddingValues(bottom=12.dp)
                             ){
-                                items(contacts.size){index->
-                                    val contact=contacts[index]
+                                if(filteredContacts.isEmpty()){
+                                    item{
+                                        RsFloatingGlassPanelV125(c){
+                                            Text(if(searchQuery.isBlank())"No chat contacts available." else "No students match this search.",color=c.muted,fontSize=10.sp)
+                                        }
+                                    }
+                                }
+                                items(filteredContacts.size){index->
+                                    val contact=filteredContacts[index]
                                     RsContactPresenceV125(c,contact){
                                         privateStudentId=contact.userId
                                         tab=RsChatHubTabV125.PRIVATE
