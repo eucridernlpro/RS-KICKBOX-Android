@@ -76,8 +76,11 @@ private fun TileV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,item:DashV
         else->""
     }
     val overlay=store.s("visual_v21_opacity_tile_${item.route}","0.52").toFloatOrNull()?:.52f
+    val customUsable=rsVisualUriUsableV116(context,custom)
+    val bundledPosition=listOf("LEFT","CENTER","RIGHT")[(item.route.hashCode() and Int.MAX_VALUE)%3]
+    val tilePosition=if(customUsable)store.s("visual_v21_pos_tile_${item.route}","CENTER") else bundledPosition
     Box(Modifier.fillMaxWidth().height(220.dp).clip(shape).background(Brush.linearGradient(listOf(c.panel2,c.gold.copy(alpha=.20f),c.panel))).clickable{onRoute(item.route)}){
-        if(tileVisual.isNotBlank())RsUriPreviewV21(tileVisual,Modifier.fillMaxSize(),store.s("visual_v21_pos_tile_${item.route}","CENTER"))
+        if(tileVisual.isNotBlank())RsUriPreviewV21(tileVisual,Modifier.fillMaxSize(),tilePosition)
         else DefaultTileArtworkV21(c,item.kind)
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha=.10f),Color.Black.copy(alpha=.28f),Color.Black.copy(alpha=overlay.coerceIn(.35f,.82f))))))
         Surface(modifier=Modifier.align(Alignment.TopStart).padding(14.dp),shape=RoundedCornerShape(13.dp),color=Color.Black.copy(alpha=.46f),border=androidx.compose.foundation.BorderStroke(1.dp,c.bright.copy(alpha=.45f))){
