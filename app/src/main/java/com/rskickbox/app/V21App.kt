@@ -41,6 +41,9 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     val context = LocalContext.current
     val store = remember { RsStore(context) }
     val appScope = rememberCoroutineScope()
+    val callNotificationPermissionLauncher=rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ){}
     val localSessionAuthMs=remember{
         store.s("session_password_auth_ms","0").toLongOrNull()?:0L
     }
@@ -159,6 +162,23 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
             }else{
                 authRestoring=false
             }
+        }
+    }
+
+    LaunchedEffect(role){
+        if(role!=null && RsSupabaseV60.configured){
+            RsCallMonitorServiceV134.start(context)
+            if(
+                android.os.Build.VERSION.SDK_INT>=33 &&
+                androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                )!=android.content.pm.PackageManager.PERMISSION_GRANTED
+            ){
+                callNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }else{
+            runCatching{RsCallMonitorServiceV134.stop(context)}
         }
     }
 
@@ -378,6 +398,9 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                         }
                     }
                 }
+            }
+            if(role!=null && introDone && !authRestoring){
+                RsGlobalCallHostV134(c,lang,role!!)
             }
         }
         @Suppress("UNUSED_VARIABLE") val keepBrandRevisionObserved=currentBrandRevision
