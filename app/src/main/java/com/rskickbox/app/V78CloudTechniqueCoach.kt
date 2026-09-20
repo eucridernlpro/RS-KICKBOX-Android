@@ -161,5 +161,7 @@ suspend fun rsDeleteTechniqueSubmissionV78(
     runCatching{
         client.storage.from(RS_TECHNIQUE_BUCKET_V78).delete(submission.mediaPath)
     }
+    // Migration 0049 keeps quota usage accurate after the file is removed.
+    rsRemoveStudentMediaAssetByPathV115(RS_TECHNIQUE_BUCKET_V78,submission.mediaPath).getOrNull()
     Unit
 }
