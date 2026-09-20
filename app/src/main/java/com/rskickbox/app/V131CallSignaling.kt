@@ -36,6 +36,17 @@ data class RsCallPeerV131(
 )
 
 @Serializable
+data class RsCallPeerStatusV132(
+    @SerialName("self_online") val selfOnline:Boolean=false,
+    @SerialName("peer_online") val peerOnline:Boolean=false,
+    @SerialName("peer_id") val peerId:String,
+    @SerialName("peer_email") val peerEmail:String,
+    @SerialName("peer_name") val peerName:String,
+    @SerialName("peer_avatar_path") val peerAvatarPath:String?=null,
+    @SerialName("peer_last_seen_at") val peerLastSeenAt:String?=null
+)
+
+@Serializable
 data class RsCallSignalV131(
     val id:Long,
     @SerialName("sender_id") val senderId:String,
@@ -104,4 +115,13 @@ suspend fun rsCallSignalsSinceV131(callId:String,afterId:Long):Result<List<RsCal
             put("p_after_id",afterId)
         }
     ).decodeList<RsCallSignalV131>()
+}
+
+
+suspend fun rsCallPeerStatusV132(peerId:String):Result<RsCallPeerStatusV132?> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc(
+        "rs_call_peer_status",
+        buildJsonObject{put("p_peer_id",peerId)}
+    ).decodeList<RsCallPeerStatusV132>().firstOrNull()
 }
