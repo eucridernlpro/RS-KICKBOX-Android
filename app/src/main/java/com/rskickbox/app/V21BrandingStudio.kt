@@ -103,8 +103,26 @@ private fun rsBundledVisualUriV113(context:android.content.Context,slot:String):
     return if(id==0)"" else "android.resource://"+context.packageName+"/"+id
 }
 
+private fun rsVisualUriUsableV116(context:android.content.Context,value:String):Boolean{
+    if(value.isBlank())return false
+    return runCatching{
+        val uri=Uri.parse(value)
+        when(uri.scheme?.lowercase()){
+            "file"->{
+                val path=uri.path?:return@runCatching false
+                File(path).exists() && File(path).length()>0L
+            }
+            "content"->context.contentResolver.openAssetFileDescriptor(uri,"r")?.use{it.length!=0L}?:false
+            "android.resource"->true
+            "http","https"->true
+            else->false
+        }
+    }.getOrDefault(false)
+}
+
 private fun rsVisualUriWithBundledFallbackV113(context:android.content.Context,store:RsStore,slot:String):String{
-    return store.s(visualKeyV21(slot),"").ifBlank{rsBundledVisualUriV113(context,slot)}
+    val saved=store.s(visualKeyV21(slot),"")
+    return if(rsVisualUriUsableV116(context,saved)) saved else rsBundledVisualUriV113(context,slot)
 }
 
 
