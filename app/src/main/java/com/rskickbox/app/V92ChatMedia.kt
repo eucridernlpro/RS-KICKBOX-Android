@@ -130,14 +130,23 @@ suspend fun rsUploadChatMediaV92(
     val contentType=if(kind=="IMAGE")ContentType.Image.JPEG
         else runCatching{ContentType.parse(if(mime.isBlank())"video/mp4" else mime)}.getOrDefault(ContentType.Video.MP4)
 
-    client.storage.from(RS_CHAT_MEDIA_BUCKET_V92).upload(path,bytes){
-        upsert=false
-        this.contentType=contentType
-    }
     val currentUser=client.auth.currentUserOrNull()
     val studentId=when(scopeType){
         "coach"->scopeId
         else->currentUser?.id.orEmpty()
+    }
+    if(studentId.isNotBlank()){
+        val capacity=rsStudentStorageCapacityV114(studentId,bytes.size.toLong()).getOrThrow()
+        require(capacity.allowed){
+            capacity.warningMessage.ifBlank{
+                "Student storage limit reached. Free some space or increase the student's storage allowance."
+            }
+        }
+    }
+
+    client.storage.from(RS_CHAT_MEDIA_BUCKET_V92).upload(path,bytes){
+        upsert=false
+        this.contentType=contentType
     }
     if(studentId.isNotBlank()){
         val registration=rsRegisterStudentMediaAssetV111(
