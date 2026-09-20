@@ -149,12 +149,14 @@ suspend fun rsStaffEditCoachMessageV111(messageId:String,body:String):Result<Uni
 
 suspend fun rsStaffDeleteCoachMessageV111(messageId:String,mediaPath:String?):Result<Unit> = runCatching{
     val client=rsSupabaseClientV60() ?: error("Cloud backend is not configured.")
+    if(!mediaPath.isNullOrBlank()){
+        runCatching{client.storage.from("rs-chat-media").delete(mediaPath)}
+    }
     client.postgrest.rpc(
         "rs_staff_delete_coach_message",
         buildJsonObject{put("p_message_id",messageId)}
     )
     if(!mediaPath.isNullOrBlank()){
-        runCatching{client.storage.from("rs-chat-media").delete(mediaPath)}
         rsRemoveStudentMediaAssetByPathV115("rs-chat-media",mediaPath).getOrNull()
     }
     Unit
@@ -201,5 +203,74 @@ suspend fun rsStaffClearGroupChatV111(groupId:String,mediaPaths:List<String>):Re
     mediaPaths.filter{it.isNotBlank()}.distinct().forEach{path->
         runCatching{client.storage.from("rs-chat-media").delete(path)}
     }
+    Unit
+}
+
+
+suspend fun rsStaffClearCoachThreadRobustV116(
+    studentId:String,
+    messages:List<RsCloudCoachMessageV72>
+):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("Cloud backend is not configured.")
+    val mediaPaths=messages.mapNotNull{it.mediaPath}.filter{it.isNotBlank()}.distinct()
+    mediaPaths.forEach{path->runCatching{client.storage.from("rs-chat-media").delete(path)}}
+
+    val bulk=runCatching{
+        client.postgrest.rpc(
+            "rs_staff_clear_coach_thread",
+            buildJsonObject{put("p_student_id",studentId)}
+        )
+    }
+    if(bulk.isFailure){
+        var last:Throwable?=bulk.exceptionOrNull()
+        messages.forEach{message->
+            val one=runCatching{
+                client.postgrest.rpc(
+                    "rs_staff_delete_coach_message",
+                    buildJsonObject{put("p_message_id",message.id)}
+                )
+            }
+            if(one.isFailure)last=one.exceptionOrNull()
+        }
+        if(last!=null){
+            val remaining=rsCloudCoachMessagesV72(studentId).getOrDefault(emptyList())
+            if(remaining.isNotEmpty())throw last!!
+        }
+    }
+    mediaPaths.forEach{path->rsRemoveStudentMediaAssetByPathV115("rs-chat-media",path).getOrNull()}
+    Unit
+}
+
+suspend fun rsStaffClearGroupChatRobustV116(
+    groupId:String,
+    messages:List<RsCloudGroupMessageV92>
+):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("Cloud backend is not configured.")
+    val mediaPaths=messages.mapNotNull{it.mediaPath}.filter{it.isNotBlank()}.distinct()
+    mediaPaths.forEach{path->runCatching{client.storage.from("rs-chat-media").delete(path)}}
+
+    val bulk=runCatching{
+        client.postgrest.rpc(
+            "rs_staff_clear_group_chat",
+            buildJsonObject{put("p_group_id",groupId)}
+        )
+    }
+    if(bulk.isFailure){
+        var last:Throwable?=bulk.exceptionOrNull()
+        messages.forEach{message->
+            val one=runCatching{
+                client.postgrest.rpc(
+                    "rs_staff_delete_group_message",
+                    buildJsonObject{put("p_message_id",message.id)}
+                )
+            }
+            if(one.isFailure)last=one.exceptionOrNull()
+        }
+        if(last!=null){
+            val remaining=rsCloudGroupMessagesV92(groupId).getOrDefault(emptyList())
+            if(remaining.isNotEmpty())throw last!!
+        }
+    }
+    mediaPaths.forEach{path->rsRemoveStudentMediaAssetByPathV115("rs-chat-media",path).getOrNull()}
     Unit
 }
