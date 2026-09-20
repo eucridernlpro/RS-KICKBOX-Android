@@ -17,6 +17,12 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         RsSupabaseV60.client?.handleDeeplinks(intent)
-        recreate()
+
+        // MediaSession/launcher intents can arrive while music keeps playing.
+        // Do not recreate the whole activity for those: recreation used to
+        // tear down Compose state and could bounce a valid user back to Login.
+        val isAuthCallback=intent.data?.scheme.equals("rskickbox",ignoreCase=true) &&
+            intent.data?.host.equals("auth-callback",ignoreCase=true)
+        if(isAuthCallback)recreate()
     }
 }
