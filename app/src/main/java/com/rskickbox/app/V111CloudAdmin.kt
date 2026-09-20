@@ -23,6 +23,31 @@ data class RsStudentMediaAssetV111(
     @SerialName("created_at") val createdAt:String
 )
 
+
+
+@Serializable
+data class RsStudentStorageCapacityV114(
+    @SerialName("used_bytes") val usedBytes:Long,
+    @SerialName("limit_bytes") val limitBytes:Long,
+    @SerialName("remaining_bytes") val remainingBytes:Long,
+    val allowed:Boolean,
+    @SerialName("warning_message") val warningMessage:String
+)
+
+suspend fun rsStudentStorageCapacityV114(
+    studentId:String,
+    incomingBytes:Long
+):Result<RsStudentStorageCapacityV114> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("Cloud backend is not configured.")
+    client.postgrest.rpc(
+        "rs_student_storage_capacity",
+        buildJsonObject{
+            put("p_student_id",studentId)
+            put("p_incoming_bytes",incomingBytes.coerceAtLeast(0))
+        }
+    ).decodeList<RsStudentStorageCapacityV114>().first()
+}
+
 @Serializable
 data class RsPrivateLessonTrainingV111(
     @SerialName("booking_id") val bookingId:String,
