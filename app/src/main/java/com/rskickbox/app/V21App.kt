@@ -56,15 +56,21 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         }
     }
     var role by remember { mutableStateOf<RsRole?>(localSessionRole) }
-    var route by remember { mutableStateOf(if(localSessionRole==RsRole.TRAINER)"trainer" else "home") }
+    val restoredRoute=remember(localSessionRole){
+        val saved=store.s("session_last_route","")
+        if(localSessionRole==RsRole.TRAINER) saved.ifBlank{"trainer"} else saved.ifBlank{"home"}
+    }
+    var route by remember { mutableStateOf(restoredRoute) }
     var authRestoreAttempted by remember { mutableStateOf(false) }
     var authRestoring by remember { mutableStateOf(localSessionRole==null && RsSupabaseV60.configured) }
     var cloudControlsRevision by remember { mutableIntStateOf(0) }
     var brandRevision by remember { mutableIntStateOf(0) }
-    var brandAssetsRestoring by remember { mutableStateOf(RsSupabaseV60.configured) }
+    // Cloud brand/visual sync runs in the background. Never block cold start with
+    // a generic loading screen before the cinematic RS splash.
+    var brandAssetsRestoring by remember { mutableStateOf(false) }
     var lang by remember { mutableStateOf(rsInitialLanguageV111(store)) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
-    var introDone by remember { mutableStateOf(RsRuntimeV108.introShownThisProcess || !store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
+    var introDone by remember { mutableStateOf(localSessionFresh || RsRuntimeV108.introShownThisProcess || !store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
     var passwordRecoveryLaunch by remember(initialAuthDeepLink){
         mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
     }
@@ -75,7 +81,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
             rsSyncCloudBrandV100(store)
                 .onSuccess{settings->
                     theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
-                    introDone=RsRuntimeV108.introShownThisProcess || !settings.introEnabled || (!settings.introEveryLaunch && store.b("intro_seen",false))
+                    introDone=localSessionFresh || RsRuntimeV108.introShownThisProcess || !settings.introEnabled || (!settings.introEveryLaunch && store.b("intro_seen",false))
                     brandRevision++
                 }
             rsSyncCloudVisualAssetsV101(context,store)
@@ -127,7 +133,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                 store.ps("session_plan",session.plan)
                                 store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
                                 role=session.role
-                                route=if(session.role==RsRole.TRAINER)"trainer" else "home"
+                                route=store.s("session_last_route","").ifBlank{if(session.role==RsRole.TRAINER)"trainer" else "home"}
                             }else{
                                 store.ps("session_password_auth_ms","0")
                                 role=null
@@ -164,6 +170,10 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                     if(role==RsRole.STUDENT && !rsStudentRouteEnabledV82(store,route))route="home"
                 }
         }
+    }
+
+    LaunchedEffect(role,route){
+        if(role!=null)store.ps("session_last_route",route)
     }
 
     LaunchedEffect(role,route,cloudControlsRevision){
@@ -270,6 +280,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                                 passwordRecoveryLaunch=false
                                 role=null
                                 route="home"
+                                store.ps("session_last_route","")
                                 store.ps("session_password_auth_ms","0")
                                 appScope.launch { rsCloudLogoutV63() }
                             }) {
