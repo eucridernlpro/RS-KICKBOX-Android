@@ -348,40 +348,49 @@ private fun RsTrainerCoachInboxV44(c:RsPalette,store:RsStore,lang:RsLang){
 private fun RsCloudCoachBubbleV72(
     c:RsPalette,
     lang:RsLang,
-    message:RsCloudCoachMessageV72
+    message:RsCloudCoachMessageV72,
+    viewerRole:RsRole
 ){
     val trainer=message.senderRole=="trainer" || message.senderRole=="admin"
-    Surface(
-        color=if(trainer)c.gold.copy(alpha=.18f) else c.panel,
-        shape=MaterialTheme.shapes.large,
-        modifier=Modifier.fillMaxWidth()
+    val mine=if(viewerRole==RsRole.TRAINER)trainer else !trainer
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement=if(mine)Arrangement.End else Arrangement.Start,
+        verticalAlignment=Alignment.Bottom
     ){
-        Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(4.dp)){
-            if(trainer){
+        if(!mine && !trainer){
+            RsMemberAvatarV68(c,message.studentEmail,message.studentName,size=30.dp)
+            Spacer(Modifier.width(7.dp))
+        }
+        Surface(
+            color=if(mine)c.gold.copy(alpha=.17f) else c.panel.copy(alpha=.72f),
+            shape=RoundedCornerShape(
+                topStart=20.dp,
+                topEnd=20.dp,
+                bottomStart=if(mine)20.dp else 6.dp,
+                bottomEnd=if(mine)6.dp else 20.dp
+            ),
+            border=BorderStroke(1.dp,if(mine)c.gold.copy(alpha=.26f) else c.gold.copy(alpha=.10f)),
+            tonalElevation=4.dp,
+            modifier=Modifier.fillMaxWidth(.84f)
+        ){
+            Column(Modifier.padding(11.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
                 Text(
-                    rsCoachUiV44(lang,"trainer"),
-                    color=c.bright,
+                    if(trainer)rsCoachUiV44(lang,"trainer")
+                    else message.studentName.ifBlank{rsCoachUiV44(lang,"student")},
+                    color=if(mine)c.bright else c.text,
                     fontWeight=FontWeight.Black,
-                    fontSize=10.sp
+                    fontSize=9.sp
                 )
-            }else{
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement=Arrangement.spacedBy(8.dp),
-                    verticalAlignment=Alignment.CenterVertically
-                ){
-                    RsMemberAvatarV68(c,message.studentEmail,message.studentName,size=32.dp)
-                    Text(
-                        message.studentName.ifBlank{rsCoachUiV44(lang,"student")},
-                        color=c.bright,
-                        fontWeight=FontWeight.Black,
-                        fontSize=11.sp
-                    )
-                }
+                if(message.body.isNotBlank())Text(message.body,color=c.text,fontSize=13.sp,lineHeight=18.sp)
+                RsChatAttachmentPreviewV92(c,lang,message.mediaPath,message.mediaKind,message.mediaName)
+                Text(
+                    rsCoachTimeV44(message.createdAtMillis()),
+                    color=c.muted,
+                    fontSize=8.sp,
+                    modifier=Modifier.align(Alignment.End)
+                )
             }
-            if(message.body.isNotBlank())Text(message.body,color=c.text)
-            RsChatAttachmentPreviewV92(c,lang,message.mediaPath,message.mediaKind,message.mediaName)
-            Text(rsCoachTimeV44(message.createdAtMillis()),color=c.muted,fontSize=9.sp)
         }
     }
 }
@@ -427,7 +436,7 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
             Text(rsCoachUiV44(lang,"start"),color=c.muted)
         }
 
-        messages.forEach{RsCloudCoachBubbleV72(c,lang,it)}
+        messages.forEach{RsCloudCoachBubbleV72(c,lang,it,RsRole.STUDENT)}
 
         if(studentId.isNotBlank()){
             RsChatComposerV92(
@@ -541,7 +550,7 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang,initialStudentId
             if(status.isNotBlank())RsPanel(c){Text(status,color=c.muted,fontSize=10.sp)}
             if(messages.isEmpty()&&!loading)RsPanel(c){Text(rsCoachUiV44(lang,"no_messages"),color=c.muted)}
             messages.forEach{message->
-                RsCloudCoachBubbleV72(c,lang,message)
+                RsCloudCoachBubbleV72(c,lang,message,RsRole.TRAINER)
                 RsTrainerMessageAdminV111(
                     c=c,
                     lang=lang,
