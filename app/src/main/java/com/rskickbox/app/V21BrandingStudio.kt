@@ -755,12 +755,18 @@ fun RsUriPreviewV21(uri:String,modifier:Modifier=Modifier,position:String="CENTE
 fun RsPerPageBackgroundV21(store:RsStore,route:String,content:@Composable ()->Unit){
     val context=LocalContext.current
     val key=when(route){"home"->"student_home";"trainer"->"trainer_home";else->route}
-    val uri=rsVisualUriWithBundledFallbackV113(context,store,key)
-    val opacity=store.s(opacityKeyV21(key),"0.60").toFloatOrNull()?:.60f
+    val saved=store.s(visualKeyV21(key),"")
+    val customVisual=rsVisualUriUsableV116(context,saved)
+    val uri=if(customVisual)saved else rsBundledVisualUriV113(context,key)
+    val configuredOpacity=store.s(opacityKeyV21(key),"0.60").toFloatOrNull()?:.60f
+    // Keep bundled art clearly visible. Custom Visual Studio backgrounds still use
+    // the trainer-selected opacity without being overridden here.
+    val opacity=if(customVisual)configuredOpacity.coerceIn(0f,.88f)
+        else configuredOpacity.coerceIn(0f,.42f)
     val pos=store.s(posKeyV21(key),"CENTER")
     Box(Modifier.fillMaxSize()){
         if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.fillMaxSize(),pos)
-        if(uri.isNotBlank())Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=opacity.coerceIn(0f,.88f))))
+        if(uri.isNotBlank())Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=opacity)))
         content()
     }
 }
