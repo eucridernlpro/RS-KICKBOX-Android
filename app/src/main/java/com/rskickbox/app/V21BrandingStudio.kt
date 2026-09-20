@@ -42,7 +42,7 @@ private fun opacityKeyV21(slot:String)="visual_v21_opacity_$slot"
 private fun rsVisualPackFileV115(context:android.content.Context,fileName:String):String{
     if(fileName.isBlank())return ""
     return runCatching{
-        val dir=File(context.filesDir,"rs_visual_pack_v115").apply{mkdirs()}
+        val dir=File(context.filesDir,"rs_visual_pack_v116").apply{mkdirs()}
         val wanted=File(dir,fileName)
         if(!wanted.exists()||wanted.length()==0L){
             ZipInputStream(context.assets.open("rs_visual_pack_v115.zip")).use{zip->
@@ -112,9 +112,13 @@ private fun rsVisualUriUsableV116(context:android.content.Context,value:String):
                 val path=uri.path?:return@runCatching false
                 File(path).exists() && File(path).length()>0L
             }
-            "content"->context.contentResolver.openAssetFileDescriptor(uri,"r")?.use{it.length!=0L}?:false
+            "content"->context.contentResolver.openInputStream(uri)?.use{input->
+                input.read()!=-1
+            }?:false
             "android.resource"->true
-            "http","https"->true
+            // Cloud visual sync stores a verified local file URI. A raw remote URL here
+            // is treated as stale so bundled visuals still work offline and after updates.
+            "http","https"->false
             else->false
         }
     }.getOrDefault(false)
