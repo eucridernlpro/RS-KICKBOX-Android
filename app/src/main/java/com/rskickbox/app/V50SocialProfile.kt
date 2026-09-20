@@ -697,7 +697,7 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
         }else{
             rsCloudGroupMessagesV92(selectedGroup!!.id)
                 .onSuccess{messages=it}
-                .onFailure{status=rsGroupChatT(lang,"update_error")}
+                .onFailure{status=rsChatBackendFriendlyErrorV121(lang,it)}
         }
         loading=false
     }
