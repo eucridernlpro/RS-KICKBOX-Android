@@ -1,11 +1,14 @@
 package com.rskickbox.app
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.media.MediaRecorder
 import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -28,7 +31,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.FileProvider
+import androidx.core.content.ContextCompat
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.storage
@@ -126,10 +135,10 @@ private fun rsChatImageBytesV92(context:Context,uri:Uri):ByteArray{
     }
 }
 
-private fun rsChatVideoBytesV115(context:Context,uri:Uri):ByteArray{
+private fun rsChatBinaryBytesV125(context:Context,uri:Uri,maxBytes:Long=30L*1024L*1024L):ByteArray{
     val size=rsChatSourceSizeV115(context,uri)
-    require(size in 1..(30L*1024L*1024L)){"Chat video must be 30 MB or smaller."}
-    require(size<=Int.MAX_VALUE){"Video is too large."}
+    require(size in 1..maxBytes){"Chat attachment must be 30 MB or smaller."}
+    require(size<=Int.MAX_VALUE){"Attachment is too large."}
     val result=ByteArray(size.toInt())
     context.contentResolver.openInputStream(uri)?.use{input->
         var offset=0
@@ -138,8 +147,8 @@ private fun rsChatVideoBytesV115(context:Context,uri:Uri):ByteArray{
             if(read<0)break
             offset+=read
         }
-        require(offset==result.size){"Could not read the complete video."}
-    } ?: error("Could not read video.")
+        require(offset==result.size){"Could not read the complete attachment."}
+    } ?: error("Could not read attachment.")
     return result
 }
 
@@ -152,12 +161,14 @@ suspend fun rsUploadChatMediaV92(
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     require(scopeType=="coach"||scopeType=="group"){"Invalid chat scope."}
     val mime=context.contentResolver.getType(uri)?.lowercase().orEmpty()
-    val kind=when{
-        mime.startsWith("video/")->"VIDEO"
-        mime.startsWith("audio/")->"AUDIO"
-        else->"IMAGE"
-    }
     val name=rsChatFileNameV92(context,uri)
+    val lowerName=name.lowercase()
+    val kind=when{
+        mime.startsWith("video/") || lowerName.endsWith(".mp4") || lowerName.endsWith(".webm") || lowerName.endsWith(".mov") || lowerName.endsWith(".3gp")->"VIDEO"
+        mime.startsWith("audio/") || lowerName.endsWith(".m4a") || lowerName.endsWith(".aac") || lowerName.endsWith(".mp3") || lowerName.endsWith(".ogg") || lowerName.endsWith(".wav")->"AUDIO"
+        mime.startsWith("image/") || lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg") || lowerName.endsWith(".png") || lowerName.endsWith(".webp") || lowerName.endsWith(".gif")->"IMAGE"
+        else->"FILE"
+    }
 
     if(kind=="VIDEO"){
         val duration=rsChatMediaDurationMsV122(context,uri)
@@ -169,7 +180,7 @@ suspend fun rsUploadChatMediaV92(
 
     val bytes=try{
         if(kind=="IMAGE")rsChatImageBytesV92(context,uri)
-        else rsChatVideoBytesV115(context,uri)
+        else rsChatBinaryBytesV125(context,uri)
     }catch(t:OutOfMemoryError){
         throw IllegalStateException("This media file is too large for the device. Choose a smaller image or video.")
     }
@@ -181,6 +192,7 @@ suspend fun rsUploadChatMediaV92(
         kind=="AUDIO" && mime.contains("ogg")->"ogg"
         kind=="AUDIO" && mime.contains("wav")->"wav"
         kind=="AUDIO"->"m4a"
+        kind=="FILE"->lowerName.substringAfterLast('.', "bin").take(8).replace(Regex("[^a-z0-9]"),"").ifBlank{"bin"}
         mime=="video/webm"->"webm"
         mime=="video/quicktime"->"mov"
         mime=="video/3gpp"->"3gp"
@@ -190,6 +202,7 @@ suspend fun rsUploadChatMediaV92(
     val contentType=when{
         kind=="IMAGE"->ContentType.Image.JPEG
         kind=="AUDIO"->runCatching{ContentType.parse(if(mime.isBlank())"audio/mp4" else mime)}.getOrDefault(ContentType.parse("audio/mp4"))
+        kind=="FILE"->runCatching{ContentType.parse(if(mime.isBlank())"application/octet-stream" else mime)}.getOrDefault(ContentType.Application.OctetStream)
         else->runCatching{ContentType.parse(if(mime.isBlank())"video/mp4" else mime)}.getOrDefault(ContentType.Video.MP4)
     }
 
