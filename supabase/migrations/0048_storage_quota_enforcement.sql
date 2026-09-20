@@ -122,7 +122,7 @@ create or replace function public.rs_student_storage_capacity(
     warning_message text
 )
 language plpgsql stable security definer set search_path=''
-as $
+as $capacity$
 declare
     v_uid uuid:=(select auth.uid());
     v_backend_tier text;
@@ -180,7 +180,7 @@ begin
         (v_used_bytes+v_incoming)<=v_limit_bytes,
         v_warning;
 end;
-$;
+$capacity$;
 
 revoke execute on function public.rs_student_storage_capacity(uuid,bigint) from public,anon;
 grant execute on function public.rs_student_storage_capacity(uuid,bigint) to authenticated;
