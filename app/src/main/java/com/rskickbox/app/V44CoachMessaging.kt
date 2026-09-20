@@ -404,10 +404,10 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
                 studentId=id
                 rsCloudCoachMessagesV72(id)
                     .onSuccess{messages=it}
-                    .onFailure{status=rsCloudT93(lang,"could_not_save")}
+                    .onFailure{status=rsChatBackendFriendlyErrorV121(lang,it)}
                 rsCloudMarkCoachReadV72(id)
             }
-            .onFailure{status=rsCloudT93(lang,"could_not_save")}
+            .onFailure{status=rsChatBackendFriendlyErrorV121(lang,it)}
         loading=false
     }
 
@@ -461,12 +461,12 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang){
         if(selected==null){
             rsCloudCoachThreadsV72()
                 .onSuccess{threads=it}
-                .onFailure{status=rsCloudT93(lang,"could_not_save")}
+                .onFailure{status=rsChatBackendFriendlyErrorV121(lang,it)}
         }else{
             val id=selected!!.studentId
             rsCloudCoachMessagesV72(id)
                 .onSuccess{messages=it}
-                .onFailure{status=rsCloudT93(lang,"could_not_save")}
+                .onFailure{status=rsChatBackendFriendlyErrorV121(lang,it)}
             rsCloudMarkCoachReadV72(id)
         }
         loading=false
