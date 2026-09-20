@@ -75,7 +75,7 @@ data class RsCloudGroupMessageV92(
 )
 
 private fun rsChatFileNameV92(context:Context,uri:Uri):String{
-    var result="attachment"
+    var result=uri.lastPathSegment?.substringAfterLast('/')?.takeIf{it.isNotBlank()} ?: "attachment"
     runCatching{
         context.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use{cur->
             if(cur.moveToFirst())result=cur.getString(0)?:result
@@ -93,6 +93,9 @@ private fun rsChatMediaDurationMsV122(context:Context,uri:Uri):Long{
 }
 
 private fun rsChatSourceSizeV115(context:Context,uri:Uri):Long{
+    if(uri.scheme=="file"){
+        return runCatching{uri.path?.let(::File)?.length()?:-1L}.getOrDefault(-1L)
+    }
     return runCatching{
         context.contentResolver.query(uri,arrayOf(OpenableColumns.SIZE),null,null,null)?.use{cur->
             if(cur.moveToFirst())cur.getLong(0) else -1L
