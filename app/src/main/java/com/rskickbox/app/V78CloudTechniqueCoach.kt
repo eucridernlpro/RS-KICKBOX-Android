@@ -88,16 +88,14 @@ suspend fun rsUploadTechniqueSubmissionV78(
                 put("student_summary",summary)
             }
         )
-        runCatching{
-            rsRegisterStudentMediaAssetV111(
-                studentId=user.id,
-                bucket=RS_TECHNIQUE_BUCKET_V78,
-                path=path,
-                kind="VIDEO",
-                sourceArea="TECHNIQUE",
-                byteSize=bytes.size.toLong()
-            )
-        }
+        rsRegisterStudentMediaAssetV111(
+            studentId=user.id,
+            bucket=RS_TECHNIQUE_BUCKET_V78,
+            path=path,
+            kind="VIDEO",
+            sourceArea="TECHNIQUE",
+            byteSize=bytes.size.toLong()
+        ).getOrThrow()
     }catch(t:Throwable){
         runCatching{client.storage.from(RS_TECHNIQUE_BUCKET_V78).delete(path)}
         throw t
