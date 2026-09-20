@@ -433,6 +433,14 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
         }
 
+        RsDirectCallControlsV133(
+            c=c,
+            lang=lang,
+            role=RsRole.STUDENT,
+            peerId="",
+            peerName=rsCoachUiV44(lang,"student_title")
+        )
+
         if(messages.isEmpty()&&!loading)RsPanel(c){
             Text(rsCoachUiV44(lang,"no_messages"),color=c.bright,fontWeight=FontWeight.Bold)
             Text(rsCoachUiV44(lang,"start"),color=c.muted)
@@ -544,6 +552,15 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang,initialStudentId
                     }
                 }
             }
+
+            RsDirectCallControlsV133(
+                c=c,
+                lang=lang,
+                role=RsRole.TRAINER,
+                peerId=thread.studentId,
+                peerName=thread.studentName.ifBlank{thread.studentEmail}
+            )
+
             OutlinedButton(
                 onClick={selected=null;draft="";status="";messages=emptyList();revision++},
                 modifier=Modifier.fillMaxWidth()
