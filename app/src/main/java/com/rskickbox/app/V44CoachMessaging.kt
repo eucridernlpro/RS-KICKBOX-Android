@@ -556,9 +556,9 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang){
                     lang=lang,
                     enabled=!loading,
                     onClear={
-                        rsStaffClearCoachThreadV111(
+                        rsStaffClearCoachThreadRobustV116(
                             thread.studentId,
-                            messages.mapNotNull{it.mediaPath}
+                            messages
                         )
                     },
                     onChanged={messages=emptyList();revision++},
