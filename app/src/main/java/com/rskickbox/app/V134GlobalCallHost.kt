@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,6 +36,7 @@ fun rsCancelIncomingCallNotificationV134(context:Context,callId:String){
     runCatching{
         context.getSystemService(NotificationManager::class.java).cancel(callId.hashCode())
     }
+    RsCallMonitorServiceV134.stopRing(context)
 }
 
 @Composable
@@ -108,6 +111,12 @@ fun RsGlobalCallHostV134(
                     horizontalAlignment=Alignment.CenterHorizontally,
                     verticalArrangement=Arrangement.spacedBy(16.dp)
                 ){
+                    Image(
+                        painter=painterResource(R.drawable.rs_launcher_royal_v129),
+                        contentDescription="RS KICKBOXING",
+                        modifier=Modifier.size(88.dp)
+                    )
+
                     Surface(
                         color=Color.Black.copy(alpha=.72f),
                         shape=RoundedCornerShape(18.dp),
