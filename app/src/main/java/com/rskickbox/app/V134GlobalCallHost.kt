@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -88,7 +90,15 @@ fun RsGlobalCallHostV134(
             properties=DialogProperties(usePlatformDefaultWidth=false)
         ){
             Box(
-                Modifier.fillMaxSize().background(Color.Black),
+                Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Black,
+                            c.gold.copy(alpha=.07f),
+                            Color.Black
+                        )
+                    )
+                ),
                 contentAlignment=Alignment.Center
             ){
                 Column(
@@ -96,23 +106,33 @@ fun RsGlobalCallHostV134(
                     horizontalAlignment=Alignment.CenterHorizontally,
                     verticalArrangement=Arrangement.spacedBy(16.dp)
                 ){
-                    Text(
-                        if(call.callType=="VIDEO")"RS VIDEO CALL" else "RS AUDIO CALL",
-                        color=c.gold,
-                        fontWeight=FontWeight.Black,
-                        fontSize=16.sp
-                    )
+                    Surface(
+                        color=Color.Black.copy(alpha=.72f),
+                        shape=RoundedCornerShape(18.dp),
+                        border=BorderStroke(1.dp,c.gold.copy(alpha=.48f))
+                    ){
+                        Text(
+                            if(call.callType=="VIDEO")"♛  RS VIDEO CALL" else "♛  RS AUDIO CALL",
+                            color=c.bright,
+                            fontWeight=FontWeight.Black,
+                            fontSize=13.sp,
+                            letterSpacing=1.1.sp,
+                            modifier=Modifier.padding(horizontal=16.dp,vertical=9.dp)
+                        )
+                    }
                     Surface(
                         shape=CircleShape,
-                        color=c.panel,
-                        modifier=Modifier.size(138.dp)
+                        color=Color.Black,
+                        border=BorderStroke(3.dp,c.gold.copy(alpha=.82f)),
+                        tonalElevation=18.dp,
+                        modifier=Modifier.size(162.dp)
                     ){
                         Box(contentAlignment=Alignment.Center){
                             RsMemberAvatarV68(
                                 c,
                                 call.peerEmail,
                                 call.peerName.ifBlank{call.peerEmail},
-                                size=138.dp
+                                size=156.dp
                             )
                         }
                     }
@@ -123,53 +143,74 @@ fun RsGlobalCallHostV134(
                         fontSize=26.sp
                     )
                     Text(
-                        if(call.callType=="VIDEO")"Incoming video call" else "Incoming audio call",
+                        if(call.callType=="VIDEO")"INCOMING VIDEO CALL" else "INCOMING AUDIO CALL",
+                        color=c.gold,
+                        fontSize=11.sp,
+                        fontWeight=FontWeight.Black,
+                        letterSpacing=1.2.sp
+                    )
+                    Text(
+                        "RS KICKBOXING · SECURE CALL",
                         color=c.muted,
-                        fontSize=14.sp
+                        fontSize=9.sp
                     )
                     if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
 
                     Row(
                         Modifier.fillMaxWidth(),
-                        horizontalArrangement=Arrangement.spacedBy(16.dp)
+                        horizontalArrangement=Arrangement.SpaceEvenly,
+                        verticalAlignment=Alignment.CenterVertically
                     ){
-                        OutlinedButton(
-                            onClick={
-                                scope.launch{
-                                    rsSetCallStatusV131(call.id,"DECLINED")
-                                    rsCancelIncomingCallNotificationV134(context,call.id)
-                                    incoming=null
-                                }
-                            },
-                            modifier=Modifier.weight(1f).height(56.dp)
-                        ){
-                            Text("✕  Decline")
-                        }
-                        Button(
-                            onClick={
-                                val needs=buildList{
-                                    if(ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)
-                                        add(Manifest.permission.RECORD_AUDIO)
-                                    if(call.callType=="VIDEO" && ContextCompat.checkSelfPermission(context,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED)
-                                        add(Manifest.permission.CAMERA)
-                                }
-                                if(needs.isEmpty()){
+                        Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(7.dp)){
+                            Surface(
+                                shape=CircleShape,
+                                color=Color(0xFF3A0909),
+                                border=BorderStroke(2.dp,Color(0xFFFF5C5C).copy(alpha=.80f)),
+                                tonalElevation=14.dp,
+                                modifier=Modifier.size(70.dp).clickable{
                                     scope.launch{
-                                        rsSetCallStatusV131(call.id,"ACCEPTED")
-                                            .onSuccess{
-                                                rsCancelIncomingCallNotificationV134(context,call.id)
-                                                incoming=null
-                                            }
-                                            .onFailure{status=it.message.orEmpty()}
+                                        rsSetCallStatusV131(call.id,"DECLINED")
+                                        rsCancelIncomingCallNotificationV134(context,call.id)
+                                        incoming=null
                                     }
-                                }else{
-                                    pendingAccept=call
-                                    permissionLauncher.launch(needs.toTypedArray())
                                 }
-                            },
-                            modifier=Modifier.weight(1f).height(56.dp)
-                        ){
-                            Text("☎  Accept")
+                            ){
+                                Box(contentAlignment=Alignment.Center){Text("✕",color=Color.White,fontSize=25.sp,fontWeight=FontWeight.Black)}
+                            }
+                            Text("DECLINE",color=Color(0xFFFF8A80),fontSize=9.sp,fontWeight=FontWeight.Black,letterSpacing=.9.sp)
+                        }
+
+                        Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(7.dp)){
+                            Surface(
+                                shape=CircleShape,
+                                color=c.gold.copy(alpha=.18f),
+                                border=BorderStroke(2.dp,c.bright.copy(alpha=.88f)),
+                                tonalElevation=18.dp,
+                                modifier=Modifier.size(76.dp).clickable{
+                                    val needs=buildList{
+                                        if(ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)
+                                            add(Manifest.permission.RECORD_AUDIO)
+                                        if(call.callType=="VIDEO" && ContextCompat.checkSelfPermission(context,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED)
+                                            add(Manifest.permission.CAMERA)
+                                    }
+                                    if(needs.isEmpty()){
+                                        scope.launch{
+                                            rsSetCallStatusV131(call.id,"ACCEPTED")
+                                                .onSuccess{
+                                                    rsCancelIncomingCallNotificationV134(context,call.id)
+                                                    incoming=null
+                                                }
+                                                .onFailure{status=it.message.orEmpty()}
+                                        }
+                                    }else{
+                                        pendingAccept=call
+                                        permissionLauncher.launch(needs.toTypedArray())
+                                    }
+                                }
+                            ){
+                                Box(contentAlignment=Alignment.Center){Text("☎",color=c.bright,fontSize=27.sp,fontWeight=FontWeight.Black)}
+                            }
+                            Text("ACCEPT",color=c.bright,fontSize=9.sp,fontWeight=FontWeight.Black,letterSpacing=.9.sp)
                         }
                     }
                 }
