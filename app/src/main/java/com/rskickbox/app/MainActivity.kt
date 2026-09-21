@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun applyIncomingCallWindow(intent:Intent?){
-        if(intent?.action=="com.rskickbox.app.INCOMING_CALL"){
+        if(intent?.action=="com.rskickbox.app.INCOMING_CALL" || intent?.action=="com.rskickbox.app.INCOMING_VIDEO_ROOM"){
             if(android.os.Build.VERSION.SDK_INT>=27){
                 setShowWhenLocked(true)
                 setTurnScreenOn(true)
