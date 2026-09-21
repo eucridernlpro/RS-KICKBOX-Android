@@ -401,6 +401,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
             }
             if(role!=null && introDone && !authRestoring){
                 RsGlobalCallHostV134(c,lang,role!!)
+                RsGlobalVideoRoomHostV137(c,lang,role!!)
             }
         }
         @Suppress("UNUSED_VARIABLE") val keepBrandRevisionObserved=currentBrandRevision
