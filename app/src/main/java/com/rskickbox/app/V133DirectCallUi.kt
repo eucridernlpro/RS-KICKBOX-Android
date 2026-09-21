@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -370,6 +372,12 @@ fun RsActiveCallDialogV133(
         properties=DialogProperties(usePlatformDefaultWidth=false)
     ){
         Box(Modifier.fillMaxSize().background(Color.Black)){
+            Image(
+                painter=painterResource(R.drawable.rs_launcher_royal_v129),
+                contentDescription="RS KICKBOXING",
+                modifier=Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top=8.dp).size(64.dp)
+            )
+
             if(isVideo){
                 var remoteRenderer by remember{mutableStateOf<SurfaceViewRenderer?>(null)}
                 var localRenderer by remember{mutableStateOf<SurfaceViewRenderer?>(null)}
