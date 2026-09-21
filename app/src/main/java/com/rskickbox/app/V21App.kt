@@ -76,7 +76,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     }
     var route by remember { mutableStateOf(restoredRoute) }
     var authRestoreAttempted by remember { mutableStateOf(false) }
-    var authRestoring by remember { mutableStateOf(localSessionRole==null && RsSupabaseV60.configured) }
+    var authRestoring by remember { mutableStateOf(false) }
     var cloudControlsRevision by remember { mutableIntStateOf(0) }
     var brandRevision by remember { mutableIntStateOf(0) }
     // Cloud brand/visual sync runs in the background. Never block cold start with
@@ -127,9 +127,8 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
             role=null
             route="home"
             authRestoring=false
-            if(RsSupabaseV60.configured){
-                runCatching{rsCloudLogoutV63()}
-            }
+            // Do not make any cloud/auth request before the Login screen.
+            // The previous token is simply ignored until the user signs in again.
         }
         store.ps("rs_last_started_version_code",currentVersionCode.toString())
     }
