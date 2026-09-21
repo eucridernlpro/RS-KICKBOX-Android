@@ -6,6 +6,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -677,50 +679,178 @@ private fun RsCloudCommunityV84(c:RsPalette,store:RsStore,lang:RsLang,role:RsRol
 }
 
 @Composable
+private fun RsGroupThumbnailV144(
+    c:RsPalette,
+    group:RsCloudGroupV84,
+    modifier:Modifier=Modifier
+){
+    val context=LocalContext.current
+    val local by produceState("",group.thumbnailPath){
+        value=if(group.thumbnailPath.isNullOrBlank())"" else
+            rsGroupThumbnailLocalV144(context,group.thumbnailPath).getOrDefault("")
+    }
+    Box(modifier.background(Color.Black),contentAlignment=Alignment.Center){
+        if(local.isNotBlank()){
+            RsUriPreviewV21(local,Modifier.fillMaxSize(),"CENTER")
+            Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=.22f)))
+        }else{
+            Box(Modifier.fillMaxSize().background(c.gold.copy(alpha=.08f)),contentAlignment=Alignment.Center){
+                Text("♛\\nRS",color=c.bright,fontSize=22.sp,fontWeight=FontWeight.Black)
+            }
+        }
+    }
+}
+
+@Composable
 private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
+    val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var revision by remember{mutableIntStateOf(0)}
     var groups by remember{mutableStateOf<List<RsCloudGroupV84>>(emptyList())}
     var selectedGroup by remember{mutableStateOf<RsCloudGroupV84?>(null)}
     var messages by remember{mutableStateOf<List<RsCloudGroupMessageV92>>(emptyList())}
+    var members by remember{mutableStateOf<List<RsCloudGroupMemberV144>>(emptyList())}
     var name by remember{mutableStateOf("")}
     var description by remember{mutableStateOf("")}
+    var newThumb by remember{mutableStateOf("")}
     var loading by remember{mutableStateOf(true)}
     var busyId by remember{mutableStateOf<String?>(null)}
     var status by remember{mutableStateOf("")}
     var pendingDelete by remember{mutableStateOf<String?>(null)}
+    var editing by remember{mutableStateOf<RsCloudGroupV84?>(null)}
+    var editName by remember{mutableStateOf("")}
+    var editDescription by remember{mutableStateOf("")}
+    var editThumb by remember{mutableStateOf("")}
+    var editCanPost by remember{mutableStateOf(true)}
+    var editCanMedia by remember{mutableStateOf(true)}
+    var editOpenJoin by remember{mutableStateOf(true)}
+    var showMembers by remember{mutableStateOf(false)}
+
+    val newThumbPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
+        if(uri!=null)newThumb=uri.toString()
+    }
+    val editThumbPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
+        if(uri!=null)editThumb=uri.toString()
+    }
+
+    fun startEdit(g:RsCloudGroupV84){
+        editing=g
+        editName=g.name
+        editDescription=g.description
+        editThumb=""
+        editCanPost=g.studentsCanPost
+        editCanMedia=g.studentsCanMedia
+        editOpenJoin=g.openJoin
+        showMembers=false
+    }
 
     LaunchedEffect(revision,selectedGroup?.id){
         loading=true
         if(selectedGroup==null){
             rsCloudGroupsV84()
                 .onSuccess{groups=it}
-                .onFailure{status=rsGroupChatT(lang,"update_error")}
+                .onFailure{status=it.message?:rsGroupChatT(lang,"update_error")}
         }else{
             rsCloudGroupMessagesV92(selectedGroup!!.id)
                 .onSuccess{messages=it}
                 .onFailure{status=rsChatBackendFriendlyErrorV121(lang,it)}
+            if(role==RsRole.TRAINER){
+                rsCloudGroupMembersV144(selectedGroup!!.id)
+                    .onSuccess{members=it}
+                    .onFailure{members=emptyList()}
+            }
         }
         loading=false
     }
 
     val activeGroup=selectedGroup
     if(activeGroup!=null){
-        RsScroll(c,activeGroup.name,rsGroupChatT(lang,"chat_sub")){
-            OutlinedButton(
-                onClick={selectedGroup=null;messages=emptyList();status="";revision++},
-                modifier=Modifier.fillMaxWidth()
-            ){Text(rsGroupChatT(lang,"back"))}
-
-            RsPanel(c){
-                Text(
-                    if(loading)rsGroupChatT(lang,"loading_chat") else rsGroupChatT(lang,"chat_ready"),
-                    color=if(loading)c.muted else c.bright,
-                    fontWeight=FontWeight.Bold,
-                    fontSize=10.sp
-                )
-                if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        RsScroll(c,activeGroup.name,activeGroup.description.ifBlank{rsGroupChatT(lang,"chat_sub")}){
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                OutlinedButton(
+                    onClick={selectedGroup=null;messages=emptyList();members=emptyList();status="";revision++},
+                    modifier=Modifier.weight(1f)
+                ){Text(rsGroupChatT(lang,"back"))}
+                if(role==RsRole.TRAINER){
+                    Button(
+                        onClick={startEdit(activeGroup)},
+                        modifier=Modifier.weight(1f)
+                    ){Text("⚙  Group Settings",fontSize=9.sp)}
+                }
             }
+
+            Surface(
+                color=Color.Black.copy(alpha=.72f),
+                shape=RoundedCornerShape(26.dp),
+                border=BorderStroke(1.dp,c.gold.copy(alpha=.32f)),
+                modifier=Modifier.fillMaxWidth()
+            ){
+                Column{
+                    RsGroupThumbnailV144(c,activeGroup,Modifier.fillMaxWidth().height(170.dp))
+                    Row(
+                        Modifier.fillMaxWidth().padding(12.dp),
+                        horizontalArrangement=Arrangement.SpaceBetween
+                    ){
+                        Column{
+                            Text(activeGroup.name,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
+                            Text("${activeGroup.memberCount} MEMBERS",color=c.muted,fontSize=8.sp,fontWeight=FontWeight.Black)
+                        }
+                        Column(horizontalAlignment=Alignment.End){
+                            Text("${activeGroup.onlineCount} ONLINE",color=Color(0xFF36D27F),fontSize=8.sp,fontWeight=FontWeight.Black)
+                            Text("${activeGroup.offlineCount} OFFLINE",color=c.muted,fontSize=8.sp,fontWeight=FontWeight.Black)
+                        }
+                    }
+                }
+            }
+
+            if(role==RsRole.TRAINER){
+                Surface(
+                    color=Color.Black.copy(alpha=.58f),
+                    shape=RoundedCornerShape(20.dp),
+                    border=BorderStroke(1.dp,c.gold.copy(alpha=.18f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Column(Modifier.padding(11.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                            Text("MODERATION",color=c.gold,fontWeight=FontWeight.Black,fontSize=9.sp,letterSpacing=1.sp)
+                            TextButton(onClick={showMembers=!showMembers}){Text(if(showMembers)"Hide Members" else "Members (${members.size})",fontSize=9.sp)}
+                        }
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                            AssistChip(onClick={},label={Text(if(activeGroup.studentsCanPost)"Student text ON" else "Student text OFF",fontSize=8.sp)})
+                            AssistChip(onClick={},label={Text(if(activeGroup.studentsCanMedia)"Media ON" else "Media OFF",fontSize=8.sp)})
+                        }
+                        if(showMembers){
+                            members.forEach{m->
+                                Row(
+                                    Modifier.fillMaxWidth().padding(vertical=4.dp),
+                                    verticalAlignment=Alignment.CenterVertically,
+                                    horizontalArrangement=Arrangement.spacedBy(8.dp)
+                                ){
+                                    RsMemberAvatarV68(c,m.email,m.displayName,size=36.dp)
+                                    Column(Modifier.weight(1f)){
+                                        Text(m.displayName.ifBlank{m.email},color=c.bright,fontWeight=FontWeight.Bold,fontSize=10.sp)
+                                        Text(if(m.online)"ONLINE" else "OFFLINE",color=if(m.online)Color(0xFF36D27F) else c.muted,fontSize=7.sp,fontWeight=FontWeight.Black)
+                                    }
+                                    TextButton(
+                                        onClick={
+                                            busyId=m.userId
+                                            scope.launch{
+                                                rsRemoveCloudGroupMemberV144(activeGroup.id,m.userId)
+                                                    .onSuccess{status="Member removed.";revision++}
+                                                    .onFailure{status=it.message?:"Could not remove member."}
+                                                busyId=null
+                                            }
+                                        },
+                                        enabled=busyId==null
+                                    ){Text("Remove",color=Color(0xFFFF8A80),fontSize=8.sp)}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=9.sp)
 
             if(messages.isEmpty()&&!loading){
                 RsPanel(c){Text(rsGroupChatT(lang,"no_messages"),color=c.muted)}
@@ -749,23 +879,15 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                         modifier=Modifier.fillMaxWidth(.84f)
                     ){
                         Column(Modifier.padding(11.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
-                            Text(
-                                m.senderName.ifBlank{m.senderEmail},
-                                color=c.bright,fontWeight=FontWeight.Black,fontSize=9.sp
-                            )
+                            Text(m.senderName.ifBlank{m.senderEmail},color=c.bright,fontWeight=FontWeight.Black,fontSize=9.sp)
                             if(m.body.isNotBlank())Text(m.body,color=c.text,fontSize=13.sp,lineHeight=18.sp)
                             RsChatAttachmentPreviewV92(c,lang,m.mediaPath,m.mediaKind,m.mediaName)
                             if(role==RsRole.TRAINER){
                                 RsTrainerMessageAdminV111(
-                                    c=c,
-                                    lang=lang,
-                                    body=m.body,
-                                    canEdit=mine,
-                                    busy=loading,
+                                    c=c,lang=lang,body=m.body,canEdit=mine,busy=loading,
                                     onEdit={body->rsStaffEditGroupMessageV111(m.id,body)},
                                     onDelete={rsStaffDeleteGroupMessageV111(m.id,m.mediaPath)},
-                                    onChanged={revision++},
-                                    onStatus={status=it}
+                                    onChanged={revision++},onStatus={status=it}
                                 )
                             }
                         }
@@ -775,30 +897,89 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
 
             if(role==RsRole.TRAINER && messages.isNotEmpty()){
                 RsTrainerClearConversationV111(
-                    c=c,
-                    lang=lang,
-                    enabled=!loading,
-                    onClear={
-                        rsStaffClearGroupChatRobustV116(
-                            activeGroup.id,
-                            messages
-                        )
-                    },
+                    c=c,lang=lang,enabled=!loading,
+                    onClear={rsStaffClearGroupChatRobustV116(activeGroup.id,messages)},
                     onChanged={messages=emptyList();revision++},
                     onStatus={status=it}
                 )
             }
 
+            val studentComposerAllowed=role==RsRole.TRAINER || activeGroup.studentsCanPost || activeGroup.studentsCanMedia
             RsChatComposerV92(
-                c=c,
-                lang=lang,
-                scopeType="group",
-                scopeId=activeGroup.id,
-                enabled=!loading,
-                onSent={revision++},
-                onStatus={status=it},
+                c=c,lang=lang,scopeType="group",scopeId=activeGroup.id,
+                enabled=!loading&&studentComposerAllowed,
+                onSent={revision++},onStatus={status=it},
                 onSend={body,attachment->rsSendCloudGroupMessageV92(activeGroup.id,body,attachment)}
             )
+        }
+
+        val eg=editing
+        if(eg!=null){
+            androidx.compose.ui.window.Dialog(onDismissRequest={if(busyId==null)editing=null}){
+                Surface(
+                    color=Color.Black.copy(alpha=.98f),
+                    shape=RoundedCornerShape(28.dp),
+                    border=BorderStroke(1.dp,c.gold.copy(alpha=.46f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+                        Text("♛  GROUP SETTINGS",color=c.bright,fontWeight=FontWeight.Black,fontSize=16.sp)
+                        Text("Identity · permissions · joining",color=c.muted,fontSize=9.sp)
+                        if(editThumb.isNotBlank())RsUriPreviewV21(editThumb,Modifier.fillMaxWidth().height(120.dp),"CENTER")
+                        OutlinedButton(
+                            onClick={editThumbPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
+                            enabled=busyId==null,
+                            modifier=Modifier.fillMaxWidth()
+                        ){Text("Change Group Thumbnail")}
+                        OutlinedTextField(editName,{editName=it.take(80)},label={Text("Group name")},modifier=Modifier.fillMaxWidth(),enabled=busyId==null)
+                        OutlinedTextField(editDescription,{editDescription=it.take(500)},label={Text("Description")},modifier=Modifier.fillMaxWidth(),minLines=2,enabled=busyId==null)
+                        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                            Text("Students can send messages",color=c.text,fontSize=10.sp,modifier=Modifier.weight(1f))
+                            Switch(editCanPost,{editCanPost=it},enabled=busyId==null)
+                        }
+                        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                            Text("Students can send photos / video",color=c.text,fontSize=10.sp,modifier=Modifier.weight(1f))
+                            Switch(editCanMedia,{editCanMedia=it},enabled=busyId==null)
+                        }
+                        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                            Text("Students can join themselves",color=c.text,fontSize=10.sp,modifier=Modifier.weight(1f))
+                            Switch(editOpenJoin,{editOpenJoin=it},enabled=busyId==null)
+                        }
+                        if(busyId!=null)LinearProgressIndicator(Modifier.fillMaxWidth())
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                            OutlinedButton(onClick={editing=null},enabled=busyId==null,modifier=Modifier.weight(1f)){Text("Cancel")}
+                            Button(
+                                onClick={
+                                    busyId="edit"
+                                    scope.launch{
+                                        var path=eg.thumbnailPath
+                                        if(editThumb.isNotBlank()){
+                                            val upload=rsUploadGroupThumbnailV144(context,editThumb)
+                                            if(upload.isFailure){
+                                                status=upload.exceptionOrNull()?.message?:"Thumbnail upload failed."
+                                                busyId=null
+                                                return@launch
+                                            }
+                                            path=upload.getOrNull()
+                                        }
+                                        rsUpdateCloudGroupV144(eg.id,editName,editDescription,path,editCanPost,editCanMedia,editOpenJoin)
+                                            .onSuccess{
+                                                status="Group settings saved."
+                                                editing=null
+                                                selectedGroup=null
+                                                revision++
+                                            }
+                                            .onFailure{status=it.message?:"Could not save group."}
+                                        busyId=null
+                                    }
+                                },
+                                enabled=editName.isNotBlank()&&busyId==null,
+                                modifier=Modifier.weight(1f)
+                            ){Text("Save")}
+                        }
+                    }
+                }
+            }
         }
         return
     }
@@ -806,103 +987,197 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
     RsScroll(
         c,
         rsSocialUiV50(lang,"groups"),
-        if(role==RsRole.TRAINER)rsGroupChatT(lang,"manage_sub") else rsGroupChatT(lang,"student_sub")
+        if(role==RsRole.TRAINER)"Professional team spaces · moderation · media" else rsGroupChatT(lang,"student_sub")
     ){
-        RsPanel(c){
-            Text(
-                if(loading)rsGroupChatT(lang,"syncing") else rsGroupChatT(lang,"connected"),
-                color=if(loading)c.muted else c.bright,
-                fontWeight=FontWeight.Bold,
-                fontSize=10.sp
-            )
-            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+        Surface(
+            color=Color.Black.copy(alpha=.62f),
+            shape=RoundedCornerShape(22.dp),
+            border=BorderStroke(1.dp,c.gold.copy(alpha=.20f)),
+            modifier=Modifier.fillMaxWidth()
+        ){
+            Row(Modifier.fillMaxWidth().padding(12.dp),horizontalArrangement=Arrangement.SpaceBetween){
+                Column{
+                    Text("FIGHT GROUPS",color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp)
+                    Text(if(loading)"Syncing groups…" else "${groups.size} active spaces",color=c.muted,fontSize=9.sp)
+                }
+                Text("${groups.sumOf{it.onlineCount}} ONLINE",color=Color(0xFF36D27F),fontWeight=FontWeight.Black,fontSize=8.sp)
+            }
         }
+        if(status.isNotBlank())Text(status,color=c.muted,fontSize=9.sp)
 
         if(role==RsRole.TRAINER)RsPanel(c){
-            Text(rsSocialUiV50(lang,"new_group"),color=c.bright,fontWeight=FontWeight.Black)
+            Text("＋ CREATE GROUP",color=c.bright,fontWeight=FontWeight.Black)
+            if(newThumb.isNotBlank())RsUriPreviewV21(newThumb,Modifier.fillMaxWidth().height(130.dp),"CENTER")
+            OutlinedButton(
+                onClick={newThumbPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
+                enabled=busyId==null,
+                modifier=Modifier.fillMaxWidth()
+            ){Text("Choose Group Thumbnail")}
             OutlinedTextField(name,{name=it.take(80)},label={Text(rsSocialUiV50(lang,"name"))},modifier=Modifier.fillMaxWidth(),enabled=busyId==null)
             OutlinedTextField(description,{description=it.take(500)},label={Text(rsSocialUiV50(lang,"description"))},modifier=Modifier.fillMaxWidth(),minLines=2,enabled=busyId==null)
             Button(
                 onClick={
                     busyId="new"
                     scope.launch{
-                        rsCreateCloudGroupV84(name,description)
-                            .onSuccess{name="";description="";status=rsGroupChatT(lang,"created");revision++}
+                        var thumbPath:String?=null
+                        if(newThumb.isNotBlank()){
+                            val upload=rsUploadGroupThumbnailV144(context,newThumb)
+                            if(upload.isFailure){
+                                status=upload.exceptionOrNull()?.message?:"Thumbnail upload failed."
+                                busyId=null
+                                return@launch
+                            }
+                            thumbPath=upload.getOrNull()
+                        }
+                        rsCreateCloudGroupV84(name,description,thumbPath,true,true,true)
+                            .onSuccess{name="";description="";newThumb="";status="Group created.";revision++}
                             .onFailure{status=it.message?:rsGroupChatT(lang,"create_error")}
                         busyId=null
                     }
                 },
                 enabled=name.isNotBlank()&&busyId==null,
                 modifier=Modifier.fillMaxWidth()
-            ){Text(if(busyId=="new")rsGroupChatT(lang,"creating") else rsSocialUiV50(lang,"create"))}
+            ){Text(if(busyId=="new")"Creating…" else rsSocialUiV50(lang,"create"))}
         }
 
         groups.forEach{g->
-            RsPanel(c){
-                Text(g.name,color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
-                Text(g.description,color=c.text)
-                Text(g.memberCount.toString()+" "+rsGroupChatT(lang,"members"),color=c.muted,fontSize=10.sp)
+            Surface(
+                color=Color.Black.copy(alpha=.66f),
+                shape=RoundedCornerShape(28.dp),
+                border=BorderStroke(1.dp,c.gold.copy(alpha=.26f)),
+                tonalElevation=10.dp,
+                modifier=Modifier.fillMaxWidth()
+            ){
+                Column{
+                    Box(Modifier.fillMaxWidth().height(190.dp)){
+                        RsGroupThumbnailV144(c,g,Modifier.fillMaxSize())
+                        Box(Modifier.matchParentSize().background(
+                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                listOf(Color.Transparent,Color.Black.copy(alpha=.18f),Color.Black.copy(alpha=.88f))
+                            )
+                        ))
+                        Surface(
+                            color=Color.Black.copy(alpha=.58f),
+                            shape=RoundedCornerShape(13.dp),
+                            border=BorderStroke(1.dp,c.gold.copy(alpha=.28f)),
+                            modifier=Modifier.align(Alignment.TopEnd).padding(10.dp)
+                        ){
+                            Text(if(g.active)"ACTIVE" else "PAUSED",color=if(g.active)Color(0xFF36D27F) else c.muted,fontSize=7.sp,fontWeight=FontWeight.Black,modifier=Modifier.padding(horizontal=8.dp,vertical=5.dp))
+                        }
+                        Column(Modifier.align(Alignment.BottomStart).padding(14.dp)){
+                            Text(g.name,color=Color.White,fontWeight=FontWeight.Black,fontSize=20.sp)
+                            Text(g.description,color=Color.White.copy(alpha=.78f),fontSize=9.sp,maxLines=2)
+                        }
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
+                        horizontalArrangement=Arrangement.SpaceBetween
+                    ){
+                        Text("${g.memberCount} MEMBERS",color=c.muted,fontSize=8.sp,fontWeight=FontWeight.Black)
+                        Text("${g.onlineCount} ONLINE",color=Color(0xFF36D27F),fontSize=8.sp,fontWeight=FontWeight.Black)
+                        Text("${g.offlineCount} OFFLINE",color=c.muted,fontSize=8.sp,fontWeight=FontWeight.Black)
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().padding(start=12.dp,end=12.dp,bottom=12.dp),
+                        horizontalArrangement=Arrangement.spacedBy(7.dp)
+                    ){
+                        if(role==RsRole.STUDENT){
+                            if(g.joined){
+                                Button(onClick={selectedGroup=g;status="";revision++},modifier=Modifier.weight(1f)){Text("Open Group")}
+                                OutlinedButton(
+                                    onClick={
+                                        busyId=g.id
+                                        scope.launch{
+                                            rsSetMyCloudGroupMembershipV84(g.id,false)
+                                                .onSuccess{status="Left group.";revision++}
+                                                .onFailure{status=it.message?:"Could not leave."}
+                                            busyId=null
+                                        }
+                                    },
+                                    enabled=busyId==null,
+                                    modifier=Modifier.weight(1f)
+                                ){Text("Leave")}
+                            }else{
+                                Button(
+                                    onClick={
+                                        busyId=g.id
+                                        scope.launch{
+                                            rsSetMyCloudGroupMembershipV84(g.id,true)
+                                                .onSuccess{status="Joined group.";revision++}
+                                                .onFailure{status=it.message?:"Joining is closed."}
+                                            busyId=null
+                                        }
+                                    },
+                                    enabled=g.openJoin&&busyId==null,
+                                    modifier=Modifier.fillMaxWidth()
+                                ){Text(if(g.openJoin)"Join Group" else "Invite Only")}
+                            }
+                        }else{
+                            Button(onClick={selectedGroup=g;status="";revision++},modifier=Modifier.weight(1f)){Text("Open")}
+                            OutlinedButton(onClick={startEdit(g)},modifier=Modifier.weight(1f)){Text("Edit")}
+                            OutlinedButton(
+                                onClick={
+                                    if(pendingDelete==g.id){
+                                        busyId=g.id
+                                        scope.launch{
+                                            rsDeleteCloudGroupV84(g.id)
+                                                .onSuccess{pendingDelete=null;status="Group deleted.";revision++}
+                                                .onFailure{status=it.message?:"Delete failed."}
+                                            busyId=null
+                                        }
+                                    }else pendingDelete=g.id
+                                },
+                                enabled=busyId==null,
+                                modifier=Modifier.weight(1f)
+                            ){Text(if(pendingDelete==g.id)"Confirm" else "Delete",fontSize=8.sp)}
+                        }
+                    }
+                }
+            }
+        }
 
-                if(role==RsRole.STUDENT){
+        val eg=editing
+        if(eg!=null){
+            RsPanel(c){
+                Text("EDIT GROUP",color=c.bright,fontWeight=FontWeight.Black)
+                if(editThumb.isNotBlank())RsUriPreviewV21(editThumb,Modifier.fillMaxWidth().height(120.dp),"CENTER")
+                OutlinedButton(
+                    onClick={editThumbPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
+                    modifier=Modifier.fillMaxWidth()
+                ){Text("Replace Thumbnail")}
+                OutlinedTextField(editName,{editName=it.take(80)},label={Text("Name")},modifier=Modifier.fillMaxWidth())
+                OutlinedTextField(editDescription,{editDescription=it.take(500)},label={Text("Description")},modifier=Modifier.fillMaxWidth(),minLines=2)
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text("Student text",modifier=Modifier.weight(1f));Switch(editCanPost,{editCanPost=it})}
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text("Student media",modifier=Modifier.weight(1f));Switch(editCanMedia,{editCanMedia=it})}
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text("Open joining",modifier=Modifier.weight(1f));Switch(editOpenJoin,{editOpenJoin=it})}
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                    OutlinedButton(onClick={editing=null},modifier=Modifier.weight(1f)){Text("Cancel")}
                     Button(
                         onClick={
-                            busyId=g.id
+                            busyId="edit"
                             scope.launch{
-                                rsSetMyCloudGroupMembershipV84(g.id,!g.joined)
-                                    .onSuccess{status=if(g.joined)rsGroupChatT(lang,"left") else rsGroupChatT(lang,"joined");revision++}
-                                    .onFailure{status=rsGroupChatT(lang,"update_error")}
+                                var path=eg.thumbnailPath
+                                if(editThumb.isNotBlank()){
+                                    val upload=rsUploadGroupThumbnailV144(context,editThumb)
+                                    if(upload.isFailure){
+                                        status=upload.exceptionOrNull()?.message?:"Thumbnail upload failed."
+                                        busyId=null
+                                        return@launch
+                                    }
+                                    path=upload.getOrNull()
+                                }
+                                rsUpdateCloudGroupV144(eg.id,editName,editDescription,path,editCanPost,editCanMedia,editOpenJoin)
+                                    .onSuccess{editing=null;status="Group updated.";revision++}
+                                    .onFailure{status=it.message?:"Update failed."}
                                 busyId=null
                             }
                         },
-                        enabled=busyId==null,
-                        modifier=Modifier.fillMaxWidth()
-                    ){Text(if(busyId==g.id)rsGroupChatT(lang,"wait") else if(g.joined)rsSocialUiV50(lang,"leave") else rsSocialUiV50(lang,"join"))}
-
-                    if(g.joined){
-                        OutlinedButton(
-                            onClick={selectedGroup=g;status="";revision++},
-                            modifier=Modifier.fillMaxWidth()
-                        ){Text(rsGroupChatT(lang,"open_chat"))}
-                    }
-                }else{
-                    Button(
-                        onClick={selectedGroup=g;status="";revision++},
-                        modifier=Modifier.fillMaxWidth()
-                    ){Text(rsGroupChatT(lang,"open_chat"))}
-
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
-                        Text(if(g.active)rsSocialUiV50(lang,"active") else rsSocialUiV50(lang,"inactive"),color=c.muted)
-                        Switch(
-                            g.active,
-                            {value->
-                                busyId=g.id
-                                scope.launch{
-                                    rsSetCloudGroupActiveV84(g.id,value)
-                                        .onSuccess{revision++}
-                                        .onFailure{status=rsGroupChatT(lang,"update_error")}
-                                    busyId=null
-                                }
-                            },
-                            enabled=busyId==null
-                        )
-                    }
-                    OutlinedButton(
-                        onClick={
-                            if(pendingDelete==g.id){
-                                busyId=g.id
-                                scope.launch{
-                                    rsDeleteCloudGroupV84(g.id)
-                                        .onSuccess{pendingDelete=null;status=rsGroupChatT(lang,"deleted");revision++}
-                                        .onFailure{status=it.message?:rsGroupChatT(lang,"delete_error")}
-                                    busyId=null
-                                }
-                            }else pendingDelete=g.id
-                        },
-                        enabled=busyId==null,
-                        modifier=Modifier.fillMaxWidth()
-                    ){Text(if(pendingDelete==g.id)rsSocialUiV50(lang,"confirm") else rsSocialUiV50(lang,"delete"))}
+                        enabled=editName.isNotBlank()&&busyId==null,
+                        modifier=Modifier.weight(1f)
+                    ){Text("Save")}
                 }
             }
         }
     }
 }
+
