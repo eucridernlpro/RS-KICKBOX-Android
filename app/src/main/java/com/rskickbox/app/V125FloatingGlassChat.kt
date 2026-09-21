@@ -229,7 +229,6 @@ fun RsFloatingGlassChatHubV125(
     initialRoute:String="coachchat",
     onBack:()->Unit
 ){
-    BackHandler(onBack=onBack)
     var tab by remember(initialRoute){mutableStateOf(rsInitialChatTabV125(initialRoute))}
     var contacts by remember{mutableStateOf<List<RsChatContactV125>>(emptyList())}
     var presenceError by remember{mutableStateOf(false)}
@@ -237,6 +236,18 @@ fun RsFloatingGlassChatHubV125(
     var presenceRevision by remember{mutableIntStateOf(0)}
     var searchQuery by remember{mutableStateOf("")}
     var slideMenuOpen by remember{mutableStateOf(false)}
+
+    BackHandler{
+        when{
+            slideMenuOpen->slideMenuOpen=false
+            tab==RsChatHubTabV125.PRIVATE && privateStudentId!=null->{
+                privateStudentId=null
+                tab=RsChatHubTabV125.ALL
+            }
+            tab!=RsChatHubTabV125.ALL->tab=RsChatHubTabV125.ALL
+            else->onBack()
+        }
+    }
 
     LaunchedEffect(Unit){
         val pending=store.s("chat_open_peer_id_v156","").trim()
