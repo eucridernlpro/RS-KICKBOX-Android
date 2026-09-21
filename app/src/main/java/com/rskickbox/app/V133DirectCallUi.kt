@@ -240,7 +240,7 @@ fun RsDirectCallControlsV133(
                 modifier=Modifier.size(39.dp).clickable(
                     enabled=allowVideo&&resolvedPeerId.isNotBlank()
                 ){requestAndCall("VIDEO")}
-            ){Box(contentAlignment=Alignment.Center){Text("▣",color=c.bright,fontSize=16.sp,fontWeight=FontWeight.Black)}}
+            ){Box(contentAlignment=Alignment.Center){Text("📹",color=c.bright,fontSize=16.sp,fontWeight=FontWeight.Black)}}
         }
         return
     }
@@ -549,7 +549,7 @@ fun RsActiveCallDialogV133(
                                     cameraOn=!cameraOn
                                     engine.setCameraEnabled(cameraOn)
                                 }
-                            ){Box(contentAlignment=Alignment.Center){Text(if(cameraOn)"▣" else "□",color=c.bright,fontSize=19.sp,fontWeight=FontWeight.Black)}}
+                            ){Box(contentAlignment=Alignment.Center){Text(if(cameraOn)"📹" else "🚫",color=c.bright,fontSize=19.sp,fontWeight=FontWeight.Black)}}
                             Text("CAMERA",color=if(cameraOn)c.bright else Color(0xFFFF9999),fontSize=7.sp,fontWeight=FontWeight.Black)
                         }
 
