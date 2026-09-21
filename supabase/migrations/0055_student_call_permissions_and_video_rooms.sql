@@ -493,3 +493,94 @@ grant execute on function public.rs_video_room_members(uuid) to authenticated;
 grant execute on function public.rs_set_video_room_status(uuid,text) to authenticated;
 grant execute on function public.rs_add_video_room_signal(uuid,uuid,text,jsonb) to authenticated;
 grant execute on function public.rs_video_room_signals_since(uuid,bigint) to authenticated;
+
+
+-- Student call contacts exposed only when trainer permissions allow it.
+create or replace function public.rs_student_call_contacts()
+returns table(
+    user_id uuid,
+    display_name text,
+    email text,
+    avatar_path text,
+    online boolean,
+    audio_allowed boolean,
+    video_allowed boolean
+)
+language sql
+stable
+security definer
+set search_path=''
+as $$
+    with mine as (
+        select coalesce(cp.audio_enabled,false) audio_enabled,
+               coalesce(cp.video_enabled,false) video_enabled
+        from public.rs_profiles me
+        left join public.rs_student_call_permissions cp on cp.student_id=me.id
+        where me.id=(select auth.uid()) and me.active=true and me.role='student'
+    )
+    select
+        p.id,p.display_name,p.email,p.avatar_path,
+        coalesce(p.last_seen_at>now()-interval '2 minutes',false),
+        (select audio_enabled from mine) and coalesce(cp.audio_enabled,false),
+        (select video_enabled from mine) and coalesce(cp.video_enabled,false)
+    from public.rs_profiles p
+    left join public.rs_student_call_permissions cp on cp.student_id=p.id
+    where p.active=true
+      and p.role='student'
+      and p.id<>(select auth.uid())
+      and exists(select 1 from mine where audio_enabled or video_enabled)
+      and (
+          ((select audio_enabled from mine) and coalesce(cp.audio_enabled,false))
+          or
+          ((select video_enabled from mine) and coalesce(cp.video_enabled,false))
+      )
+    order by coalesce(nullif(p.display_name,''),p.email);
+$$;
+
+-- Peer status supports trainer<->student and trainer-approved student<->student calls.
+create or replace function public.rs_call_peer_status(p_peer_id uuid)
+returns table(
+    self_online boolean,
+    peer_online boolean,
+    peer_id uuid,
+    peer_email text,
+    peer_name text,
+    peer_avatar_path text,
+    peer_last_seen_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path=''
+as $$
+    select
+        coalesce(me.last_seen_at > now()-interval '2 minutes',false),
+        coalesce(peer.last_seen_at > now()-interval '2 minutes',false),
+        peer.id,peer.email,peer.display_name,peer.avatar_path,peer.last_seen_at
+    from public.rs_profiles me
+    join public.rs_profiles peer on peer.id=p_peer_id
+    left join public.rs_student_call_permissions mecp on mecp.student_id=me.id
+    left join public.rs_student_call_permissions pcp on pcp.student_id=peer.id
+    where me.id=(select auth.uid())
+      and me.active=true and peer.active=true
+      and (
+          (me.role in ('trainer','admin') and peer.role='student')
+          or
+          (me.role='student' and peer.role in ('trainer','admin'))
+          or
+          (
+              me.role='student' and peer.role='student'
+              and (
+                  (coalesce(mecp.audio_enabled,false) and coalesce(pcp.audio_enabled,false))
+                  or
+                  (coalesce(mecp.video_enabled,false) and coalesce(pcp.video_enabled,false))
+              )
+          )
+      )
+    limit 1;
+$$;
+
+revoke all on function public.rs_student_call_contacts() from public,anon;
+grant execute on function public.rs_student_call_contacts() to authenticated;
+revoke all on function public.rs_call_peer_status(uuid) from public,anon;
+grant execute on function public.rs_call_peer_status(uuid) to authenticated;
