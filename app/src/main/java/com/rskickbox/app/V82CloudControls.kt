@@ -106,6 +106,11 @@ suspend fun rsSaveCloudControlsV82(
 }
 
 fun rsStudentRouteEnabledV82(store:RsStore,route:String):Boolean{
+    // Temporary full-access test mode: keep every student feature visible by
+    // default so the complete app can be physically tested. This can later be
+    // switched off without changing the route architecture.
+    if(store.b("student_full_access_test_v142",true))return true
+
     if(route in setOf("home","student_guide","profile","settings","support"))return true
     if(route in rsDisabledStudentRoutesV82(store))return false
     return when(route){
