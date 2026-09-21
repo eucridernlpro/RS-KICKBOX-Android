@@ -48,7 +48,7 @@ returns void
 language plpgsql
 security definer
 set search_path=''
-as $
+as $$
 declare
   v_uid uuid:=(select auth.uid());
   v_sender uuid;
@@ -191,7 +191,7 @@ returns void
 language plpgsql
 security definer
 set search_path=''
-as $
+as $$
 declare v_uid uuid:=(select auth.uid());
 begin
   if v_uid is null then raise exception 'authentication required' using errcode='42501'; end if;
