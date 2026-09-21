@@ -374,9 +374,10 @@ fun RsVideoRoomScreenV137(
                             color=if(member.userId==featuredId)c.gold.copy(alpha=.16f) else c.panel.copy(alpha=.50f),
                             shape=RoundedCornerShape(16.dp),
                             border=BorderStroke(1.dp,if(member.userId==featuredId)c.gold.copy(alpha=.55f) else c.gold.copy(alpha=.16f)),
-                            modifier=Modifier.width(92.dp).clickable{
-                                if(isHost&&member.memberRole=="STUDENT"&&member.memberStatus=="JOINED"){
+                            modifier=Modifier.width(104.dp).clickable{
+                                if(member.userId!=myId && member.memberStatus=="JOINED"){
                                     featuredId=if(featuredId==member.userId)null else member.userId
+                                    gridMode=featuredId==null
                                 }
                             }
                         ){
