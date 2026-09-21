@@ -7,6 +7,8 @@ import android.media.AudioManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -396,9 +399,20 @@ fun RsActiveCallDialogV133(
             }
 
             Column(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color.Black.copy(alpha=.72f)).padding(18.dp),
+                Modifier.align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha=.86f),
+                                Color.Black.copy(alpha=.97f)
+                            )
+                        )
+                    )
+                    .padding(horizontal=16.dp,vertical=18.dp),
                 horizontalAlignment=Alignment.CenterHorizontally,
-                verticalArrangement=Arrangement.spacedBy(10.dp)
+                verticalArrangement=Arrangement.spacedBy(14.dp)
             ){
                 Text(
                     when(engineState){
@@ -410,27 +424,88 @@ fun RsActiveCallDialogV133(
                     },
                     color=Color.White,fontWeight=FontWeight.Bold
                 )
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly){
-                    OutlinedButton(onClick={micOn=!micOn;engine.setMicEnabled(micOn)}){
-                        Text(if(micOn)"🎙" else "🔇")
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.SpaceEvenly,
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    fun premiumControl(
+                        symbol:String,
+                        label:String,
+                        active:Boolean=true,
+                        danger:Boolean=false,
+                        action:()->Unit
+                    ) = Unit
+
+                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
+                        Surface(
+                            shape=CircleShape,
+                            color=if(micOn)c.gold.copy(alpha=.15f) else Color(0xFF2A1010),
+                            border=BorderStroke(1.5.dp,if(micOn)c.bright.copy(alpha=.72f) else Color(0xFFFF7777).copy(alpha=.60f)),
+                            tonalElevation=10.dp,
+                            modifier=Modifier.size(58.dp).clickable{
+                                micOn=!micOn
+                                engine.setMicEnabled(micOn)
+                            }
+                        ){Box(contentAlignment=Alignment.Center){Text(if(micOn)"🎙" else "🔇",fontSize=20.sp)}}
+                        Text("MIC",color=if(micOn)c.bright else Color(0xFFFF9999),fontSize=7.sp,fontWeight=FontWeight.Black)
                     }
-                    OutlinedButton(onClick={
-                        speakerOn=!speakerOn
-                        @Suppress("DEPRECATION")
-                        audioManager.isSpeakerphoneOn=speakerOn
-                    }){
-                        Text(if(speakerOn)"🔊" else "🔈")
+
+                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
+                        Surface(
+                            shape=CircleShape,
+                            color=if(speakerOn)c.gold.copy(alpha=.15f) else Color.Black.copy(alpha=.72f),
+                            border=BorderStroke(1.5.dp,c.gold.copy(alpha=.48f)),
+                            tonalElevation=10.dp,
+                            modifier=Modifier.size(58.dp).clickable{
+                                speakerOn=!speakerOn
+                                @Suppress("DEPRECATION")
+                                audioManager.isSpeakerphoneOn=speakerOn
+                            }
+                        ){Box(contentAlignment=Alignment.Center){Text(if(speakerOn)"🔊" else "🔈",fontSize=20.sp)}}
+                        Text("SPEAKER",color=c.bright,fontSize=7.sp,fontWeight=FontWeight.Black)
                     }
-                    if(isVideo)OutlinedButton(onClick={cameraOn=!cameraOn;engine.setCameraEnabled(cameraOn)}){
-                        Text(if(cameraOn)"▣" else "□")
-                    }
-                    if(isVideo)OutlinedButton(onClick={engine.switchCamera()}){Text("↻")}
-                    Button(
-                        onClick={
-                            scope.launch{rsSetCallStatusV131(call.id,"ENDED")}
-                            onClosed()
+
+                    if(isVideo){
+                        Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
+                            Surface(
+                                shape=CircleShape,
+                                color=if(cameraOn)c.gold.copy(alpha=.15f) else Color(0xFF2A1010),
+                                border=BorderStroke(1.5.dp,if(cameraOn)c.bright.copy(alpha=.72f) else Color(0xFFFF7777).copy(alpha=.60f)),
+                                tonalElevation=10.dp,
+                                modifier=Modifier.size(58.dp).clickable{
+                                    cameraOn=!cameraOn
+                                    engine.setCameraEnabled(cameraOn)
+                                }
+                            ){Box(contentAlignment=Alignment.Center){Text(if(cameraOn)"▣" else "□",color=c.bright,fontSize=19.sp,fontWeight=FontWeight.Black)}}
+                            Text("CAMERA",color=if(cameraOn)c.bright else Color(0xFFFF9999),fontSize=7.sp,fontWeight=FontWeight.Black)
                         }
-                    ){Text(rsCallT133(lang,"end"))}
+
+                        Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
+                            Surface(
+                                shape=CircleShape,
+                                color=Color.Black.copy(alpha=.72f),
+                                border=BorderStroke(1.5.dp,c.gold.copy(alpha=.48f)),
+                                tonalElevation=10.dp,
+                                modifier=Modifier.size(58.dp).clickable{engine.switchCamera()}
+                            ){Box(contentAlignment=Alignment.Center){Text("↻",color=c.bright,fontSize=22.sp,fontWeight=FontWeight.Black)}}
+                            Text("SWITCH",color=c.bright,fontSize=7.sp,fontWeight=FontWeight.Black)
+                        }
+                    }
+
+                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
+                        Surface(
+                            shape=CircleShape,
+                            color=Color(0xFF4A0C0C),
+                            border=BorderStroke(2.dp,Color(0xFFFF5C5C).copy(alpha=.78f)),
+                            tonalElevation=12.dp,
+                            modifier=Modifier.size(64.dp).clickable{
+                                scope.launch{rsSetCallStatusV131(call.id,"ENDED")}
+                                onClosed()
+                            }
+                        ){Box(contentAlignment=Alignment.Center){Text("✕",color=Color.White,fontSize=23.sp,fontWeight=FontWeight.Black)}}
+                        Text("END",color=Color(0xFFFF8A80),fontSize=7.sp,fontWeight=FontWeight.Black)
+                    }
                 }
             }
         }
