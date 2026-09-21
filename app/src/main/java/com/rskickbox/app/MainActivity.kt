@@ -12,7 +12,13 @@ class MainActivity : ComponentActivity() {
         applyIncomingCallWindow(intent)
         RsSupabaseV60.client?.handleDeeplinks(intent)
         val restoredFromAndroidState=savedInstanceState!=null
-        setContent { RsKickboxV21App(intent?.dataString,skipIntroOnRestore=restoredFromAndroidState) }
+        setContent {
+            RsKickboxV21App(
+                initialAuthDeepLink=intent?.dataString,
+                skipIntroOnRestore=restoredFromAndroidState,
+                initialIncomingAction=intent?.action
+            )
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -26,7 +32,10 @@ class MainActivity : ComponentActivity() {
         // tear down Compose state and could bounce a valid user back to Login.
         val isAuthCallback=intent.data?.scheme.equals("rskickbox",ignoreCase=true) &&
             intent.data?.host.equals("auth-callback",ignoreCase=true)
-        if(isAuthCallback)recreate()
+        val isIncomingCallAction=
+            intent.action=="com.rskickbox.app.INCOMING_CALL" ||
+            intent.action=="com.rskickbox.app.INCOMING_VIDEO_ROOM"
+        if(isAuthCallback || isIncomingCallAction)recreate()
     }
 
     private fun applyIncomingCallWindow(intent:Intent?){
