@@ -3,6 +3,7 @@ package com.rskickbox.app
 import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.widget.VideoView
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -82,10 +83,21 @@ fun RsCinematicIntroV21(c:RsPalette,store:RsStore,lang:RsLang,onFinished:()->Uni
         else{
             val parsed=runCatching{Uri.parse(selectedUri)}.getOrNull()
             when(parsed?.scheme){
-                "file"->parsed.path?.let(::File)?.exists()==true
+                "file"->parsed.path?.let(::File)?.let{it.exists()&&it.length()>0L}==true
                 else->true
             }
         }
+    }
+
+    // Crash-loop guard: if the previous process died while the intro was marked
+    // active, skip it once and let the already initialized app continue.
+    val previousIntroInterrupted=remember{store.b("intro_playback_guard_v141",false)}
+    if(previousIntroInterrupted){
+        LaunchedEffect(Unit){
+            store.pb("intro_playback_guard_v141",false)
+            onFinished()
+        }
+        return
     }
 
     if(!selectedPlayable){
@@ -94,14 +106,21 @@ fun RsCinematicIntroV21(c:RsPalette,store:RsStore,lang:RsLang,onFinished:()->Uni
     }
 
     Box(Modifier.fillMaxSize().background(Color.Black)){
-        RsIntroVideoStageV30(
+        RsSafeIntroVideoStageV141(
             uri=selectedUri,
             sound=store.b("intro_video_sound",true),
-            onFinished=onFinished
+            onStarted={store.pb("intro_playback_guard_v141",true)},
+            onFinished={
+                store.pb("intro_playback_guard_v141",false)
+                onFinished()
+            }
         )
         if(store.b("intro_skip_enabled",true)){
             TextButton(
-                onClick=onFinished,
+                onClick={
+                    store.pb("intro_playback_guard_v141",false)
+                    onFinished()
+                },
                 modifier=Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
             ){Text(rsIntroT102(lang,"skip"),color=Color.White.copy(alpha=.82f))}
         }
@@ -109,73 +128,63 @@ fun RsCinematicIntroV21(c:RsPalette,store:RsStore,lang:RsLang,onFinished:()->Uni
 }
 
 @Composable
-private fun RsIntroVideoStageV30(uri:String,sound:Boolean,onFinished:()->Unit){
-    val context=LocalContext.current.applicationContext
+private fun RsSafeIntroVideoStageV141(
+    uri:String,
+    sound:Boolean,
+    onStarted:()->Unit,
+    onFinished:()->Unit
+){
+    val context=LocalContext.current
     val finished=remember(uri){AtomicBoolean(false)}
-    val player=remember(uri){ExoPlayer.Builder(context).build()}
+    var videoView by remember(uri){mutableStateOf<VideoView?>(null)}
+
     fun finishOnce(){
         if(finished.compareAndSet(false,true)){
-            runCatching{
-                player.playWhenReady=false
-                player.stop()
-            }
+            runCatching{videoView?.stopPlayback()}
             onFinished()
-        }
-    }
-
-    DisposableEffect(player){
-        val listener=object:Player.Listener{
-            override fun onPlaybackStateChanged(state:Int){
-                if(state==Player.STATE_ENDED)finishOnce()
-            }
-            override fun onPlayerError(error:androidx.media3.common.PlaybackException){
-                finishOnce()
-            }
-        }
-        player.addListener(listener)
-        onDispose{
-            player.removeListener(listener)
-            runCatching{
-                player.playWhenReady=false
-                player.stop()
-                player.clearMediaItems()
-            }
-            runCatching{player.release()}
-        }
-    }
-
-    LaunchedEffect(uri,sound){
-        finished.set(false)
-        player.volume=if(sound)1f else 0f
-        player.repeatMode=Player.REPEAT_MODE_OFF
-        player.setMediaItem(MediaItem.fromUri(Uri.parse(uri)))
-        player.prepare()
-        player.playWhenReady=true
-    }
-
-    LaunchedEffect(uri){
-        kotlinx.coroutines.delay(RS_INTRO_VIDEO_MAX_MS)
-        if(!finished.get()){
-            runCatching{player.pause()}
-            finishOnce()
         }
     }
 
     AndroidView(
         factory={ctx->
-            PlayerView(ctx).apply{
-                useController=false
-                resizeMode=AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                setShutterBackgroundColor(android.graphics.Color.BLACK)
-                this.player=player
+            VideoView(ctx).apply{
+                setBackgroundColor(android.graphics.Color.BLACK)
+                setOnPreparedListener{mp->
+                    mp.isLooping=false
+                    mp.setVolume(if(sound)1f else 0f,if(sound)1f else 0f)
+                    runCatching{
+                        mp.setVideoScalingMode(android.media.MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+                    }
+                    onStarted()
+                    start()
+                }
+                setOnCompletionListener{finishOnce()}
+                setOnErrorListener{_,_,_->
+                    finishOnce()
+                    true
+                }
+                videoView=this
+                runCatching{setVideoURI(Uri.parse(uri))}
+                    .onFailure{finishOnce()}
             }
         },
         update={view->
-            view.player=player
-            view.resizeMode=AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+            videoView=view
         },
         modifier=Modifier.fillMaxSize().background(Color.Black)
     )
+
+    LaunchedEffect(uri){
+        kotlinx.coroutines.delay(RS_INTRO_VIDEO_MAX_MS+750L)
+        if(!finished.get())finishOnce()
+    }
+
+    DisposableEffect(uri){
+        onDispose{
+            runCatching{videoView?.stopPlayback()}
+            videoView=null
+        }
+    }
 }
 
 @Composable
