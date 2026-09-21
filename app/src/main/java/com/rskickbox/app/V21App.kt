@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -39,6 +40,8 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 @Composable
 fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     val context = LocalContext.current
+    val config = LocalConfiguration.current
+    val isTabletStartup = config.smallestScreenWidthDp>=600
     val store = remember { RsStore(context) }
     val appScope = rememberCoroutineScope()
     val callNotificationPermissionLauncher=rememberLauncherForActivityResult(
@@ -71,6 +74,13 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     // Cloud brand/visual sync runs in the background. Never block cold start with
     // a generic loading screen before the cinematic RS splash.
     var brandAssetsRestoring by remember { mutableStateOf(false) }
+    var introPreparing by remember {
+        mutableStateOf(
+            !RsRuntimeV108.introShownThisProcess &&
+            store.b("intro_enabled",true) &&
+            RsSupabaseV60.configured
+        )
+    }
     var lang by remember { mutableStateOf(rsInitialLanguageV111(store)) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
     var introDone by remember { mutableStateOf(RsRuntimeV108.introShownThisProcess || !store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
@@ -78,6 +88,13 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
     }
     val c = paletteFor(theme)
+
+    LaunchedEffect(introPreparing,isTabletStartup){
+        if(introPreparing){
+            rsPrepareIntroAssetV140(context,store,isTabletStartup)
+            introPreparing=false
+        }
+    }
 
     LaunchedEffect(introDone){
         if(introDone && RsSupabaseV60.configured){
@@ -254,6 +271,16 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         val currentBrandRevision=brandRevision
         Box(Modifier.fillMaxSize()) {
             when {
+                introPreparing -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(14.dp)){
+                        androidx.compose.foundation.Image(
+                            painter=androidx.compose.ui.res.painterResource(R.drawable.rs_launcher_royal_v129),
+                            contentDescription="RS KICKBOXING",
+                            modifier=Modifier.size(92.dp)
+                        )
+                        CircularProgressIndicator(color=c.gold)
+                    }
+                }
                 brandAssetsRestoring -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                     Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(10.dp)){
                         CircularProgressIndicator()
