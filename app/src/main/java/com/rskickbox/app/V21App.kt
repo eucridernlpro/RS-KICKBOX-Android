@@ -162,6 +162,9 @@ fun RsKickboxV21App(
             else RsPreLoginStageV147.LOGO
         )
     }
+    var passwordRecoveryLaunch by remember(initialAuthDeepLink){
+        mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
+    }
     fun finishPreLoginV156(){
         if(localSessionFresh && localSessionRole!=null && !passwordRecoveryLaunch){
             authRestoreAttempted=true
@@ -174,9 +177,6 @@ fun RsKickboxV21App(
         }
     }
 
-    var passwordRecoveryLaunch by remember(initialAuthDeepLink){
-        mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
-    }
     val c = paletteFor(theme)
 
     val localSplashUri=remember(preLoginStage,isTabletStartup){
