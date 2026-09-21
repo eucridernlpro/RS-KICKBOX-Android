@@ -399,9 +399,10 @@ fun RsIntroSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
                 modifier=Modifier.fillMaxWidth().fillMaxHeight(.94f)
             ){
                 Box(Modifier.fillMaxSize().background(Color.Black)){
-                    RsIntroVideoStageV30(
+                    RsSafeIntroVideoStageV141(
                         uri=previewUri,
                         sound=videoSound,
+                        onStarted={},
                         onFinished={previewUri=""}
                     )
                     TextButton(
