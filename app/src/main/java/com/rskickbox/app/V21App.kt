@@ -45,16 +45,19 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     val store = remember { RsStore(context) }
     val currentVersionCode=BuildConfig.VERSION_CODE
     val previousVersionCode=remember{store.s("rs_last_started_version_code","0").toIntOrNull()?:0}
-    val updatedSinceLastLaunch=remember(currentVersionCode,previousVersionCode){
-        previousVersionCode>0 && previousVersionCode!=currentVersionCode
+    val localSessionAuthMs=remember{
+        store.s("session_password_auth_ms","0").toLongOrNull()?:0L
+    }
+    val updatedSinceLastLaunch=remember(currentVersionCode,previousVersionCode,localSessionAuthMs){
+        (previousVersionCode>0 && previousVersionCode!=currentVersionCode) ||
+        // First rollout of version-aware sessions: an old authenticated session
+        // with no version marker must be treated as an APK-update migration.
+        (previousVersionCode==0 && localSessionAuthMs>0L)
     }
     val appScope = rememberCoroutineScope()
     val callNotificationPermissionLauncher=rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ){}
-    val localSessionAuthMs=remember{
-        store.s("session_password_auth_ms","0").toLongOrNull()?:0L
-    }
     val localSessionFresh=remember(localSessionAuthMs,updatedSinceLastLaunch){
         !updatedSinceLastLaunch &&
         localSessionAuthMs>0L &&
