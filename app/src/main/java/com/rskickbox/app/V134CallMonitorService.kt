@@ -31,7 +31,7 @@ class RsCallMonitorServiceV134:Service(){
         const val ACTION_PUSH_CALL="com.rskickbox.app.PUSH_CALL"
         const val ACTION_PUSH_ROOM="com.rskickbox.app.PUSH_ROOM"
         private const val CHANNEL_MONITOR="rs_call_monitor"
-        private const val CHANNEL_CALLS="rs_incoming_calls_v3"
+        private const val CHANNEL_CALLS="rs_incoming_calls_v4"
         private const val FOREGROUND_ID=9134
 
         fun start(context:Context){
@@ -235,9 +235,14 @@ class RsCallMonitorServiceV134:Service(){
                     setShowBadge(true)
                     enableVibration(true)
                     vibrationPattern=longArrayOf(0,700,350,700,350,900)
-                    // The service plays the user's selected RS-only ringtone.
-                    // Keep the channel itself silent to avoid double audio.
-                    setSound(null,null)
+                    val ringUri=rsSavedCallRingtoneUriV138(this@RsCallMonitorServiceV134)
+                    setSound(
+                        ringUri,
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build()
+                    )
                 }
             )
         }
@@ -278,6 +283,10 @@ class RsCallMonitorServiceV134:Service(){
         val fullIntent=Intent(this,MainActivity::class.java).apply{
             action="com.rskickbox.app.INCOMING_CALL"
             putExtra("rs_incoming_call_id",call.id)
+            putExtra("rs_incoming_call_type",call.callType)
+            putExtra("rs_incoming_caller_id",call.peerId.ifBlank{call.callerId})
+            putExtra("rs_incoming_caller_name",call.peerName)
+            putExtra("rs_incoming_caller_email",call.peerEmail)
             flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val fullPending=PendingIntent.getActivity(
@@ -314,7 +323,6 @@ class RsCallMonitorServiceV134:Service(){
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setAutoCancel(false)
-            .setSilent(true)
             .setVibrate(longArrayOf(0,700,350,700,350,900))
             .setContentIntent(fullPending)
             .setFullScreenIntent(fullPending,true)
