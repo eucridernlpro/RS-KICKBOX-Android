@@ -4,6 +4,10 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.media.AudioAttributes
+import android.media.Ringtone
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import io.github.jan.supabase.auth.auth
@@ -13,20 +17,23 @@ class RsCallMonitorServiceV134:Service(){
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.IO)
     private var lastNotifiedCallId:String?=null
     private var lastNotifiedRoomId:String?=null
+    private var ringtone:Ringtone?=null
 
     companion object{
         const val ACTION_START="com.rskickbox.app.CALL_MONITOR_START"
         const val ACTION_STOP="com.rskickbox.app.CALL_MONITOR_STOP"
         private const val CHANNEL_MONITOR="rs_call_monitor"
-        private const val CHANNEL_CALLS="rs_incoming_calls"
+        private const val CHANNEL_CALLS="rs_incoming_calls_v2"
         private const val FOREGROUND_ID=9134
 
         fun start(context:Context){
             val i=Intent(context,RsCallMonitorServiceV134::class.java).setAction(ACTION_START)
-            if(Build.VERSION.SDK_INT>=26)context.startForegroundService(i) else context.startService(i)
+            runCatching{
+                if(Build.VERSION.SDK_INT>=26)context.startForegroundService(i) else context.startService(i)
+            }
         }
         fun stop(context:Context){
-            context.startService(Intent(context,RsCallMonitorServiceV134::class.java).setAction(ACTION_STOP))
+            runCatching{context.stopService(Intent(context,RsCallMonitorServiceV134::class.java))}
         }
     }
 
@@ -60,9 +67,13 @@ class RsCallMonitorServiceV134:Service(){
                         }
                         if(incoming!=null && incoming.id!=lastNotifiedCallId){
                             lastNotifiedCallId=incoming.id
+                            startRinging()
                             showIncomingCall(incoming)
                         }
-                        if(incoming==null)lastNotifiedCallId=null
+                        if(incoming==null){
+                            lastNotifiedCallId=null
+                            stopRinging()
+                        }
                     }
                     rsMyVideoRoomsV136().onSuccess{rooms->
                         val invite=rooms.firstOrNull{
@@ -70,9 +81,13 @@ class RsCallMonitorServiceV134:Service(){
                         }
                         if(invite!=null && invite.roomId!=lastNotifiedRoomId){
                             lastNotifiedRoomId=invite.roomId
+                            startRinging()
                             showIncomingVideoRoom(invite)
                         }
-                        if(invite==null)lastNotifiedRoomId=null
+                        if(invite==null){
+                            lastNotifiedRoomId=null
+                            if(lastNotifiedCallId==null)stopRinging()
+                        }
                     }
                 }
             }
@@ -93,6 +108,7 @@ class RsCallMonitorServiceV134:Service(){
                     setShowBadge(false)
                 }
             )
+            val ringUri=RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
             nm.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_CALLS,
@@ -103,6 +119,14 @@ class RsCallMonitorServiceV134:Service(){
                     lockscreenVisibility=Notification.VISIBILITY_PUBLIC
                     setShowBadge(true)
                     enableVibration(true)
+                    vibrationPattern=longArrayOf(0,700,350,700,350,900)
+                    setSound(
+                        ringUri,
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build()
+                    )
                 }
             )
         }
@@ -123,6 +147,20 @@ class RsCallMonitorServiceV134:Service(){
             .setSilent(true)
             .setContentIntent(openIntent)
             .build()
+    }
+
+    private fun startRinging(){
+        if(ringtone?.isPlaying==true)return
+        val uri:Uri=RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        ringtone=RingtoneManager.getRingtone(this,uri)?.apply{
+            if(Build.VERSION.SDK_INT>=28)isLooping=true
+            play()
+        }
+    }
+
+    private fun stopRinging(){
+        runCatching{ringtone?.stop()}
+        ringtone=null
     }
 
     private fun showIncomingCall(call:RsCallV131){
@@ -147,6 +185,8 @@ class RsCallMonitorServiceV134:Service(){
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setAutoCancel(false)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE))
+            .setVibrate(longArrayOf(0,700,350,700,350,900))
             .setContentIntent(pending)
             .setFullScreenIntent(pending,true)
             .build()
@@ -174,6 +214,8 @@ class RsCallMonitorServiceV134:Service(){
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setAutoCancel(false)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE))
+            .setVibrate(longArrayOf(0,700,350,700,350,900))
             .setContentIntent(pending)
             .setFullScreenIntent(pending,true)
             .build()
@@ -181,6 +223,7 @@ class RsCallMonitorServiceV134:Service(){
     }
 
     override fun onDestroy(){
+        stopRinging()
         scope.cancel()
         super.onDestroy()
     }
