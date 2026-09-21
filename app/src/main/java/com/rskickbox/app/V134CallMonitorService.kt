@@ -22,8 +22,9 @@ class RsCallMonitorServiceV134:Service(){
     companion object{
         const val ACTION_START="com.rskickbox.app.CALL_MONITOR_START"
         const val ACTION_STOP="com.rskickbox.app.CALL_MONITOR_STOP"
+        const val ACTION_STOP_RING="com.rskickbox.app.CALL_RING_STOP"
         private const val CHANNEL_MONITOR="rs_call_monitor"
-        private const val CHANNEL_CALLS="rs_incoming_calls_v2"
+        private const val CHANNEL_CALLS="rs_incoming_calls_v3"
         private const val FOREGROUND_ID=9134
 
         fun start(context:Context){
@@ -35,6 +36,12 @@ class RsCallMonitorServiceV134:Service(){
         fun stop(context:Context){
             runCatching{context.stopService(Intent(context,RsCallMonitorServiceV134::class.java))}
         }
+        fun stopRing(context:Context){
+            val i=Intent(context,RsCallMonitorServiceV134::class.java).setAction(ACTION_STOP_RING)
+            runCatching{
+                if(Build.VERSION.SDK_INT>=26)context.startForegroundService(i) else context.startService(i)
+            }
+        }
     }
 
     override fun onCreate(){
@@ -43,6 +50,10 @@ class RsCallMonitorServiceV134:Service(){
     }
 
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int{
+        if(intent?.action==ACTION_STOP_RING){
+            stopRinging()
+            return START_STICKY
+        }
         if(intent?.action==ACTION_STOP){
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -108,7 +119,6 @@ class RsCallMonitorServiceV134:Service(){
                     setShowBadge(false)
                 }
             )
-            val ringUri=RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
             nm.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_CALLS,
@@ -120,13 +130,9 @@ class RsCallMonitorServiceV134:Service(){
                     setShowBadge(true)
                     enableVibration(true)
                     vibrationPattern=longArrayOf(0,700,350,700,350,900)
-                    setSound(
-                        ringUri,
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .build()
-                    )
+                    // The service plays the user's selected RS-only ringtone.
+                    // Keep the channel itself silent to avoid double audio.
+                    setSound(null,null)
                 }
             )
         }
@@ -151,7 +157,7 @@ class RsCallMonitorServiceV134:Service(){
 
     private fun startRinging(){
         if(ringtone?.isPlaying==true)return
-        val uri:Uri=RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        val uri:Uri=rsSavedCallRingtoneUriV138(this)
         ringtone=RingtoneManager.getRingtone(this,uri)?.apply{
             if(Build.VERSION.SDK_INT>=28)isLooping=true
             play()
@@ -185,7 +191,7 @@ class RsCallMonitorServiceV134:Service(){
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setAutoCancel(false)
-            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE))
+            .setSilent(true)
             .setVibrate(longArrayOf(0,700,350,700,350,900))
             .setContentIntent(pending)
             .setFullScreenIntent(pending,true)
@@ -214,7 +220,7 @@ class RsCallMonitorServiceV134:Service(){
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setAutoCancel(false)
-            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE))
+            .setSilent(true)
             .setVibrate(longArrayOf(0,700,350,700,350,900))
             .setContentIntent(pending)
             .setFullScreenIntent(pending,true)
