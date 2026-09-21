@@ -64,7 +64,7 @@ begin
   end if;
   update public.rs_coach_messages set body=v_clean where id=p_message_id;
 end;
-$;
+$$;
 
 create or replace function public.rs_delete_coach_message_for_everyone(p_message_id uuid)
 returns void
@@ -202,7 +202,7 @@ begin
   insert into public.rs_call_history_hidden(user_id,call_id)
   values(v_uid,p_call_id) on conflict do nothing;
 end;
-$;
+$$;
 
 -- Unified direct-call history. Existing rs_calls already stores all call states.
 create or replace function public.rs_call_history()
