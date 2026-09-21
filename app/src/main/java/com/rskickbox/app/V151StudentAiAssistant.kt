@@ -1,5 +1,10 @@
 package com.rskickbox.app
 
+import android.app.Activity
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,6 +32,26 @@ fun RsStudentAiAssistantSafeV151(
     var openTechnique by remember{mutableStateOf(false)}
     var question by remember{mutableStateOf("")}
     var answer by remember{mutableStateOf("")}
+    val context=LocalContext.current
+    var voiceStatus by remember{mutableStateOf("")}
+    val voiceLauncher=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
+        if(result.resultCode==Activity.RESULT_OK){
+            val spoken=result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
+            if(spoken.isNotBlank()){
+                question=spoken.take(600)
+                voiceStatus="Voice question ready."
+            }
+        }
+    }
+    fun startVoiceQuestion(){
+        val intent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PROMPT,"Ask RS AI Trainer")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE,java.util.Locale.getDefault().toLanguageTag())
+        }
+        runCatching{voiceLauncher.launch(intent)}
+            .onFailure{voiceStatus="Voice input is not available on this device."}
+    }
 
     if(openTechnique){
         Column(Modifier.fillMaxSize()){
@@ -115,6 +141,17 @@ fun RsStudentAiAssistantSafeV151(
                     minLines=3,
                     modifier=Modifier.fillMaxWidth()
                 )
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                    OutlinedButton(
+                        onClick={startVoiceQuestion()},
+                        modifier=Modifier.weight(1f)
+                    ){Text("🎙  Ask with voice")}
+                    OutlinedButton(
+                        onClick={openTechnique=true},
+                        modifier=Modifier.weight(1f)
+                    ){Text("🎥  Upload video")}
+                }
+                if(voiceStatus.isNotBlank())Text(voiceStatus,color=Color(0xFF58C9FF),fontSize=9.sp)
                 Button(
                     onClick={
                         answer=when{
