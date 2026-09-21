@@ -547,6 +547,7 @@ private fun LoginV21(
         store.ps("background_call_role",roleName)
         store.pb("background_calls_enabled",true)
         store.ps("session_password_auth_ms",System.currentTimeMillis().toString())
+        rsRefreshAndRegisterFcmTokenV155()
         statusIsError=false
         status="✓ "+rsEnrollMsg(lang,"welcome",name=session.displayName)
         onLogin(session.role)
