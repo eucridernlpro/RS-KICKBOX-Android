@@ -77,9 +77,19 @@ fun RsCinematicIntroV21(c:RsPalette,store:RsStore,lang:RsLang,onFinished:()->Uni
     val phoneUri=store.s("intro_phone_video_uri",legacy)
     val tabletUri=store.s("intro_tablet_video_uri","")
     val selectedUri=if(isTablet && tabletUri.isNotBlank())tabletUri else phoneUri
+    val selectedPlayable=remember(selectedUri){
+        if(selectedUri.isBlank())false
+        else{
+            val parsed=runCatching{Uri.parse(selectedUri)}.getOrNull()
+            when(parsed?.scheme){
+                "file"->parsed.path?.let(::File)?.exists()==true
+                else->true
+            }
+        }
+    }
 
-    if(selectedUri.isBlank()){
-        LaunchedEffect(Unit){onFinished()}
+    if(!selectedPlayable){
+        LaunchedEffect(selectedUri){onFinished()}
         return
     }
 
@@ -100,11 +110,17 @@ fun RsCinematicIntroV21(c:RsPalette,store:RsStore,lang:RsLang,onFinished:()->Uni
 
 @Composable
 private fun RsIntroVideoStageV30(uri:String,sound:Boolean,onFinished:()->Unit){
-    val context=LocalContext.current
+    val context=LocalContext.current.applicationContext
     val finished=remember(uri){AtomicBoolean(false)}
     val player=remember(uri){ExoPlayer.Builder(context).build()}
     fun finishOnce(){
-        if(finished.compareAndSet(false,true))onFinished()
+        if(finished.compareAndSet(false,true)){
+            runCatching{
+                player.playWhenReady=false
+                player.stop()
+            }
+            onFinished()
+        }
     }
 
     DisposableEffect(player){
@@ -119,7 +135,12 @@ private fun RsIntroVideoStageV30(uri:String,sound:Boolean,onFinished:()->Unit){
         player.addListener(listener)
         onDispose{
             player.removeListener(listener)
-            player.release()
+            runCatching{
+                player.playWhenReady=false
+                player.stop()
+                player.clearMediaItems()
+            }
+            runCatching{player.release()}
         }
     }
 
