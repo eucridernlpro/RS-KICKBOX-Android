@@ -502,6 +502,8 @@ fun RsChatComposerV92(
     scopeType:String,
     scopeId:String,
     enabled:Boolean=true,
+    replyPreview:String?=null,
+    onClearReply:()->Unit={},
     onSent:()->Unit,
     onStatus:(String)->Unit,
     onSend:suspend (String,RsChatAttachmentV92?)->Result<Unit>
@@ -638,6 +640,25 @@ fun RsChatComposerV92(
             Modifier.fillMaxWidth().padding(9.dp),
             verticalArrangement=Arrangement.spacedBy(7.dp)
         ){
+            if(!replyPreview.isNullOrBlank()){
+                Surface(
+                    color=c.gold.copy(alpha=.08f),
+                    shape=RoundedCornerShape(14.dp),
+                    border=BorderStroke(1.dp,c.gold.copy(alpha=.20f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=7.dp),
+                        verticalAlignment=Alignment.CenterVertically
+                    ){
+                        Column(Modifier.weight(1f)){
+                            Text("REPLYING TO",color=c.gold,fontSize=7.sp,fontWeight=FontWeight.Black)
+                            Text(replyPreview.take(140),color=c.text,fontSize=9.sp,maxLines=2)
+                        }
+                        TextButton(onClick=onClearReply,contentPadding=PaddingValues(4.dp)){Text("×",fontSize=20.sp)}
+                    }
+                }
+            }
             if(picked!=null){
                 Surface(
                     color=c.gold.copy(alpha=.09f),
