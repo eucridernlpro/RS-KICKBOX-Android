@@ -21,6 +21,17 @@ data class RsStudentCallPermissionV136(
 )
 
 @Serializable
+data class RsStudentCallContactV136(
+    @SerialName("user_id") val userId:String,
+    @SerialName("display_name") val displayName:String,
+    val email:String,
+    @SerialName("avatar_path") val avatarPath:String?=null,
+    val online:Boolean=false,
+    @SerialName("audio_allowed") val audioAllowed:Boolean=false,
+    @SerialName("video_allowed") val videoAllowed:Boolean=false
+)
+
+@Serializable
 data class RsMyCallPermissionsV136(
     @SerialName("audio_enabled") val audioEnabled:Boolean=false,
     @SerialName("video_enabled") val videoEnabled:Boolean=false
@@ -161,4 +172,10 @@ suspend fun rsVideoRoomSignalsSinceV136(
             put("p_after_id",afterId)
         }
     ).decodeList<RsVideoRoomSignalV136>()
+}
+
+
+suspend fun rsStudentCallContactsV136():Result<List<RsStudentCallContactV136>> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc("rs_student_call_contacts").decodeList<RsStudentCallContactV136>()
 }
