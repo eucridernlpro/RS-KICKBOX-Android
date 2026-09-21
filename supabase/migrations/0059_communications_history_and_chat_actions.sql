@@ -172,6 +172,38 @@ begin
 end;
 $$;
 
+-- Per-user hidden call-history items.
+create table if not exists public.rs_call_history_hidden (
+    user_id uuid not null references auth.users(id) on delete cascade,
+    call_id uuid not null references public.rs_calls(id) on delete cascade,
+    hidden_at timestamptz not null default now(),
+    primary key(user_id,call_id)
+);
+alter table public.rs_call_history_hidden enable row level security;
+drop policy if exists "rs_call_history_hidden_own" on public.rs_call_history_hidden;
+create policy "rs_call_history_hidden_own"
+on public.rs_call_history_hidden for all to authenticated
+using(user_id=(select auth.uid()))
+with check(user_id=(select auth.uid()));
+
+create or replace function public.rs_hide_call_history(p_call_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $
+declare v_uid uuid:=(select auth.uid());
+begin
+  if v_uid is null then raise exception 'authentication required' using errcode='42501'; end if;
+  if not exists(
+    select 1 from public.rs_calls c
+    where c.id=p_call_id and v_uid in (c.caller_id,c.callee_id)
+  ) then raise exception 'call not found' using errcode='P0002'; end if;
+  insert into public.rs_call_history_hidden(user_id,call_id)
+  values(v_uid,p_call_id) on conflict do nothing;
+end;
+$;
+
 -- Unified direct-call history. Existing rs_calls already stores all call states.
 create or replace function public.rs_call_history()
 returns table(
@@ -204,6 +236,10 @@ as $$
   join public.rs_profiles p
     on p.id=case when c.caller_id=(select auth.uid()) then c.callee_id else c.caller_id end
   where (select auth.uid()) in (c.caller_id,c.callee_id)
+    and not exists(
+      select 1 from public.rs_call_history_hidden h
+      where h.user_id=(select auth.uid()) and h.call_id=c.id
+    )
   order by c.created_at desc
   limit 100;
 $$;
@@ -214,9 +250,11 @@ revoke all on function public.rs_delete_coach_message_for_everyone(uuid) from pu
 revoke all on function public.rs_coach_thread_messages_v3(uuid) from public,anon;
 revoke all on function public.rs_send_coach_message_v3(uuid,text,text,text,text,uuid) from public,anon;
 revoke all on function public.rs_call_history() from public,anon;
+revoke all on function public.rs_hide_call_history(uuid) from public,anon;
 grant execute on function public.rs_hide_coach_message(uuid) to authenticated;
 grant execute on function public.rs_edit_coach_message(uuid,text) to authenticated;
 grant execute on function public.rs_delete_coach_message_for_everyone(uuid) to authenticated;
 grant execute on function public.rs_coach_thread_messages_v3(uuid) to authenticated;
 grant execute on function public.rs_send_coach_message_v3(uuid,text,text,text,text,uuid) to authenticated;
 grant execute on function public.rs_call_history() to authenticated;
+grant execute on function public.rs_hide_call_history(uuid) to authenticated;
