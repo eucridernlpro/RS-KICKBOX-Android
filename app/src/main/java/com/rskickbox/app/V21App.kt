@@ -58,11 +58,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     val callNotificationPermissionLauncher=rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ){}
-    val localSessionFresh=remember(localSessionAuthMs,updatedSinceLastLaunch){
-        !updatedSinceLastLaunch &&
-        localSessionAuthMs>0L &&
-        System.currentTimeMillis()-localSessionAuthMs<=12L*60L*60L*1000L
-    }
+    val localSessionFresh=false
     val localSessionRole=remember(localSessionFresh){
         if(!localSessionFresh)null
         else when(store.s("session_role","")){
@@ -84,30 +80,10 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     // Cloud brand/visual sync runs in the background. Never block cold start with
     // a generic loading screen before the cinematic RS splash.
     var brandAssetsRestoring by remember { mutableStateOf(false) }
-    var introPreparing by remember {
-        mutableStateOf(
-            !skipIntroOnRestore &&
-            !RsRuntimeV108.introShownThisProcess &&
-            store.b("intro_enabled",true) &&
-            RsSupabaseV60.configured
-        )
-    }
+    var introPreparing by remember { mutableStateOf(false) }
     var lang by remember { mutableStateOf(rsInitialLanguageV111(store)) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
-    var introDone by remember {
-        mutableStateOf(
-            skipIntroOnRestore ||
-            (
-                !updatedSinceLastLaunch &&
-                (
-                    RsRuntimeV108.introShownThisProcess ||
-                    !store.b("intro_enabled",true) ||
-                    (!store.b("intro_every_launch",true) && store.b("intro_seen",false))
-                )
-            ) ||
-            (!store.b("intro_enabled",true))
-        )
-    }
+    var introDone by remember { mutableStateOf(true) }
     var passwordRecoveryLaunch by remember(initialAuthDeepLink){
         mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
     }
@@ -137,8 +113,8 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
         }
     }
 
-    LaunchedEffect(introDone){
-        if(introDone && RsSupabaseV60.configured){
+    LaunchedEffect(introDone,role){
+        if(introDone && role!=null && RsSupabaseV60.configured){
             rsSyncCloudBrandV100(store)
                 .onSuccess{settings->
                     theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
@@ -155,74 +131,16 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     LaunchedEffect(authRestoreAttempted){
         if(!authRestoreAttempted){
             authRestoreAttempted=true
-            if(updatedSinceLastLaunch){
-                role=null
-                route="home"
-                authRestoring=false
-            }else if(passwordRecoveryLaunch){
-                role=null
-                route="home"
-                authRestoring=false
-            }else if(RsSupabaseV60.configured){
-                val lastPasswordAuth=store.s("session_password_auth_ms","0").toLongOrNull()?:0L
-                val now=System.currentTimeMillis()
-                val reauthWindowMs=12L*60L*60L*1000L
-                val localFresh=lastPasswordAuth>0L && now-lastPasswordAuth<=reauthWindowMs
-                val savedRole=when(store.s("session_role","")){
-                    "trainer"->RsRole.TRAINER
-                    "student"->RsRole.STUDENT
-                    else->null
-                }
-
-                // Restore the accepted local 12-hour session immediately.
-                // Supabase validation follows in the background so Android process
-                // recreation / returning from background music never flashes Login.
-                if(localFresh && savedRole!=null){
-                    role=savedRole
-                    route=store.s("session_last_route","").ifBlank{if(savedRole==RsRole.TRAINER)"trainer" else "home"}
-                    authRestoring=false
-                }else{
-                    authRestoring=true
-                }
-
-                rsCloudCurrentSessionV67()
-                    .onSuccess{session->
-                        if(session!=null){
-                            val effectiveAuthAt=if(lastPasswordAuth>0L)lastPasswordAuth else now
-                            if(now-effectiveAuthAt<=reauthWindowMs){
-                                if(lastPasswordAuth<=0L)store.ps("session_password_auth_ms",effectiveAuthAt.toString())
-                                store.ps("session_student_email",session.email)
-                                store.ps("last_login_email",session.email)
-                                store.ps("session_student_name",session.displayName)
-                                store.ps("session_plan",session.plan)
-                                store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
-                                role=session.role
-                                route=store.s("session_last_route","").ifBlank{if(session.role==RsRole.TRAINER)"trainer" else "home"}
-                            }else{
-                                store.ps("session_password_auth_ms","0")
-                                role=null
-                                route="home"
-                                appScope.launch{rsCloudLogoutV63()}
-                            }
-                        }else if(!localFresh){
-                            role=null
-                            route="home"
-                        }
-                        // If cloud restoration is temporarily late but local session is
-                        // still inside the 12-hour window, keep the local UI session.
-                    }
-                    .onFailure{
-                        // Network/auth restore failures must not destroy a fresh local
-                        // session. Backend calls can recover when connectivity returns.
-                        if(!localFresh){
-                            role=null
-                            route="home"
-                        }
-                    }
-                authRestoring=false
-            }else{
-                authRestoring=false
-            }
+            // Stability-first startup: never enter an authenticated screen
+            // automatically. Show Login first, then start app services only
+            // after the user authenticates successfully.
+            role=null
+            route="home"
+            authRestoring=false
+            store.ps("session_password_auth_ms","0")
+            store.ps("session_last_route","")
+            store.ps("session_role","")
+            store.ps("rs_last_started_version_code",currentVersionCode.toString())
         }
     }
 
@@ -263,18 +181,10 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
         }
     }
 
-    LaunchedEffect(role,introDone){
-        if(introDone && role==null && RsSupabaseV60.configured){
-            rsSyncCloudBrandV100(store).onSuccess{settings->
-                theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
-                brandRevision++
-            }
-            rsSyncCloudVisualAssetsV101(context,store).onSuccess{brandRevision++}
-        }
-    }
 
-    LaunchedEffect(introDone){
-        if(introDone && RsSupabaseV60.configured){
+
+    LaunchedEffect(introDone,role){
+        if(introDone && role!=null && RsSupabaseV60.configured){
             while(true){
                 kotlinx.coroutines.delay(60_000)
                 rsSyncCloudBrandV100(store).onSuccess{settings->
@@ -456,13 +366,6 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
                 RsGlobalVideoRoomHostV137(c,lang,role!!)
             }
 
-            if(!introDone && !authRestoring && !introPreparing){
-                RsCinematicIntroV21(c,store,lang){
-                    RsRuntimeV108.introShownThisProcess=true
-                    store.pb("intro_seen",true)
-                    introDone=true
-                }
-            }
         }
         @Suppress("UNUSED_VARIABLE") val keepBrandRevisionObserved=currentBrandRevision
     }
