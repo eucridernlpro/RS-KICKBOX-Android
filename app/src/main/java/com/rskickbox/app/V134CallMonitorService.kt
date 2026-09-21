@@ -28,6 +28,8 @@ class RsCallMonitorServiceV134:Service(){
         const val ACTION_DECLINE_CALL="com.rskickbox.app.CALL_DECLINE"
         const val ACTION_JOIN_ROOM="com.rskickbox.app.ROOM_JOIN"
         const val ACTION_DECLINE_ROOM="com.rskickbox.app.ROOM_DECLINE"
+        const val ACTION_PUSH_CALL="com.rskickbox.app.PUSH_CALL"
+        const val ACTION_PUSH_ROOM="com.rskickbox.app.PUSH_ROOM"
         private const val CHANNEL_MONITOR="rs_call_monitor"
         private const val CHANNEL_CALLS="rs_incoming_calls_v3"
         private const val FOREGROUND_ID=9134
@@ -56,6 +58,56 @@ class RsCallMonitorServiceV134:Service(){
 
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int{
         when(intent?.action){
+            ACTION_PUSH_CALL->{
+                startForeground(FOREGROUND_ID,monitorNotification())
+                val id=intent.getStringExtra("call_id").orEmpty()
+                if(id.isNotBlank()){
+                    lastNotifiedCallId=id
+                    startRinging()
+                    showIncomingCall(
+                        RsCallV131(
+                            id=id,
+                            callerId=intent.getStringExtra("caller_id").orEmpty(),
+                            calleeId="",
+                            studentId="",
+                            callType=intent.getStringExtra("call_type").orEmpty().ifBlank{"AUDIO"},
+                            status="RINGING",
+                            peerId=intent.getStringExtra("caller_id").orEmpty(),
+                            peerName=intent.getStringExtra("caller_name").orEmpty(),
+                            peerEmail=intent.getStringExtra("caller_email").orEmpty(),
+                            createdAt=intent.getStringExtra("created_at").orEmpty()
+                        )
+                    )
+                }
+                scope.coroutineContext.cancelChildren()
+                scope.launch{monitorLoop()}
+                return START_STICKY
+            }
+            ACTION_PUSH_ROOM->{
+                startForeground(FOREGROUND_ID,monitorNotification())
+                val id=intent.getStringExtra("room_id").orEmpty()
+                if(id.isNotBlank()){
+                    lastNotifiedRoomId=id
+                    startRinging()
+                    showIncomingVideoRoom(
+                        RsVideoRoomV136(
+                            roomId=id,
+                            title=intent.getStringExtra("title").orEmpty().ifBlank{"RS Video Session"},
+                            roomStatus="OPEN",
+                            hostId=intent.getStringExtra("host_id").orEmpty(),
+                            hostName=intent.getStringExtra("host_name").orEmpty().ifBlank{"RS Trainer"},
+                            myRole="STUDENT",
+                            myStatus="INVITED",
+                            participantCount=intent.getStringExtra("participant_count")?.toLongOrNull()?:0L,
+                            onlineCount=0L,
+                            createdAt=intent.getStringExtra("created_at").orEmpty()
+                        )
+                    )
+                }
+                scope.coroutineContext.cancelChildren()
+                scope.launch{monitorLoop()}
+                return START_STICKY
+            }
             ACTION_ACCEPT_CALL->{
                 val id=intent.getStringExtra("call_id").orEmpty()
                 if(id.isNotBlank())scope.launch{
