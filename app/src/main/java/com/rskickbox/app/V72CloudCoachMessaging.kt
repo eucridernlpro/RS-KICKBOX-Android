@@ -149,3 +149,13 @@ suspend fun rsEditCoachMessageV156(messageId:String,body:String):Result<Unit> = 
     )
     Unit
 }
+
+
+suspend fun rsHideCallHistoryV156(callId:String):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc(
+        "rs_hide_call_history",
+        buildJsonObject{put("p_call_id",callId)}
+    )
+    Unit
+}
