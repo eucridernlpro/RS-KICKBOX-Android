@@ -113,7 +113,9 @@ suspend fun rsCreateVideoRoomV136(
             put("p_student_ids",JsonArray(studentIds.distinct().map(::JsonPrimitive)))
         }
     )
-    response.data.trim().trim('"').ifBlank{error("Video room could not be created.")}
+    val roomId=response.data.trim().trim('"').ifBlank{error("Video room could not be created.")}
+    rsSendVideoRoomPushV155(roomId)
+    roomId
 }
 
 suspend fun rsMyVideoRoomsV136():Result<List<RsVideoRoomV136>> = runCatching{
