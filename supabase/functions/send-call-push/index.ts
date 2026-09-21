@@ -1,4 +1,36 @@
-import { admin, json, userClient } from "../_shared/rs.ts"
+import { createClient } from "npm:@supabase/supabase-js@2"
+
+const supabaseUrl=Deno.env.get("SUPABASE_URL")!
+
+function keyMap(name:string):Record<string,string>{
+  const raw=Deno.env.get(name)
+  if(!raw)throw new Error("Missing "+name)
+  return JSON.parse(raw)
+}
+
+const publishableKey=keyMap("SUPABASE_PUBLISHABLE_KEYS")["default"]
+const secretKey=keyMap("SUPABASE_SECRET_KEYS")["default"]
+const legacyServiceRoleKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""
+const adminKey=legacyServiceRoleKey||secretKey
+
+const admin=createClient(supabaseUrl,adminKey,{
+  auth:{persistSession:false,autoRefreshToken:false}
+})
+
+function userClient(req:Request){
+  const authorization=req.headers.get("Authorization")||""
+  return createClient(supabaseUrl,publishableKey,{
+    global:{headers:{Authorization:authorization}},
+    auth:{persistSession:false,autoRefreshToken:false}
+  })
+}
+
+function json(body:unknown,status=200){
+  return new Response(JSON.stringify(body),{
+    status,
+    headers:{"content-type":"application/json; charset=utf-8"}
+  })
+}
 
 type ServiceAccount={
   project_id:string
