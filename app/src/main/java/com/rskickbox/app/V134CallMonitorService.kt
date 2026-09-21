@@ -12,6 +12,7 @@ import kotlinx.coroutines.*
 class RsCallMonitorServiceV134:Service(){
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.IO)
     private var lastNotifiedCallId:String?=null
+    private var lastNotifiedRoomId:String?=null
 
     companion object{
         const val ACTION_START="com.rskickbox.app.CALL_MONITOR_START"
@@ -54,14 +55,24 @@ class RsCallMonitorServiceV134:Service(){
                 runCatching{
                     rsTouchPresenceV125()
                     rsCallInboxV131().onSuccess{calls->
-                    val incoming=calls.firstOrNull{
-                        it.calleeId==uid && it.status=="RINGING"
+                        val incoming=calls.firstOrNull{
+                            it.calleeId==uid && it.status=="RINGING"
+                        }
+                        if(incoming!=null && incoming.id!=lastNotifiedCallId){
+                            lastNotifiedCallId=incoming.id
+                            showIncomingCall(incoming)
+                        }
+                        if(incoming==null)lastNotifiedCallId=null
                     }
-                    if(incoming!=null && incoming.id!=lastNotifiedCallId){
-                        lastNotifiedCallId=incoming.id
-                        showIncomingCall(incoming)
-                    }
-                    if(incoming==null)lastNotifiedCallId=null
+                    rsMyVideoRoomsV136().onSuccess{rooms->
+                        val invite=rooms.firstOrNull{
+                            it.myRole=="STUDENT" && it.myStatus=="INVITED" && it.roomStatus=="OPEN"
+                        }
+                        if(invite!=null && invite.roomId!=lastNotifiedRoomId){
+                            lastNotifiedRoomId=invite.roomId
+                            showIncomingVideoRoom(invite)
+                        }
+                        if(invite==null)lastNotifiedRoomId=null
                     }
                 }
             }
@@ -140,6 +151,33 @@ class RsCallMonitorServiceV134:Service(){
             .setFullScreenIntent(pending,true)
             .build()
         getSystemService(NotificationManager::class.java).notify(call.id.hashCode(),notification)
+    }
+
+    private fun showIncomingVideoRoom(room:RsVideoRoomV136){
+        val fullIntent=Intent(this,MainActivity::class.java).apply{
+            action="com.rskickbox.app.INCOMING_VIDEO_ROOM"
+            putExtra("rs_video_room_id",room.roomId)
+            flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pending=PendingIntent.getActivity(
+            this,
+            room.roomId.hashCode(),
+            fullIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification=NotificationCompat.Builder(this,CHANNEL_CALLS)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(room.hostName.ifBlank{"RS Trainer"})
+            .setContentText("Incoming RS group video session · "+room.participantCount+" participants")
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setContentIntent(pending)
+            .setFullScreenIntent(pending,true)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(room.roomId.hashCode(),notification)
     }
 
     override fun onDestroy(){
