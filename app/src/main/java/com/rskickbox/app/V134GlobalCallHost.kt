@@ -44,12 +44,13 @@ fun RsGlobalCallHostV134(
     c:RsPalette,
     lang:RsLang,
     role:RsRole,
+    initialIncomingCall:RsCallV131?=null,
     onCallSessionFinished:(()->Unit)?=null
 ){
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     val myId=remember{rsSupabaseClientV60()?.auth?.currentUserOrNull()?.id.orEmpty()}
-    var incoming by remember{mutableStateOf<RsCallV131?>(null)}
+    var incoming by remember(initialIncomingCall?.id){mutableStateOf(initialIncomingCall)}
     var accepted by remember{mutableStateOf<RsCallV131?>(null)}
     var status by remember{mutableStateOf("")}
     var pendingAccept by remember{mutableStateOf<RsCallV131?>(null)}
