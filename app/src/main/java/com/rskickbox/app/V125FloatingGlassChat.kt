@@ -455,7 +455,7 @@ fun RsFloatingGlassChatHubV125(
                 }
                 RsChatHubTabV125.PRIVATE->RsCoachChatV44(c,store,lang,role,privateStudentId)
                 RsChatHubTabV125.GROUPS->RsGroupsV50(c,store,lang,role)
-                RsChatHubTabV125.AI->if(role==RsRole.TRAINER) RsTrainerAiReferenceChatV125(c,lang) else RsTechniqueCoachV27(c,lang,store,role)
+                RsChatHubTabV125.AI->if(role==RsRole.TRAINER) RsTrainerAiReferenceChatV125(c,lang) else RsStudentAiAssistantSafeV151(c,lang,store)
             }
         }
         }
