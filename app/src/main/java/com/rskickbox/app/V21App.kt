@@ -42,11 +42,32 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 private enum class RsPreLoginStageV147{LOGO,VIDEO,LOGIN}
 
 @Composable
-fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=false) {
+fun RsKickboxV21App(
+    initialAuthDeepLink:String?=null,
+    skipIntroOnRestore:Boolean=false,
+    initialIncomingAction:String?=null
+) {
     val context = LocalContext.current
     val config = LocalConfiguration.current
     val isTabletStartup = config.smallestScreenWidthDp>=600
     val store = remember { RsStore(context) }
+    val incomingCallLaunch=remember(initialIncomingAction){
+        initialIncomingAction=="com.rskickbox.app.INCOMING_CALL" ||
+        initialIncomingAction=="com.rskickbox.app.INCOMING_VIDEO_ROOM"
+    }
+    val backgroundCallRole=remember(incomingCallLaunch){
+        if(
+            incomingCallLaunch &&
+            store.b("background_calls_enabled",true) &&
+            rsSupabaseClientV60()?.auth?.currentUserOrNull()!=null
+        ){
+            when(store.s("background_call_role","")){
+                "trainer"->RsRole.TRAINER
+                "student"->RsRole.STUDENT
+                else->null
+            }
+        }else null
+    }
     val currentVersionCode=BuildConfig.VERSION_CODE
     val previousVersionCode=remember{store.s("rs_last_started_version_code","0").toIntOrNull()?:0}
     val localSessionAuthMs=remember{
@@ -71,10 +92,14 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
             else->null
         }
     }
-    var role by remember { mutableStateOf<RsRole?>(localSessionRole) }
-    val restoredRoute=remember(localSessionRole){
-        val saved=store.s("session_last_route","")
-        if(localSessionRole==RsRole.TRAINER) saved.ifBlank{"trainer"} else saved.ifBlank{"home"}
+    var role by remember { mutableStateOf<RsRole?>(backgroundCallRole?:localSessionRole) }
+    var callOnlyMode by remember { mutableStateOf(incomingCallLaunch && backgroundCallRole!=null) }
+    val restoredRoute=remember(localSessionRole,backgroundCallRole){
+        if(backgroundCallRole!=null)"coachchat"
+        else{
+            val saved=store.s("session_last_route","")
+            if(localSessionRole==RsRole.TRAINER) saved.ifBlank{"trainer"} else saved.ifBlank{"home"}
+        }
     }
     var route by remember { mutableStateOf(restoredRoute) }
     var authRestoreAttempted by remember { mutableStateOf(false) }
@@ -89,7 +114,10 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
     var introDone by remember { mutableStateOf(true) }
     var preLoginStage by remember {
-        mutableStateOf(if(skipIntroOnRestore)RsPreLoginStageV147.LOGIN else RsPreLoginStageV147.LOGO)
+        mutableStateOf(
+            if(skipIntroOnRestore || incomingCallLaunch)RsPreLoginStageV147.LOGIN
+            else RsPreLoginStageV147.LOGO
+        )
     }
     var passwordRecoveryLaunch by remember(initialAuthDeepLink){
         mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
@@ -143,7 +171,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     }
 
     LaunchedEffect(introDone,role){
-        if(introDone && role!=null && RsSupabaseV60.configured){
+        if(introDone && role!=null && !callOnlyMode && RsSupabaseV60.configured){
             rsSyncCloudBrandV100(store)
                 .onSuccess{settings->
                     theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
@@ -160,15 +188,19 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     LaunchedEffect(authRestoreAttempted){
         if(!authRestoreAttempted){
             authRestoreAttempted=true
-            // Stability-first startup: never enter an authenticated screen
-            // automatically. Show Login first, then start app services only
-            // after the user authenticates successfully.
-            role=null
-            route="home"
-            authRestoring=false
-            store.ps("session_password_auth_ms","0")
-            store.ps("session_last_route","")
-            store.ps("session_role","")
+            if(callOnlyMode && backgroundCallRole!=null){
+                role=backgroundCallRole
+                route="coachchat"
+                authRestoring=false
+            }else{
+                // Stability-first normal startup: Login remains the secure UI gate.
+                role=null
+                route="home"
+                authRestoring=false
+                store.ps("session_password_auth_ms","0")
+                store.ps("session_last_route","")
+                store.ps("session_role","")
+            }
             store.ps("rs_last_started_version_code",currentVersionCode.toString())
         }
     }
@@ -196,7 +228,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     }
 
     LaunchedEffect(role,introDone){
-        if(introDone && role!=null && RsSupabaseV60.configured){
+        if(introDone && role!=null && !callOnlyMode && RsSupabaseV60.configured){
             rsSyncCloudControlsV82(store)
                 .onSuccess{
                     cloudControlsRevision++
@@ -304,6 +336,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
                         RsPerPageBackgroundV21(store, "login") {
                             LoginV21(c, store, lang, passwordRecoveryLaunch, { selected -> store.pb("lang_manual_override_v111",true);lang=selected;store.ps("lang",selected.code) }) { selected ->
                                 passwordRecoveryLaunch=false
+                                callOnlyMode=false
                                 role = selected
                                 route = if(selected==RsRole.TRAINER) "trainer" else "home"
                             }
@@ -434,8 +467,27 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
                 }
             }
             if(role!=null && introDone && !authRestoring){
-                RsGlobalCallHostV134(c,lang,role!!)
-                RsGlobalVideoRoomHostV137(c,lang,role!!)
+                val finishCallOnlySession={
+                    if(callOnlyMode){
+                        callOnlyMode=false
+                        role=null
+                        route="home"
+                        preLoginStage=RsPreLoginStageV147.LOGIN
+                        store.ps("session_password_auth_ms","0")
+                        store.ps("session_role","")
+                        if(store.b("background_calls_enabled",true)){
+                            RsCallMonitorServiceV134.start(context)
+                        }
+                    }
+                }
+                RsGlobalCallHostV134(
+                    c,lang,role!!,
+                    onCallSessionFinished=if(callOnlyMode)finishCallOnlySession else null
+                )
+                RsGlobalVideoRoomHostV137(
+                    c,lang,role!!,
+                    onRoomSessionFinished=if(callOnlyMode)finishCallOnlySession else null
+                )
             }
 
         }
