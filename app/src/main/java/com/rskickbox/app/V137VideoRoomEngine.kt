@@ -96,25 +96,20 @@ class RsVideoRoomEngineV137(
 
     fun syncMembers(members:List<RsVideoRoomMemberV136>){
         if(!started||disposed)return
-        if(isHost){
-            members.filter{
-                it.memberRole=="STUDENT" &&
-                it.memberStatus=="JOINED" &&
-                it.userId!=myId
-            }.forEach{member->
-                ensurePeer(member.userId,true)
-            }
-        }else{
-            members.firstOrNull{
-                it.memberRole=="HOST" &&
-                it.memberStatus=="JOINED" &&
-                it.userId!=myId
-            }?.let{host->
-                ensurePeer(host.userId,false)
-            }
+
+        // Full small-room mesh: every joined participant connects to every
+        // other joined participant, so students see/hear one another too.
+        // Deterministic initiator ordering prevents both sides from offering
+        // at the same time.
+        val joined=members.filter{
+            it.memberStatus=="JOINED" && it.userId!=myId
+        }
+        joined.forEach{member->
+            val initiator=myId < member.userId
+            ensurePeer(member.userId,initiator)
         }
 
-        val valid=members.filter{it.memberStatus=="JOINED"}.map{it.userId}.toSet()
+        val valid=joined.map{it.userId}.toSet()
         peers.keys.filter{it !in valid}.toList().forEach(::removePeer)
     }
 
