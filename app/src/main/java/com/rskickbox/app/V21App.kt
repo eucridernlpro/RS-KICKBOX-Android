@@ -45,7 +45,12 @@ private enum class RsPreLoginStageV147{LOGO,VIDEO,LOGIN}
 fun RsKickboxV21App(
     initialAuthDeepLink:String?=null,
     skipIntroOnRestore:Boolean=false,
-    initialIncomingAction:String?=null
+    initialIncomingAction:String?=null,
+    initialIncomingCallId:String?=null,
+    initialIncomingCallType:String?=null,
+    initialIncomingCallerId:String?=null,
+    initialIncomingCallerName:String?=null,
+    initialIncomingCallerEmail:String?=null
 ) {
     val context = LocalContext.current
     val config = LocalConfiguration.current
@@ -54,6 +59,32 @@ fun RsKickboxV21App(
     val incomingCallLaunch=remember(initialIncomingAction){
         initialIncomingAction=="com.rskickbox.app.INCOMING_CALL" ||
         initialIncomingAction=="com.rskickbox.app.INCOMING_VIDEO_ROOM"
+    }
+    val initialIncomingDirectCall=remember(
+        initialIncomingAction,
+        initialIncomingCallId,
+        initialIncomingCallType,
+        initialIncomingCallerId,
+        initialIncomingCallerName,
+        initialIncomingCallerEmail
+    ){
+        if(
+            initialIncomingAction=="com.rskickbox.app.INCOMING_CALL" &&
+            !initialIncomingCallId.isNullOrBlank()
+        ){
+            RsCallV131(
+                id=initialIncomingCallId,
+                callerId=initialIncomingCallerId.orEmpty(),
+                calleeId="",
+                studentId="",
+                callType=initialIncomingCallType.orEmpty().ifBlank{"AUDIO"},
+                status="RINGING",
+                peerId=initialIncomingCallerId.orEmpty(),
+                peerName=initialIncomingCallerName.orEmpty(),
+                peerEmail=initialIncomingCallerEmail.orEmpty(),
+                createdAt=""
+            )
+        }else null
     }
     val backgroundCallRole=remember(incomingCallLaunch){
         if(
@@ -494,6 +525,7 @@ fun RsKickboxV21App(
                 }
                 RsGlobalCallHostV134(
                     c,lang,role!!,
+                    initialIncomingCall=initialIncomingDirectCall,
                     onCallSessionFinished=if(callOnlyMode)finishCallOnlySession else null
                 )
                 RsGlobalVideoRoomHostV137(
@@ -1149,6 +1181,16 @@ private fun ShellV21(
                         modifier=Modifier.widthIn(min=42.dp,max=50.dp).heightIn(min=40.dp),
                         contentPadding=PaddingValues(horizontal=8.dp)
                     ){Text("‹")}
+                    RsNotificationBellV156(
+                        c=c,
+                        store=store,
+                        lang=lang,
+                        onOpenCall={peerId->
+                            store.ps("chat_open_peer_id_v156",peerId)
+                            onRoute("coachchat")
+                        },
+                        onOpenNotifications={onRoute("notifications")}
+                    )
                     OutlinedButton(
                         onClick=onLogout,
                         modifier=Modifier.widthIn(min=68.dp,max=106.dp).heightIn(min=40.dp),
