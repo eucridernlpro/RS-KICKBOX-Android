@@ -137,6 +137,7 @@ fun RsStudentPrivacyV40(c:RsPalette,store:RsStore,lang:RsLang,onLanguageChanged:
 
     RsScroll(c,rsAccountUiV40(lang,"title"),rsAccountUiV40(lang,"sub")){
         RsLanguageSettingsPanelV111(c,store,lang,onLanguageChanged)
+        RsCallRingtoneSettingsV138(c,store,lang)
         RsPanel(c){
             Text(rsAccountUiV40(lang,"prefs"),color=c.bright,fontWeight=FontWeight.Bold)
             listOf(
@@ -236,6 +237,7 @@ private fun RsCloudStudentPrivacyV78(c:RsPalette,store:RsStore,lang:RsLang,onLan
 
     RsScroll(c,rsAccountUiV40(lang,"title"),rsAccountUiV40(lang,"sub")){
         RsLanguageSettingsPanelV111(c,store,lang,onLanguageChanged)
+        RsCallRingtoneSettingsV138(c,store,lang)
         RsPanel(c){
             Text(rsAccountUiV40(lang,"prefs"),color=c.bright,fontWeight=FontWeight.Bold)
             listOf(
