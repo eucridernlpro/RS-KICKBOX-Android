@@ -213,3 +213,21 @@ fun rsCloudPromotionAsLocalV103(item:RsCloudPromotionV103)=RsPromoItemV45(
     externalUrl=item.externalUrl,
     active=item.active
 )
+
+suspend fun rsCloudPromotionLocalV156(context:Context,item:RsCloudPromotionV103):RsPromoItemV45{
+    val client=rsSupabaseClientV60() ?: return rsCloudPromotionAsLocalV103(item)
+    val ext=item.imagePath.substringAfterLast('.', "jpg")
+    val dir=File(context.cacheDir,"rs_promo_cloud").apply{mkdirs()}
+    val file=File(dir,"promo_"+item.imagePath.hashCode()+"."+ext)
+    if(!file.exists()||file.length()==0L){
+        val bytes=client.storage.from(RS_PROMO_BUCKET_V103).downloadAuthenticated(item.imagePath)
+        file.writeBytes(bytes)
+    }
+    return RsPromoItemV45(
+        id=item.id,
+        title=item.title,
+        imageUri=Uri.fromFile(file).toString(),
+        externalUrl=item.externalUrl,
+        active=item.active
+    )
+}
