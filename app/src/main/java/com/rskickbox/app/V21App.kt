@@ -131,7 +131,11 @@ fun RsKickboxV21App(
     }
     // Normal trusted-session restore happens only after crown/splash reaches LOGIN.
     // This prevents heavy authenticated systems from initializing during startup presentation.
-    var role by remember { mutableStateOf<RsRole?>(backgroundCallRole) }
+    var role by remember {
+        mutableStateOf<RsRole?>(
+            backgroundCallRole ?: if(skipIntroOnRestore && localSessionFresh) localSessionRole else null
+        )
+    }
     var callOnlyMode by remember { mutableStateOf(incomingCallLaunch && backgroundCallRole!=null) }
     val restoredRoute=remember(localSessionRole,backgroundCallRole){
         if(backgroundCallRole!=null)"coachchat"
@@ -158,6 +162,18 @@ fun RsKickboxV21App(
             else RsPreLoginStageV147.LOGO
         )
     }
+    fun finishPreLoginV156(){
+        if(localSessionFresh && localSessionRole!=null && !passwordRecoveryLaunch){
+            authRestoreAttempted=true
+            authRestoring=false
+            role=localSessionRole
+            route=if(localSessionRole==RsRole.TRAINER)"trainer" else "home"
+            preLoginStage=RsPreLoginStageV147.LOGIN
+        }else{
+            preLoginStage=RsPreLoginStageV147.LOGIN
+        }
+    }
+
     var passwordRecoveryLaunch by remember(initialAuthDeepLink){
         mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
     }
@@ -182,7 +198,11 @@ fun RsKickboxV21App(
     LaunchedEffect(preLoginStage){
         if(preLoginStage==RsPreLoginStageV147.LOGO){
             delay(850L)
-            preLoginStage=if(localSplashUri.isNotBlank())RsPreLoginStageV147.VIDEO else RsPreLoginStageV147.LOGIN
+            if(localSplashUri.isNotBlank()){
+                preLoginStage=RsPreLoginStageV147.VIDEO
+            }else{
+                finishPreLoginV156()
+            }
         }
     }
 
@@ -190,8 +210,8 @@ fun RsKickboxV21App(
         if(updatedSinceLastLaunch){
             // Preserve a still-valid 72-hour trusted login across APK updates,
             // but reset the deep route so a changed screen cannot crash startup.
-            store.ps("session_last_route","")
-            route="home"
+            if(!localSessionFresh)store.ps("session_last_route","")
+            if(!localSessionFresh)route="home"
             authRestoring=false
             if(!localSessionFresh){
                 store.ps("session_password_auth_ms","0")
@@ -224,7 +244,7 @@ fun RsKickboxV21App(
         }
     }
 
-    LaunchedEffect(authRestoreAttempted,preLoginStage){
+    LaunchedEffect(authRestoreAttempted,preLoginStage,localSessionFresh,localSessionRole){
         if(!authRestoreAttempted && preLoginStage==RsPreLoginStageV147.LOGIN){
             authRestoreAttempted=true
             if(callOnlyMode && backgroundCallRole!=null){
@@ -366,11 +386,11 @@ fun RsKickboxV21App(
                             sound=store.b("intro_video_sound",true),
                             showProgress=true,
                             onStarted={},
-                            onFinished={preLoginStage=RsPreLoginStageV147.LOGIN}
+                            onFinished={finishPreLoginV156()}
                         )
                         if(store.b("intro_skip_enabled",true)){
                             TextButton(
-                                onClick={preLoginStage=RsPreLoginStageV147.LOGIN},
+                                onClick={finishPreLoginV156()},
                                 modifier=Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
                             ){Text("Skip",color=Color.White.copy(alpha=.82f))}
                         }
