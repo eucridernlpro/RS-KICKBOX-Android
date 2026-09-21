@@ -47,8 +47,10 @@ class RsWebRtcEngineV132(
     private var peerConnection:PeerConnection?=null
     private var audioSource:AudioSource?=null
     private var audioTrack:AudioTrack?=null
+    private var audioSender:org.webrtc.RtpSender?=null
     private var videoSource:VideoSource?=null
     private var videoTrack:VideoTrack?=null
+    private var videoSender:org.webrtc.RtpSender?=null
     private var videoCapturer:VideoCapturer?=null
     private var surfaceTextureHelper:SurfaceTextureHelper?=null
     private var remoteVideoTrack:VideoTrack?=null
@@ -76,19 +78,31 @@ class RsWebRtcEngineV132(
     }
 
     fun attachRenderers(local:SurfaceViewRenderer?,remote:SurfaceViewRenderer?){
-        localRenderer=local
-        remoteRenderer=remote
-        local?.let{renderer->
-            runCatching{renderer.init(eglContext,null)}
-            renderer.setMirror(true)
-            renderer.setEnableHardwareScaler(true)
-            videoTrack?.addSink(renderer)
+        val previousLocal=localRenderer
+        val previousRemote=remoteRenderer
+
+        if(local!==previousLocal){
+            previousLocal?.let{old->runCatching{videoTrack?.removeSink(old)}}
+            localRenderer=local
+            local?.let{renderer->
+                runCatching{renderer.init(eglContext,null)}
+                renderer.setMirror(true)
+                renderer.setEnableHardwareScaler(true)
+                renderer.setScalingType(org.webrtc.RendererCommon.ScalingType.SCALE_ASPECT_FILL)
+                videoTrack?.addSink(renderer)
+            }
         }
-        remote?.let{renderer->
-            runCatching{renderer.init(eglContext,null)}
-            renderer.setMirror(false)
-            renderer.setEnableHardwareScaler(true)
-            remoteVideoTrack?.addSink(renderer)
+
+        if(remote!==previousRemote){
+            previousRemote?.let{old->runCatching{remoteVideoTrack?.removeSink(old)}}
+            remoteRenderer=remote
+            remote?.let{renderer->
+                runCatching{renderer.init(eglContext,null)}
+                renderer.setMirror(false)
+                renderer.setEnableHardwareScaler(true)
+                renderer.setScalingType(org.webrtc.RendererCommon.ScalingType.SCALE_ASPECT_FILL)
+                remoteVideoTrack?.addSink(renderer)
+            }
         }
     }
 
@@ -178,11 +192,19 @@ class RsWebRtcEngineV132(
             return
         }
 
-        audioSource=factory.createAudioSource(MediaConstraints())
+        val audioConstraints=MediaConstraints().apply{
+            mandatory.add(MediaConstraints.KeyValuePair("googEchoCancellation","true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googNoiseSuppression","true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googHighpassFilter","true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googAutoGainControl","true"))
+            optional.add(MediaConstraints.KeyValuePair("googTypingNoiseDetection","true"))
+        }
+        audioSource=factory.createAudioSource(audioConstraints)
         audioTrack=factory.createAudioTrack("RS_AUDIO",audioSource).also{
             it.setEnabled(true)
-            pc.addTrack(it)
+            audioSender=pc.addTrack(it)
         }
+        tuneAudioSender(audioSender)
 
         if(videoEnabled){
             val capturer=createCameraCapturer()
@@ -191,12 +213,14 @@ class RsWebRtcEngineV132(
                 surfaceTextureHelper=SurfaceTextureHelper.create("RSVideoCapture",eglContext)
                 videoSource=factory.createVideoSource(false)
                 capturer.initialize(surfaceTextureHelper,appContext,videoSource!!.capturerObserver)
-                runCatching{capturer.startCapture(720,1280,24)}
+                runCatching{capturer.startCapture(720,1280,30)}
+                runCatching{videoSource?.adaptOutputFormat(720,1280,30)}
                 videoTrack=factory.createVideoTrack("RS_VIDEO",videoSource).also{
                     it.setEnabled(true)
                     localRenderer?.let(it::addSink)
-                    pc.addTrack(it)
+                    videoSender=pc.addTrack(it)
                 }
+                tuneVideoSender(videoSender)
             }
         }
 
@@ -209,11 +233,35 @@ class RsWebRtcEngineV132(
                             handleSignal(signal)
                         }
                     }
-                delay(500)
+                delay(250)
             }
         }
 
         if(isCaller)createOffer()
+    }
+
+    private fun tuneAudioSender(sender:org.webrtc.RtpSender?){
+        sender?:return
+        runCatching{
+            val p=sender.parameters
+            p.encodings.forEach{encoding->
+                encoding.maxBitrateBps=64_000
+            }
+            sender.parameters=p
+        }
+    }
+
+    private fun tuneVideoSender(sender:org.webrtc.RtpSender?){
+        sender?:return
+        runCatching{
+            val p=sender.parameters
+            p.degradationPreference=org.webrtc.RtpParameters.DegradationPreference.MAINTAIN_FRAMERATE
+            p.encodings.forEach{encoding->
+                encoding.maxBitrateBps=1_800_000
+                encoding.maxFramerate=30
+            }
+            sender.parameters=p
+        }
     }
 
     private fun createCameraCapturer():VideoCapturer?{
@@ -324,10 +372,12 @@ class RsWebRtcEngineV132(
         runCatching{surfaceTextureHelper?.dispose()}
         surfaceTextureHelper=null
         remoteVideoTrack=null
+        videoSender=null
         videoTrack?.dispose()
         videoTrack=null
         videoSource?.dispose()
         videoSource=null
+        audioSender=null
         audioTrack?.dispose()
         audioTrack=null
         audioSource?.dispose()
