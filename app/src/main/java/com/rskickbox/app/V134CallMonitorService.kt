@@ -10,6 +10,7 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.Person
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.*
 
@@ -23,6 +24,10 @@ class RsCallMonitorServiceV134:Service(){
         const val ACTION_START="com.rskickbox.app.CALL_MONITOR_START"
         const val ACTION_STOP="com.rskickbox.app.CALL_MONITOR_STOP"
         const val ACTION_STOP_RING="com.rskickbox.app.CALL_RING_STOP"
+        const val ACTION_ACCEPT_CALL="com.rskickbox.app.CALL_ACCEPT"
+        const val ACTION_DECLINE_CALL="com.rskickbox.app.CALL_DECLINE"
+        const val ACTION_JOIN_ROOM="com.rskickbox.app.ROOM_JOIN"
+        const val ACTION_DECLINE_ROOM="com.rskickbox.app.ROOM_DECLINE"
         private const val CHANNEL_MONITOR="rs_call_monitor"
         private const val CHANNEL_CALLS="rs_incoming_calls_v3"
         private const val FOREGROUND_ID=9134
@@ -50,6 +55,54 @@ class RsCallMonitorServiceV134:Service(){
     }
 
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int{
+        when(intent?.action){
+            ACTION_ACCEPT_CALL->{
+                val id=intent.getStringExtra("call_id").orEmpty()
+                if(id.isNotBlank())scope.launch{
+                    rsSetCallStatusV131(id,"ACCEPTED")
+                    stopRinging()
+                    val open=Intent(this@RsCallMonitorServiceV134,MainActivity::class.java).apply{
+                        action="com.rskickbox.app.INCOMING_CALL"
+                        putExtra("rs_incoming_call_id",id)
+                        flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    runCatching{startActivity(open)}
+                }
+                return START_STICKY
+            }
+            ACTION_DECLINE_CALL->{
+                val id=intent.getStringExtra("call_id").orEmpty()
+                if(id.isNotBlank())scope.launch{
+                    rsSetCallStatusV131(id,"DECLINED")
+                    stopRinging()
+                    getSystemService(NotificationManager::class.java).cancel(id.hashCode())
+                }
+                return START_STICKY
+            }
+            ACTION_JOIN_ROOM->{
+                val id=intent.getStringExtra("room_id").orEmpty()
+                if(id.isNotBlank())scope.launch{
+                    rsSetVideoRoomStatusV136(id,"JOINED")
+                    stopRinging()
+                    val open=Intent(this@RsCallMonitorServiceV134,MainActivity::class.java).apply{
+                        action="com.rskickbox.app.INCOMING_VIDEO_ROOM"
+                        putExtra("rs_video_room_id",id)
+                        flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    runCatching{startActivity(open)}
+                }
+                return START_STICKY
+            }
+            ACTION_DECLINE_ROOM->{
+                val id=intent.getStringExtra("room_id").orEmpty()
+                if(id.isNotBlank())scope.launch{
+                    rsSetVideoRoomStatusV136(id,"DECLINED")
+                    stopRinging()
+                    getSystemService(NotificationManager::class.java).cancel(id.hashCode())
+                }
+                return START_STICKY
+            }
+        }
         if(intent?.action==ACTION_STOP_RING){
             stopRinging()
             return START_STICKY
@@ -175,16 +228,34 @@ class RsCallMonitorServiceV134:Service(){
             putExtra("rs_incoming_call_id",call.id)
             flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        val pending=PendingIntent.getActivity(
-            this,
-            call.id.hashCode(),
-            fullIntent,
+        val fullPending=PendingIntent.getActivity(
+            this,call.id.hashCode(),fullIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val answerIntent=Intent(this,RsCallMonitorServiceV134::class.java).apply{
+            action=ACTION_ACCEPT_CALL
+            putExtra("call_id",call.id)
+        }
+        val declineIntent=Intent(this,RsCallMonitorServiceV134::class.java).apply{
+            action=ACTION_DECLINE_CALL
+            putExtra("call_id",call.id)
+        }
+        val answerPending=PendingIntent.getService(
+            this,call.id.hashCode()+101,answerIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val declinePending=PendingIntent.getService(
+            this,call.id.hashCode()+102,declineIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val person=Person.Builder()
+            .setName(call.peerName.ifBlank{call.peerEmail.ifBlank{"RS Member"}})
+            .setImportant(true)
+            .build()
         val isVideo=call.callType=="VIDEO"
         val notification=NotificationCompat.Builder(this,CHANNEL_CALLS)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(call.peerName.ifBlank{"RS Member"})
+            .setContentTitle(person.name)
             .setContentText(if(isVideo)"Incoming RS video call" else "Incoming RS audio call")
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -193,8 +264,16 @@ class RsCallMonitorServiceV134:Service(){
             .setAutoCancel(false)
             .setSilent(true)
             .setVibrate(longArrayOf(0,700,350,700,350,900))
-            .setContentIntent(pending)
-            .setFullScreenIntent(pending,true)
+            .setContentIntent(fullPending)
+            .setFullScreenIntent(fullPending,true)
+            .setStyle(
+                NotificationCompat.CallStyle.forIncomingCall(
+                    person,
+                    declinePending,
+                    answerPending
+                )
+            )
+            .addPerson(person)
             .build()
         getSystemService(NotificationManager::class.java).notify(call.id.hashCode(),notification)
     }
@@ -205,16 +284,34 @@ class RsCallMonitorServiceV134:Service(){
             putExtra("rs_video_room_id",room.roomId)
             flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        val pending=PendingIntent.getActivity(
-            this,
-            room.roomId.hashCode(),
-            fullIntent,
+        val fullPending=PendingIntent.getActivity(
+            this,room.roomId.hashCode(),fullIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val joinIntent=Intent(this,RsCallMonitorServiceV134::class.java).apply{
+            action=ACTION_JOIN_ROOM
+            putExtra("room_id",room.roomId)
+        }
+        val declineIntent=Intent(this,RsCallMonitorServiceV134::class.java).apply{
+            action=ACTION_DECLINE_ROOM
+            putExtra("room_id",room.roomId)
+        }
+        val joinPending=PendingIntent.getService(
+            this,room.roomId.hashCode()+201,joinIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val declinePending=PendingIntent.getService(
+            this,room.roomId.hashCode()+202,declineIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val person=Person.Builder()
+            .setName(room.hostName.ifBlank{"RS Trainer"})
+            .setImportant(true)
+            .build()
         val notification=NotificationCompat.Builder(this,CHANNEL_CALLS)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(room.hostName.ifBlank{"RS Trainer"})
-            .setContentText("Incoming RS group video session · "+room.participantCount+" participants")
+            .setContentText("RS group video · "+room.participantCount+" participants")
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -222,8 +319,16 @@ class RsCallMonitorServiceV134:Service(){
             .setAutoCancel(false)
             .setSilent(true)
             .setVibrate(longArrayOf(0,700,350,700,350,900))
-            .setContentIntent(pending)
-            .setFullScreenIntent(pending,true)
+            .setContentIntent(fullPending)
+            .setFullScreenIntent(fullPending,true)
+            .setStyle(
+                NotificationCompat.CallStyle.forIncomingCall(
+                    person,
+                    declinePending,
+                    joinPending
+                )
+            )
+            .addPerson(person)
             .build()
         getSystemService(NotificationManager::class.java).notify(room.roomId.hashCode(),notification)
     }
