@@ -38,7 +38,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 
 @Composable
-fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
+fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=false) {
     val context = LocalContext.current
     val config = LocalConfiguration.current
     val isTabletStartup = config.smallestScreenWidthDp>=600
@@ -76,6 +76,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     var brandAssetsRestoring by remember { mutableStateOf(false) }
     var introPreparing by remember {
         mutableStateOf(
+            !skipIntroOnRestore &&
             !RsRuntimeV108.introShownThisProcess &&
             store.b("intro_enabled",true) &&
             RsSupabaseV60.configured
@@ -83,7 +84,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     }
     var lang by remember { mutableStateOf(rsInitialLanguageV111(store)) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
-    var introDone by remember { mutableStateOf(RsRuntimeV108.introShownThisProcess || !store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
+    var introDone by remember { mutableStateOf(skipIntroOnRestore || RsRuntimeV108.introShownThisProcess || !store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
     var passwordRecoveryLaunch by remember(initialAuthDeepLink){
         mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
     }
@@ -134,7 +135,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
                 // recreation / returning from background music never flashes Login.
                 if(localFresh && savedRole!=null){
                     role=savedRole
-                    route=if(savedRole==RsRole.TRAINER)"trainer" else "home"
+                    route=store.s("session_last_route","").ifBlank{if(savedRole==RsRole.TRAINER)"trainer" else "home"}
                     authRestoring=false
                 }else{
                     authRestoring=true
