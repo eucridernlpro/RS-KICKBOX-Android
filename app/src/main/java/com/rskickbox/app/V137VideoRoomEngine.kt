@@ -25,8 +25,10 @@ class RsVideoRoomEngineV137(
     private val factory:PeerConnectionFactory
     private var audioSource:AudioSource?=null
     private var audioTrack:AudioTrack?=null
+    private val audioSenders=mutableMapOf<String,RtpSender>()
     private var videoSource:VideoSource?=null
     private var videoTrack:VideoTrack?=null
+    private val videoSenders=mutableMapOf<String,RtpSender>()
     private var videoCapturer:VideoCapturer?=null
     private var surfaceTextureHelper:SurfaceTextureHelper?=null
     private val peers=mutableMapOf<String,PeerConnection>()
@@ -56,7 +58,14 @@ class RsVideoRoomEngineV137(
         if(started||disposed)return
         started=true
 
-        audioSource=factory.createAudioSource(MediaConstraints())
+        val audioConstraints=MediaConstraints().apply{
+            mandatory.add(MediaConstraints.KeyValuePair("googEchoCancellation","true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googNoiseSuppression","true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googHighpassFilter","true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googAutoGainControl","true"))
+            optional.add(MediaConstraints.KeyValuePair("googTypingNoiseDetection","true"))
+        }
+        audioSource=factory.createAudioSource(audioConstraints)
         audioTrack=factory.createAudioTrack("RS_ROOM_AUDIO",audioSource).apply{setEnabled(true)}
 
         val capturer=createCameraCapturer()
@@ -65,7 +74,8 @@ class RsVideoRoomEngineV137(
             surfaceTextureHelper=SurfaceTextureHelper.create("RSRoomCapture",eglContext)
             videoSource=factory.createVideoSource(false)
             capturer.initialize(surfaceTextureHelper,appContext,videoSource!!.capturerObserver)
-            runCatching{capturer.startCapture(720,1280,24)}
+            runCatching{capturer.startCapture(720,1280,30)}
+            runCatching{videoSource?.adaptOutputFormat(720,1280,30)}
             videoTrack=factory.createVideoTrack("RS_ROOM_VIDEO",videoSource).apply{setEnabled(true)}
             localSink?.let{videoTrack?.addSink(it)}
         }
@@ -79,7 +89,7 @@ class RsVideoRoomEngineV137(
                             if(signal.senderId!=myId)handleSignal(signal)
                         }
                     }
-                delay(450)
+                delay(250)
             }
         }
     }
@@ -132,6 +142,28 @@ class RsVideoRoomEngineV137(
     fun setMicEnabled(enabled:Boolean){audioTrack?.setEnabled(enabled)}
     fun setCameraEnabled(enabled:Boolean){videoTrack?.setEnabled(enabled)}
     fun switchCamera(){(videoCapturer as? CameraVideoCapturer)?.switchCamera(null)}
+
+    private fun tuneAudioSender(sender:RtpSender?){
+        sender?:return
+        runCatching{
+            val p=sender.parameters
+            p.encodings.forEach{it.maxBitrateBps=64_000}
+            sender.parameters=p
+        }
+    }
+
+    private fun tuneVideoSender(sender:RtpSender?){
+        sender?:return
+        runCatching{
+            val p=sender.parameters
+            p.degradationPreference=RtpParameters.DegradationPreference.MAINTAIN_FRAMERATE
+            p.encodings.forEach{encoding->
+                encoding.maxBitrateBps=1_500_000
+                encoding.maxFramerate=30
+            }
+            sender.parameters=p
+        }
+    }
 
     private fun createCameraCapturer():VideoCapturer?{
         val e=Camera2Enumerator(appContext)
@@ -204,8 +236,18 @@ class RsVideoRoomEngineV137(
         })?:return null
 
         peers[peerId]=pc
-        audioTrack?.let{pc.addTrack(it)}
-        videoTrack?.let{pc.addTrack(it)}
+        audioTrack?.let{track->
+            pc.addTrack(track)?.let{sender->
+                audioSenders[peerId]=sender
+                tuneAudioSender(sender)
+            }
+        }
+        videoTrack?.let{track->
+            pc.addTrack(track)?.let{sender->
+                videoSenders[peerId]=sender
+                tuneVideoSender(sender)
+            }
+        }
 
         if(initiator)createOffer(peerId,pc)
         return pc
@@ -301,6 +343,8 @@ class RsVideoRoomEngineV137(
             pc.close()
             pc.dispose()
         }
+        audioSenders.remove(peerId)
+        videoSenders.remove(peerId)
         remoteSinks.remove(peerId)
         onPeerState(peerId,"ENDED")
     }
