@@ -253,14 +253,10 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     val lifecycleOwner=LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner){
         val observer=LifecycleEventObserver{_,event->
-            if(event==Lifecycle.Event.ON_RESUME && introDone && RsSupabaseV60.configured){
-                appScope.launch{
-                    rsSyncCloudBrandV100(store).onSuccess{settings->
-                        theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
-                        brandRevision++
-                    }
-                    rsSyncCloudVisualAssetsV101(context,store).onSuccess{brandRevision++}
-                }
+            if(event==Lifecycle.Event.ON_RESUME && introDone && role!=null && RsSupabaseV60.configured){
+                // Resume must be lightweight and must never rewrite visual files while
+                // Compose/VideoView/Media3 surfaces are being restored.
+                appScope.launch{runCatching{rsTouchPresenceV125()}}
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
