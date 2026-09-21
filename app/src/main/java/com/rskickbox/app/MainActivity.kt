@@ -16,7 +16,12 @@ class MainActivity : ComponentActivity() {
             RsKickboxV21App(
                 initialAuthDeepLink=intent?.dataString,
                 skipIntroOnRestore=restoredFromAndroidState,
-                initialIncomingAction=intent?.action
+                initialIncomingAction=intent?.action,
+                initialIncomingCallId=intent?.getStringExtra("rs_incoming_call_id"),
+                initialIncomingCallType=intent?.getStringExtra("rs_incoming_call_type"),
+                initialIncomingCallerId=intent?.getStringExtra("rs_incoming_caller_id"),
+                initialIncomingCallerName=intent?.getStringExtra("rs_incoming_caller_name"),
+                initialIncomingCallerEmail=intent?.getStringExtra("rs_incoming_caller_email")
             )
         }
     }
