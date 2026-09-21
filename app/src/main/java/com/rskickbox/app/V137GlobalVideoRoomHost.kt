@@ -34,7 +34,8 @@ private fun rsVideoRoomFriendlyErrorV151(message:String):String{
 fun RsGlobalVideoRoomHostV137(
     c:RsPalette,
     lang:RsLang,
-    role:RsRole
+    role:RsRole,
+    onRoomSessionFinished:(()->Unit)?=null
 ){
     val scope=rememberCoroutineScope()
     var rooms by remember{mutableStateOf<List<RsVideoRoomV136>>(emptyList())}
@@ -107,6 +108,7 @@ fun RsGlobalVideoRoomHostV137(
                                     rsSetVideoRoomStatusV136(room.roomId,"DECLINED")
                                         .onFailure{status=it.message.orEmpty()}
                                     inviteRoom=null
+                                    onRoomSessionFinished?.invoke()
                                 }
                             },
                             modifier=Modifier.weight(1f).height(56.dp)
@@ -133,6 +135,7 @@ fun RsGlobalVideoRoomHostV137(
     activeRoom?.let{room->
         RsVideoRoomScreenV137(c,lang,room){
             activeRoom=null
+            onRoomSessionFinished?.invoke()
         }
     }
 }
