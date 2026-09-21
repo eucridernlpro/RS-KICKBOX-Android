@@ -4,6 +4,7 @@ import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.widget.VideoView
+import android.view.TextureView
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -151,51 +152,111 @@ fun RsSafeIntroVideoWithProgressV147(
     onStarted:()->Unit,
     onFinished:()->Unit
 ){
-    val context=LocalContext.current
+    val context=LocalContext.current.applicationContext
     val finished=remember(uri){AtomicBoolean(false)}
-    var videoView by remember(uri){mutableStateOf<VideoView?>(null)}
+    val player=remember(uri){ExoPlayer.Builder(context).build()}
     var prepared by remember(uri){mutableStateOf(false)}
     var durationMs by remember(uri){mutableLongStateOf(0L)}
     var progress by remember(uri){mutableFloatStateOf(0f)}
+    var textureView by remember(uri){mutableStateOf<TextureView?>(null)}
+    var aspectFrame by remember(uri){mutableStateOf<AspectRatioFrameLayout?>(null)}
 
     fun finishOnce(){
         if(finished.compareAndSet(false,true)){
-            runCatching{videoView?.stopPlayback()}
+            runCatching{
+                player.playWhenReady=false
+                player.stop()
+                textureView?.let{player.clearVideoTextureView(it)}
+            }
             onFinished()
         }
+    }
+
+    DisposableEffect(player,uri){
+        val listener=object:Player.Listener{
+            override fun onPlaybackStateChanged(state:Int){
+                when(state){
+                    Player.STATE_READY->{
+                        prepared=true
+                        durationMs=player.duration.takeIf{it>0L}?:1L
+                        onStarted()
+                    }
+                    Player.STATE_ENDED->{
+                        progress=1f
+                        finishOnce()
+                    }
+                }
+            }
+
+            override fun onPlayerError(error:androidx.media3.common.PlaybackException){
+                finishOnce()
+            }
+
+            override fun onVideoSizeChanged(videoSize:androidx.media3.common.VideoSize){
+                val h=videoSize.height
+                if(h>0){
+                    aspectFrame?.setAspectRatio(
+                        (videoSize.width.toFloat()*videoSize.pixelWidthHeightRatio)/h.toFloat()
+                    )
+                }
+            }
+        }
+
+        player.addListener(listener)
+        player.volume=if(sound)1f else 0f
+        runCatching{
+            player.setMediaItem(MediaItem.fromUri(Uri.parse(uri)))
+            player.prepare()
+            player.playWhenReady=true
+        }.onFailure{finishOnce()}
+
+        onDispose{
+            runCatching{
+                player.removeListener(listener)
+                player.playWhenReady=false
+                player.stop()
+                textureView?.let{player.clearVideoTextureView(it)}
+                player.clearMediaItems()
+                player.release()
+            }
+            textureView=null
+            aspectFrame=null
+        }
+    }
+
+    LaunchedEffect(sound){
+        player.volume=if(sound)1f else 0f
     }
 
     Box(Modifier.fillMaxSize().background(Color.Black)){
         AndroidView(
             factory={ctx->
-                VideoView(ctx).apply{
+                AspectRatioFrameLayout(ctx).apply{
+                    resizeMode=AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                     setBackgroundColor(android.graphics.Color.BLACK)
-                    setOnPreparedListener{mp->
-                        mp.isLooping=false
-                        mp.setVolume(if(sound)1f else 0f,if(sound)1f else 0f)
-                        runCatching{
-                            mp.setVideoScalingMode(android.media.MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
-                        }
-                        durationMs=duration.toLong().coerceAtLeast(1L)
-                        prepared=true
-                        onStarted()
-                        start()
+                    aspectFrame=this
+
+                    val texture=TextureView(ctx).apply{
+                        isOpaque=true
                     }
-                    setOnCompletionListener{
-                        progress=1f
-                        finishOnce()
-                    }
-                    setOnErrorListener{_,_,_->
-                        finishOnce()
-                        true
-                    }
-                    videoView=this
-                    runCatching{setVideoURI(Uri.parse(uri))}
-                        .onFailure{finishOnce()}
+                    addView(
+                        texture,
+                        android.widget.FrameLayout.LayoutParams(
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+                        )
+                    )
+                    textureView=texture
+                    player.setVideoTextureView(texture)
                 }
             },
-            update={view->videoView=view},
-            modifier=Modifier.fillMaxSize().background(Color.Black)
+            update={frame->
+                aspectFrame=frame
+                textureView?.let{texture->
+                    runCatching{player.setVideoTextureView(texture)}
+                }
+            },
+            modifier=Modifier.fillMaxSize()
         )
 
         if(showProgress){
@@ -224,10 +285,10 @@ fun RsSafeIntroVideoWithProgressV147(
     }
 
     LaunchedEffect(uri,prepared,durationMs){
-        if(prepared && durationMs>0L){
+        if(prepared){
             while(!finished.get()){
-                val pos=runCatching{videoView?.currentPosition?.toLong()?:0L}.getOrDefault(0L)
-                progress=(pos.toFloat()/durationMs.toFloat()).coerceIn(0f,1f)
+                val total=(player.duration.takeIf{it>0L}?:durationMs).coerceAtLeast(1L)
+                progress=(player.currentPosition.toFloat()/total.toFloat()).coerceIn(0f,1f)
                 kotlinx.coroutines.delay(50L)
             }
         }
@@ -236,13 +297,6 @@ fun RsSafeIntroVideoWithProgressV147(
     LaunchedEffect(uri){
         kotlinx.coroutines.delay(RS_INTRO_VIDEO_MAX_MS+1500L)
         if(!finished.get())finishOnce()
-    }
-
-    DisposableEffect(uri){
-        onDispose{
-            runCatching{videoView?.stopPlayback()}
-            videoView=null
-        }
     }
 }
 
