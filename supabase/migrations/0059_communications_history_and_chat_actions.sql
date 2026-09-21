@@ -258,3 +258,10 @@ grant execute on function public.rs_coach_thread_messages_v3(uuid) to authentica
 grant execute on function public.rs_send_coach_message_v3(uuid,text,text,text,text,uuid) to authenticated;
 grant execute on function public.rs_call_history() to authenticated;
 grant execute on function public.rs_hide_call_history(uuid) to authenticated;
+
+
+-- Promotion thumbnails must be readable by authenticated app members when cached locally.
+drop policy if exists "rs_promotions_media_member_select_v156" on storage.objects;
+create policy "rs_promotions_media_member_select_v156"
+on storage.objects for select to authenticated
+using(bucket_id='rs-promotions');
