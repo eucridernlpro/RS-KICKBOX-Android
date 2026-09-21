@@ -134,9 +134,29 @@ private fun RsSafeIntroVideoStageV141(
     onStarted:()->Unit,
     onFinished:()->Unit
 ){
+    RsSafeIntroVideoWithProgressV147(
+        uri=uri,
+        sound=sound,
+        showProgress=false,
+        onStarted=onStarted,
+        onFinished=onFinished
+    )
+}
+
+@Composable
+fun RsSafeIntroVideoWithProgressV147(
+    uri:String,
+    sound:Boolean,
+    showProgress:Boolean=true,
+    onStarted:()->Unit,
+    onFinished:()->Unit
+){
     val context=LocalContext.current
     val finished=remember(uri){AtomicBoolean(false)}
     var videoView by remember(uri){mutableStateOf<VideoView?>(null)}
+    var prepared by remember(uri){mutableStateOf(false)}
+    var durationMs by remember(uri){mutableLongStateOf(0L)}
+    var progress by remember(uri){mutableFloatStateOf(0f)}
 
     fun finishOnce(){
         if(finished.compareAndSet(false,true)){
@@ -145,37 +165,76 @@ private fun RsSafeIntroVideoStageV141(
         }
     }
 
-    AndroidView(
-        factory={ctx->
-            VideoView(ctx).apply{
-                setBackgroundColor(android.graphics.Color.BLACK)
-                setOnPreparedListener{mp->
-                    mp.isLooping=false
-                    mp.setVolume(if(sound)1f else 0f,if(sound)1f else 0f)
-                    runCatching{
-                        mp.setVideoScalingMode(android.media.MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+    Box(Modifier.fillMaxSize().background(Color.Black)){
+        AndroidView(
+            factory={ctx->
+                VideoView(ctx).apply{
+                    setBackgroundColor(android.graphics.Color.BLACK)
+                    setOnPreparedListener{mp->
+                        mp.isLooping=false
+                        mp.setVolume(if(sound)1f else 0f,if(sound)1f else 0f)
+                        runCatching{
+                            mp.setVideoScalingMode(android.media.MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+                        }
+                        durationMs=duration.toLong().coerceAtLeast(1L)
+                        prepared=true
+                        onStarted()
+                        start()
                     }
-                    onStarted()
-                    start()
+                    setOnCompletionListener{
+                        progress=1f
+                        finishOnce()
+                    }
+                    setOnErrorListener{_,_,_->
+                        finishOnce()
+                        true
+                    }
+                    videoView=this
+                    runCatching{setVideoURI(Uri.parse(uri))}
+                        .onFailure{finishOnce()}
                 }
-                setOnCompletionListener{finishOnce()}
-                setOnErrorListener{_,_,_->
-                    finishOnce()
-                    true
-                }
-                videoView=this
-                runCatching{setVideoURI(Uri.parse(uri))}
-                    .onFailure{finishOnce()}
+            },
+            update={view->videoView=view},
+            modifier=Modifier.fillMaxSize().background(Color.Black)
+        )
+
+        if(showProgress){
+            Column(
+                Modifier.align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal=22.dp,vertical=18.dp),
+                verticalArrangement=Arrangement.spacedBy(7.dp)
+            ){
+                LinearProgressIndicator(
+                    progress={progress.coerceIn(0f,1f)},
+                    modifier=Modifier.fillMaxWidth().height(5.dp),
+                    color=Color(0xFFD6B15E),
+                    trackColor=Color.White.copy(alpha=.18f)
+                )
+                Text(
+                    if(prepared)"RS KICKBOXING" else "Preparing intro…",
+                    color=Color.White.copy(alpha=.74f),
+                    fontSize=8.sp,
+                    fontWeight=FontWeight.Bold,
+                    modifier=Modifier.align(Alignment.CenterHorizontally)
+                )
             }
-        },
-        update={view->
-            videoView=view
-        },
-        modifier=Modifier.fillMaxSize().background(Color.Black)
-    )
+        }
+    }
+
+    LaunchedEffect(uri,prepared,durationMs){
+        if(prepared && durationMs>0L){
+            while(!finished.get()){
+                val pos=runCatching{videoView?.currentPosition?.toLong()?:0L}.getOrDefault(0L)
+                progress=(pos.toFloat()/durationMs.toFloat()).coerceIn(0f,1f)
+                kotlinx.coroutines.delay(50L)
+            }
+        }
+    }
 
     LaunchedEffect(uri){
-        kotlinx.coroutines.delay(RS_INTRO_VIDEO_MAX_MS+750L)
+        kotlinx.coroutines.delay(RS_INTRO_VIDEO_MAX_MS+1500L)
         if(!finished.get())finishOnce()
     }
 
