@@ -83,7 +83,13 @@ fun RsKickboxV21App(
     val callNotificationPermissionLauncher=rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ){}
-    val localSessionFresh=false
+    val trustedSessionMaxAgeMs=72L*60L*60L*1000L
+    val localSessionFresh=remember(localSessionAuthMs,currentVersionCode){
+        val age=System.currentTimeMillis()-localSessionAuthMs
+        localSessionAuthMs>0L &&
+            age in 0..trustedSessionMaxAgeMs &&
+            rsSupabaseClientV60()?.auth?.currentUserOrNull()!=null
+    }
     val localSessionRole=remember(localSessionFresh){
         if(!localSessionFresh)null
         else when(store.s("session_role","")){
@@ -92,7 +98,9 @@ fun RsKickboxV21App(
             else->null
         }
     }
-    var role by remember { mutableStateOf<RsRole?>(backgroundCallRole?:localSessionRole) }
+    // Normal trusted-session restore happens only after crown/splash reaches LOGIN.
+    // This prevents heavy authenticated systems from initializing during startup presentation.
+    var role by remember { mutableStateOf<RsRole?>(backgroundCallRole) }
     var callOnlyMode by remember { mutableStateOf(incomingCallLaunch && backgroundCallRole!=null) }
     val restoredRoute=remember(localSessionRole,backgroundCallRole){
         if(backgroundCallRole!=null)"coachchat"
@@ -149,16 +157,16 @@ fun RsKickboxV21App(
 
     LaunchedEffect(currentVersionCode){
         if(updatedSinceLastLaunch){
-            // APK updates get one clean authentication boundary. Keep remembered
-            // email/autofill, but never jump directly into an old authenticated route.
-            store.ps("session_password_auth_ms","0")
+            // Preserve a still-valid 72-hour trusted login across APK updates,
+            // but reset the deep route so a changed screen cannot crash startup.
             store.ps("session_last_route","")
-            store.ps("session_role","")
-            role=null
             route="home"
             authRestoring=false
-            // Do not make any cloud/auth request before the Login screen.
-            // The previous token is simply ignored until the user signs in again.
+            if(!localSessionFresh){
+                store.ps("session_password_auth_ms","0")
+                store.ps("session_role","")
+                role=null
+            }
         }
         store.ps("rs_last_started_version_code",currentVersionCode.toString())
     }
@@ -185,15 +193,19 @@ fun RsKickboxV21App(
         }
     }
 
-    LaunchedEffect(authRestoreAttempted){
-        if(!authRestoreAttempted){
+    LaunchedEffect(authRestoreAttempted,preLoginStage){
+        if(!authRestoreAttempted && preLoginStage==RsPreLoginStageV147.LOGIN){
             authRestoreAttempted=true
             if(callOnlyMode && backgroundCallRole!=null){
                 role=backgroundCallRole
                 route="coachchat"
                 authRestoring=false
+            }else if(localSessionFresh && localSessionRole!=null){
+                // Trusted login: no password prompt for up to 72 hours.
+                role=localSessionRole
+                route=if(localSessionRole==RsRole.TRAINER)"trainer" else "home"
+                authRestoring=false
             }else{
-                // Stability-first normal startup: Login remains the secure UI gate.
                 role=null
                 route="home"
                 authRestoring=false
