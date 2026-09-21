@@ -4,6 +4,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -407,6 +409,7 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
     var loading by remember{mutableStateOf(true)}
     var sending by remember{mutableStateOf(false)}
     var revision by remember{mutableIntStateOf(0)}
+    var replyTarget by remember{mutableStateOf<RsCloudCoachMessageV72?>(null)}
 
     LaunchedEffect(revision){
         loading=true
@@ -422,32 +425,27 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
         loading=false
     }
 
-    RsScroll(c,rsCoachUiV44(lang,"student_title"),rsCoachUiV44(lang,"student_sub")){
-        RsPanel(c){
-            Text(
-                if(loading)rsCloudT93(lang,"syncing") else rsCloudT93(lang,"connected"),
-                color=if(loading)c.muted else c.bright,
-                fontWeight=FontWeight.Bold,
-                fontSize=10.sp
-            )
-            if(status.isNotBlank())Text(status,color=c.muted,fontSize=10.sp)
+    Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(7.dp)){
+        if(status.isNotBlank())Text(status,color=c.muted,fontSize=9.sp,modifier=Modifier.padding(horizontal=8.dp))
+        Column(
+            Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(horizontal=4.dp),
+            verticalArrangement=Arrangement.spacedBy(7.dp)
+        ){
+            if(loading)Text(rsCloudT93(lang,"syncing"),color=c.muted,fontSize=9.sp)
+            if(messages.isEmpty()&&!loading)RsPanel(c){
+                Text(rsCoachUiV44(lang,"no_messages"),color=c.bright,fontWeight=FontWeight.Bold)
+                Text(rsCoachUiV44(lang,"start"),color=c.muted)
+            }
+            messages.forEach{message->
+                RsCloudCoachBubbleV156(
+                    c,lang,message,RsRole.STUDENT,
+                    onReply={replyTarget=it},
+                    onChanged={revision++},
+                    onStatus={status=it}
+                )
+            }
+            Spacer(Modifier.height(8.dp))
         }
-
-        RsDirectCallControlsV133(
-            c=c,
-            lang=lang,
-            role=RsRole.STUDENT,
-            peerId="",
-            peerName=rsCoachUiV44(lang,"student_title")
-        )
-
-        if(messages.isEmpty()&&!loading)RsPanel(c){
-            Text(rsCoachUiV44(lang,"no_messages"),color=c.bright,fontWeight=FontWeight.Bold)
-            Text(rsCoachUiV44(lang,"start"),color=c.muted)
-        }
-
-        messages.forEach{RsCloudCoachBubbleV72(c,lang,it,RsRole.STUDENT)}
-
         if(studentId.isNotBlank()){
             RsChatComposerV92(
                 c=c,
@@ -455,9 +453,11 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
                 scopeType="coach",
                 scopeId=studentId,
                 enabled=!loading,
-                onSent={revision++},
+                replyPreview=replyTarget?.body?.ifBlank{replyTarget?.mediaName.orEmpty()},
+                onClearReply={replyTarget=null},
+                onSent={replyTarget=null;revision++},
                 onStatus={status=it},
-                onSend={body,attachment->rsCloudSendCoachMessageV72(studentId,body,attachment)}
+                onSend={body,attachment->rsCloudSendCoachMessageV72(studentId,body,attachment,replyTarget?.id)}
             )
         }
     }
@@ -474,6 +474,7 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang,initialStudentId
     var loading by remember{mutableStateOf(true)}
     var sending by remember{mutableStateOf(false)}
     var revision by remember{mutableIntStateOf(0)}
+    var replyTarget by remember{mutableStateOf<RsCloudCoachMessageV72?>(null)}
 
     LaunchedEffect(revision,selected?.studentId,initialStudentId){
         loading=true
@@ -538,76 +539,49 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang,initialStudentId
         }
     }else{
         val thread=selected!!
-        RsScroll(c,thread.studentName.ifBlank{thread.studentEmail},thread.studentEmail){
-            RsPanel(c){
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement=Arrangement.spacedBy(10.dp),
-                    verticalAlignment=Alignment.CenterVertically
-                ){
-                    RsMemberAvatarV68(c,thread.studentEmail,thread.studentName,size=54.dp)
-                    Column(Modifier.weight(1f)){
-                        Text(thread.studentName.ifBlank{thread.studentEmail},color=c.bright,fontWeight=FontWeight.Black,fontSize=19.sp)
-                        Text(thread.studentEmail,color=c.muted,fontSize=10.sp)
-                    }
+        Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(7.dp)){
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal=4.dp),
+                verticalAlignment=Alignment.CenterVertically,
+                horizontalArrangement=Arrangement.spacedBy(8.dp)
+            ){
+                OutlinedButton(
+                    onClick={selected=null;status="";messages=emptyList();replyTarget=null;revision++},
+                    contentPadding=PaddingValues(horizontal=10.dp,vertical=5.dp)
+                ){Text("‹")}
+                RsMemberAvatarV68(c,thread.studentEmail,thread.studentName,size=36.dp)
+                Column(Modifier.weight(1f)){
+                    Text(thread.studentName.ifBlank{thread.studentEmail},color=c.bright,fontWeight=FontWeight.Black,fontSize=12.sp)
+                    Text(thread.studentEmail,color=c.muted,fontSize=8.sp)
                 }
             }
-
-            RsDirectCallControlsV133(
-                c=c,
-                lang=lang,
-                role=RsRole.TRAINER,
-                peerId=thread.studentId,
-                peerName=thread.studentName.ifBlank{thread.studentEmail}
-            )
-
-            OutlinedButton(
-                onClick={selected=null;draft="";status="";messages=emptyList();revision++},
-                modifier=Modifier.fillMaxWidth()
-            ){Text(rsCoachUiV44(lang,"back"))}
-
-            if(status.isNotBlank())RsPanel(c){Text(status,color=c.muted,fontSize=10.sp)}
-            if(messages.isEmpty()&&!loading)RsPanel(c){Text(rsCoachUiV44(lang,"no_messages"),color=c.muted)}
-            messages.forEach{message->
-                RsCloudCoachBubbleV72(c,lang,message,RsRole.TRAINER)
-                RsTrainerMessageAdminV111(
-                    c=c,
-                    lang=lang,
-                    body=message.body,
-                    canEdit=message.senderRole=="trainer"||message.senderRole=="admin",
-                    busy=loading,
-                    onEdit={body->rsStaffEditCoachMessageV111(message.id,body)},
-                    onDelete={rsStaffDeleteCoachMessageV111(message.id,message.mediaPath)},
-                    onChanged={revision++},
-                    onStatus={status=it}
-                )
+            if(status.isNotBlank())Text(status,color=c.muted,fontSize=9.sp,modifier=Modifier.padding(horizontal=8.dp))
+            Column(
+                Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(horizontal=4.dp),
+                verticalArrangement=Arrangement.spacedBy(7.dp)
+            ){
+                if(messages.isEmpty()&&!loading)RsPanel(c){Text(rsCoachUiV44(lang,"no_messages"),color=c.muted)}
+                messages.forEach{message->
+                    RsCloudCoachBubbleV156(
+                        c,lang,message,RsRole.TRAINER,
+                        onReply={replyTarget=it},
+                        onChanged={revision++},
+                        onStatus={status=it}
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
             }
-
-            if(messages.isNotEmpty()){
-                RsTrainerClearConversationV111(
-                    c=c,
-                    lang=lang,
-                    enabled=!loading,
-                    onClear={
-                        rsStaffClearCoachThreadRobustV116(
-                            thread.studentId,
-                            messages
-                        )
-                    },
-                    onChanged={messages=emptyList();revision++},
-                    onStatus={status=it}
-                )
-            }
-
             RsChatComposerV92(
                 c=c,
                 lang=lang,
                 scopeType="coach",
                 scopeId=thread.studentId,
                 enabled=!loading,
-                onSent={revision++},
+                replyPreview=replyTarget?.body?.ifBlank{replyTarget?.mediaName.orEmpty()},
+                onClearReply={replyTarget=null},
+                onSent={replyTarget=null;revision++},
                 onStatus={status=it},
-                onSend={body,attachment->rsCloudSendCoachMessageV72(thread.studentId,body,attachment)}
+                onSend={body,attachment->rsCloudSendCoachMessageV72(thread.studentId,body,attachment,replyTarget?.id)}
             )
         }
     }
