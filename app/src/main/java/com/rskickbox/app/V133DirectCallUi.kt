@@ -334,6 +334,7 @@ fun RsActiveCallDialogV133(
     var micOn by remember(call.id){mutableStateOf(true)}
     var cameraOn by remember(call.id){mutableStateOf(isVideo)}
     var speakerOn by remember(call.id){mutableStateOf(isVideo)}
+    var closing by remember(call.id){mutableStateOf(false)}
     val audioManager=remember{context.getSystemService(Context.AUDIO_SERVICE) as AudioManager}
     val engine=remember(call.id){
         RsWebRtcEngineV132(context,call.id,isCaller,isVideo,scope){engineState=it}
@@ -349,7 +350,8 @@ fun RsActiveCallDialogV133(
         while(isActive){
             rsCallInboxV131().onSuccess{list->
                 val current=list.firstOrNull{it.id==call.id}
-                if(current==null||current.status in setOf("ENDED","DECLINED","MISSED","CANCELLED")){
+                if(!closing && (current==null||current.status in setOf("ENDED","DECLINED","MISSED","CANCELLED"))){
+                    closing=true
                     onClosed()
                 }
             }
@@ -381,14 +383,37 @@ fun RsActiveCallDialogV133(
             if(isVideo){
                 var remoteRenderer by remember{mutableStateOf<SurfaceViewRenderer?>(null)}
                 var localRenderer by remember{mutableStateOf<SurfaceViewRenderer?>(null)}
+
                 AndroidView(
-                    factory={ctx->SurfaceViewRenderer(ctx).also{remoteRenderer=it;engine.attachRenderers(localRenderer,it)}},
+                    factory={ctx->
+                        SurfaceViewRenderer(ctx).also{view->
+                            remoteRenderer=view
+                            engine.attachRenderers(localRenderer,view)
+                        }
+                    },
                     modifier=Modifier.fillMaxSize()
                 )
                 AndroidView(
-                    factory={ctx->SurfaceViewRenderer(ctx).also{localRenderer=it;engine.attachRenderers(it,remoteRenderer)}},
+                    factory={ctx->
+                        SurfaceViewRenderer(ctx).also{view->
+                            localRenderer=view
+                            engine.attachRenderers(view,remoteRenderer)
+                        }
+                    },
                     modifier=Modifier.align(Alignment.TopEnd).padding(14.dp).width(116.dp).height(164.dp)
                 )
+
+                DisposableEffect(call.id){
+                    onDispose{
+                        val local=localRenderer
+                        val remote=remoteRenderer
+                        engine.detachRenderers(local,remote)
+                        runCatching{local?.release()}
+                        runCatching{remote?.release()}
+                        localRenderer=null
+                        remoteRenderer=null
+                    }
+                }
             }else{
                 Column(
                     Modifier.align(Alignment.Center),
@@ -507,9 +532,14 @@ fun RsActiveCallDialogV133(
                             color=Color(0xFF4A0C0C),
                             border=BorderStroke(2.dp,Color(0xFFFF5C5C).copy(alpha=.78f)),
                             tonalElevation=12.dp,
-                            modifier=Modifier.size(64.dp).clickable{
-                                scope.launch{rsSetCallStatusV131(call.id,"ENDED")}
-                                onClosed()
+                            modifier=Modifier.size(64.dp).clickable(enabled=!closing){
+                                if(!closing){
+                                    closing=true
+                                    scope.launch{
+                                        runCatching{rsSetCallStatusV131(call.id,"ENDED")}
+                                        onClosed()
+                                    }
+                                }
                             }
                         ){Box(contentAlignment=Alignment.Center){Text("✕",color=Color.White,fontSize=23.sp,fontWeight=FontWeight.Black)}}
                         Text("END",color=Color(0xFFFF8A80),fontSize=7.sp,fontWeight=FontWeight.Black)
