@@ -302,28 +302,81 @@ fun RsSafeIntroVideoWithProgressV147(
 
 @Composable
 private fun RsIntroVideoPreviewV30(uri:String,sound:Boolean,height:Int){
-    val context=LocalContext.current
+    val context=LocalContext.current.applicationContext
     val player=remember(uri){ExoPlayer.Builder(context).build()}
-    DisposableEffect(player){onDispose{player.release()}}
-    LaunchedEffect(uri,sound){
-        player.volume=if(sound)1f else 0f
-        player.setMediaItem(MediaItem.fromUri(Uri.parse(uri)))
-        player.prepare()
-        player.playWhenReady=false
-        player.seekTo(1)
-    }
-    AndroidView(
-        factory={ctx->
-            PlayerView(ctx).apply{
-                useController=true
-                resizeMode=AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                setShutterBackgroundColor(android.graphics.Color.BLACK)
-                this.player=player
+    var textureView by remember(uri){mutableStateOf<android.view.TextureView?>(null)}
+    var aspectFrame by remember(uri){mutableStateOf<AspectRatioFrameLayout?>(null)}
+    var ready by remember(uri){mutableStateOf(false)}
+
+    DisposableEffect(player,uri){
+        val listener=object:Player.Listener{
+            override fun onPlaybackStateChanged(state:Int){
+                if(state==Player.STATE_READY){
+                    ready=true
+                    player.playWhenReady=false
+                    player.seekTo(1L)
+                }
             }
-        },
-        update={view->view.player=player},
-        modifier=Modifier.fillMaxWidth().height(height.dp).background(Color.Black)
-    )
+            override fun onVideoSizeChanged(videoSize:androidx.media3.common.VideoSize){
+                if(videoSize.height>0){
+                    aspectFrame?.setAspectRatio(
+                        (videoSize.width.toFloat()*videoSize.pixelWidthHeightRatio)/videoSize.height.toFloat()
+                    )
+                }
+            }
+        }
+        player.addListener(listener)
+        player.volume=if(sound)1f else 0f
+        runCatching{
+            player.setMediaItem(MediaItem.fromUri(Uri.parse(uri)))
+            player.prepare()
+            player.playWhenReady=false
+        }
+        onDispose{
+            runCatching{
+                player.removeListener(listener)
+                textureView?.let{player.clearVideoTextureView(it)}
+                player.stop()
+                player.clearMediaItems()
+                player.release()
+            }
+            textureView=null
+            aspectFrame=null
+        }
+    }
+
+    Box(Modifier.fillMaxWidth().height(height.dp).background(Color.Black)){
+        AndroidView(
+            factory={ctx->
+                AspectRatioFrameLayout(ctx).apply{
+                    resizeMode=AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    setBackgroundColor(android.graphics.Color.BLACK)
+                    aspectFrame=this
+                    val texture=android.view.TextureView(ctx).apply{isOpaque=true}
+                    addView(
+                        texture,
+                        android.widget.FrameLayout.LayoutParams(
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+                        )
+                    )
+                    textureView=texture
+                    player.setVideoTextureView(texture)
+                }
+            },
+            update={frame->
+                aspectFrame=frame
+                textureView?.let{runCatching{player.setVideoTextureView(it)}}
+            },
+            modifier=Modifier.fillMaxSize()
+        )
+        if(!ready){
+            CircularProgressIndicator(
+                color=Color(0xFFD6B15E),
+                modifier=Modifier.align(Alignment.Center).size(28.dp)
+            )
+        }
+    }
 }
 
 private data class PendingSplashV30(val uri:String="",val duration:Long=0L)
