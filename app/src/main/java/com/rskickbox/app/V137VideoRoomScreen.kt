@@ -189,6 +189,7 @@ fun RsVideoRoomScreenV137(
 
     LaunchedEffect(permissionsReady){
         if(permissionsReady){
+            rsConfigureCallPipV154(context,true,9,16)
             audioManager.mode=AudioManager.MODE_IN_COMMUNICATION
             @Suppress("DEPRECATION")
             audioManager.isSpeakerphoneOn=speakerOn
@@ -216,6 +217,7 @@ fun RsVideoRoomScreenV137(
 
     DisposableEffect(engine){
         onDispose{
+            rsConfigureCallPipV154(context,false)
             engine.dispose()
             runCatching{
                 @Suppress("DEPRECATION")
@@ -419,6 +421,12 @@ fun RsVideoRoomScreenV137(
                     horizontalArrangement=Arrangement.SpaceEvenly,
                     verticalAlignment=Alignment.CenterVertically
                 ){
+                    OutlinedButton(
+                        onClick={rsEnterCallPipV154(context,9,16)},
+                        modifier=Modifier.size(48.dp),
+                        shape=CircleShape,
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text("↙",fontSize=20.sp)}
                     OutlinedButton(
                         onClick={micOn=!micOn;engine.setMicEnabled(micOn)},
                         modifier=Modifier.size(48.dp),
