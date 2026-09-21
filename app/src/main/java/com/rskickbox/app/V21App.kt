@@ -37,6 +37,8 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 
+private enum class RsPreLoginStageV147{LOGO,VIDEO,LOGIN}
+
 @Composable
 fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=false) {
     val context = LocalContext.current
@@ -84,10 +86,36 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     var lang by remember { mutableStateOf(rsInitialLanguageV111(store)) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
     var introDone by remember { mutableStateOf(true) }
+    var preLoginStage by remember {
+        mutableStateOf(if(skipIntroOnRestore)RsPreLoginStageV147.LOGIN else RsPreLoginStageV147.LOGO)
+    }
     var passwordRecoveryLaunch by remember(initialAuthDeepLink){
         mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
     }
     val c = paletteFor(theme)
+
+    val localSplashUri=remember(preLoginStage,isTabletStartup){
+        if(!store.b("intro_enabled",true))""
+        else{
+            val legacy=store.s("intro_video_uri","")
+            val phone=store.s("intro_phone_video_uri",legacy)
+            val tablet=store.s("intro_tablet_video_uri","")
+            val candidate=if(isTabletStartup && tablet.isNotBlank())tablet else phone
+            val parsed=runCatching{android.net.Uri.parse(candidate)}.getOrNull()
+            when(parsed?.scheme){
+                "file"->parsed.path?.let(::java.io.File)?.takeIf{it.exists()&&it.length()>1024L}?.let{candidate}.orEmpty()
+                "content"->candidate
+                else->""
+            }
+        }
+    }
+
+    LaunchedEffect(preLoginStage){
+        if(preLoginStage==RsPreLoginStageV147.LOGO){
+            delay(850L)
+            preLoginStage=if(localSplashUri.isNotBlank())RsPreLoginStageV147.VIDEO else RsPreLoginStageV147.LOGIN
+        }
+    }
 
     LaunchedEffect(currentVersionCode){
         if(updatedSinceLastLaunch){
@@ -234,12 +262,45 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
                         Text(rsCommonT95(lang,"restoring_session"),color=c.text)
                     }
                 }
-                role == null -> RsLiveBackground(c, store, BgScope.LOGIN) {
-                    RsPerPageBackgroundV21(store, "login") {
-                        LoginV21(c, store, lang, passwordRecoveryLaunch, { selected -> store.pb("lang_manual_override_v111",true);lang=selected;store.ps("lang",selected.code) }) { selected ->
-                            passwordRecoveryLaunch=false
-                            role = selected
-                            route = if(selected==RsRole.TRAINER) "trainer" else "home"
+                role == null -> when(preLoginStage){
+                    RsPreLoginStageV147.LOGO -> Box(
+                        Modifier.fillMaxSize().background(Color.Black),
+                        contentAlignment=Alignment.Center
+                    ){
+                        Column(
+                            horizontalAlignment=Alignment.CenterHorizontally,
+                            verticalArrangement=Arrangement.spacedBy(16.dp)
+                        ){
+                            androidx.compose.foundation.Image(
+                                painter=androidx.compose.ui.res.painterResource(R.drawable.rs_launcher_royal_v129),
+                                contentDescription="RS KICKBOXING",
+                                modifier=Modifier.size(148.dp)
+                            )
+                            Text("RS KICKBOXING",color=c.bright,fontWeight=FontWeight.Black,fontSize=16.sp,letterSpacing=1.5.sp)
+                        }
+                    }
+                    RsPreLoginStageV147.VIDEO -> Box(Modifier.fillMaxSize().background(Color.Black)){
+                        RsSafeIntroVideoWithProgressV147(
+                            uri=localSplashUri,
+                            sound=store.b("intro_video_sound",true),
+                            showProgress=true,
+                            onStarted={},
+                            onFinished={preLoginStage=RsPreLoginStageV147.LOGIN}
+                        )
+                        if(store.b("intro_skip_enabled",true)){
+                            TextButton(
+                                onClick={preLoginStage=RsPreLoginStageV147.LOGIN},
+                                modifier=Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
+                            ){Text("Skip",color=Color.White.copy(alpha=.82f))}
+                        }
+                    }
+                    RsPreLoginStageV147.LOGIN -> RsLiveBackground(c, store, BgScope.LOGIN) {
+                        RsPerPageBackgroundV21(store, "login") {
+                            LoginV21(c, store, lang, passwordRecoveryLaunch, { selected -> store.pb("lang_manual_override_v111",true);lang=selected;store.ps("lang",selected.code) }) { selected ->
+                                passwordRecoveryLaunch=false
+                                role = selected
+                                route = if(selected==RsRole.TRAINER) "trainer" else "home"
+                            }
                         }
                     }
                 }
