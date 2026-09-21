@@ -7,6 +7,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -23,16 +24,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
 
-private enum class RsChatHubTabV125{ALL,PRIVATE,GROUPS,AI}
+private enum class RsChatHubTabV125{ALL,PRIVATE,GROUPS,COMMUNITY,NOTIFICATIONS,AI}
 
 private fun rsInitialChatTabV125(route:String)=when(route){
     "groups"->RsChatHubTabV125.GROUPS
     "voice"->RsChatHubTabV125.AI
+    "community"->RsChatHubTabV125.COMMUNITY
+    "notifications"->RsChatHubTabV125.NOTIFICATIONS
     else->RsChatHubTabV125.ALL
 }
 
@@ -261,6 +265,10 @@ fun RsFloatingGlassChatHubV125(
 
     val context=LocalContext.current
     val chatVisual=remember(store){rsVisualUriWithBundledFallbackV113(context,store,"coachchat")}
+    val chatHeaderVisual=remember(store){rsVisualUriWithBundledFallbackV113(context,store,"header")}
+    val selectedContact=remember(contacts,privateStudentId){
+        privateStudentId?.let{id->contacts.firstOrNull{it.userId==id}}
+    }
     Box(Modifier.fillMaxSize().background(Color.Black)){
         if(chatVisual.isNotBlank())RsUriPreviewV21(chatVisual,Modifier.fillMaxSize().alpha(.24f),"CENTER")
         Box(
@@ -281,40 +289,63 @@ fun RsFloatingGlassChatHubV125(
             shape=RoundedCornerShape(24.dp),
             modifier=Modifier.fillMaxWidth()
         ){
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal=11.dp,vertical=9.dp),
-                verticalAlignment=Alignment.CenterVertically,
-                horizontalArrangement=Arrangement.spacedBy(10.dp)
-            ){
-                OutlinedButton(
-                    onClick=onBack,
-                    modifier=Modifier.size(42.dp),
-                    shape=CircleShape,
-                    border=BorderStroke(1.dp,c.gold.copy(alpha=.34f)),
-                    contentPadding=PaddingValues(0.dp)
-                ){Text("‹",color=c.bright,fontSize=25.sp)}
-                OutlinedButton(
-                    onClick={slideMenuOpen=true},
-                    modifier=Modifier.size(42.dp),
-                    shape=CircleShape,
-                    border=BorderStroke(1.dp,c.gold.copy(alpha=.50f)),
-                    contentPadding=PaddingValues(0.dp)
-                ){Text("☰",color=c.bright,fontSize=17.sp,fontWeight=FontWeight.Black)}
-                Column(Modifier.weight(1f)){
-                    Text("RS COMMUNICATION HUB",color=c.bright,fontWeight=FontWeight.Black,fontSize=17.sp,letterSpacing=.9.sp)
-                    Text("Private · Groups · Voice · Media · AI Coach",color=c.muted,fontSize=9.sp)
-                }
-                Column(horizontalAlignment=Alignment.End,verticalArrangement=Arrangement.spacedBy(4.dp)){
-                    Surface(
-                        color=c.gold.copy(alpha=.12f),
-                        shape=RoundedCornerShape(14.dp),
-                        border=BorderStroke(1.dp,c.gold.copy(alpha=.30f))
+            Box(Modifier.fillMaxWidth()){
+                if(chatHeaderVisual.isNotBlank())RsUriPreviewV21(chatHeaderVisual,Modifier.matchParentSize().alpha(.48f),"CENTER")
+                Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=.58f)))
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=9.dp),
+                    verticalArrangement=Arrangement.spacedBy(7.dp)
+                ){
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment=Alignment.CenterVertically,
+                        horizontalArrangement=Arrangement.spacedBy(10.dp)
                     ){
-                        Text("♛  RS",color=c.bright,fontWeight=FontWeight.Black,fontSize=10.sp,modifier=Modifier.padding(horizontal=9.dp,vertical=6.dp))
+                        Image(
+                            painter=painterResource(R.drawable.rs_launcher_royal_v129),
+                            contentDescription="RS",
+                            modifier=Modifier.size(46.dp)
+                        )
+                        Column(Modifier.weight(1f)){
+                            Text("RS CHAT",color=c.bright,fontWeight=FontWeight.Black,fontSize=19.sp,letterSpacing=1.sp)
+                            Text("Private · Groups · Community · AI",color=c.muted,fontSize=8.sp)
+                        }
+                        if(tab==RsChatHubTabV125.PRIVATE){
+                            RsDirectCallControlsV133(
+                                c=c,
+                                lang=lang,
+                                role=role,
+                                peerId=privateStudentId.orEmpty(),
+                                peerName=selectedContact?.displayName.orEmpty(),
+                                peerEmail=selectedContact?.email.orEmpty(),
+                                compact=true
+                            )
+                        }
                     }
-                    Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)){
-                        Surface(color=Color(0xFF36D27F),shape=CircleShape,modifier=Modifier.size(6.dp)){}
-                        Text("LIVE",color=Color(0xFF36D27F),fontSize=7.sp,fontWeight=FontWeight.Black,letterSpacing=.8.sp)
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment=Alignment.CenterVertically,
+                        horizontalArrangement=Arrangement.spacedBy(8.dp)
+                    ){
+                        OutlinedButton(
+                            onClick=onBack,
+                            modifier=Modifier.size(38.dp),
+                            shape=CircleShape,
+                            border=BorderStroke(1.dp,c.gold.copy(alpha=.34f)),
+                            contentPadding=PaddingValues(0.dp)
+                        ){Text("‹",color=c.bright,fontSize=23.sp)}
+                        OutlinedButton(
+                            onClick={slideMenuOpen=true},
+                            modifier=Modifier.size(38.dp),
+                            shape=CircleShape,
+                            border=BorderStroke(1.dp,c.gold.copy(alpha=.50f)),
+                            contentPadding=PaddingValues(0.dp)
+                        ){Text("☰",color=c.bright,fontSize=15.sp,fontWeight=FontWeight.Black)}
+                        Spacer(Modifier.weight(1f))
+                        Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)){
+                            Surface(color=Color(0xFF36D27F),shape=CircleShape,modifier=Modifier.size(6.dp)){}
+                            Text("LIVE",color=Color(0xFF36D27F),fontSize=7.sp,fontWeight=FontWeight.Black,letterSpacing=.8.sp)
+                        }
                     }
                 }
             }
@@ -334,6 +365,8 @@ fun RsFloatingGlassChatHubV125(
                 Triple(RsChatHubTabV125.ALL,"All","◆"),
                 Triple(RsChatHubTabV125.PRIVATE,"Private","✦"),
                 Triple(RsChatHubTabV125.GROUPS,"Groups","◈"),
+                Triple(RsChatHubTabV125.COMMUNITY,"Community","◎"),
+                Triple(RsChatHubTabV125.NOTIFICATIONS,"Alerts","●"),
                 Triple(RsChatHubTabV125.AI,"AI Coach","✧")
             ).forEach{(item,label,symbol)->
                 RsRoyalChatTabV135(c,tab==item,label,symbol){tab=item}
@@ -455,6 +488,8 @@ fun RsFloatingGlassChatHubV125(
                 }
                 RsChatHubTabV125.PRIVATE->RsCoachChatV44(c,store,lang,role,privateStudentId)
                 RsChatHubTabV125.GROUPS->RsGroupsV50(c,store,lang,role)
+                RsChatHubTabV125.COMMUNITY->RsCommunityV50(c,store,lang,role)
+                RsChatHubTabV125.NOTIFICATIONS->RsChatNotificationsV156(c,lang)
                 RsChatHubTabV125.AI->if(role==RsRole.TRAINER) RsTrainerAiReferenceChatV125(c,lang) else RsStudentAiAssistantSafeV151(c,lang,store)
             }
         }
