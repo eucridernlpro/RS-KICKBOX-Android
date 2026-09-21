@@ -43,6 +43,11 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     val config = LocalConfiguration.current
     val isTabletStartup = config.smallestScreenWidthDp>=600
     val store = remember { RsStore(context) }
+    val currentVersionCode=BuildConfig.VERSION_CODE
+    val previousVersionCode=remember{store.s("rs_last_started_version_code","0").toIntOrNull()?:0}
+    val updatedSinceLastLaunch=remember(currentVersionCode,previousVersionCode){
+        previousVersionCode>0 && previousVersionCode!=currentVersionCode
+    }
     val appScope = rememberCoroutineScope()
     val callNotificationPermissionLauncher=rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -50,8 +55,10 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     val localSessionAuthMs=remember{
         store.s("session_password_auth_ms","0").toLongOrNull()?:0L
     }
-    val localSessionFresh=remember(localSessionAuthMs){
-        localSessionAuthMs>0L && System.currentTimeMillis()-localSessionAuthMs<=12L*60L*60L*1000L
+    val localSessionFresh=remember(localSessionAuthMs,updatedSinceLastLaunch){
+        !updatedSinceLastLaunch &&
+        localSessionAuthMs>0L &&
+        System.currentTimeMillis()-localSessionAuthMs<=12L*60L*60L*1000L
     }
     val localSessionRole=remember(localSessionFresh){
         if(!localSessionFresh)null
@@ -84,11 +91,41 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     }
     var lang by remember { mutableStateOf(rsInitialLanguageV111(store)) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
-    var introDone by remember { mutableStateOf(skipIntroOnRestore || RsRuntimeV108.introShownThisProcess || !store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
+    var introDone by remember {
+        mutableStateOf(
+            skipIntroOnRestore ||
+            (
+                !updatedSinceLastLaunch &&
+                (
+                    RsRuntimeV108.introShownThisProcess ||
+                    !store.b("intro_enabled",true) ||
+                    (!store.b("intro_every_launch",true) && store.b("intro_seen",false))
+                )
+            ) ||
+            (!store.b("intro_enabled",true))
+        )
+    }
     var passwordRecoveryLaunch by remember(initialAuthDeepLink){
         mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
     }
     val c = paletteFor(theme)
+
+    LaunchedEffect(currentVersionCode){
+        if(updatedSinceLastLaunch){
+            // APK updates get one clean authentication boundary. Keep remembered
+            // email/autofill, but never jump directly into an old authenticated route.
+            store.ps("session_password_auth_ms","0")
+            store.ps("session_last_route","")
+            store.ps("session_role","")
+            role=null
+            route="home"
+            authRestoring=false
+            if(RsSupabaseV60.configured){
+                runCatching{rsCloudLogoutV63()}
+            }
+        }
+        store.ps("rs_last_started_version_code",currentVersionCode.toString())
+    }
 
     LaunchedEffect(introPreparing,isTabletStartup){
         if(introPreparing){
@@ -115,7 +152,11 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     LaunchedEffect(authRestoreAttempted){
         if(!authRestoreAttempted){
             authRestoreAttempted=true
-            if(passwordRecoveryLaunch){
+            if(updatedSinceLastLaunch){
+                role=null
+                route="home"
+                authRestoring=false
+            }else if(passwordRecoveryLaunch){
                 role=null
                 route="home"
                 authRestoring=false
