@@ -706,7 +706,7 @@ fun RsBrandSiteSettingsV21(c:RsPalette,store:RsStore,lang:RsLang){
     }
 }
 
-private val rsPreviewBitmapCacheV129=object:LruCache<String,Bitmap>(12*1024*1024){
+private val rsPreviewBitmapCacheV129=object:LruCache<String,Bitmap>(20*1024*1024){
     override fun sizeOf(key:String,value:Bitmap)=value.allocationByteCount
 }
 
@@ -719,10 +719,12 @@ private fun rsCachedPreviewBitmapV129(context:android.content.Context,uri:Uri):B
         resolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it,null,bounds)}
         if(bounds.outWidth<=0||bounds.outHeight<=0)return@runCatching null
         var sample=1
-        while(bounds.outWidth/sample>720 || bounds.outHeight/sample>720)sample*=2
+        // Keep enough detail for book covers and premium dashboard tiles while
+        // still sampling very large camera/gallery images to avoid OOM crashes.
+        while(bounds.outWidth/sample>1080 || bounds.outHeight/sample>1080)sample*=2
         val opts=BitmapFactory.Options().apply{
             inSampleSize=sample
-            inPreferredConfig=Bitmap.Config.RGB_565
+            inPreferredConfig=Bitmap.Config.ARGB_8888
         }
         val bitmap=resolver.openInputStream(uri)?.use{BitmapFactory.decodeStream(it,null,opts)}
         if(bitmap!=null)rsPreviewBitmapCacheV129.put(key,bitmap)
