@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.analyze-technique]
 verify_jwt = true
+
+[functions.send-call-push]
+verify_jwt = true
