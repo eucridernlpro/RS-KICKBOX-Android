@@ -17,19 +17,9 @@ grant execute on function public.rs_add_video_room_signal(uuid,uuid,text,jsonb) 
 grant execute on function public.rs_video_room_signals_since(uuid,bigint) to authenticated;
 grant execute on function public.rs_create_video_room(text,uuid[]) to authenticated;
 
--- Members of a room may see the other members. This policy is used only for
--- ordinary SELECT paths; security-definer RPCs remain the canonical API.
+-- Room data is intentionally exposed through security-definer RPCs only.
+-- Remove any legacy direct-table read policy to avoid recursive RLS evaluation.
 drop policy if exists "rs_video_room_members_read" on public.rs_video_room_members;
-create policy "rs_video_room_members_read"
-on public.rs_video_room_members for select to authenticated
-using(
-    exists(
-        select 1
-        from public.rs_video_room_members me
-        where me.room_id=rs_video_room_members.room_id
-          and me.user_id=(select auth.uid())
-    )
-);
 
 -- Make the room-list RPC explicitly verify an active authenticated profile.
 create or replace function public.rs_my_video_rooms()
