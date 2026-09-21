@@ -26,6 +26,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
     val scope=rememberCoroutineScope()
     var revision by remember{mutableIntStateOf(0)}
     var promos by remember{mutableStateOf<List<RsCloudPromotionV103>>(emptyList())}
+    var promoLocal by remember{mutableStateOf<Map<String,String>>(emptyMap())}
     var bookRow by remember{mutableStateOf<RsCloudBookV103?>(null)}
     var bookLocal by remember{mutableStateOf<RsBookConfigV45?>(null)}
     var loading by remember{mutableStateOf(true)}
@@ -44,11 +45,19 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
     var pendingCover by remember{mutableStateOf("")}
     var pendingPreview by remember{mutableStateOf("")}
     var pendingFull by remember{mutableStateOf("")}
+    var readerUri by remember{mutableStateOf("")}
+    var readerTitle by remember{mutableStateOf("")}
 
     LaunchedEffect(revision){
         loading=true
         rsCloudPromotionsV103()
-            .onSuccess{promos=it}
+            .onSuccess{loaded->
+                promos=loaded
+                promoLocal=loaded.mapNotNull{item->
+                    runCatching{rsCloudPromotionLocalV156(context,item)}.getOrNull()
+                        ?.let{local->item.id to local.imageUri}
+                }.toMap()
+            }
             .onFailure{status=rsReleaseT98(lang,"load_failed")}
         rsCloudBookV103()
             .onSuccess{row->
@@ -90,6 +99,11 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
             pendingFull=uri.toString()
             status=rsPromoUiV45(lang,"full_ready")
         }
+    }
+
+    if(readerUri.isNotBlank()){
+        RsPdfBookReaderV45(c,store,lang,readerTitle,readerUri){readerUri=""}
+        return
     }
 
     RsScroll(c,rsPromoUiV45(lang,"manager"),rsPromoUiV45(lang,"manager_sub")){
@@ -150,8 +164,9 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
 
         promos.forEach{item->
             RsPanel(c){
-                RsUriPreviewV21(
-                    BuildConfig.SUPABASE_URL.trimEnd('/')+"/storage/v1/object/public/rs-promotions/"+item.imagePath,
+                val preview=promoLocal[item.id].orEmpty()
+                if(preview.isNotBlank())RsUriPreviewV21(
+                    preview,
                     Modifier.fillMaxWidth().height(130.dp),
                     "CENTER"
                 )
@@ -207,6 +222,18 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
             }
             OutlinedButton(onClick={fullPicker.launch(arrayOf("application/pdf"))},enabled=!busy,modifier=Modifier.fillMaxWidth()){
                 Text(rsPromoUiV45(lang,"full_pdf")+(if(pendingFull.isNotBlank()||bookRow?.fullPath?.isNotBlank()==true)" ✓" else ""))
+            }
+            bookLocal?.previewPdfUri?.takeIf{it.isNotBlank()}?.let{uri->
+                OutlinedButton(
+                    onClick={readerTitle=bookTitle+" · "+rsPromoUiV45(lang,"preview");readerUri=uri},
+                    modifier=Modifier.fillMaxWidth()
+                ){Text("Trainer · "+rsPromoUiV45(lang,"preview"))}
+            }
+            bookLocal?.fullPdfUri?.takeIf{it.isNotBlank()}?.let{uri->
+                Button(
+                    onClick={readerTitle=bookTitle;readerUri=uri},
+                    modifier=Modifier.fillMaxWidth()
+                ){Text("Trainer · "+rsPromoUiV45(lang,"read"))}
             }
 
             Text(rsPromoUiV45(lang,"access"),color=c.muted,fontSize=10.sp)
@@ -320,7 +347,11 @@ fun RsCloudPromotionPageV104(
     LaunchedEffect(Unit){
         loading=true
         rsCloudPromotionsV103()
-            .onSuccess{promos=it.filter{x->x.active}.map(::rsCloudPromotionAsLocalV103)}
+            .onSuccess{loaded->
+                promos=loaded.filter{x->x.active}.mapNotNull{item->
+                    runCatching{rsCloudPromotionLocalV156(context,item)}.getOrNull()
+                }
+            }
             .onFailure{status=rsReleaseT98(lang,"load_failed")}
         rsCloudBookConfigLocalV103(context)
             .onSuccess{book=it.first}
