@@ -195,8 +195,9 @@ fun rsOptimizeSplashVideoV32(
 ){
     val (targetW,targetH)=if(target=="tablet") 1280 to 800 else 720 to 1280
     val outDir=File(context.filesDir,"rs_splash").apply{mkdirs()}
-    outDir.listFiles()?.filter{it.name.startsWith(target+"_") }?.forEach{it.delete()}
-    val output=File(outDir,target+"_"+UUID.randomUUID()+".mp4")
+    // Do not delete the currently working splash until the replacement has
+    // finished conversion and passed validation.
+    val output=File(outDir,target+"_pending_"+UUID.randomUUID()+".mp4")
     if(output.exists())output.delete()
 
     onStatus("Converting splash to H.264 + AAC for reliable playback…")
@@ -215,7 +216,28 @@ fun rsOptimizeSplashVideoV32(
         .setAudioMimeType(MimeTypes.AUDIO_AAC)
         .addListener(object:Transformer.Listener{
             override fun onCompleted(composition:Composition,exportResult:ExportResult){
-                onComplete(Uri.fromFile(output).toString())
+                val valid=runCatching{
+                    if(!output.exists() || output.length()<1024L)return@runCatching false
+                    val mmr=android.media.MediaMetadataRetriever()
+                    mmr.setDataSource(output.absolutePath)
+                    val duration=mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()?:0L
+                    mmr.release()
+                    duration in 250L..17_000L
+                }.getOrDefault(false)
+
+                if(!valid){
+                    output.delete()
+                    onError("Converted splash could not be validated. The previous splash was kept.")
+                    return
+                }
+
+                val finalFile=File(outDir,target+"_"+UUID.randomUUID()+".mp4")
+                val moved=runCatching{output.renameTo(finalFile)}.getOrDefault(false)
+                val ready=if(moved)finalFile else output
+                outDir.listFiles()
+                    ?.filter{it!=ready && it.name.startsWith(target+"_")}
+                    ?.forEach{runCatching{it.delete()}}
+                onComplete(Uri.fromFile(ready).toString())
             }
             override fun onError(
                 composition:Composition,
