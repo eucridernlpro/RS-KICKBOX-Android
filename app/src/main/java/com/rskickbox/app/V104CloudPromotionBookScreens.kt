@@ -113,10 +113,17 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
             ){Text(rsPromoUiV45(lang,"image"))}
             OutlinedTextField(promoTitle,{promoTitle=it.take(120)},label={Text(rsPromoUiV45(lang,"title"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
             OutlinedTextField(promoLink,{promoLink=it.trim()},label={Text(rsPromoUiV45(lang,"link"))},modifier=Modifier.fillMaxWidth(),enabled=!busy)
+            if(busy){
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+                Text(status,color=c.bright,fontSize=10.sp,fontWeight=FontWeight.Bold)
+            }else if(status.isNotBlank()){
+                Text(status,color=c.muted,fontSize=10.sp)
+            }
+
             Button(
                 onClick={
                     busy=true
-                    status=rsReleaseT98(lang,"saving")
+                    status="Preparing book upload…"
                     scope.launch{
                         rsUploadPromotionImageV103(context,promoImage)
                             .fold(
@@ -235,6 +242,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
                         var previewPath=bookRow?.previewPath
                         var fullPath=bookRow?.fullPath
 
+                        if(pendingCover.isNotBlank())status="Uploading book cover…"
                         val coverResult=if(pendingCover.isNotBlank())rsUploadBookAssetV103(context,pendingCover,"cover") else Result.success(coverPath.orEmpty())
                         if(coverResult.isFailure){
                             status=rsReleaseT98(lang,"save_failed")
@@ -243,6 +251,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
                         }
                         if(pendingCover.isNotBlank())coverPath=coverResult.getOrNull()
 
+                        if(pendingPreview.isNotBlank())status="Uploading preview PDF…"
                         val previewResult=if(pendingPreview.isNotBlank())rsUploadBookAssetV103(context,pendingPreview,"preview") else Result.success(previewPath.orEmpty())
                         if(previewResult.isFailure){
                             status=rsReleaseT98(lang,"save_failed")
@@ -251,6 +260,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
                         }
                         if(pendingPreview.isNotBlank())previewPath=previewResult.getOrNull()
 
+                        if(pendingFull.isNotBlank())status="Uploading full book PDF…"
                         val fullResult=if(pendingFull.isNotBlank())rsUploadBookAssetV103(context,pendingFull,"full") else Result.success(fullPath.orEmpty())
                         if(fullResult.isFailure){
                             status=rsReleaseT98(lang,"save_failed")
@@ -264,6 +274,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
                             .filter{it.contains("@")}
                             .toSet()
 
+                        status="Saving book settings…"
                         rsSaveCloudBookV103(
                             bookRow?.id,
                             bookTitle,
