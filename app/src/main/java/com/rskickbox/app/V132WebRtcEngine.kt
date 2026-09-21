@@ -349,6 +349,17 @@ class RsWebRtcEngineV132(
         override fun onSetFailure(error:String?){onState("FAILED")}
     }
 
+    fun detachRenderers(local:SurfaceViewRenderer?,remote:SurfaceViewRenderer?){
+        local?.let{renderer->
+            runCatching{videoTrack?.removeSink(renderer)}
+            if(localRenderer===renderer)localRenderer=null
+        }
+        remote?.let{renderer->
+            runCatching{remoteVideoTrack?.removeSink(renderer)}
+            if(remoteRenderer===renderer)remoteRenderer=null
+        }
+    }
+
     fun setMicEnabled(enabled:Boolean){
         audioTrack?.setEnabled(enabled)
     }
@@ -385,8 +396,11 @@ class RsWebRtcEngineV132(
         peerConnection?.close()
         peerConnection?.dispose()
         peerConnection=null
-        runCatching{localRenderer?.release()}
-        runCatching{remoteRenderer?.release()}
+        // Renderer lifecycle belongs to the Compose AndroidView. Detach only;
+        // releasing a SurfaceViewRenderer here while the UI still owns it can
+        // crash the Activity during call teardown.
+        localRenderer?.let{runCatching{videoTrack?.removeSink(it)}}
+        remoteRenderer?.let{runCatching{remoteVideoTrack?.removeSink(it)}}
         localRenderer=null
         remoteRenderer=null
         factory.dispose()
