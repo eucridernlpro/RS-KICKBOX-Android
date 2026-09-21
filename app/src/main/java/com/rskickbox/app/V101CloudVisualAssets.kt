@@ -212,3 +212,46 @@ suspend fun rsDeleteCloudVisualAssetV101(slotKey:String):Result<Unit> = runCatch
         runCatching{client.storage.from(RS_BRAND_BUCKET_V101).delete(old.objectPath)}
     }
 }
+
+
+suspend fun rsPrepareIntroAssetV140(
+    context:Context,
+    store:RsStore,
+    isTablet:Boolean
+):Result<Boolean> = runCatching{
+    val preferredKey=if(isTablet)"intro_tablet_video_uri" else "intro_phone_video_uri"
+    val fallbackKey="intro_phone_video_uri"
+
+    fun usable(value:String):Boolean{
+        if(value.isBlank())return false
+        val uri=runCatching{Uri.parse(value)}.getOrNull()?:return false
+        return when(uri.scheme){
+            "file"->uri.path?.let(::File)?.let{it.exists()&&it.length()>0L}==true
+            "content"->runCatching{
+                context.contentResolver.openFileDescriptor(uri,"r")?.use{it.statSize!=0L}==true
+            }.getOrDefault(false)
+            else->false
+        }
+    }
+
+    val preferredLocal=store.s(preferredKey,"")
+    if(usable(preferredLocal))return@runCatching true
+    if(isTablet){
+        val phoneLocal=store.s(fallbackKey,store.s("intro_video_uri",""))
+        if(usable(phoneLocal))return@runCatching true
+    }
+
+    val assets=rsCloudVisualAssetsV101().getOrThrow()
+    val preferredSlot=if(isTablet)"intro:tablet" else "intro:phone"
+    val asset=assets.firstOrNull{it.slotKey==preferredSlot}
+        ?:assets.firstOrNull{it.slotKey=="intro:phone"}
+        ?:return@runCatching false
+
+    val local=rsDownloadBrandAssetV101(context,asset)
+    val localKey=rsLocalBrandKeyV101(asset.slotKey)
+    if(localKey.isNotBlank()){
+        store.ps(localKey,local)
+        store.ps("cloud_brand_path_v101_"+asset.slotKey,asset.objectPath)
+    }
+    usable(local)
+}
