@@ -98,83 +98,6 @@ private fun RsContactPresenceV125(
                 }
             }
 
-        if(slideMenuOpen){
-            Box(
-                Modifier.fillMaxSize()
-                    .background(Color.Black.copy(alpha=.56f))
-                    .zIndex(8f)
-                    .clickable{slideMenuOpen=false}
-            )
-        }
-        AnimatedVisibility(
-            visible=slideMenuOpen,
-            enter=slideInHorizontally(initialOffsetX={-it})+fadeIn(),
-            exit=slideOutHorizontally(targetOffsetX={-it})+fadeOut(),
-            modifier=Modifier.align(Alignment.CenterStart).fillMaxHeight().widthIn(max=310.dp).zIndex(9f)
-        ){
-            Surface(
-                color=Color.Black.copy(alpha=.97f),
-                shape=RoundedCornerShape(topEnd=30.dp,bottomEnd=30.dp),
-                border=BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
-                tonalElevation=20.dp,
-                modifier=Modifier.fillMaxHeight().fillMaxWidth()
-            ){
-                Column(
-                    Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(14.dp),
-                    verticalArrangement=Arrangement.spacedBy(9.dp)
-                ){
-                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                        Column(Modifier.weight(1f)){
-                            Text("♛  RS CHAT",color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp,letterSpacing=1.sp)
-                            Text("ROYAL COMMUNICATION",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.3.sp)
-                        }
-                        TextButton(onClick={slideMenuOpen=false}){Text("×",color=c.bright,fontSize=24.sp)}
-                    }
-                    Surface(
-                        color=c.gold.copy(alpha=.07f),
-                        shape=RoundedCornerShape(16.dp),
-                        border=BorderStroke(1.dp,c.gold.copy(alpha=.18f)),
-                        modifier=Modifier.fillMaxWidth()
-                    ){
-                        Row(Modifier.fillMaxWidth().padding(10.dp),horizontalArrangement=Arrangement.SpaceBetween){
-                            Text(if(role==RsRole.TRAINER)"TRAINER COMMAND" else "STUDENT HUB",color=c.muted,fontSize=8.sp,fontWeight=FontWeight.Black)
-                            Text(contacts.count{it.online}.toString()+" ONLINE",color=Color(0xFF36D27F),fontSize=8.sp,fontWeight=FontWeight.Black)
-                        }
-                    }
-
-                    Text("COMMUNICATION",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp,modifier=Modifier.padding(top=5.dp))
-                    RsChatDrawerItemV144(c,"All Chats","Overview · live contacts · calls","◆",tab==RsChatHubTabV125.ALL){
-                        tab=RsChatHubTabV125.ALL;slideMenuOpen=false
-                    }
-                    RsChatDrawerItemV144(c,"Private","Direct trainer/student conversation","✦",tab==RsChatHubTabV125.PRIVATE){
-                        tab=RsChatHubTabV125.PRIVATE;slideMenuOpen=false
-                    }
-
-                    Text("TEAM SPACES",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp,modifier=Modifier.padding(top=5.dp))
-                    RsChatDrawerItemV144(c,"Fight Groups","Team rooms · media · moderation","◈",tab==RsChatHubTabV125.GROUPS){
-                        tab=RsChatHubTabV125.GROUPS;slideMenuOpen=false
-                    }
-
-                    Text("INTELLIGENCE",color=Color(0xFF58C9FF),fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp,modifier=Modifier.padding(top=5.dp))
-                    RsChatDrawerItemV144(c,"RS AI Trainer","Sofia · Marcus · technique coaching","✧",tab==RsChatHubTabV125.AI,ai=true){
-                        tab=RsChatHubTabV125.AI;slideMenuOpen=false
-                    }
-
-                    Spacer(Modifier.weight(1f))
-                    Surface(
-                        color=Color.Black.copy(alpha=.62f),
-                        shape=RoundedCornerShape(18.dp),
-                        border=BorderStroke(1.dp,c.gold.copy(alpha=.18f)),
-                        modifier=Modifier.fillMaxWidth()
-                    ){
-                        Column(Modifier.padding(11.dp),verticalArrangement=Arrangement.spacedBy(4.dp)){
-                            Text("RS SECURE COMMUNICATION",color=c.bright,fontWeight=FontWeight.Black,fontSize=9.sp)
-                            Text("Private · Groups · Voice · Video · AI",color=c.muted,fontSize=8.sp)
-                        }
-                    }
-                }
-            }
-        }
         }
     }
 }
@@ -536,5 +459,17 @@ fun RsFloatingGlassChatHubV125(
             }
         }
         }
+        RsChatSlideMenuV144(
+            c=c,
+            role=role,
+            onlineCount=contacts.count{it.online},
+            visible=slideMenuOpen,
+            selected=tab.name,
+            onClose={slideMenuOpen=false},
+            onAll={tab=RsChatHubTabV125.ALL;slideMenuOpen=false},
+            onPrivate={tab=RsChatHubTabV125.PRIVATE;slideMenuOpen=false},
+            onGroups={tab=RsChatHubTabV125.GROUPS;slideMenuOpen=false},
+            onAi={tab=RsChatHubTabV125.AI;slideMenuOpen=false}
+        )
     }
 }
