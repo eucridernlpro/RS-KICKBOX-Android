@@ -153,7 +153,7 @@ fun RsNotificationBellV156(
                                                 }
                                             ){
                                                 Box(contentAlignment=Alignment.Center){
-                                                    Text(if(call.callType=="VIDEO")"▣" else "☎",color=c.bright,fontSize=16.sp)
+                                                    Text(if(call.callType=="VIDEO")"📹" else "☎",color=c.bright,fontSize=16.sp)
                                                 }
                                             }
                                             Column(
