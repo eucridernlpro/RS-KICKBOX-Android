@@ -11,7 +11,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         applyIncomingCallWindow(intent)
         RsSupabaseV60.client?.handleDeeplinks(intent)
-        setContent { RsKickboxV21App(intent?.dataString) }
+        val restoredFromAndroidState=savedInstanceState!=null
+        setContent { RsKickboxV21App(intent?.dataString,skipIntroOnRestore=restoredFromAndroidState) }
     }
 
     override fun onNewIntent(intent: Intent) {
