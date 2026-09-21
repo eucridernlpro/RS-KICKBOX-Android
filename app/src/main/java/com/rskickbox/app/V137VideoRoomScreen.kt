@@ -150,6 +150,8 @@ fun RsVideoRoomScreenV137(
     var featuredId by remember(room.roomId){mutableStateOf<String?>(null)}
     var micOn by remember(room.roomId){mutableStateOf(true)}
     var cameraOn by remember(room.roomId){mutableStateOf(true)}
+    var speakerOn by remember(room.roomId){mutableStateOf(true)}
+    var gridMode by remember(room.roomId){mutableStateOf(true)}
     var permissionsReady by remember(room.roomId){mutableStateOf(false)}
     var status by remember(room.roomId){mutableStateOf("")}
     val audioManager=remember{context.getSystemService(Context.AUDIO_SERVICE) as AudioManager}
@@ -188,7 +190,7 @@ fun RsVideoRoomScreenV137(
         if(permissionsReady){
             audioManager.mode=AudioManager.MODE_IN_COMMUNICATION
             @Suppress("DEPRECATION")
-            audioManager.isSpeakerphoneOn=true
+            audioManager.isSpeakerphoneOn=speakerOn
             engine.start()
         }
     }
@@ -222,9 +224,9 @@ fun RsVideoRoomScreenV137(
         }
     }
 
-    val hostMember=members.firstOrNull{it.memberRole=="HOST"}
-    val joinedStudents=members.filter{it.memberRole=="STUDENT"&&it.memberStatus=="JOINED"}
-    val featured=members.firstOrNull{it.userId==featuredId}
+    val joinedMembers=members.filter{it.memberStatus=="JOINED"}
+    val remoteMembers=joinedMembers.filter{it.userId!=myId}
+    val featured=remoteMembers.firstOrNull{it.userId==featuredId}
 
     Dialog(
         onDismissRequest={},
@@ -242,10 +244,7 @@ fun RsVideoRoomScreenV137(
                         color=Color.White,fontWeight=FontWeight.Black,fontSize=16.sp
                     )
                     Text(
-                        if(isHost)
-                            joinedStudents.size.toString()+" joined · "+members.count{it.online}.toString()+" online"
-                        else
-                            "Trainer-hosted RS video session",
+                        joinedMembers.size.toString()+" joined · "+members.count{it.online}.toString()+" online",
                         color=c.muted,fontSize=9.sp
                     )
                 }
@@ -268,47 +267,90 @@ fun RsVideoRoomScreenV137(
                         Text("CAMERA + MICROPHONE",color=c.gold,fontWeight=FontWeight.Black)
                         Text(status.ifBlank{"Waiting for permission…"},color=c.muted,fontSize=10.sp)
                     }
-                }else if(isHost){
-                    if(featured!=null){
+                }else{
+                    if(featured!=null && !gridMode){
                         RsRoomRemoteVideoV137(
                             c,engine,featured,peerStates[featured.userId].orEmpty(),
                             modifier=Modifier.fillMaxSize(),
-                            onClick={featuredId=null}
+                            onClick={featuredId=null;gridMode=true}
                         )
-                    }else if(joinedStudents.isEmpty()){
+                    }else if(remoteMembers.isEmpty()){
                         Column(
                             Modifier.align(Alignment.Center),
                             horizontalAlignment=Alignment.CenterHorizontally,
                             verticalArrangement=Arrangement.spacedBy(10.dp)
                         ){
-                            Text("WAITING FOR STUDENTS",color=c.gold,fontWeight=FontWeight.Black,fontSize=14.sp)
+                            Surface(
+                                color=c.gold.copy(alpha=.08f),
+                                shape=CircleShape,
+                                border=BorderStroke(1.dp,c.gold.copy(alpha=.30f)),
+                                modifier=Modifier.size(104.dp)
+                            ){
+                                Box(contentAlignment=Alignment.Center){
+                                    Text("♛\nRS",color=c.bright,fontWeight=FontWeight.Black,fontSize=24.sp)
+                                }
+                            }
+                            Text("WAITING FOR PARTICIPANTS",color=c.gold,fontWeight=FontWeight.Black,fontSize=13.sp)
                             Text(
-                                "Invited students will appear here when they join.",
+                                "Joined members will appear here automatically.",
                                 color=c.muted,fontSize=10.sp
                             )
                         }
                     }else{
+                        val columns=when{
+                            remoteMembers.size<=1->1
+                            remoteMembers.size<=4->2
+                            else->3
+                        }
                         LazyVerticalGrid(
-                            columns=GridCells.Fixed(if(joinedStudents.size<=2)1 else 2),
+                            columns=GridCells.Fixed(columns),
                             modifier=Modifier.fillMaxSize(),
-                            verticalArrangement=Arrangement.spacedBy(6.dp),
-                            horizontalArrangement=Arrangement.spacedBy(6.dp)
+                            verticalArrangement=Arrangement.spacedBy(7.dp),
+                            horizontalArrangement=Arrangement.spacedBy(7.dp)
                         ){
-                            items(joinedStudents,key={it.userId}){member->
-                                RsRoomRemoteVideoV137(
-                                    c,engine,member,peerStates[member.userId].orEmpty(),
-                                    modifier=Modifier.fillMaxWidth().height(if(joinedStudents.size<=2)260.dp else 190.dp),
-                                    onClick={featuredId=member.userId}
-                                )
+                            items(remoteMembers,key={it.userId}){member->
+                                Surface(
+                                    color=Color.Black,
+                                    shape=RoundedCornerShape(22.dp),
+                                    border=BorderStroke(
+                                        1.dp,
+                                        if(member.memberRole=="HOST")c.gold.copy(alpha=.65f)
+                                        else c.gold.copy(alpha=.28f)
+                                    ),
+                                    tonalElevation=10.dp,
+                                    modifier=Modifier.fillMaxWidth()
+                                        .height(
+                                            when{
+                                                remoteMembers.size==1->420.dp
+                                                remoteMembers.size<=4->245.dp
+                                                else->180.dp
+                                            }
+                                        )
+                                ){
+                                    Box(Modifier.fillMaxSize()){
+                                        RsRoomRemoteVideoV137(
+                                            c,engine,member,peerStates[member.userId].orEmpty(),
+                                            modifier=Modifier.fillMaxSize(),
+                                            onClick={featuredId=member.userId;gridMode=false}
+                                        )
+                                        Surface(
+                                            color=Color.Black.copy(alpha=.60f),
+                                            shape=RoundedCornerShape(12.dp),
+                                            border=BorderStroke(1.dp,c.gold.copy(alpha=.22f)),
+                                            modifier=Modifier.align(Alignment.TopStart).padding(8.dp)
+                                        ){
+                                            Text(
+                                                if(member.memberRole=="HOST")"♛ TRAINER" else "RS MEMBER",
+                                                color=if(member.memberRole=="HOST")c.bright else Color.White,
+                                                fontSize=7.sp,
+                                                fontWeight=FontWeight.Black,
+                                                modifier=Modifier.padding(horizontal=7.dp,vertical=4.dp)
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
-                    }
-                }else{
-                    if(hostMember!=null){
-                        RsRoomRemoteVideoV137(
-                            c,engine,hostMember,peerStates[hostMember.userId].orEmpty(),
-                            modifier=Modifier.fillMaxSize()
-                        )
                     }
                 }
 
@@ -360,40 +402,84 @@ fun RsVideoRoomScreenV137(
                 }
             }
 
-            Row(
-                Modifier.fillMaxWidth().background(Color.Black.copy(alpha=.92f)).padding(12.dp),
-                horizontalArrangement=Arrangement.SpaceEvenly,
-                verticalAlignment=Alignment.CenterVertically
+            Column(
+                Modifier.fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Black.copy(alpha=.88f),Color.Black)
+                        )
+                    )
+                    .padding(horizontal=10.dp,vertical=9.dp),
+                verticalArrangement=Arrangement.spacedBy(7.dp)
             ){
-                OutlinedButton(
-                    onClick={micOn=!micOn;engine.setMicEnabled(micOn)},
-                    modifier=Modifier.size(50.dp),
-                    shape=CircleShape,
-                    contentPadding=PaddingValues(0.dp)
-                ){Text(if(micOn)"🎙" else "🔇")}
-                OutlinedButton(
-                    onClick={cameraOn=!cameraOn;engine.setCameraEnabled(cameraOn)},
-                    modifier=Modifier.size(50.dp),
-                    shape=CircleShape,
-                    contentPadding=PaddingValues(0.dp)
-                ){Text(if(cameraOn)"▣" else "□")}
-                OutlinedButton(
-                    onClick={engine.switchCamera()},
-                    modifier=Modifier.size(50.dp),
-                    shape=CircleShape,
-                    contentPadding=PaddingValues(0.dp)
-                ){Text("↻",fontSize=20.sp)}
-                Button(
-                    onClick={
-                        scope.launch{
-                            rsSetVideoRoomStatusV136(room.roomId,if(isHost)"ENDED" else "LEFT")
-                            onClosed()
-                        }
-                    },
-                    modifier=Modifier.height(50.dp),
-                    colors=ButtonDefaults.buttonColors(containerColor=Color(0xFF8D2020))
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.SpaceEvenly,
+                    verticalAlignment=Alignment.CenterVertically
                 ){
-                    Text(if(isHost)"End Session" else "Leave",fontWeight=FontWeight.Black)
+                    OutlinedButton(
+                        onClick={micOn=!micOn;engine.setMicEnabled(micOn)},
+                        modifier=Modifier.size(48.dp),
+                        shape=CircleShape,
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text(if(micOn)"🎙" else "🔇")}
+                    OutlinedButton(
+                        onClick={cameraOn=!cameraOn;engine.setCameraEnabled(cameraOn)},
+                        modifier=Modifier.size(48.dp),
+                        shape=CircleShape,
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text(if(cameraOn)"▣" else "□")}
+                    OutlinedButton(
+                        onClick={
+                            speakerOn=!speakerOn
+                            @Suppress("DEPRECATION")
+                            audioManager.isSpeakerphoneOn=speakerOn
+                        },
+                        modifier=Modifier.size(48.dp),
+                        shape=CircleShape,
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text(if(speakerOn)"🔊" else "🔈")}
+                    OutlinedButton(
+                        onClick={engine.switchCamera()},
+                        modifier=Modifier.size(48.dp),
+                        shape=CircleShape,
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text("↻",fontSize=20.sp)}
+                    OutlinedButton(
+                        onClick={
+                            gridMode=!gridMode
+                            if(gridMode)featuredId=null
+                            else if(featuredId==null)featuredId=remoteMembers.firstOrNull()?.userId
+                        },
+                        modifier=Modifier.size(48.dp),
+                        shape=CircleShape,
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text(if(gridMode)"▦" else "▣",fontSize=18.sp)}
+                }
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.SpaceBetween,
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    Text(
+                        "♛  RS GROUP VIDEO · "+joinedMembers.size+" LIVE",
+                        color=c.gold,
+                        fontSize=8.sp,
+                        fontWeight=FontWeight.Black
+                    )
+                    Button(
+                        onClick={
+                            scope.launch{
+                                rsSetVideoRoomStatusV136(room.roomId,if(isHost)"ENDED" else "LEFT")
+                                onClosed()
+                            }
+                        },
+                        modifier=Modifier.height(44.dp),
+                        colors=ButtonDefaults.buttonColors(containerColor=Color(0xFF8D2020))
+                    ){
+                        Text(if(isHost)"End Session" else "Leave",fontWeight=FontWeight.Black)
+                    }
                 }
             }
         }
