@@ -100,7 +100,9 @@ fun RsDirectCallControlsV133(
     role:RsRole,
     peerId:String,
     peerName:String,
-    peerEmail:String=""
+    peerEmail:String="",
+    allowAudio:Boolean=true,
+    allowVideo:Boolean=true
 ){
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
@@ -253,12 +255,12 @@ fun RsDirectCallControlsV133(
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                     OutlinedButton(
                         onClick={requestAndCall("AUDIO")},
-                        enabled=resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline,
+                        enabled=allowAudio&&resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline,
                         modifier=Modifier.weight(1f)
                     ){Text("☎  "+rsCallT133(lang,"audio"),fontSize=10.sp)}
                     OutlinedButton(
                         onClick={requestAndCall("VIDEO")},
-                        enabled=resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline,
+                        enabled=allowVideo&&resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline,
                         modifier=Modifier.weight(1f)
                     ){Text("▣  "+rsCallT133(lang,"video"),fontSize=10.sp)}
                 }
