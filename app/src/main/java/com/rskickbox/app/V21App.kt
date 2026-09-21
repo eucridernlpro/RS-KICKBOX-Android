@@ -79,18 +79,17 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     }
     val c = paletteFor(theme)
 
-    LaunchedEffect(Unit){
-        if(RsSupabaseV60.configured){
+    LaunchedEffect(introDone){
+        if(introDone && RsSupabaseV60.configured){
             rsSyncCloudBrandV100(store)
                 .onSuccess{settings->
                     theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
-                    introDone=RsRuntimeV108.introShownThisProcess || !settings.introEnabled || (!settings.introEveryLaunch && store.b("intro_seen",false))
                     brandRevision++
                 }
             rsSyncCloudVisualAssetsV101(context,store)
                 .onSuccess{brandRevision++}
             brandAssetsRestoring=false
-        }else{
+        }else if(introDone){
             brandAssetsRestoring=false
         }
     }
@@ -165,8 +164,8 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         }
     }
 
-    LaunchedEffect(role){
-        if(role!=null && RsSupabaseV60.configured){
+    LaunchedEffect(role,introDone){
+        if(introDone && role!=null && RsSupabaseV60.configured){
             RsCallMonitorServiceV134.start(context)
             if(
                 android.os.Build.VERSION.SDK_INT>=33 &&
@@ -182,8 +181,8 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         }
     }
 
-    LaunchedEffect(role){
-        if(role!=null && RsSupabaseV60.configured){
+    LaunchedEffect(role,introDone){
+        if(introDone && role!=null && RsSupabaseV60.configured){
             rsSyncCloudControlsV82(store)
                 .onSuccess{
                     cloudControlsRevision++
@@ -202,8 +201,8 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         }
     }
 
-    LaunchedEffect(role){
-        if(role==null && RsSupabaseV60.configured){
+    LaunchedEffect(role,introDone){
+        if(introDone && role==null && RsSupabaseV60.configured){
             rsSyncCloudBrandV100(store).onSuccess{settings->
                 theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
                 brandRevision++
@@ -212,8 +211,8 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         }
     }
 
-    LaunchedEffect(Unit){
-        if(RsSupabaseV60.configured){
+    LaunchedEffect(introDone){
+        if(introDone && RsSupabaseV60.configured){
             while(true){
                 kotlinx.coroutines.delay(60_000)
                 rsSyncCloudBrandV100(store).onSuccess{settings->
@@ -225,8 +224,8 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         }
     }
 
-    LaunchedEffect(role){
-        if(role!=null && RsSupabaseV60.configured){
+    LaunchedEffect(role,introDone){
+        if(introDone && role!=null && RsSupabaseV60.configured){
             while(true){
                 rsTouchPresenceV125()
                 delay(45_000)
@@ -237,7 +236,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     val lifecycleOwner=LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner){
         val observer=LifecycleEventObserver{_,event->
-            if(event==Lifecycle.Event.ON_RESUME && RsSupabaseV60.configured){
+            if(event==Lifecycle.Event.ON_RESUME && introDone && RsSupabaseV60.configured){
                 appScope.launch{
                     rsSyncCloudBrandV100(store).onSuccess{settings->
                         theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
