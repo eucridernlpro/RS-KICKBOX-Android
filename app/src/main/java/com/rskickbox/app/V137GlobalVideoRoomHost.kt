@@ -19,6 +19,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+private fun rsVideoRoomFriendlyErrorV151(message:String):String{
+    val m=message.lowercase()
+    return when{
+        "permission denied" in m || "42501" in m ->
+            "Video rooms need the latest RS backend update. Ask the trainer/admin to run the video-room permission repair."
+        "network" in m || "timeout" in m ->
+            "Video room connection is temporarily unavailable. Check your internet connection and try again."
+        else->"Video room is temporarily unavailable."
+    }
+}
+
 @Composable
 fun RsGlobalVideoRoomHostV137(
     c:RsPalette,
@@ -42,7 +53,7 @@ fun RsGlobalVideoRoomHostV137(
                         it.roomStatus=="OPEN"&&it.myRole=="STUDENT"&&it.myStatus=="INVITED"
                     }else null
                 }
-                .onFailure{status=it.message.orEmpty()}
+                .onFailure{status=rsVideoRoomFriendlyErrorV151(it.message.orEmpty())}
             delay(1200)
         }
     }
