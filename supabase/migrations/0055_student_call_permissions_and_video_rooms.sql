@@ -240,18 +240,12 @@ using(
 drop policy if exists "rs_video_room_members_read" on public.rs_video_room_members;
 create policy "rs_video_room_members_read"
 on public.rs_video_room_members for select to authenticated
-using(
-    exists(select 1 from public.rs_video_room_members me
-           where me.room_id=room_id and me.user_id=(select auth.uid()))
-);
+using(user_id=(select auth.uid()));
 
 drop policy if exists "rs_video_room_signals_read" on public.rs_video_room_signals;
 create policy "rs_video_room_signals_read"
 on public.rs_video_room_signals for select to authenticated
-using(
-    exists(select 1 from public.rs_video_room_members me
-           where me.room_id=room_id and me.user_id=(select auth.uid()))
-);
+using(sender_id=(select auth.uid()) or target_id=(select auth.uid()));
 
 create or replace function public.rs_create_video_room(
     p_title text,
@@ -289,11 +283,19 @@ begin
     values(v_room,v_uid,'HOST','JOINED',now());
 
     foreach v_student in array p_student_ids loop
-        if exists(select 1 from public.rs_profiles s where s.id=v_student and s.active=true and s.role='student') then
-            insert into public.rs_video_room_members(room_id,user_id,role,status)
-            values(v_room,v_student,'STUDENT','INVITED')
-            on conflict do nothing;
+        if not exists(
+            select 1 from public.rs_profiles s
+            where s.id=v_student
+              and s.active=true
+              and s.role='student'
+              and s.last_seen_at>now()-interval '2 minutes'
+        ) then
+            raise exception 'all selected students must still be online' using errcode='P0001';
         end if;
+
+        insert into public.rs_video_room_members(room_id,user_id,role,status)
+        values(v_room,v_student,'STUDENT','INVITED')
+        on conflict do nothing;
     end loop;
 
     return v_room;
