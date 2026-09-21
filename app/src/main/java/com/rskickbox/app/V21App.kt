@@ -173,7 +173,12 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
     }
 
     LaunchedEffect(role,introDone){
-        if(introDone && role!=null && RsSupabaseV60.configured){
+        val backgroundCallIdentityAvailable=
+            store.b("background_calls_enabled",true) &&
+            !store.s("background_call_role","").isBlank() &&
+            rsSupabaseClientV60()?.auth?.currentUserOrNull()!=null
+
+        if(introDone && RsSupabaseV60.configured && (role!=null || backgroundCallIdentityAvailable)){
             RsCallMonitorServiceV134.start(context)
             if(
                 android.os.Build.VERSION.SDK_INT>=33 &&
@@ -323,9 +328,14 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
                                 passwordRecoveryLaunch=false
                                 role=null
                                 route="home"
+                                preLoginStage=RsPreLoginStageV147.LOGIN
                                 store.ps("session_last_route","")
                                 store.ps("session_password_auth_ms","0")
-                                appScope.launch { rsCloudLogoutV63() }
+                                // Lock the application UI but retain the authenticated
+                                // device identity so incoming calls can still be routed.
+                                // Full account sign-out remains available from privacy/settings.
+                                store.pb("background_calls_enabled",true)
+                                RsCallMonitorServiceV134.start(context)
                             }) {
                                 when(route) {
                                     "home", "trainer" -> RsPremiumDashboardV21(c, store, active, lang) { route=it }
@@ -467,7 +477,10 @@ private fun LoginV21(
         store.ps("last_login_email",session.email)
         store.ps("session_student_name",session.displayName)
         store.ps("session_plan",session.plan)
-        store.ps("session_role",if(session.role==RsRole.TRAINER)"trainer" else "student")
+        val roleName=if(session.role==RsRole.TRAINER)"trainer" else "student"
+        store.ps("session_role",roleName)
+        store.ps("background_call_role",roleName)
+        store.pb("background_calls_enabled",true)
         store.ps("session_password_auth_ms",System.currentTimeMillis().toString())
         statusIsError=false
         status="✓ "+rsEnrollMsg(lang,"welcome",name=session.displayName)
