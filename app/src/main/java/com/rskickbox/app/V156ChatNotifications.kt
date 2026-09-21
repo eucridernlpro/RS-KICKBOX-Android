@@ -84,7 +84,7 @@ fun RsChatNotificationsV156(c:RsPalette,lang:RsLang){
                                 color=c.gold.copy(alpha=.10f),
                                 border=BorderStroke(1.dp,c.gold.copy(alpha=.30f)),
                                 modifier=Modifier.size(42.dp)
-                            ){Box(contentAlignment=Alignment.Center){Text(if(call.callType=="VIDEO")"▣" else "☎",color=c.bright,fontSize=17.sp)}}
+                            ){Box(contentAlignment=Alignment.Center){Text(if(call.callType=="VIDEO")"📹" else "☎",color=c.bright,fontSize=17.sp)}}
                             Column(Modifier.weight(1f)){
                                 Text(call.peerName.ifBlank{call.peerEmail},color=c.bright,fontWeight=FontWeight.Black,fontSize=12.sp)
                                 Text(
