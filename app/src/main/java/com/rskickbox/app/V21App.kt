@@ -73,7 +73,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
     var brandAssetsRestoring by remember { mutableStateOf(false) }
     var lang by remember { mutableStateOf(rsInitialLanguageV111(store)) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
-    var introDone by remember { mutableStateOf(localSessionFresh || RsRuntimeV108.introShownThisProcess || !store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
+    var introDone by remember { mutableStateOf(RsRuntimeV108.introShownThisProcess || !store.b("intro_enabled", true) || (!store.b("intro_every_launch", true) && store.b("intro_seen", false))) }
     var passwordRecoveryLaunch by remember(initialAuthDeepLink){
         mutableStateOf(initialAuthDeepLink?.startsWith("rskickbox://auth-callback",ignoreCase=true)==true)
     }
@@ -84,7 +84,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
             rsSyncCloudBrandV100(store)
                 .onSuccess{settings->
                     theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
-                    introDone=localSessionFresh || RsRuntimeV108.introShownThisProcess || !settings.introEnabled || (!settings.introEveryLaunch && store.b("intro_seen",false))
+                    introDone=RsRuntimeV108.introShownThisProcess || !settings.introEnabled || (!settings.introEveryLaunch && store.b("intro_seen",false))
                     brandRevision++
                 }
             rsSyncCloudVisualAssetsV101(context,store)
