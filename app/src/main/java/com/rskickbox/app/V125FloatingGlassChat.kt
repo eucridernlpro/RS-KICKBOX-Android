@@ -238,6 +238,15 @@ fun RsFloatingGlassChatHubV125(
     var searchQuery by remember{mutableStateOf("")}
     var slideMenuOpen by remember{mutableStateOf(false)}
 
+    LaunchedEffect(Unit){
+        val pending=store.s("chat_open_peer_id_v156","").trim()
+        if(pending.isNotBlank()){
+            privateStudentId=pending
+            tab=RsChatHubTabV125.PRIVATE
+            store.ps("chat_open_peer_id_v156","")
+        }
+    }
+
     LaunchedEffect(role,presenceRevision){
         if(RsSupabaseV60.configured){
             rsTouchPresenceV125()
@@ -321,6 +330,16 @@ fun RsFloatingGlassChatHubV125(
                                 compact=true
                             )
                         }
+                        RsNotificationBellV156(
+                            c=c,
+                            store=store,
+                            lang=lang,
+                            onOpenCall={peerId->
+                                privateStudentId=peerId
+                                tab=RsChatHubTabV125.PRIVATE
+                            },
+                            onOpenNotifications={tab=RsChatHubTabV125.NOTIFICATIONS}
+                        )
                     }
                     Row(
                         Modifier.fillMaxWidth(),
