@@ -43,6 +43,29 @@ begin
 end;
 $$;
 
+create or replace function public.rs_edit_coach_message(p_message_id uuid,p_body text)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $
+declare
+  v_uid uuid:=(select auth.uid());
+  v_sender uuid;
+  v_clean text:=trim(coalesce(p_body,''));
+begin
+  if length(v_clean)<1 or length(v_clean)>1200 then
+    raise exception 'message must contain 1 to 1200 characters' using errcode='22023';
+  end if;
+  select sender_id into v_sender from public.rs_coach_messages where id=p_message_id;
+  if v_sender is null then raise exception 'message not found' using errcode='P0002'; end if;
+  if v_sender<>v_uid and not (select private.rs_is_staff()) then
+    raise exception 'only the sender or staff may edit this message' using errcode='42501';
+  end if;
+  update public.rs_coach_messages set body=v_clean where id=p_message_id;
+end;
+$;
+
 create or replace function public.rs_delete_coach_message_for_everyone(p_message_id uuid)
 returns void
 language plpgsql
@@ -186,11 +209,13 @@ as $$
 $$;
 
 revoke all on function public.rs_hide_coach_message(uuid) from public,anon;
+revoke all on function public.rs_edit_coach_message(uuid,text) from public,anon;
 revoke all on function public.rs_delete_coach_message_for_everyone(uuid) from public,anon;
 revoke all on function public.rs_coach_thread_messages_v3(uuid) from public,anon;
 revoke all on function public.rs_send_coach_message_v3(uuid,text,text,text,text,uuid) from public,anon;
 revoke all on function public.rs_call_history() from public,anon;
 grant execute on function public.rs_hide_coach_message(uuid) to authenticated;
+grant execute on function public.rs_edit_coach_message(uuid,text) to authenticated;
 grant execute on function public.rs_delete_coach_message_for_everyone(uuid) to authenticated;
 grant execute on function public.rs_coach_thread_messages_v3(uuid) to authenticated;
 grant execute on function public.rs_send_coach_message_v3(uuid,text,text,text,text,uuid) to authenticated;
