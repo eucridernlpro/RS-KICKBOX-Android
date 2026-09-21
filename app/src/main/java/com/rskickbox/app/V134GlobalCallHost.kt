@@ -43,7 +43,8 @@ fun rsCancelIncomingCallNotificationV134(context:Context,callId:String){
 fun RsGlobalCallHostV134(
     c:RsPalette,
     lang:RsLang,
-    role:RsRole
+    role:RsRole,
+    onCallSessionFinished:(()->Unit)?=null
 ){
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
@@ -183,6 +184,7 @@ fun RsGlobalCallHostV134(
                                         rsSetCallStatusV131(call.id,"DECLINED")
                                         rsCancelIncomingCallNotificationV134(context,call.id)
                                         incoming=null
+                                        onCallSessionFinished?.invoke()
                                     }
                                 }
                             ){
@@ -233,6 +235,7 @@ fun RsGlobalCallHostV134(
         RsActiveCallDialogV133(c,lang,call,myId){
             rsCancelIncomingCallNotificationV134(context,call.id)
             accepted=null
+            onCallSessionFinished?.invoke()
         }
     }
 }
