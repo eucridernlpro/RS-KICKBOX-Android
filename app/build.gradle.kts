@@ -25,13 +25,19 @@ android {
         applicationId = "com.rskickbox.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 142
-        versionName = "0.141.0"
+        versionCode = 143
+        versionName = "0.142.0"
         buildConfigField("String", "SUPABASE_URL", "\""+rsSupabaseUrl.replace("\\","\\\\").replace("\"","\\\"")+"\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\""+rsSupabasePublishableKey.replace("\\","\\\\").replace("\"","\\\"")+"\"")
     }
 
     signingConfigs {
+        getByName("debug") {
+            storeFile = file(System.getProperty("user.home")+"/.android/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (rsReleaseSigningReady) {
             create("release") {
                 storeFile = file(rsReleaseStoreFile)
@@ -43,6 +49,9 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         getByName("release") {
             isMinifyEnabled = false
             if (rsReleaseSigningReady) {
