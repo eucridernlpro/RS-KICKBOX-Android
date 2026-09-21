@@ -107,7 +107,8 @@ fun RsDirectCallControlsV133(
     peerName:String,
     peerEmail:String="",
     allowAudio:Boolean=true,
-    allowVideo:Boolean=true
+    allowVideo:Boolean=true,
+    compact:Boolean=false
 ){
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
@@ -219,6 +220,29 @@ fun RsDirectCallControlsV133(
     }
 
     val call=active
+    if(compact){
+        Row(horizontalArrangement=Arrangement.spacedBy(7.dp),verticalAlignment=Alignment.CenterVertically){
+            Surface(
+                color=Color.Transparent,
+                shape=CircleShape,
+                border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.48f)),
+                shadowElevation=10.dp,
+                modifier=Modifier.size(39.dp).clickable(
+                    enabled=allowAudio&&resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline
+                ){requestAndCall("AUDIO")}
+            ){Box(contentAlignment=Alignment.Center){Text("☎",color=c.bright,fontSize=17.sp,fontWeight=FontWeight.Black)}}
+            Surface(
+                color=Color.Transparent,
+                shape=CircleShape,
+                border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.48f)),
+                shadowElevation=10.dp,
+                modifier=Modifier.size(39.dp).clickable(
+                    enabled=allowVideo&&resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline
+                ){requestAndCall("VIDEO")}
+            ){Box(contentAlignment=Alignment.Center){Text("▣",color=c.bright,fontSize=16.sp,fontWeight=FontWeight.Black)}}
+        }
+        return
+    }
     Surface(
         color=c.panel.copy(alpha=.55f),
         shape=RoundedCornerShape(20.dp),
