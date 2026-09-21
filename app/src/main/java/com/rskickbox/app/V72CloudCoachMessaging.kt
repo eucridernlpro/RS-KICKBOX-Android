@@ -134,3 +134,18 @@ suspend fun rsCallHistoryV156():Result<List<RsCallHistoryV156>> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     client.postgrest.rpc("rs_call_history").decodeList<RsCallHistoryV156>()
 }
+
+
+suspend fun rsEditCoachMessageV156(messageId:String,body:String):Result<Unit> = runCatching{
+    val clean=body.trim()
+    require(clean.isNotBlank()){"Message cannot be empty."}
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc(
+        "rs_edit_coach_message",
+        buildJsonObject{
+            put("p_message_id",messageId)
+            put("p_body",clean)
+        }
+    )
+    Unit
+}
