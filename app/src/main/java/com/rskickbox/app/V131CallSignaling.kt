@@ -57,7 +57,7 @@ data class RsCallSignalV131(
 
 suspend fun rsStartDirectCallV131(peerId:String,type:String):Result<String> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
-    client.postgrest.rpc(
+    val callId=client.postgrest.rpc(
         "rs_start_direct_call",
         buildJsonObject{
             put("p_peer_id",peerId)
@@ -65,6 +65,8 @@ suspend fun rsStartDirectCallV131(peerId:String,type:String):Result<String> = ru
         }
     ).decodeList<RsCallIdV131>().firstOrNull()?.callId
         ?:error("Call could not be started.")
+    rsSendCallPushV155(callId)
+    callId
 }
 
 suspend fun rsCallInboxV131():Result<List<RsCallV131>> = runCatching{
