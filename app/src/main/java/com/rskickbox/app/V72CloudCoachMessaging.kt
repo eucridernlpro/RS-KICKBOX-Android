@@ -24,10 +24,13 @@ data class RsCloudCoachMessageV72(
     @SerialName("student_email") val studentEmail:String,
     @SerialName("student_name") val studentName:String,
     @SerialName("sender_role") val senderRole:String,
+    @SerialName("sender_id") val senderId:String="",
     val body:String,
     @SerialName("media_path") val mediaPath:String?=null,
     @SerialName("media_kind") val mediaKind:String?=null,
     @SerialName("media_name") val mediaName:String?=null,
+    @SerialName("reply_to") val replyTo:String?=null,
+    @SerialName("reply_body") val replyBody:String?=null,
     @SerialName("created_at") val createdAt:String
 ){
     fun createdAtMillis():Long=runCatching{Instant.parse(createdAt).toEpochMilli()}.getOrDefault(0L)
@@ -63,13 +66,14 @@ suspend fun rsCloudMyStudentIdV72():Result<String> = runCatching{
 suspend fun rsCloudSendCoachMessageV72(
     studentId:String,
     body:String,
-    attachment:RsChatAttachmentV92?=null
+    attachment:RsChatAttachmentV92?=null,
+    replyTo:String?=null
 ):Result<Unit> = runCatching{
     val clean=body.trim()
     require(clean.isNotBlank()||attachment!=null){"Write a message or add an attachment."}
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     client.postgrest.rpc(
-        "rs_send_coach_message_v2",
+        "rs_send_coach_message_v3",
         buildJsonObject{
             put("p_student_id",studentId)
             put("p_body",clean)
@@ -82,6 +86,8 @@ suspend fun rsCloudSendCoachMessageV72(
                 put("p_media_kind",attachment.kind)
                 put("p_media_name",attachment.name)
             }
+            if(replyTo.isNullOrBlank())put("p_reply_to",kotlinx.serialization.json.JsonNull)
+            else put("p_reply_to",replyTo)
         }
     )
     Unit
@@ -94,4 +100,37 @@ suspend fun rsCloudMarkCoachReadV72(studentId:String):Result<Unit> = runCatching
         buildJsonObject{put("p_student_id",studentId)}
     )
     Unit
+}
+
+
+suspend fun rsHideCoachMessageV156(messageId:String):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc("rs_hide_coach_message",buildJsonObject{put("p_message_id",messageId)})
+    Unit
+}
+
+suspend fun rsDeleteCoachMessageForEveryoneV156(messageId:String,mediaPath:String?):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc("rs_delete_coach_message_for_everyone",buildJsonObject{put("p_message_id",messageId)})
+    if(!mediaPath.isNullOrBlank())runCatching{rsDeleteChatMediaV108(mediaPath)}
+    Unit
+}
+
+@Serializable
+data class RsCallHistoryV156(
+    val id:String,
+    @SerialName("peer_id") val peerId:String,
+    @SerialName("peer_name") val peerName:String,
+    @SerialName("peer_email") val peerEmail:String,
+    @SerialName("call_type") val callType:String,
+    val status:String,
+    val direction:String,
+    @SerialName("created_at") val createdAt:String,
+    @SerialName("answered_at") val answeredAt:String?=null,
+    @SerialName("ended_at") val endedAt:String?=null
+)
+
+suspend fun rsCallHistoryV156():Result<List<RsCallHistoryV156>> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc("rs_call_history").decodeList<RsCallHistoryV156>()
 }
