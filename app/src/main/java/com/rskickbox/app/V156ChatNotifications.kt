@@ -20,7 +20,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private fun rsCallHistoryTimeV156(raw:String):String=runCatching{
+fun rsCallHistoryTimeV156(raw:String):String=runCatching{
     Instant.parse(raw).atZone(ZoneId.systemDefault())
         .format(DateTimeFormatter.ofPattern("dd MMM · HH:mm",Locale.getDefault()))
 }.getOrDefault(raw)
