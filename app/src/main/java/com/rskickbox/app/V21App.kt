@@ -111,8 +111,8 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         }
     }
 
-    LaunchedEffect(introDone,authRestoreAttempted){
-        if(introDone && !authRestoreAttempted){
+    LaunchedEffect(authRestoreAttempted){
+        if(!authRestoreAttempted){
             authRestoreAttempted=true
             if(passwordRecoveryLaunch){
                 role=null
@@ -271,26 +271,11 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
         val currentBrandRevision=brandRevision
         Box(Modifier.fillMaxSize()) {
             when {
-                introPreparing -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
-                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(14.dp)){
-                        androidx.compose.foundation.Image(
-                            painter=androidx.compose.ui.res.painterResource(R.drawable.rs_launcher_royal_v129),
-                            contentDescription="RS KICKBOXING",
-                            modifier=Modifier.size(92.dp)
-                        )
-                        CircularProgressIndicator(color=c.gold)
-                    }
-                }
                 brandAssetsRestoring -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                     Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(10.dp)){
                         CircularProgressIndicator()
                         Text("RS KICKBOXING",color=c.bright,fontWeight=FontWeight.Black)
                     }
-                }
-                !introDone -> RsCinematicIntroV21(c, store, lang) {
-                    RsRuntimeV108.introShownThisProcess=true
-                    store.pb("intro_seen", true)
-                    introDone = true
                 }
                 authRestoring -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                     Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(10.dp)){
@@ -428,6 +413,14 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null) {
             if(role!=null && introDone && !authRestoring){
                 RsGlobalCallHostV134(c,lang,role!!)
                 RsGlobalVideoRoomHostV137(c,lang,role!!)
+            }
+
+            if(!introDone && !authRestoring && !introPreparing){
+                RsCinematicIntroV21(c,store,lang){
+                    RsRuntimeV108.introShownThisProcess=true
+                    store.pb("intro_seen",true)
+                    introDone=true
+                }
             }
         }
         @Suppress("UNUSED_VARIABLE") val keepBrandRevisionObserved=currentBrandRevision
