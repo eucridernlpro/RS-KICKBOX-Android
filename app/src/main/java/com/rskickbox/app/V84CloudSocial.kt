@@ -261,3 +261,18 @@ suspend fun rsRemoveCloudGroupMemberV144(groupId:String,studentId:String):Result
     )
     Unit
 }
+
+
+suspend fun rsGroupThumbnailLocalV144(context:Context,path:String?):Result<String> = runCatching{
+    val clean=path.orEmpty().trim()
+    if(clean.isBlank())return@runCatching ""
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    val ext=clean.substringAfterLast('.', "jpg")
+    val dir=java.io.File(context.cacheDir,"rs_group_artwork").apply{mkdirs()}
+    val file=java.io.File(dir,"group_"+clean.hashCode()+"."+ext)
+    if(!file.exists()||file.length()==0L){
+        val bytes=client.storage.from(RS_GROUP_ART_BUCKET_V144).downloadAuthenticated(clean)
+        file.writeBytes(bytes)
+    }
+    Uri.fromFile(file).toString()
+}
