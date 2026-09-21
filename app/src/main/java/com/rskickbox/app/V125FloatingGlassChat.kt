@@ -316,6 +316,11 @@ fun RsFloatingGlassChatHubV125(
                                     )
                                 )
                             }
+                            RsTrainerCallControlV136(
+                                c=c,
+                                lang=lang,
+                                onRoomCreated={}
+                            )
                             if(presenceError){
                                 RsFloatingGlassPanelV125(c){
                                     Text("Presence will become available after the latest Supabase chat migration is installed.",color=c.muted,fontSize=10.sp)
@@ -367,6 +372,9 @@ fun RsFloatingGlassChatHubV125(
                                         "Sofia / Marcus · technique analysis · spoken coaching · trainer references",
                                         "AI LIVE",ai=true
                                     ){tab=RsChatHubTabV125.AI}
+                                }
+                                item{
+                                    RsStudentAllowedCallsV136(c,lang)
                                 }
                                 item{
                                     Surface(
