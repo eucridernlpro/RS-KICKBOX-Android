@@ -177,7 +177,8 @@ fun RsDirectCallControlsV133(
 
     fun beginCall(type:String){
         if(resolvedPeerId.isBlank())return
-        if(!selfOnline||!peerOnline){status=rsCallT133(lang,"offline_call");return}
+        // FCM can wake the peer even when they are not actively present in the app.
+        // Presence is informative only; it must not block a real call.
         scope.launch{
             status=rsCallT133(lang,"calling")
             rsStartDirectCallV131(resolvedPeerId,type)
@@ -228,7 +229,7 @@ fun RsDirectCallControlsV133(
                 border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.48f)),
                 shadowElevation=10.dp,
                 modifier=Modifier.size(39.dp).clickable(
-                    enabled=allowAudio&&resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline
+                    enabled=allowAudio&&resolvedPeerId.isNotBlank()
                 ){requestAndCall("AUDIO")}
             ){Box(contentAlignment=Alignment.Center){Text("☎",color=c.bright,fontSize=17.sp,fontWeight=FontWeight.Black)}}
             Surface(
@@ -237,7 +238,7 @@ fun RsDirectCallControlsV133(
                 border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.48f)),
                 shadowElevation=10.dp,
                 modifier=Modifier.size(39.dp).clickable(
-                    enabled=allowVideo&&resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline
+                    enabled=allowVideo&&resolvedPeerId.isNotBlank()
                 ){requestAndCall("VIDEO")}
             ){Box(contentAlignment=Alignment.Center){Text("▣",color=c.bright,fontSize=16.sp,fontWeight=FontWeight.Black)}}
         }
@@ -284,16 +285,16 @@ fun RsDirectCallControlsV133(
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                     OutlinedButton(
                         onClick={requestAndCall("AUDIO")},
-                        enabled=allowAudio&&resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline,
+                        enabled=allowAudio&&resolvedPeerId.isNotBlank(),
                         modifier=Modifier.weight(1f)
                     ){Text("☎  "+rsCallT133(lang,"audio"),fontSize=10.sp)}
                     OutlinedButton(
                         onClick={requestAndCall("VIDEO")},
-                        enabled=allowVideo&&resolvedPeerId.isNotBlank()&&selfOnline&&peerOnline,
+                        enabled=allowVideo&&resolvedPeerId.isNotBlank(),
                         modifier=Modifier.weight(1f)
                     ){Text("▣  "+rsCallT133(lang,"video"),fontSize=10.sp)}
                 }
-                if(!selfOnline||!peerOnline)Text(rsCallT133(lang,"offline_call"),color=c.muted,fontSize=9.sp)
+                if(!peerOnline)Text("Push calling ready · recipient may be outside the app",color=c.muted,fontSize=9.sp)
             }else if(call.status=="RINGING"){
                 val incoming=call.calleeId==myId
                 Text(
