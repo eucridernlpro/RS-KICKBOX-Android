@@ -341,6 +341,7 @@ fun RsActiveCallDialogV133(
     }
 
     LaunchedEffect(engine){
+        rsConfigureCallPipV154(context,true,if(isVideo)9 else 1,if(isVideo)16 else 1)
         audioManager.mode=AudioManager.MODE_IN_COMMUNICATION
         @Suppress("DEPRECATION")
         audioManager.isSpeakerphoneOn=speakerOn
@@ -360,6 +361,7 @@ fun RsActiveCallDialogV133(
     }
     DisposableEffect(engine){
         onDispose{
+            rsConfigureCallPipV154(context,false)
             engine.dispose()
             runCatching{
                 @Suppress("DEPRECATION")
@@ -462,6 +464,18 @@ fun RsActiveCallDialogV133(
                     horizontalArrangement=Arrangement.SpaceEvenly,
                     verticalAlignment=Alignment.CenterVertically
                 ){
+                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
+                        Surface(
+                            shape=CircleShape,
+                            color=Color.Black.copy(alpha=.72f),
+                            border=BorderStroke(1.5.dp,c.gold.copy(alpha=.48f)),
+                            tonalElevation=10.dp,
+                            modifier=Modifier.size(58.dp).clickable{
+                                rsEnterCallPipV154(context,if(isVideo)9 else 1,if(isVideo)16 else 1)
+                            }
+                        ){Box(contentAlignment=Alignment.Center){Text("↙",color=c.bright,fontSize=21.sp,fontWeight=FontWeight.Black)}}
+                        Text("MINIMIZE",color=c.bright,fontSize=7.sp,fontWeight=FontWeight.Black)
+                    }
                     fun premiumControl(
                         symbol:String,
                         label:String,
