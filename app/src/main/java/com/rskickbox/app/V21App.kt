@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -103,7 +104,7 @@ fun RsKickboxV21App(initialAuthDeepLink:String?=null,skipIntroOnRestore:Boolean=
             val candidate=if(isTabletStartup && tablet.isNotBlank())tablet else phone
             val parsed=runCatching{android.net.Uri.parse(candidate)}.getOrNull()
             when(parsed?.scheme){
-                "file"->parsed.path?.let(::java.io.File)?.takeIf{it.exists()&&it.length()>1024L}?.let{candidate}.orEmpty()
+                "file"->parsed.path?.let{path->java.io.File(path)}?.takeIf{it.exists()&&it.length()>1024L}?.let{candidate}.orEmpty()
                 "content"->candidate
                 else->""
             }
