@@ -179,7 +179,7 @@ suspend fun rsUploadChatMediaV92(
     scopeId:String
 ):Result<RsChatAttachmentV92> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
-    require(scopeType=="coach"||scopeType=="group"){"Invalid chat scope."}
+    require(scopeType in setOf("coach","group","community","support")){"Invalid chat scope."}
     val mime=context.contentResolver.getType(uri)?.lowercase().orEmpty()
     val name=rsChatFileNameV92(context,uri)
     val lowerName=name.lowercase()
