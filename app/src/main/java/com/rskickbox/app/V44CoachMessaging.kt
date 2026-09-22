@@ -1,5 +1,7 @@
 package com.rskickbox.app
 
+import androidx.activity.compose.BackHandler
+
 import org.json.JSONArray
 import org.json.JSONObject
 import androidx.compose.foundation.BorderStroke
@@ -591,6 +593,13 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang,initialStudentId
         }
     }else{
         val thread=selected!!
+        BackHandler{
+            selected=null
+            status=""
+            messages=emptyList()
+            replyTarget=null
+            revision++
+        }
         Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(7.dp)){
             Row(
                 Modifier.fillMaxWidth().padding(horizontal=4.dp),
