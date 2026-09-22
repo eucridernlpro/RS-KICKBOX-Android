@@ -1,6 +1,21 @@
 -- RS KICKBOXING v0.163 - persistent chat gallery + seven day temporary media cleanup
 -- Safe to run repeatedly. Run after 0060.
 
+-- Add shared media columns before any functions reference them.
+alter table public.rs_community_posts
+    add column if not exists media_path text,
+    add column if not exists media_kind text,
+    add column if not exists media_name text;
+
+alter table public.rs_support_tickets
+    add column if not exists media_path text,
+    add column if not exists media_kind text,
+    add column if not exists media_name text,
+    add column if not exists trainer_media_path text,
+    add column if not exists trainer_media_kind text,
+    add column if not exists trainer_media_name text;
+
+
 create table if not exists public.rs_chat_gallery_items (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
@@ -218,6 +233,17 @@ as $$
               t.student_id=(select auth.uid())
               or (select private.rs_is_staff())
           )
+
+        union
+
+        select distinct t.trainer_media_path
+        from public.rs_support_tickets t
+        where t.trainer_media_path is not null
+          and t.created_at < now()-interval '7 days'
+          and (
+              t.student_id=(select auth.uid())
+              or (select private.rs_is_staff())
+          )
     )
     select v.media_path
     from visible_paths v
@@ -296,6 +322,11 @@ begin
     set media_path=null,media_kind=null,media_name=null
     where media_path=p_media_path
       and created_at < now()-interval '7 days';
+
+    update public.rs_support_tickets
+    set trainer_media_path=null,trainer_media_kind=null,trainer_media_name=null
+    where trainer_media_path=p_media_path
+      and created_at < now()-interval '7 days';
 end;
 $$;
 
@@ -321,7 +352,10 @@ alter table public.rs_community_posts
 alter table public.rs_support_tickets
     add column if not exists media_path text,
     add column if not exists media_kind text,
-    add column if not exists media_name text;
+    add column if not exists media_name text,
+    add column if not exists trainer_media_path text,
+    add column if not exists trainer_media_kind text,
+    add column if not exists trainer_media_name text;
 
 create or replace function public.rs_community_feed_v2()
 returns table(
@@ -334,6 +368,9 @@ returns table(
     media_path text,
     media_kind text,
     media_name text,
+    trainer_media_path text,
+    trainer_media_kind text,
+    trainer_media_name text,
     created_at timestamptz
 )
 language sql
@@ -427,7 +464,9 @@ as $$
     select
         t.id,t.student_id,p.email,p.display_name,
         t.subject,t.message,t.trainer_reply,t.status,
-        t.media_path,t.media_kind,t.media_name,t.created_at
+        t.media_path,t.media_kind,t.media_name,
+        t.trainer_media_path,t.trainer_media_kind,t.trainer_media_name,
+        t.created_at
     from public.rs_support_tickets t
     join public.rs_profiles p on p.id=t.student_id
     where t.student_id=(select auth.uid())
@@ -611,3 +650,54 @@ grant execute on function public.rs_community_feed_v2() to authenticated;
 grant execute on function public.rs_create_community_post_v2(text,text,text,text) to authenticated;
 grant execute on function public.rs_support_feed_v2() to authenticated;
 grant execute on function public.rs_create_support_ticket_v2(text,text,text,text,text) to authenticated;
+
+
+create or replace function public.rs_staff_update_support_ticket_v2(
+    p_ticket_id uuid,
+    p_trainer_reply text,
+    p_status text,
+    p_media_path text default null,
+    p_media_kind text default null,
+    p_media_name text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+    v_student uuid;
+begin
+    if not (select private.rs_is_staff()) then
+        raise exception 'trainer/admin access required' using errcode='42501';
+    end if;
+    if p_status not in ('OPEN','RESOLVED') then
+        raise exception 'invalid support status' using errcode='22023';
+    end if;
+
+    select student_id into v_student
+    from public.rs_support_tickets
+    where id=p_ticket_id;
+
+    if v_student is null then
+        raise exception 'support ticket not found' using errcode='P0002';
+    end if;
+
+    if p_media_path is not null
+       and p_media_path not like ('support/'||v_student::text||'/%') then
+        raise exception 'invalid trainer support media path' using errcode='22023';
+    end if;
+
+    update public.rs_support_tickets
+    set trainer_reply=coalesce(p_trainer_reply,''),
+        status=p_status,
+        trainer_media_path=p_media_path,
+        trainer_media_kind=p_media_kind,
+        trainer_media_name=p_media_name,
+        updated_at=now()
+    where id=p_ticket_id;
+end;
+$$;
+
+revoke all on function public.rs_staff_update_support_ticket_v2(uuid,text,text,text,text,text) from public,anon;
+grant execute on function public.rs_staff_update_support_ticket_v2(uuid,text,text,text,text,text) to authenticated;
