@@ -249,6 +249,8 @@ fun RsFloatingGlassChatHubV125(
     var hubSwipe by remember{mutableFloatStateOf(0f)}
     var hubSwipeStartX by remember{mutableFloatStateOf(Float.MAX_VALUE)}
     var hubSwipeActive by remember{mutableStateOf(false)}
+    val context=LocalContext.current
+    val swipeMenuEnabled=store.b("chat_swipe_menu_v163",true)
 
     fun handleChatBack(){
         when{
@@ -300,7 +302,6 @@ fun RsFloatingGlassChatHubV125(
         }
     }
 
-    val context=LocalContext.current
     val chatVisual=remember(store){rsVisualUriWithBundledFallbackV113(context,store,"coachchat")}
     val chatHeaderVisual=remember(store){rsVisualUriWithBundledFallbackV113(context,store,"header")}
     val selectedContact=remember(contacts,privateStudentId){
@@ -314,7 +315,7 @@ fun RsFloatingGlassChatHubV125(
                     onDragStart={offset->
                         hubSwipe=0f
                         hubSwipeStartX=offset.x
-                        hubSwipeActive=!slideMenuOpen && offset.x<90f
+                        hubSwipeActive=swipeMenuEnabled && !slideMenuOpen && offset.x<90f
                     },
                     onHorizontalDrag={change,amount->
                         if(hubSwipeActive){
