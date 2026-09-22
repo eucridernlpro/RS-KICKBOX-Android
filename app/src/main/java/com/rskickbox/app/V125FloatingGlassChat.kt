@@ -41,6 +41,7 @@ private fun rsInitialChatTabV125(route:String)=when(route){
     "community"->RsChatHubTabV125.COMMUNITY
     "support"->RsChatHubTabV125.SUPPORT
     "gallery"->RsChatHubTabV125.GALLERY
+    "media"->RsChatHubTabV125.GALLERY
     "notifications"->RsChatHubTabV125.NOTIFICATIONS
     else->RsChatHubTabV125.ALL
 }
@@ -245,6 +246,8 @@ fun RsFloatingGlassChatHubV125(
     var menuMessage by remember{mutableStateOf("")}
     val chatScope=rememberCoroutineScope()
     var hubSwipe by remember{mutableFloatStateOf(0f)}
+    var hubSwipeStartX by remember{mutableFloatStateOf(Float.MAX_VALUE)}
+    var hubSwipeActive by remember{mutableStateOf(false)}
 
     fun handleChatBack(){
         when{
@@ -307,17 +310,28 @@ fun RsFloatingGlassChatHubV125(
             .background(Color.Black)
             .pointerInput(slideMenuOpen){
                 detectHorizontalDragGestures(
-                    onDragStart={hubSwipe=0f},
+                    onDragStart={offset->
+                        hubSwipe=0f
+                        hubSwipeStartX=offset.x
+                        hubSwipeActive=!slideMenuOpen && offset.x<90f
+                    },
                     onHorizontalDrag={change,amount->
-                        hubSwipe+=amount
-                        change.consume()
+                        if(hubSwipeActive){
+                            hubSwipe+=amount
+                            change.consume()
+                        }
                     },
                     onDragEnd={
-                        if(!slideMenuOpen && hubSwipe>85f)slideMenuOpen=true
-                        else if(slideMenuOpen && hubSwipe< -85f)slideMenuOpen=false
+                        if(hubSwipeActive && hubSwipe>85f)slideMenuOpen=true
                         hubSwipe=0f
+                        hubSwipeStartX=Float.MAX_VALUE
+                        hubSwipeActive=false
                     },
-                    onDragCancel={hubSwipe=0f}
+                    onDragCancel={
+                        hubSwipe=0f
+                        hubSwipeStartX=Float.MAX_VALUE
+                        hubSwipeActive=false
+                    }
                 )
             }
     ){
