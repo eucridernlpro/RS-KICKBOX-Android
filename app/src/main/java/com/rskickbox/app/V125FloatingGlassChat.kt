@@ -11,6 +11,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -31,12 +33,14 @@ import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private enum class RsChatHubTabV125{ALL,PRIVATE,GROUPS,COMMUNITY,NOTIFICATIONS,AI,SETTINGS}
+private enum class RsChatHubTabV125{ALL,PRIVATE,GROUPS,COMMUNITY,SUPPORT,GALLERY,NOTIFICATIONS,AI,SETTINGS}
 
 private fun rsInitialChatTabV125(route:String)=when(route){
     "groups"->RsChatHubTabV125.GROUPS
     "voice"->RsChatHubTabV125.AI
     "community"->RsChatHubTabV125.COMMUNITY
+    "support"->RsChatHubTabV125.SUPPORT
+    "gallery"->RsChatHubTabV125.GALLERY
     "notifications"->RsChatHubTabV125.NOTIFICATIONS
     else->RsChatHubTabV125.ALL
 }
@@ -240,6 +244,7 @@ fun RsFloatingGlassChatHubV125(
     var confirmClearChat by remember{mutableStateOf(false)}
     var menuMessage by remember{mutableStateOf("")}
     val chatScope=rememberCoroutineScope()
+    var hubSwipe by remember{mutableFloatStateOf(0f)}
 
     fun handleChatBack(){
         when{
@@ -257,6 +262,7 @@ fun RsFloatingGlassChatHubV125(
     BackHandler{handleChatBack()}
 
     LaunchedEffect(Unit){
+        if(RsSupabaseV60.configured)rsCleanupExpiredChatMediaV163()
         val pending=store.s("chat_open_peer_id_v156","").trim()
         if(pending.isNotBlank()){
             privateStudentId=pending
@@ -296,7 +302,25 @@ fun RsFloatingGlassChatHubV125(
     val selectedContact=remember(contacts,privateStudentId){
         privateStudentId?.let{id->contacts.firstOrNull{it.userId==id}}
     }
-    Box(Modifier.fillMaxSize().background(Color.Black)){
+    Box(
+        Modifier.fillMaxSize()
+            .background(Color.Black)
+            .pointerInput(slideMenuOpen){
+                detectHorizontalDragGestures(
+                    onDragStart={hubSwipe=0f},
+                    onHorizontalDrag={change,amount->
+                        hubSwipe+=amount
+                        change.consume()
+                    },
+                    onDragEnd={
+                        if(!slideMenuOpen && hubSwipe>85f)slideMenuOpen=true
+                        else if(slideMenuOpen && hubSwipe< -85f)slideMenuOpen=false
+                        hubSwipe=0f
+                    },
+                    onDragCancel={hubSwipe=0f}
+                )
+            }
+    ){
         if(chatVisual.isNotBlank())RsUriPreviewV21(chatVisual,Modifier.fillMaxSize().alpha(.24f),"CENTER")
         Box(
             Modifier.fillMaxSize().background(
@@ -335,7 +359,7 @@ fun RsFloatingGlassChatHubV125(
                         )
                         Column(Modifier.weight(1f)){
                             Text("RS CHAT",color=c.bright,fontWeight=FontWeight.Black,fontSize=19.sp,letterSpacing=1.sp)
-                            Text("Private · Groups · Community · AI",color=c.muted,fontSize=8.sp)
+                            Text("Private · Groups · Community · Support · AI",color=c.muted,fontSize=8.sp)
                         }
                         if(tab==RsChatHubTabV125.PRIVATE){
                             RsDirectCallControlsV133(
@@ -403,7 +427,7 @@ fun RsFloatingGlassChatHubV125(
                 Triple(RsChatHubTabV125.PRIVATE,"Private","✦"),
                 Triple(RsChatHubTabV125.GROUPS,"Groups","◈"),
                 Triple(RsChatHubTabV125.COMMUNITY,"Community","◎"),
-                Triple(RsChatHubTabV125.NOTIFICATIONS,"Alerts","●"),
+                Triple(RsChatHubTabV125.SUPPORT,"Support","?"),
                 Triple(RsChatHubTabV125.AI,"AI Coach","✧")
             ).forEach{(item,label,symbol)->
                 RsRoyalChatTabV135(c,tab==item,label,symbol){tab=item}
@@ -527,9 +551,11 @@ fun RsFloatingGlassChatHubV125(
                     RsCoachChatV44(c,store,lang,role,privateStudentId)
                 }
                 RsChatHubTabV125.GROUPS->RsGroupsV50(c,store,lang,role)
-                RsChatHubTabV125.COMMUNITY->RsCommunityV50(c,store,lang,role)
+                RsChatHubTabV125.COMMUNITY->RsCommunityChatV163(c,store,lang,role)
+                RsChatHubTabV125.SUPPORT->RsSupportChatV163(c,store,lang,role)
+                RsChatHubTabV125.GALLERY->RsChatGalleryV163(c,lang)
                 RsChatHubTabV125.NOTIFICATIONS->RsChatNotificationsV156(c,lang)
-                RsChatHubTabV125.AI->if(role==RsRole.TRAINER) RsTrainerAiHubV161(c,lang,store) else RsStudentAiAssistantSafeV151(c,lang,store)
+                RsChatHubTabV125.AI->RsAiRoyalChatV163(c,store,lang,role)
                 RsChatHubTabV125.SETTINGS->RsChatSettingsV162(c,store,lang)
             }
         }
@@ -545,6 +571,8 @@ fun RsFloatingGlassChatHubV125(
             onPrivate={tab=RsChatHubTabV125.PRIVATE;slideMenuOpen=false},
             onGroups={tab=RsChatHubTabV125.GROUPS;slideMenuOpen=false},
             onCommunity={tab=RsChatHubTabV125.COMMUNITY;slideMenuOpen=false},
+            onSupport={tab=RsChatHubTabV125.SUPPORT;slideMenuOpen=false},
+            onGallery={tab=RsChatHubTabV125.GALLERY;slideMenuOpen=false},
             onNotifications={tab=RsChatHubTabV125.NOTIFICATIONS;slideMenuOpen=false},
             onAi={tab=RsChatHubTabV125.AI;slideMenuOpen=false},
             onSettings={tab=RsChatHubTabV125.SETTINGS;slideMenuOpen=false},
