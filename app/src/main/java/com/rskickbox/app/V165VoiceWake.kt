@@ -21,6 +21,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.*
 import org.json.JSONArray
 import org.json.JSONObject
@@ -28,6 +29,8 @@ import java.util.Locale
 
 private const val RS_VOICE_CHANNEL_V165="rs_voice_wake_v165"
 private const val RS_VOICE_NOTIFICATION_ID_V165=1651
+private const val RS_VOICE_LOGIN_NOTIFICATION_ID_V165=1652
+private const val RS_TRUSTED_LOGIN_MS_V165=72L*60L*60L*1000L
 
 private fun rsWakePhrasesV165()=listOf(
     "wake up rs","hey rs","ok rs",
@@ -187,7 +190,8 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             },ContextCompat.getMainExecutor(this))
         }
 
-        startListening()
+        if(trustedSessionActive())startListening()
+        else requireFreshLoginOrStop()
     }
 
     override fun onBind(intent:Intent?):IBinder?=null
@@ -214,6 +218,46 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private fun language():RsLang{
         val code=store.s("lang","en")
         return rsLangs.firstOrNull{it.code==code}?:rsLangs.first()
+    }
+
+    private fun trustedSessionActive():Boolean{
+        val authMs=store.s("session_password_auth_ms","0").toLongOrNull()?:0L
+        val age=System.currentTimeMillis()-authMs
+        val role=store.s("session_role","")
+        val localFresh=authMs>0L && age in 0..RS_TRUSTED_LOGIN_MS_V165 && role in setOf("student","trainer")
+        val cloudFresh=rsSupabaseClientV60()?.auth?.currentUserOrNull()!=null
+        return localFresh && cloudFresh
+    }
+
+    private fun loginRequiredText():String=when(language().code){
+        "nl"->"Je login is verlopen. Open RS KICKBOXING en log opnieuw in om RS Voice Wake te gebruiken."
+        "pt"->"O teu login expirou. Abre o RS KICKBOXING e inicia sessão novamente para usar o RS Voice Wake."
+        "es"->"Tu sesión ha caducado. Abre RS KICKBOXING e inicia sesión de nuevo para usar RS Voice Wake."
+        "fr"->"Ta session a expiré. Ouvre RS KICKBOXING et reconnecte-toi pour utiliser RS Voice Wake."
+        "de"->"Deine Anmeldung ist abgelaufen. Öffne RS KICKBOXING und melde dich erneut an, um RS Voice Wake zu nutzen."
+        "it"->"La sessione è scaduta. Apri RS KICKBOXING e accedi di nuovo per usare RS Voice Wake."
+        "pl"->"Sesja logowania wygasła. Otwórz RS KICKBOXING i zaloguj się ponownie, aby używać RS Voice Wake."
+        "tr"->"Oturum süren doldu. RS Voice Wake'i kullanmak için RS KICKBOXING'i açıp tekrar giriş yap."
+        else->"Your login has expired. Open RS KICKBOXING and sign in again to use RS Voice Wake."
+    }
+
+    private fun requireFreshLoginOrStop():Boolean{
+        if(trustedSessionActive())return true
+        recognizer?.cancel()
+        awakeUntil=0L
+        awaitingPlaylistName=false
+        val nm=getSystemService(NotificationManager::class.java)
+        nm.notify(
+            RS_VOICE_LOGIN_NOTIFICATION_ID_V165,
+            loginRequiredNotification()
+        )
+        speak(loginRequiredText(),thenListen=false)
+        scope.launch{
+            delay(1200)
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        }
+        return false
     }
 
     private fun applyLanguage(){
@@ -277,6 +321,10 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun startListening(){
+        if(!trustedSessionActive()){
+            requireFreshLoginOrStop()
+            return
+        }
         if(
             ActivityCompat.checkSelfPermission(this,Manifest.permission.RECORD_AUDIO)
             !=PackageManager.PERMISSION_GRANTED
@@ -296,6 +344,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun handleTranscript(text:String){
+        if(!requireFreshLoginOrStop())return
         if(text.isBlank()){
             startListening()
             return
@@ -431,6 +480,26 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         }
     }
 
+    private fun loginRequiredNotification():Notification{
+        val openIntent=Intent(this,MainActivity::class.java).apply{
+            action="com.rskickbox.app.OPEN_AI_VOICE"
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        val pending=PendingIntent.getActivity(
+            this,167,openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this,RS_VOICE_CHANNEL_V165)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("RS KICKBOXING")
+            .setContentText("Login required · tap to open RS KICKBOXING")
+            .setContentIntent(pending)
+            .setAutoCancel(true)
+            .setOngoing(false)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .build()
+    }
+
     private fun notification(text:String):Notification{
         val openIntent=Intent(this,MainActivity::class.java).apply{
             action="com.rskickbox.app.OPEN_AI_VOICE"
@@ -468,6 +537,21 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
     companion object{
         fun start(context:Context){
+            val store=RsStore(context)
+            val authMs=store.s("session_password_auth_ms","0").toLongOrNull()?:0L
+            val age=System.currentTimeMillis()-authMs
+            val role=store.s("session_role","")
+            val fresh=authMs>0L && age in 0..RS_TRUSTED_LOGIN_MS_V165 &&
+                role in setOf("student","trainer") &&
+                rsSupabaseClientV60()?.auth?.currentUserOrNull()!=null
+            if(!fresh){
+                context.startActivity(
+                    Intent(context,MainActivity::class.java)
+                        .setAction("com.rskickbox.app.OPEN_AI_VOICE")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                )
+                return
+            }
             val i=Intent(context,RsVoiceWakeServiceV165::class.java)
             ContextCompat.startForegroundService(context,i)
         }
