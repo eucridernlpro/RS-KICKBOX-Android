@@ -377,6 +377,7 @@ fun RsChatAttachmentPreviewV92(
     val context=LocalContext.current
     val previewStore=remember{RsStore(context)}
     val autoPreview=previewStore.b("chat_auto_media_preview_v162",true)
+    var galleryStatus by remember(mediaPath){mutableStateOf("")}
     var requested by remember(mediaPath,autoPreview){mutableStateOf(autoPreview)}
     var localUri by remember(mediaPath){mutableStateOf("")}
     var error by remember(mediaPath){mutableStateOf("")}
@@ -515,6 +516,19 @@ fun RsChatAttachmentPreviewV92(
                 Text("⌑ "+(mediaName?:rsChatMediaT(lang,"file")),maxLines=1,overflow=TextOverflow.Ellipsis)
             }
         }
+    }
+    }
+
+    if(mediaKind=="IMAGE"||mediaKind=="VIDEO"||mediaKind=="AUDIO"){
+        OutlinedButton(
+            onClick={
+                rsSaveChatMediaToGalleryV163(context,previewStore,localUri,mediaKind,mediaName)
+                    .onSuccess{galleryStatus="Saved to RS Chat Gallery."}
+                    .onFailure{galleryStatus=it.message?:"Could not save media."}
+            },
+            modifier=Modifier.fillMaxWidth()
+        ){Text("☆  Save to Gallery",fontSize=9.sp)}
+        if(galleryStatus.isNotBlank())Text(galleryStatus,color=c.muted,fontSize=8.sp)
     }
 }
 
