@@ -102,3 +102,5 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
+
+// RS v0.163 final unified-chat build checkpoint
