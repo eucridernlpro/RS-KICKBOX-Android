@@ -72,7 +72,7 @@ private fun rsSaveChatGalleryV163(store:RsStore,items:List<RsSavedChatMediaV163>
 
 fun rsCleanupChatMediaCacheV163(context:Context){
     val cutoff=System.currentTimeMillis()-7L*24L*60L*60L*1000L
-    listOf("rs_chat_media","rs_voice_messages").forEach{dirName->
+    listOf("rs_chat_media","rs_voice_messages","rs_ai_chat_media").forEach{dirName->
         val dir=File(context.cacheDir,dirName)
         dir.listFiles()?.forEach{file->
             if(file.isFile && file.lastModified()<cutoff)runCatching{file.delete()}
@@ -88,17 +88,24 @@ fun rsSaveChatMediaToGalleryV163(
     name:String?
 ):Result<Unit> = runCatching{
     val uri=Uri.parse(sourceUri)
-    val source=when(uri.scheme){
-        "file"->File(uri.path?:error("Missing media file."))
-        else->error("Media must be downloaded before it can be saved.")
-    }
-    require(source.exists()&&source.length()>0){"Media file is unavailable."}
-    val ext=source.extension.ifBlank{
-        when(kind){"IMAGE"->"jpg";"VIDEO"->"mp4";"AUDIO"->"m4a";else->"bin"}
+    val ext=when{
+        uri.scheme=="file"->File(uri.path.orEmpty()).extension.ifBlank{
+            when(kind){"IMAGE"->"jpg";"VIDEO"->"mp4";"AUDIO"->"m4a";else->"bin"}
+        }
+        else->when(kind){"IMAGE"->"jpg";"VIDEO"->"mp4";"AUDIO"->"m4a";else->"bin"}
     }
     val dir=File(context.filesDir,"rs_chat_gallery").apply{mkdirs()}
     val target=File(dir,"saved_"+UUID.randomUUID()+"."+ext)
-    source.copyTo(target,overwrite=false)
+    if(uri.scheme=="file"){
+        val source=File(uri.path?:error("Missing media file."))
+        require(source.exists()&&source.length()>0){"Media file is unavailable."}
+        source.copyTo(target,overwrite=false)
+    }else{
+        context.contentResolver.openInputStream(uri)?.use{input->
+            target.outputStream().use{output->input.copyTo(output)}
+        } ?: error("Could not read selected media.")
+        require(target.length()>0){"Media file is unavailable."}
+    }
     val items=rsLoadChatGalleryV163(store).toMutableList()
     items.add(
         0,
