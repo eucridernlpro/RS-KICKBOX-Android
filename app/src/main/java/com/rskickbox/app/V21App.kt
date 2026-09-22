@@ -60,6 +60,9 @@ fun RsKickboxV21App(
         initialIncomingAction=="com.rskickbox.app.INCOMING_CALL" ||
         initialIncomingAction=="com.rskickbox.app.INCOMING_VIDEO_ROOM"
     }
+    val voiceAssistantLaunch=remember(initialIncomingAction){
+        initialIncomingAction=="com.rskickbox.app.OPEN_AI_VOICE"
+    }
     val initialIncomingDirectCall=remember(
         initialIncomingAction,
         initialIncomingCallId,
@@ -137,11 +140,14 @@ fun RsKickboxV21App(
         )
     }
     var callOnlyMode by remember { mutableStateOf(incomingCallLaunch && backgroundCallRole!=null) }
-    val restoredRoute=remember(localSessionRole,backgroundCallRole){
-        if(backgroundCallRole!=null)"coachchat"
-        else{
-            val saved=store.s("session_last_route","")
-            if(localSessionRole==RsRole.TRAINER) saved.ifBlank{"trainer"} else saved.ifBlank{"home"}
+    val restoredRoute=remember(localSessionRole,backgroundCallRole,voiceAssistantLaunch){
+        when{
+            backgroundCallRole!=null->"coachchat"
+            voiceAssistantLaunch && localSessionFresh && localSessionRole!=null->"voice"
+            else->{
+                val saved=store.s("session_last_route","")
+                if(localSessionRole==RsRole.TRAINER) saved.ifBlank{"trainer"} else saved.ifBlank{"home"}
+            }
         }
     }
     var route by remember { mutableStateOf(restoredRoute) }
@@ -155,6 +161,18 @@ fun RsKickboxV21App(
     var introPreparing by remember { mutableStateOf(false) }
     var lang by remember { mutableStateOf(rsInitialLanguageV111(store)) }
     var theme by remember { mutableStateOf(runCatching { RsTheme.valueOf(store.s("theme", "ELITE_GOLD")) }.getOrDefault(RsTheme.ELITE_GOLD)) }
+    LaunchedEffect(role){
+        if(
+            role!=null &&
+            store.b("rs_voice_wake_enabled_v165",false) &&
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context,android.Manifest.permission.RECORD_AUDIO
+            )==android.content.pm.PackageManager.PERMISSION_GRANTED
+        ){
+            runCatching{RsVoiceWakeServiceV165.start(context)}
+        }
+    }
+
     var introDone by remember { mutableStateOf(true) }
     var preLoginStage by remember {
         mutableStateOf(
