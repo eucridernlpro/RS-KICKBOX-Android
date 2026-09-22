@@ -196,6 +196,28 @@ as $$
                     and gm.student_id=(select auth.uid())
               )
           )
+
+        union
+
+        select distinct c.media_path
+        from public.rs_community_posts c
+        where c.media_path is not null
+          and c.created_at < now()-interval '7 days'
+          and (
+              c.author_id=(select auth.uid())
+              or (select private.rs_is_staff())
+          )
+
+        union
+
+        select distinct t.media_path
+        from public.rs_support_tickets t
+        where t.media_path is not null
+          and t.created_at < now()-interval '7 days'
+          and (
+              t.student_id=(select auth.uid())
+              or (select private.rs_is_staff())
+          )
     )
     select v.media_path
     from visible_paths v
@@ -234,6 +256,20 @@ begin
              and gm.student_id=v_uid
             where m.media_path=p_media_path
               and m.created_at < now()-interval '7 days'
+        )
+        or exists(
+            select 1
+            from public.rs_community_posts cp
+            where cp.media_path=p_media_path
+              and cp.author_id=v_uid
+              and cp.created_at < now()-interval '7 days'
+        )
+        or exists(
+            select 1
+            from public.rs_support_tickets st
+            where st.media_path=p_media_path
+              and st.student_id=v_uid
+              and st.created_at < now()-interval '7 days'
         );
     end if;
 
@@ -247,6 +283,16 @@ begin
       and created_at < now()-interval '7 days';
 
     update public.rs_group_messages
+    set media_path=null,media_kind=null,media_name=null
+    where media_path=p_media_path
+      and created_at < now()-interval '7 days';
+
+    update public.rs_community_posts
+    set media_path=null,media_kind=null,media_name=null
+    where media_path=p_media_path
+      and created_at < now()-interval '7 days';
+
+    update public.rs_support_tickets
     set media_path=null,media_kind=null,media_name=null
     where media_path=p_media_path
       and created_at < now()-interval '7 days';
@@ -264,3 +310,304 @@ grant execute on function public.rs_chat_gallery_feed() to authenticated;
 grant execute on function public.rs_delete_chat_gallery_item(uuid) to authenticated;
 grant execute on function public.rs_expired_chat_media_paths() to authenticated;
 grant execute on function public.rs_clear_expired_chat_media_path(text) to authenticated;
+
+
+-- Community and Support become first-class RS CHAT surfaces with the same media pipeline.
+alter table public.rs_community_posts
+    add column if not exists media_path text,
+    add column if not exists media_kind text,
+    add column if not exists media_name text;
+
+alter table public.rs_support_tickets
+    add column if not exists media_path text,
+    add column if not exists media_kind text,
+    add column if not exists media_name text;
+
+create or replace function public.rs_community_feed_v2()
+returns table(
+    id uuid,
+    author_id uuid,
+    author_email text,
+    author_name text,
+    body text,
+    active boolean,
+    media_path text,
+    media_kind text,
+    media_name text,
+    created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path=''
+as $$
+    select
+        c.id,c.author_id,p.email,
+        coalesce(s.display_name,p.display_name),
+        c.body,c.active,
+        c.media_path,c.media_kind,c.media_name,
+        c.created_at
+    from public.rs_community_posts c
+    join public.rs_profiles p on p.id=c.author_id
+    left join public.rs_social_profiles s on s.user_id=c.author_id
+    where c.active=true
+       or c.author_id=(select auth.uid())
+       or (select private.rs_is_staff())
+    order by c.created_at asc;
+$$;
+
+create or replace function public.rs_create_community_post_v2(
+    p_body text default '',
+    p_media_path text default null,
+    p_media_kind text default null,
+    p_media_name text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+    v_uid uuid:=(select auth.uid());
+    v_id uuid;
+    v_enabled boolean;
+    v_body text:=trim(coalesce(p_body,''));
+begin
+    if v_uid is null then raise exception 'authentication required' using errcode='42501'; end if;
+    if v_body='' and p_media_path is null then
+        raise exception 'message or attachment required' using errcode='22023';
+    end if;
+    if length(v_body)>1000 then
+        raise exception 'community message too long' using errcode='22023';
+    end if;
+
+    select s.community_posts_enabled into v_enabled
+    from public.rs_app_settings s where s.singleton=true;
+    if coalesce(v_enabled,true)=false then
+        raise exception 'community posting disabled' using errcode='42501';
+    end if;
+
+    if p_media_path is not null
+       and p_media_path not like ('community/'||v_uid::text||'/%') then
+        raise exception 'invalid community media path' using errcode='22023';
+    end if;
+
+    insert into public.rs_community_posts(
+        author_id,body,active,media_path,media_kind,media_name
+    )
+    values(
+        v_uid,v_body,true,p_media_path,p_media_kind,p_media_name
+    )
+    returning id into v_id;
+
+    return v_id;
+end;
+$$;
+
+create or replace function public.rs_support_feed_v2()
+returns table(
+    id uuid,
+    student_id uuid,
+    student_email text,
+    student_name text,
+    subject text,
+    message text,
+    trainer_reply text,
+    status text,
+    media_path text,
+    media_kind text,
+    media_name text,
+    created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path=''
+as $$
+    select
+        t.id,t.student_id,p.email,p.display_name,
+        t.subject,t.message,t.trainer_reply,t.status,
+        t.media_path,t.media_kind,t.media_name,t.created_at
+    from public.rs_support_tickets t
+    join public.rs_profiles p on p.id=t.student_id
+    where t.student_id=(select auth.uid())
+       or (select private.rs_is_staff())
+    order by t.created_at asc;
+$$;
+
+create or replace function public.rs_create_support_ticket_v2(
+    p_subject text default 'RS Support',
+    p_message text default '',
+    p_media_path text default null,
+    p_media_kind text default null,
+    p_media_name text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+    v_uid uuid:=(select auth.uid());
+    v_id uuid;
+    v_message text:=trim(coalesce(p_message,''));
+begin
+    if v_uid is null then raise exception 'authentication required' using errcode='42501'; end if;
+    if not exists(
+        select 1 from public.rs_profiles p
+        where p.id=v_uid and p.role='student' and p.active=true
+    ) then
+        raise exception 'active student account required' using errcode='42501';
+    end if;
+    if v_message='' and p_media_path is null then
+        raise exception 'message or attachment required' using errcode='22023';
+    end if;
+    if p_media_path is not null
+       and p_media_path not like ('support/'||v_uid::text||'/%') then
+        raise exception 'invalid support media path' using errcode='22023';
+    end if;
+
+    insert into public.rs_support_tickets(
+        student_id,subject,message,media_path,media_kind,media_name
+    )
+    values(
+        v_uid,left(coalesce(nullif(trim(p_subject),''),'RS Support'),120),
+        v_message,p_media_path,p_media_kind,p_media_name
+    )
+    returning id into v_id;
+
+    return v_id;
+end;
+$$;
+
+-- Expand the existing private chat-media bucket permissions to Community and Support.
+update storage.buckets
+set file_size_limit=31457280,
+    allowed_mime_types=array[
+        'image/jpeg','image/png','image/webp','image/gif',
+        'video/mp4','video/webm','video/quicktime','video/3gpp',
+        'audio/mp4','audio/mpeg','audio/ogg','audio/wav','audio/x-wav',
+        'application/pdf','text/plain','application/octet-stream'
+    ]
+where id='rs-chat-media';
+
+drop policy if exists "rs_chat_media_insert_authorized" on storage.objects;
+create policy "rs_chat_media_insert_authorized"
+on storage.objects
+for insert to authenticated
+with check(
+    bucket_id='rs-chat-media'
+    and (
+        (
+            (storage.foldername(name))[1]='coach'
+            and (
+                (storage.foldername(name))[2]=(select auth.uid())::text
+                or (select private.rs_is_staff())
+            )
+        )
+        or
+        (
+            (storage.foldername(name))[1]='group'
+            and (
+                (select private.rs_is_staff())
+                or exists(
+                    select 1 from public.rs_group_memberships gm
+                    where gm.group_id::text=(storage.foldername(name))[2]
+                      and gm.student_id=(select auth.uid())
+                )
+            )
+        )
+        or
+        (
+            (storage.foldername(name))[1]='community'
+            and (storage.foldername(name))[2]=(select auth.uid())::text
+        )
+        or
+        (
+            (storage.foldername(name))[1]='support'
+            and (
+                (storage.foldername(name))[2]=(select auth.uid())::text
+                or (select private.rs_is_staff())
+            )
+        )
+    )
+);
+
+drop policy if exists "rs_chat_media_select_authorized" on storage.objects;
+create policy "rs_chat_media_select_authorized"
+on storage.objects
+for select to authenticated
+using(
+    bucket_id='rs-chat-media'
+    and (
+        (
+            (storage.foldername(name))[1]='coach'
+            and (
+                (storage.foldername(name))[2]=(select auth.uid())::text
+                or (select private.rs_is_staff())
+            )
+        )
+        or
+        (
+            (storage.foldername(name))[1]='group'
+            and (
+                (select private.rs_is_staff())
+                or exists(
+                    select 1 from public.rs_group_memberships gm
+                    where gm.group_id::text=(storage.foldername(name))[2]
+                      and gm.student_id=(select auth.uid())
+                )
+            )
+        )
+        or (storage.foldername(name))[1]='community'
+        or
+        (
+            (storage.foldername(name))[1]='support'
+            and (
+                (storage.foldername(name))[2]=(select auth.uid())::text
+                or (select private.rs_is_staff())
+            )
+        )
+    )
+);
+
+drop policy if exists "rs_chat_media_delete_authorized" on storage.objects;
+create policy "rs_chat_media_delete_authorized"
+on storage.objects
+for delete to authenticated
+using(
+    bucket_id='rs-chat-media'
+    and (
+        (select private.rs_is_staff())
+        or (
+            (storage.foldername(name))[1]='coach'
+            and (storage.foldername(name))[2]=(select auth.uid())::text
+        )
+        or (
+            (storage.foldername(name))[1]='group'
+            and exists(
+                select 1 from public.rs_group_memberships gm
+                where gm.group_id::text=(storage.foldername(name))[2]
+                  and gm.student_id=(select auth.uid())
+            )
+        )
+        or (
+            (storage.foldername(name))[1]='community'
+            and (storage.foldername(name))[2]=(select auth.uid())::text
+        )
+        or (
+            (storage.foldername(name))[1]='support'
+            and (storage.foldername(name))[2]=(select auth.uid())::text
+        )
+    )
+);
+
+revoke all on function public.rs_community_feed_v2() from public,anon;
+revoke all on function public.rs_create_community_post_v2(text,text,text,text) from public,anon;
+revoke all on function public.rs_support_feed_v2() from public,anon;
+revoke all on function public.rs_create_support_ticket_v2(text,text,text,text,text) from public,anon;
+
+grant execute on function public.rs_community_feed_v2() to authenticated;
+grant execute on function public.rs_create_community_post_v2(text,text,text,text) to authenticated;
+grant execute on function public.rs_support_feed_v2() to authenticated;
+grant execute on function public.rs_create_support_ticket_v2(text,text,text,text,text) to authenticated;
