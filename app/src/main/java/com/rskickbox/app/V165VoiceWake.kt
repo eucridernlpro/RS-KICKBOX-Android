@@ -133,6 +133,18 @@ private fun rsVoiceMusicCommandV165(text:String):RsVoiceMusicCommandV165{
     }
 }
 
+private fun rsVoiceRouteV167(text:String):String?{
+    val s=text.lowercase(Locale.ROOT)
+    return when{
+        listOf("open ai","open ai coach","open rs ai","open coach","open assistant","open de ai","open ai coach","abrir ai","abrir treinador ai","abre la ia","abre el entrenador ia","ouvre l'ia","ouvre le coach ia","ki öffnen","apri ai","otwórz ai","yapay zekayı aç").any{s.contains(it)}->"voice"
+        listOf("open support","open hulp","open ondersteuning","abrir suporte","abre soporte","ouvre support","support öffnen","apri supporto","otwórz pomoc","desteği aç").any{s.contains(it)}->"support"
+        listOf("open groups","open groepen","abrir grupos","abre grupos","ouvre groupes","gruppen öffnen","apri gruppi","otwórz grupy","grupları aç").any{s.contains(it)}->"groups"
+        listOf("open community","open community","abrir comunidade","abre comunidad","ouvre communauté","community öffnen","apri community","otwórz społeczność","topluluğu aç").any{s.contains(it)}->"community"
+        listOf("open notifications","open meldingen","abrir notificações","abre notificaciones","ouvre notifications","benachrichtigungen öffnen","apri notifiche","otwórz powiadomienia","bildirimleri aç").any{s.contains(it)}->"notifications"
+        else->null
+    }
+}
+
 private fun rsTrackMapV165(store:RsStore):Map<String,String> =
     store.s("local_music_tracks","")
         .split("§")
@@ -497,6 +509,20 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         }
 
         awakeUntil=now+45_000L
+
+        val requestedRoute=rsVoiceRouteV167(commandText)
+        if(requestedRoute!=null){
+            openRouteV166(requestedRoute)
+            speak(
+                when(language().code){
+                    "nl"->"Ik open "+when(requestedRoute){"voice"->"de AI Coach";"support"->"Support";"groups"->"Groepen";"community"->"Community";else->"Meldingen"}+"."
+                    "pt"->"Vou abrir "+when(requestedRoute){"voice"->"o Treinador IA";"support"->"o Suporte";"groups"->"os Grupos";"community"->"a Comunidade";else->"as Notificações"}+"."
+                    "es"->"Voy a abrir "+when(requestedRoute){"voice"->"el Entrenador IA";"support"->"Soporte";"groups"->"Grupos";"community"->"Comunidad";else->"Notificaciones"}+"."
+                    else->"Opening "+when(requestedRoute){"voice"->"AI Coach";"support"->"Support";"groups"->"Groups";"community"->"Community";else->"Notifications"}+"."
+                }
+            )
+            return
+        }
 
         val playlistName=playPlaylistByNameV166(commandText)
         if(playlistName!=null){
