@@ -36,7 +36,8 @@ private data class RsAiChatMessageV163(
     val mine:Boolean,
     val text:String,
     val mediaUri:String?=null,
-    val mediaKind:String?=null
+    val mediaKind:String?=null,
+    val references:List<RsAiCoachReferenceV164> = emptyList()
 )
 
 @Composable
@@ -171,7 +172,7 @@ fun RsAiAssistantChatV163(
         pickedKind=null
 
         scope.launch{
-            val reply=when{
+            val localFirst=when{
                 kind=="VIDEO"&&media!=null->{
                     status=rsAiExtraV163(aiLang,"analyzing")
                     rsAnalyzeTechniqueVisionV106(
@@ -179,25 +180,41 @@ fun RsAiAssistantChatV163(
                         media.toString(),
                         if(body.isBlank())"Uploaded kickboxing technique" else body,
                         selectedLang
-                    ).getOrElse{rsAiAnswerV162(aiLang,body.ifBlank{"kickboxing technique"})}
+                    ).getOrElse{rsAiLocalCoachAnswerV164(aiLang,body.ifBlank{"kickboxing technique"})}
                 }
-                kind=="IMAGE"&&media!=null->when(aiLang){
-                    "nl"->"Ik heb de afbeelding ontvangen. Beschrijf de techniek of het detail dat je wilt laten beoordelen."
-                    "pt"->"Recebi a imagem. Diz qual técnica ou detalhe queres que eu analise."
-                    "es"->"He recibido la imagen. Dime qué técnica o detalle quieres que revise."
-                    "fr"->"J’ai reçu l’image. Dis-moi quelle technique ou quel détail tu veux analyser."
-                    "de"->"Ich habe das Bild erhalten. Sag mir, welche Technik oder welches Detail ich prüfen soll."
-                    "it"->"Ho ricevuto l’immagine. Dimmi quale tecnica o dettaglio vuoi analizzare."
-                    "pl"->"Otrzymałem obraz. Powiedz, którą technikę lub szczegół mam przeanalizować."
-                    "tr"->"Görseli aldım. Hangi teknik veya ayrıntıyı incelememi istediğini söyle."
-                    else->"I received the image. Tell me which technique or detail you want me to review."
-                }
-                else->rsAiAnswerV162(aiLang,body)
+                kind=="IMAGE"&&media!=null->rsAiLocalCoachAnswerV164(
+                    aiLang,
+                    body.ifBlank{"kickboxing technique image"}
+                )
+                else->rsAiLocalCoachAnswerV164(aiLang,body)
             }
+
+            val earlyRefs=if(kind=="VIDEO"||kind=="IMAGE"||body.length>2)
+                rsAiReferencePreviewsV164(context,body,localFirst)
+            else emptyList()
+
+            val referenceSummary=earlyRefs.joinToString("\n"){ref->
+                ref.item.title+" | tags: "+ref.item.techniqueTags.joinToString(", ")+" | trainer note: "+ref.item.description
+            }
+
+            val reply=if(kind=="VIDEO"){
+                localFirst
+            }else{
+                rsOnlineAiCoachV164(
+                    question=body.ifBlank{"Kickboxing coaching"},
+                    lang=selectedLang,
+                    referenceSummary=referenceSummary
+                ).getOrElse{localFirst}
+            }
+
+            val refs=if(earlyRefs.isNotEmpty())earlyRefs
+            else rsAiReferencePreviewsV164(context,body,reply)
+
             messages=(messages+RsAiChatMessageV163(
                 id=System.currentTimeMillis()+1,
                 mine=false,
-                text=reply
+                text=reply,
+                references=refs
             )).takeLast(30)
             status=""
             busy=false
@@ -324,6 +341,35 @@ fun RsAiAssistantChatV163(
                                 }
                                 if(message.text.isNotBlank()){
                                     Text(message.text,color=c.text,fontSize=11.sp,lineHeight=15.sp)
+                                }
+                                message.references.forEach{ref->
+                                    Surface(
+                                        color=Color.Black.copy(alpha=.58f),
+                                        shape=RoundedCornerShape(14.dp),
+                                        border=BorderStroke(1.dp,c.gold.copy(alpha=.22f)),
+                                        modifier=Modifier.fillMaxWidth()
+                                    ){
+                                        Column(Modifier.padding(7.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
+                                            Text(
+                                                "TRAINER REFERENCE · "+ref.item.title,
+                                                color=c.gold,fontWeight=FontWeight.Black,fontSize=8.sp
+                                            )
+                                            if(ref.item.kind=="VIDEO"){
+                                                RsMiniLocalVideoV163(ref.localUri,Modifier.fillMaxWidth().height(105.dp))
+                                            }else{
+                                                RsUriPreviewV21(ref.localUri,Modifier.fillMaxWidth().height(105.dp),"CENTER")
+                                            }
+                                            if(ref.item.description.isNotBlank()){
+                                                Text(ref.item.description,color=c.text,fontSize=9.sp,lineHeight=13.sp)
+                                            }
+                                            if(ref.item.techniqueTags.isNotEmpty()){
+                                                Text(
+                                                    ref.item.techniqueTags.take(8).joinToString(" · "),
+                                                    color=c.muted,fontSize=7.sp
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
