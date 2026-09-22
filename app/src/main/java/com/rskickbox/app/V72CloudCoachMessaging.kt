@@ -159,3 +159,12 @@ suspend fun rsHideCallHistoryV156(callId:String):Result<Unit> = runCatching{
     )
     Unit
 }
+
+
+suspend fun rsHideCoachThreadForMeV161(studentId:String):Result<Unit> = runCatching{
+    val messages=rsCloudCoachMessagesV72(studentId).getOrThrow()
+    messages.forEach{message->
+        rsHideCoachMessageV156(message.id).getOrThrow()
+    }
+    Unit
+}
