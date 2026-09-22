@@ -43,6 +43,7 @@ private fun rsInitialChatTabV125(route:String)=when(route){
     "gallery"->RsChatHubTabV125.GALLERY
     "media"->RsChatHubTabV125.GALLERY
     "notifications"->RsChatHubTabV125.NOTIFICATIONS
+    "content"->RsChatHubTabV125.AI
     "coachchat"->RsChatHubTabV125.PRIVATE
     else->RsChatHubTabV125.ALL
 }
