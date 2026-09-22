@@ -3,10 +3,12 @@ package com.rskickbox.app
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -34,6 +36,51 @@ fun RsStudentAiAssistantSafeV151(
     var answer by remember{mutableStateOf("")}
     val context=LocalContext.current
     var voiceStatus by remember{mutableStateOf("")}
+    val languages=remember{
+        listOf(
+            "en" to ("English" to "en-US"),
+            "nl" to ("Nederlands" to "nl-NL"),
+            "pt" to ("Português" to "pt-PT"),
+            "es" to ("Español" to "es-ES"),
+            "fr" to ("Français" to "fr-FR"),
+            "de" to ("Deutsch" to "de-DE"),
+            "it" to ("Italiano" to "it-IT"),
+            "pl" to ("Polski" to "pl-PL"),
+            "tr" to ("Türkçe" to "tr-TR")
+        )
+    }
+    var avatar by remember{
+        mutableStateOf(store.s("ai_avatar_gender_v161","FEMALE").ifBlank{"FEMALE"})
+    }
+    var aiLanguage by remember{
+        mutableStateOf(
+            store.s("ai_voice_language_v161",lang.code)
+                .takeIf{saved->languages.any{it.first==saved}}
+                ?: "en"
+        )
+    }
+    val selectedLanguage=languages.firstOrNull{it.first==aiLanguage}?:languages.first()
+    var ttsReady by remember{mutableStateOf(false)}
+    val tts=remember{
+        TextToSpeech(context){status->
+            ttsReady=status==TextToSpeech.SUCCESS
+        }
+    }
+    DisposableEffect(tts){
+        onDispose{runCatching{tts.stop()};runCatching{tts.shutdown()}}
+    }
+    LaunchedEffect(aiLanguage,ttsReady){
+        if(ttsReady){
+            val locale=java.util.Locale.forLanguageTag(selectedLanguage.second.second)
+            tts.language=locale
+        }
+    }
+    fun speakAnswer(){
+        if(answer.isBlank()||!ttsReady)return
+        val locale=java.util.Locale.forLanguageTag(selectedLanguage.second.second)
+        tts.language=locale
+        tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"rs_ai_answer")
+    }
     val voiceLauncher=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
         if(result.resultCode==Activity.RESULT_OK){
             val spoken=result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
@@ -47,7 +94,7 @@ fun RsStudentAiAssistantSafeV151(
         val intent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_PROMPT,"Ask RS AI Trainer")
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE,java.util.Locale.getDefault().toLanguageTag())
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE,selectedLanguage.second.second)
         }
         runCatching{voiceLauncher.launch(intent)}
             .onFailure{voiceStatus="Voice input is not available on this device."}
@@ -91,31 +138,77 @@ fun RsStudentAiAssistantSafeV151(
             modifier=Modifier.fillMaxWidth()
         ){
             Column(
-                Modifier.padding(16.dp),
+                Modifier.padding(14.dp),
                 verticalArrangement=Arrangement.spacedBy(10.dp)
             ){
-                Row(
-                    verticalAlignment=Alignment.CenterVertically,
-                    horizontalArrangement=Arrangement.spacedBy(12.dp)
+                val avatarSlot=if(avatar=="FEMALE")"ai_trainer_female" else "ai_trainer_male"
+                val avatarName=if(avatar=="FEMALE")"SOFIA" else "MARCUS"
+                val avatarVisual=rsVisualUriWithBundledFallbackV113(context,store,avatarSlot)
+
+                Box(
+                    Modifier.fillMaxWidth().height(220.dp)
+                        .background(Color.Black,RoundedCornerShape(22.dp))
                 ){
-                    Surface(
-                        shape=CircleShape,
-                        color=Color(0xFF58C9FF).copy(alpha=.10f),
-                        border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.38f)),
-                        modifier=Modifier.size(58.dp)
+                    if(avatarVisual.isNotBlank()){
+                        RsUriPreviewV21(avatarVisual,Modifier.fillMaxSize(),store.s("visual_v21_pos_"+avatarSlot,"CENTER"))
+                    }else{
+                        Box(Modifier.fillMaxSize().background(
+                            Brush.verticalGradient(listOf(Color(0xFF091016),Color.Black))
+                        ))
+                    }
+                    Box(Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(listOf(Color.Transparent,Color.Black.copy(alpha=.18f),Color.Black.copy(alpha=.82f)))
+                    ))
+                    Column(
+                        Modifier.align(Alignment.BottomStart).padding(12.dp)
                     ){
-                        Box(contentAlignment=Alignment.Center){
-                            Text("✧",color=Color(0xFF58C9FF),fontSize=24.sp,fontWeight=FontWeight.Black)
-                        }
+                        Text(avatarName,color=Color.White,fontWeight=FontWeight.Black,fontSize=20.sp,letterSpacing=1.sp)
+                        Text("RS AI TRAINER · "+selectedLanguage.second.first,color=Color(0xFF58C9FF),fontSize=9.sp,fontWeight=FontWeight.Bold)
                     }
-                    Column(Modifier.weight(1f)){
-                        Text("RS AI TRAINER",color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp)
-                        Text("Sofia · Marcus · kickboxing coaching",color=Color(0xFF58C9FF),fontSize=9.sp,fontWeight=FontWeight.Bold)
-                    }
-                    Text("AI",color=Color(0xFF58C9FF),fontWeight=FontWeight.Black,fontSize=10.sp)
                 }
+
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                    Button(
+                        onClick={
+                            avatar="FEMALE"
+                            store.ps("ai_avatar_gender_v161",avatar)
+                        },
+                        modifier=Modifier.weight(1f),
+                        colors=ButtonDefaults.buttonColors(
+                            containerColor=if(avatar=="FEMALE")c.bright else c.panel,
+                            contentColor=if(avatar=="FEMALE")Color.Black else c.text
+                        )
+                    ){Text("Sofia",fontWeight=FontWeight.Black,fontSize=9.sp)}
+                    OutlinedButton(
+                        onClick={
+                            avatar="MALE"
+                            store.ps("ai_avatar_gender_v161",avatar)
+                        },
+                        modifier=Modifier.weight(1f)
+                    ){Text("Marcus",fontWeight=FontWeight.Black,fontSize=9.sp)}
+                }
+
+                Text("VOICE LANGUAGE",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=.8.sp)
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement=Arrangement.spacedBy(6.dp)
+                ){
+                    languages.forEach{item->
+                        val code=item.first
+                        val label=item.second.first
+                        FilterChip(
+                            selected=aiLanguage==code,
+                            onClick={
+                                aiLanguage=code
+                                store.ps("ai_voice_language_v161",code)
+                            },
+                            label={Text(label,fontSize=8.sp)}
+                        )
+                    }
+                }
+
                 Text(
-                    "Ask a coaching question or open Technique Analysis when you want to review a movement or video.",
+                    "Ask by text or voice, analyze technique video, and hear the coach answer in the selected language.",
                     color=c.muted,
                     fontSize=10.sp,
                     lineHeight=14.sp
@@ -175,7 +268,14 @@ fun RsStudentAiAssistantSafeV151(
                         border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.22f)),
                         modifier=Modifier.fillMaxWidth()
                     ){
-                        Text(answer,color=c.text,fontSize=12.sp,lineHeight=18.sp,modifier=Modifier.padding(12.dp))
+                        Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+                            Text(answer,color=c.text,fontSize=12.sp,lineHeight=18.sp)
+                            OutlinedButton(
+                                onClick={speakAnswer()},
+                                enabled=ttsReady,
+                                modifier=Modifier.fillMaxWidth()
+                            ){Text("🔊  Speak answer · "+selectedLanguage.second.first,fontSize=9.sp)}
+                        }
                     }
                 }
             }
