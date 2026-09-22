@@ -547,6 +547,8 @@ fun RsFloatingGlassChatHubV125(
             onAll={tab=RsChatHubTabV125.ALL;slideMenuOpen=false},
             onPrivate={tab=RsChatHubTabV125.PRIVATE;slideMenuOpen=false},
             onGroups={tab=RsChatHubTabV125.GROUPS;slideMenuOpen=false},
+            onCommunity={tab=RsChatHubTabV125.COMMUNITY;slideMenuOpen=false},
+            onNotifications={tab=RsChatHubTabV125.NOTIFICATIONS;slideMenuOpen=false},
             onAi={tab=RsChatHubTabV125.AI;slideMenuOpen=false},
             onSettings={tab=RsChatHubTabV125.SETTINGS;slideMenuOpen=false},
             onCreateGroup={tab=RsChatHubTabV125.GROUPS;slideMenuOpen=false},
