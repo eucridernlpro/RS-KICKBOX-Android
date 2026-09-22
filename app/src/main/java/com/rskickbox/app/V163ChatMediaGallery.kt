@@ -18,6 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 
 data class RsSavedChatMediaV163(
     val id:String,
@@ -189,4 +194,28 @@ private fun RsChatGalleryPreviewV163(c:RsPalette,item:RsSavedChatMediaV163){
         }
         else->Text(item.uri,color=c.muted,fontSize=8.sp)
     }
+}
+
+
+@Composable
+fun RsMiniLocalVideoV163(uri:String,modifier:Modifier=Modifier){
+    val context=LocalContext.current
+    val player=remember(uri){
+        ExoPlayer.Builder(context).build().apply{
+            setMediaItem(MediaItem.fromUri(Uri.parse(uri)))
+            playWhenReady=false
+            prepare()
+        }
+    }
+    DisposableEffect(player){onDispose{runCatching{player.release()}}}
+    AndroidView(
+        factory={ctx->
+            PlayerView(ctx).apply{
+                this.player=player
+                useController=true
+            }
+        },
+        update={it.player=player},
+        modifier=modifier
+    )
 }
