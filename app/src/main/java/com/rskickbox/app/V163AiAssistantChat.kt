@@ -27,7 +27,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private data class RsAiChatMessageV163(
     val id:Long,
@@ -94,16 +96,38 @@ fun RsAiAssistantChatV163(
 
     val imagePicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
         if(uri!=null){
-            pickedUri=uri
-            pickedKind="IMAGE"
             attachMenu=false
+            busy=true
+            status=rsAiExtraV163(aiLang,"image_ready")
+            scope.launch{
+                val local=withContext(Dispatchers.IO){
+                    rsCacheTemporaryAiMediaV163(context,uri,"IMAGE").getOrNull()
+                }
+                busy=false
+                if(local!=null){
+                    pickedUri=Uri.parse(local)
+                    pickedKind="IMAGE"
+                    status=""
+                }else status="Could not prepare image."
+            }
         }
     }
     val videoPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
         if(uri!=null){
-            pickedUri=uri
-            pickedKind="VIDEO"
             attachMenu=false
+            busy=true
+            status=rsAiExtraV163(aiLang,"video_ready")
+            scope.launch{
+                val local=withContext(Dispatchers.IO){
+                    rsCacheTemporaryAiMediaV163(context,uri,"VIDEO").getOrNull()
+                }
+                busy=false
+                if(local!=null){
+                    pickedUri=Uri.parse(local)
+                    pickedKind="VIDEO"
+                    status=""
+                }else status="Could not prepare video."
+            }
         }
     }
     val voiceLauncher=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
