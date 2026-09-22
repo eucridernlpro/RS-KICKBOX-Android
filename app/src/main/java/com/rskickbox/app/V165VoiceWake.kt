@@ -206,6 +206,26 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private var controller:MediaController?=null
     private val store by lazy{RsStore(this)}
 
+    private fun setWakeStatusV168(status:String){
+        store.ps("rs_voice_wake_status_v168",status)
+        store.ps("rs_voice_wake_status_ms_v168",System.currentTimeMillis().toString())
+        val nm=getSystemService(NotificationManager::class.java)
+        runCatching{
+            nm.notify(
+                RS_VOICE_NOTIFICATION_ID_V165,
+                notification(
+                    when(status){
+                        "LISTENING"->"RS Voice Wake · listening"
+                        "HEARD_WAKE"->"RS Voice Wake · awake"
+                        "SPEAKING"->"RS Voice Wake · speaking"
+                        "LOGIN_REQUIRED"->"RS Voice Wake · login required"
+                        else->"RS Voice Wake · "+status.lowercase().replace('_',' ')
+                    }
+                )
+            )
+        }
+    }
+
     override fun onCreate(){
         super.onCreate()
         createChannel()
@@ -227,8 +247,10 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             },ContextCompat.getMainExecutor(this))
         }
 
-        if(trustedSessionActive())startListening()
-        else requireFreshLoginOrStop()
+        if(trustedSessionActive()){
+            setWakeStatusV168("STARTING")
+            startListening()
+        }else requireFreshLoginOrStop()
     }
 
     override fun onBind(intent:Intent?):IBinder?=null
@@ -286,6 +308,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
     private fun requireFreshLoginOrStop():Boolean{
         if(trustedSessionActive())return true
+        setWakeStatusV168("LOGIN_REQUIRED")
         recognizer?.cancel()
         awakeUntil=0L
         awaitingPlaylistName=false
@@ -315,6 +338,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun speak(text:String,thenListen:Boolean=true){
+        setWakeStatusV168("SPEAKING")
         recognizer?.cancel()
         applyLanguage()
         tts?.setOnUtteranceProgressListener(object:android.speech.tts.UtteranceProgressListener(){
@@ -347,8 +371,36 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 override fun onBufferReceived(buffer:ByteArray?){}
                 override fun onEndOfSpeech(){}
                 override fun onError(error:Int){
+                    val label=when(error){
+                        SpeechRecognizer.ERROR_AUDIO->"ERROR_AUDIO"
+                        SpeechRecognizer.ERROR_CLIENT->"ERROR_CLIENT"
+                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS->"ERROR_PERMISSION"
+                        SpeechRecognizer.ERROR_NETWORK->"ERROR_NETWORK"
+                        SpeechRecognizer.ERROR_NETWORK_TIMEOUT->"ERROR_NETWORK_TIMEOUT"
+                        SpeechRecognizer.ERROR_NO_MATCH->"NO_MATCH"
+                        SpeechRecognizer.ERROR_RECOGNIZER_BUSY->"ERROR_BUSY"
+                        SpeechRecognizer.ERROR_SERVER->"ERROR_SERVER"
+                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT->"NO_SPEECH"
+                        else->"ERROR_"+error
+                    }
+                    setWakeStatusV168(label)
                     scope.launch{
-                        delay(if(error==SpeechRecognizer.ERROR_NO_MATCH)600 else 1200)
+                        if(
+                            error==SpeechRecognizer.ERROR_CLIENT ||
+                            error==SpeechRecognizer.ERROR_RECOGNIZER_BUSY ||
+                            error==SpeechRecognizer.ERROR_SERVER
+                        ){
+                            runCatching{recognizer?.destroy()}
+                            recognizer=null
+                        }
+                        delay(
+                            when(error){
+                                SpeechRecognizer.ERROR_NO_MATCH,
+                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT->350
+                                SpeechRecognizer.ERROR_RECOGNIZER_BUSY->900
+                                else->1200
+                            }
+                        )
                         startListening()
                     }
                 }
@@ -357,7 +409,18 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                     val text=list.firstOrNull().orEmpty()
                     handleTranscript(text)
                 }
-                override fun onPartialResults(partialResults:android.os.Bundle?){}
+                override fun onPartialResults(partialResults:android.os.Bundle?){
+                    val list=partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).orEmpty()
+                    val partial=list.firstOrNull().orEmpty()
+                    if(System.currentTimeMillis()>awakeUntil && rsContainsWakePhraseV165(partial)){
+                        recognizer?.cancel()
+                        awakeUntil=System.currentTimeMillis()+45_000L
+                        setWakeStatusV168("HEARD_WAKE")
+                        val command=rsStripWakePhraseV165(partial)
+                        if(command.isBlank())speak(rsVoiceGreetingV165(language().code))
+                        else handleTranscript(partial)
+                    }
+                }
                 override fun onEvent(eventType:Int,params:android.os.Bundle?){}
             })
         }
@@ -377,12 +440,23 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         val intent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE,lang.locale.toLanguageTag())
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3)
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,5)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,true)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,350L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,650L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,450L)
         }
+        setWakeStatusV168("LISTENING")
         runCatching{recognizer?.startListening(intent)}
             .onFailure{
-                scope.launch{delay(1000);startListening()}
+                setWakeStatusV168("START_FAILED")
+                scope.launch{
+                    runCatching{recognizer?.destroy()}
+                    recognizer=null
+                    delay(1000)
+                    startListening()
+                }
             }
     }
 
@@ -498,6 +572,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         if(now>awakeUntil){
             if(rsContainsWakePhraseV165(text)){
                 awakeUntil=now+45_000L
+                setWakeStatusV168("HEARD_WAKE")
                 commandText=rsStripWakePhraseV165(text)
                 if(commandText.isBlank()){
                     speak(rsVoiceGreetingV165(language().code))
