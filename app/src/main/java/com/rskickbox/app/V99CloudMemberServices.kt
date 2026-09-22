@@ -112,15 +112,25 @@ suspend fun rsCreateCloudSupportTicketV99(
 suspend fun rsUpdateCloudSupportTicketV99(
     id:String,
     reply:String,
-    status:String
+    status:String,
+    attachment:RsChatAttachmentV92?=null
 ):Result<Unit> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     client.postgrest.rpc(
-        "rs_staff_update_support_ticket",
+        "rs_staff_update_support_ticket_v2",
         buildJsonObject{
             put("p_ticket_id",id)
             put("p_trainer_reply",reply)
             put("p_status",status)
+            if(attachment==null){
+                put("p_media_path",kotlinx.serialization.json.JsonNull)
+                put("p_media_kind",kotlinx.serialization.json.JsonNull)
+                put("p_media_name",kotlinx.serialization.json.JsonNull)
+            }else{
+                put("p_media_path",attachment.path)
+                put("p_media_kind",attachment.kind)
+                put("p_media_name",attachment.name)
+            }
         }
     )
     Unit
