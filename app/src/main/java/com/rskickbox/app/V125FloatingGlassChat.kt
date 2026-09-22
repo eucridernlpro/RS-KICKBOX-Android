@@ -530,10 +530,7 @@ fun RsFloatingGlassChatHubV125(
                 RsChatHubTabV125.COMMUNITY->RsCommunityV50(c,store,lang,role)
                 RsChatHubTabV125.NOTIFICATIONS->RsChatNotificationsV156(c,lang)
                 RsChatHubTabV125.AI->if(role==RsRole.TRAINER) RsTrainerAiHubV161(c,lang,store) else RsStudentAiAssistantSafeV151(c,lang,store)
-                RsChatHubTabV125.SETTINGS->RsScroll(c,"CHAT SETTINGS","Calls · ringtone · availability · communication preferences"){
-                    if(menuMessage.isNotBlank())Text(menuMessage,color=c.muted,fontSize=9.sp)
-                    RsCallRingtoneSettingsV138(c,store,lang)
-                }
+                RsChatHubTabV125.SETTINGS->RsChatSettingsV162(c,store,lang)
             }
         }
         }
