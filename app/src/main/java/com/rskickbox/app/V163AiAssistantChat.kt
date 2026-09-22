@@ -164,6 +164,14 @@ fun RsAiAssistantChatV163(
             .onFailure{status=rsAiUiV162(aiLang,"voice_unavailable")}
     }
 
+    LaunchedEffect(Unit){
+        if(store.b("ai_start_listening_v168",false)){
+            store.pb("ai_start_listening_v168",false)
+            kotlinx.coroutines.delay(350)
+            startVoice()
+        }
+    }
+
     fun send(){
         val body=draft.trim()
         val media=pickedUri
