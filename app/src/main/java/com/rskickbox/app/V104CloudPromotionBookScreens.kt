@@ -70,7 +70,7 @@ fun RsCloudPromotionManagerV104(c:RsPalette,store:RsStore,lang:RsLang){
                 }
             }
             .onFailure{status=rsReleaseT98(lang,"load_failed")}
-        rsCloudBookConfigLocalV103(context)
+        rsCloudBookConfigLocalV103(context,forceFullAccess=true)
             .onSuccess{bookLocal=it.first}
             .onFailure{status=rsReleaseT98(lang,"load_failed")}
         loading=false
@@ -395,7 +395,12 @@ fun RsCloudPromotionPageV104(
             }
         }
         val b=book
-        if(b!=null && (b.coverUri.isNotBlank()||b.amazonUrl.isNotBlank()||b.previewPdfUri.isNotBlank())){
+        if(b!=null && (
+            b.coverUri.isNotBlank() ||
+            b.amazonUrl.isNotBlank() ||
+            b.previewPdfUri.isNotBlank() ||
+            b.fullPdfUri.isNotBlank()
+        )){
             Text(rsPromoUiV45(lang,"book"),color=c.bright,fontWeight=FontWeight.Black)
             RsPanel(c){
                 if(b.coverUri.isNotBlank())RsUriPreviewV21(
@@ -408,7 +413,10 @@ fun RsCloudPromotionPageV104(
                     onClick={rsOpenExternalV45(context,b.amazonUrl)},
                     modifier=Modifier.fillMaxWidth()
                 ){Text(rsPromoUiV45(lang,"buy"))}
-                if(b.previewPdfUri.isNotBlank())OutlinedButton(onClick=onOpenBook,modifier=Modifier.fillMaxWidth()){
+                if(b.previewPdfUri.isNotBlank() || b.fullPdfUri.isNotBlank())OutlinedButton(
+                    onClick=onOpenBook,
+                    modifier=Modifier.fillMaxWidth()
+                ){
                     Text(rsPromoUiV45(lang,"open_reader"))
                 }
             }
