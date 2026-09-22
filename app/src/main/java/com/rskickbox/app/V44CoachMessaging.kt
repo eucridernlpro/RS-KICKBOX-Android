@@ -410,6 +410,8 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
     var sending by remember{mutableStateOf(false)}
     var revision by remember{mutableIntStateOf(0)}
     var replyTarget by remember{mutableStateOf<RsCloudCoachMessageV72?>(null)}
+    var conversationMenu by remember{mutableStateOf(false)}
+    var confirmClear by remember{mutableStateOf(false)}
 
     LaunchedEffect(revision){
         loading=true
@@ -426,6 +428,29 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
     }
 
     Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(7.dp)){
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal=4.dp),
+            verticalAlignment=Alignment.CenterVertically
+        ){
+            Column(Modifier.weight(1f)){
+                Text("PRIVATE COACH",color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                Text("Secure trainer conversation",color=c.muted,fontSize=8.sp)
+            }
+            Box{
+                OutlinedButton(
+                    onClick={conversationMenu=true},
+                    modifier=Modifier.size(38.dp),
+                    shape=CircleShape,
+                    contentPadding=PaddingValues(0.dp)
+                ){Text("⋮",fontSize=19.sp,fontWeight=FontWeight.Black)}
+                DropdownMenu(expanded=conversationMenu,onDismissRequest={conversationMenu=false}){
+                    DropdownMenuItem(
+                        text={Text("Clear conversation")},
+                        onClick={conversationMenu=false;confirmClear=true}
+                    )
+                }
+            }
+        }
         if(status.isNotBlank())Text(status,color=c.muted,fontSize=9.sp,modifier=Modifier.padding(horizontal=8.dp))
         Column(
             Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(horizontal=4.dp),
@@ -446,6 +471,30 @@ private fun RsCloudStudentCoachThreadV72(c:RsPalette,lang:RsLang){
             }
             Spacer(Modifier.height(8.dp))
         }
+        if(confirmClear){
+            AlertDialog(
+                onDismissRequest={confirmClear=false},
+                title={Text("Clear private conversation")},
+                text={Text("This hides all messages from your view. Your trainer keeps their copy.")},
+                confirmButton={
+                    TextButton(onClick={
+                        confirmClear=false
+                        scope.launch{
+                            rsHideCoachThreadForMeV161(studentId)
+                                .onSuccess{
+                                    messages=emptyList()
+                                    replyTarget=null
+                                    status="Conversation cleared."
+                                    revision++
+                                }
+                                .onFailure{status=it.message?:"Could not clear conversation."}
+                        }
+                    }){Text("Clear")}
+                },
+                dismissButton={TextButton(onClick={confirmClear=false}){Text("Cancel")}}
+            )
+        }
+
         if(studentId.isNotBlank()){
             RsChatComposerV92(
                 c=c,
@@ -475,6 +524,8 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang,initialStudentId
     var sending by remember{mutableStateOf(false)}
     var revision by remember{mutableIntStateOf(0)}
     var replyTarget by remember{mutableStateOf<RsCloudCoachMessageV72?>(null)}
+    var trainerConversationMenu by remember{mutableStateOf(false)}
+    var trainerConfirmClear by remember{mutableStateOf(false)}
 
     LaunchedEffect(revision,selected?.studentId,initialStudentId){
         loading=true
@@ -554,6 +605,23 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang,initialStudentId
                     Text(thread.studentName.ifBlank{thread.studentEmail},color=c.bright,fontWeight=FontWeight.Black,fontSize=12.sp)
                     Text(thread.studentEmail,color=c.muted,fontSize=8.sp)
                 }
+                Box{
+                    OutlinedButton(
+                        onClick={trainerConversationMenu=true},
+                        modifier=Modifier.size(38.dp),
+                        shape=CircleShape,
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text("⋮",fontSize=19.sp,fontWeight=FontWeight.Black)}
+                    DropdownMenu(
+                        expanded=trainerConversationMenu,
+                        onDismissRequest={trainerConversationMenu=false}
+                    ){
+                        DropdownMenuItem(
+                            text={Text("Clear conversation")},
+                            onClick={trainerConversationMenu=false;trainerConfirmClear=true}
+                        )
+                    }
+                }
             }
             if(status.isNotBlank())Text(status,color=c.muted,fontSize=9.sp,modifier=Modifier.padding(horizontal=8.dp))
             Column(
@@ -571,6 +639,30 @@ private fun RsCloudTrainerCoachInboxV72(c:RsPalette,lang:RsLang,initialStudentId
                 }
                 Spacer(Modifier.height(8.dp))
             }
+            if(trainerConfirmClear){
+                AlertDialog(
+                    onDismissRequest={trainerConfirmClear=false},
+                    title={Text("Clear private conversation")},
+                    text={Text("This removes the full conversation for both sides.")},
+                    confirmButton={
+                        TextButton(onClick={
+                            trainerConfirmClear=false
+                            scope.launch{
+                                rsStaffClearCoachThreadRobustV116(thread.studentId,messages)
+                                    .onSuccess{
+                                        messages=emptyList()
+                                        replyTarget=null
+                                        status="Conversation cleared."
+                                        revision++
+                                    }
+                                    .onFailure{status=it.message?:"Could not clear conversation."}
+                            }
+                        }){Text("Clear")}
+                    },
+                    dismissButton={TextButton(onClick={trainerConfirmClear=false}){Text("Cancel")}}
+                )
+            }
+
             RsChatComposerV92(
                 c=c,
                 lang=lang,
