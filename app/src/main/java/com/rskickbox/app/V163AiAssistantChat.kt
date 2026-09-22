@@ -85,13 +85,26 @@ fun RsAiAssistantChatV163(
         tts=engine
         onDispose{runCatching{engine.stop()};runCatching{engine.shutdown()}}
     }
+    fun applySelectedVoice(){
+        val engine=tts?:return
+        engine.language=selectedLang.locale
+        val matching=engine.voices
+            ?.filter{it.locale.language.equals(selectedLang.locale.language,true)}
+            ?.sortedWith(
+                compareByDescending<android.speech.tts.Voice>{!it.isNetworkConnectionRequired}
+                    .thenByDescending{it.quality}
+            )
+            ?.firstOrNull()
+        if(matching!=null)engine.voice=matching
+    }
+
     LaunchedEffect(aiLang,ttsReady){
-        if(ttsReady)tts?.language=selectedLang.locale
+        if(ttsReady)applySelectedVoice()
     }
 
     fun speak(text:String){
         if(!ttsReady||text.isBlank())return
-        tts?.language=selectedLang.locale
+        applySelectedVoice()
         tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,"rs-ai-chat")
     }
 
