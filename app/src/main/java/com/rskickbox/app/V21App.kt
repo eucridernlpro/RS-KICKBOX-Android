@@ -411,7 +411,10 @@ fun RsKickboxV21App(
                     val scope = if(active==RsRole.TRAINER) BgScope.TRAINER_TRAINING else BgScope.STUDENT_TRAINING
                     RsLiveBackground(c, store, scope) {
                         RsPerPageBackgroundV21(store, route) {
-                            val chatRoute=route in setOf("coachchat","groups","voice","media")
+                            val chatRoute=route in setOf(
+                                "coachchat","groups","voice","media",
+                                "community","support","notifications","content"
+                            )
                             if(chatRoute){
                                 RsFloatingGlassChatHubV125(
                                     c=c,
@@ -495,7 +498,7 @@ fun RsKickboxV21App(
                                     "support" -> RsFloatingGlassChatHubV125(c,store,lang,active,"support"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
                                     "referrals" -> RsReferralsV51(c,store,lang)
                                     "schedule" -> RsTrainerScheduleV43(c,store,lang)
-                                    "content" -> RsContentManagerV48(c,store,lang)
+                                    "content" -> RsFloatingGlassChatHubV125(c,store,lang,active,"content"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
                                     "notes" -> RsCoachNotesV46(c,store,lang)
                                     "homework" -> RsStudentHomeworkV46(c,store,lang)
                                     "favorites" -> RsFavoritesV48(c,store,lang)
