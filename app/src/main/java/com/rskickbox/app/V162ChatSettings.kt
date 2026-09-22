@@ -2,6 +2,8 @@ package com.rskickbox.app
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.Intent
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
@@ -26,6 +28,17 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang){
     val context=LocalContext.current
     var voiceWake by remember{mutableStateOf(store.b("rs_voice_wake_enabled_v165",false))}
     var voiceWakeStatus by remember{mutableStateOf("")}
+    var listenerRevision by remember{mutableIntStateOf(0)}
+    val listenerStatus=remember(listenerRevision){
+        store.s("rs_voice_wake_status_v168","OFF").ifBlank{"OFF"}
+    }
+    LaunchedEffect(Unit){
+        while(true){
+            kotlinx.coroutines.delay(1500)
+            listenerRevision++
+        }
+    }
+
     val micPermissionLauncher=rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ){granted->
@@ -147,6 +160,53 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang){
                 )
                 if(voiceWakeStatus.isNotBlank()){
                     Text(voiceWakeStatus,color=Color(0xFF58C9FF),fontSize=8.sp)
+                }
+                Surface(
+                    color=Color.Black.copy(alpha=.34f),
+                    shape=RoundedCornerShape(14.dp),
+                    border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.18f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Column(
+                        Modifier.padding(10.dp),
+                        verticalArrangement=Arrangement.spacedBy(6.dp)
+                    ){
+                        Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+                            Text("VOICE WAKE STATUS",color=c.muted,fontSize=8.sp,fontWeight=FontWeight.Black,modifier=Modifier.weight(1f))
+                            Text(
+                                listenerStatus,
+                                color=if(listenerStatus=="LISTENING")Color(0xFF36D27F) else Color(0xFF58C9FF),
+                                fontSize=8.sp,
+                                fontWeight=FontWeight.Black
+                            )
+                        }
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                            OutlinedButton(
+                                onClick={
+                                    store.pb("ai_start_listening_v168",true)
+                                    voiceWakeStatus="Opening RS AI microphone…"
+                                },
+                                modifier=Modifier.weight(1f)
+                            ){Text("Test RS AI Mic",fontSize=8.sp)}
+                            OutlinedButton(
+                                onClick={
+                                    runCatching{
+                                        context.startActivity(
+                                            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        )
+                                    }
+                                },
+                                modifier=Modifier.weight(1f)
+                            ){Text("Battery Settings",fontSize=8.sp)}
+                        }
+                        Text(
+                            "If status changes from LISTENING to an ERROR state after the screen locks, Android is blocking the background recognizer on this device.",
+                            color=c.muted,
+                            fontSize=8.sp,
+                            lineHeight=11.sp
+                        )
+                    }
                 }
             }
         }
