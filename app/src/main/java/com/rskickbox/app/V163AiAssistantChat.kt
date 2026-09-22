@@ -67,6 +67,7 @@ fun RsAiAssistantChatV163(
     var trainerReferences by remember{mutableStateOf(false)}
     var autoSpeak by remember{mutableStateOf(store.b("ai_auto_speak_v163",true))}
     var status by remember{mutableStateOf("")}
+    var aiMessageMenuId by remember{mutableStateOf<Long?>(null)}
 
     var tts by remember{mutableStateOf<TextToSpeech?>(null)}
     var ttsReady by remember{mutableStateOf(false)}
@@ -148,7 +149,7 @@ fun RsAiAssistantChatV163(
         scope.launch{
             val reply=when{
                 kind=="VIDEO"&&media!=null->{
-                    status=if(aiLang=="nl")"Techniekvideo analyseren…" else "Analyzing technique video…"
+                    status=rsAiExtraV163(aiLang,"analyzing")
                     rsAnalyzeTechniqueVisionV106(
                         context,
                         media.toString(),
@@ -239,6 +240,50 @@ fun RsAiAssistantChatV163(
                             modifier=Modifier.fillMaxWidth(.86f)
                         ){
                             Column(Modifier.padding(9.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
+                                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                                    Text(
+                                        if(message.mine)"YOU" else if(avatar=="FEMALE")"SOFIA" else "MARCUS",
+                                        color=if(message.mine)c.gold else Color(0xFF58C9FF),
+                                        fontSize=7.sp,
+                                        fontWeight=FontWeight.Black,
+                                        modifier=Modifier.weight(1f)
+                                    )
+                                    Box{
+                                        TextButton(
+                                            onClick={aiMessageMenuId=message.id},
+                                            contentPadding=PaddingValues(2.dp),
+                                            modifier=Modifier.height(24.dp)
+                                        ){Text("⋮",fontSize=16.sp,color=c.bright)}
+                                        DropdownMenu(
+                                            expanded=aiMessageMenuId==message.id,
+                                            onDismissRequest={aiMessageMenuId=null}
+                                        ){
+                                            if(message.mediaUri!=null && message.mediaKind!=null){
+                                                DropdownMenuItem(
+                                                    text={Text(rsAiExtraV163(aiLang,"save_gallery"))},
+                                                    onClick={
+                                                        aiMessageMenuId=null
+                                                        rsSaveChatMediaToGalleryV163(
+                                                            context,
+                                                            store,
+                                                            message.mediaUri,
+                                                            message.mediaKind,
+                                                            if(message.mediaKind=="VIDEO")"AI video" else "AI image"
+                                                        ).onSuccess{status=rsAiExtraV163(aiLang,"saved")}
+                                                         .onFailure{status=it.message?:"Could not save media."}
+                                                    }
+                                                )
+                                            }
+                                            DropdownMenuItem(
+                                                text={Text(rsAiExtraV163(aiLang,"delete_chat"))},
+                                                onClick={
+                                                    aiMessageMenuId=null
+                                                    messages=messages.filterNot{it.id==message.id}
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
                                 if(message.mediaUri!=null){
                                     if(message.mediaKind=="IMAGE"){
                                         RsUriPreviewV21(
@@ -303,11 +348,11 @@ fun RsAiAssistantChatV163(
                     }
                     Column(Modifier.weight(1f)){
                         Text(
-                            if(pickedKind=="VIDEO")"VIDEO READY" else "IMAGE READY",
+                            if(pickedKind=="VIDEO")rsAiExtraV163(aiLang,"video_ready") else rsAiExtraV163(aiLang,"image_ready"),
                             color=c.bright,fontWeight=FontWeight.Black,fontSize=9.sp
                         )
                         Text(
-                            if(pickedKind=="VIDEO")"Compact preview · ready for AI analysis" else "Ready to send to AI coach",
+                            if(pickedKind=="VIDEO")rsAiExtraV163(aiLang,"video_preview") else rsAiExtraV163(aiLang,"image_preview"),
                             color=c.muted,fontSize=8.sp
                         )
                     }
@@ -383,9 +428,9 @@ fun RsAiAssistantChatV163(
                 modifier=Modifier.fillMaxWidth()
             ){
                 Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
-                    Text("AI ASSISTANT SETTINGS",color=c.bright,fontWeight=FontWeight.Black)
+                    Text(rsAiExtraV163(aiLang,"settings"),color=c.bright,fontWeight=FontWeight.Black)
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                        Text("Speak AI replies automatically",color=c.text,fontSize=10.sp,modifier=Modifier.weight(1f))
+                        Text(rsAiExtraV163(aiLang,"auto_speak"),color=c.text,fontSize=10.sp,modifier=Modifier.weight(1f))
                         Switch(autoSpeak,{
                             autoSpeak=it
                             store.pb("ai_auto_speak_v163",it)
@@ -395,9 +440,9 @@ fun RsAiAssistantChatV163(
                         OutlinedButton(
                             onClick={optionsMenu=false;trainerReferences=true},
                             modifier=Modifier.fillMaxWidth()
-                        ){Text("Trainer Reference Gallery")}
+                        ){Text(rsAiExtraV163(aiLang,"references"))}
                     }
-                    OutlinedButton(onClick={optionsMenu=false},modifier=Modifier.fillMaxWidth()){Text("Close")}
+                    OutlinedButton(onClick={optionsMenu=false},modifier=Modifier.fillMaxWidth()){Text(rsAiExtraV163(aiLang,"close"))}
                 }
             }
         }
@@ -412,26 +457,26 @@ fun RsAiAssistantChatV163(
                 modifier=Modifier.fillMaxWidth()
             ){
                 Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
-                    Text("AI MEDIA",color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp)
-                    Text("Choose what to send to your AI coach",color=c.muted,fontSize=9.sp)
+                    Text(rsAiExtraV163(aiLang,"media"),color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp)
+                    Text(rsAiExtraV163(aiLang,"media_sub"),color=c.muted,fontSize=9.sp)
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                         OutlinedButton(
                             onClick={
                                 imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                             },
                             modifier=Modifier.weight(1f)
-                        ){Text("▣  Photo",fontSize=9.sp)}
+                        ){Text("▣  "+rsAiExtraV163(aiLang,"photo"),fontSize=9.sp)}
                         OutlinedButton(
                             onClick={
                                 videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
                             },
                             modifier=Modifier.weight(1f)
-                        ){Text("▶  Video",fontSize=9.sp)}
+                        ){Text("▶  "+rsAiExtraV163(aiLang,"video"),fontSize=9.sp)}
                     }
                     OutlinedButton(
                         onClick={attachMenu=false;startVoice()},
                         modifier=Modifier.fillMaxWidth()
-                    ){Text("🎙  Voice",fontSize=9.sp)}
+                    ){Text("🎙  "+rsAiExtraV163(aiLang,"voice"),fontSize=9.sp)}
                 }
             }
         }
@@ -453,6 +498,7 @@ private fun RsAiAvatarStageV163(
     val context=LocalContext.current
     val slot=if(avatar=="FEMALE")"ai_trainer_female" else "ai_trainer_male"
     val visual=rsVisualUriWithBundledFallbackV113(context,store,slot)
+    val avatarMotion=store.b("ai_avatar_motion_v163",true)
     val transition=rememberInfiniteTransition(label="ai-stage")
     val breath by transition.animateFloat(
         initialValue=.992f,
@@ -477,9 +523,9 @@ private fun RsAiAvatarStageV163(
         Box(Modifier.fillMaxSize()){
             Box(
                 Modifier.fillMaxSize().graphicsLayer{
-                    scaleX=breath
-                    scaleY=breath
-                    translationY=floatY
+                    scaleX=if(avatarMotion)breath else 1f
+                    scaleY=if(avatarMotion)breath else 1f
+                    translationY=if(avatarMotion)floatY else 0f
                 }
             ){
                 if(visual.isNotBlank()){
@@ -537,7 +583,7 @@ private fun RsAiAvatarStageV163(
                         color=Color.White,fontWeight=FontWeight.Black,fontSize=21.sp,letterSpacing=1.sp
                     )
                     Text(
-                        if(speaking)"●  LIVE · SPEAKING" else "●  LIVE · READY",
+                        if(speaking)rsAiExtraV163(language.code,"live_speaking") else rsAiExtraV163(language.code,"live_ready"),
                         color=if(speaking)Color(0xFF58C9FF) else Color(0xFF36D27F),
                         fontSize=8.sp,fontWeight=FontWeight.Black
                     )
