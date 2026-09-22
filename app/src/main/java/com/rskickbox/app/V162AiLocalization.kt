@@ -150,3 +150,38 @@ fun rsAiAnswerV162(code:String,question:String):String{
         }
     }
 }
+
+
+fun rsAiExtraV163(code:String,key:String):String{
+    val en=mapOf(
+        "settings" to "AI Assistant Settings",
+        "auto_speak" to "Speak AI replies automatically",
+        "references" to "Trainer Reference Gallery",
+        "close" to "Close",
+        "media" to "AI Media",
+        "media_sub" to "Choose what to send to your AI coach",
+        "photo" to "Photo",
+        "video" to "Video",
+        "voice" to "Voice",
+        "video_ready" to "VIDEO READY",
+        "image_ready" to "IMAGE READY",
+        "video_preview" to "Compact preview · ready for AI analysis",
+        "image_preview" to "Ready to send to AI coach",
+        "analyzing" to "Analyzing technique video…",
+        "live_speaking" to "● LIVE · SPEAKING",
+        "live_ready" to "● LIVE · READY",
+        "save_gallery" to "Save to Gallery",
+        "delete_chat" to "Delete from AI chat",
+        "saved" to "Saved to RS Chat Gallery."
+    )
+    val nl=en+mapOf("settings" to "AI-assistent instellingen","auto_speak" to "AI-antwoorden automatisch uitspreken","references" to "Trainer Referentiegalerij","close" to "Sluiten","media" to "AI-media","media_sub" to "Kies wat je naar je AI-coach wilt sturen","photo" to "Foto","video" to "Video","voice" to "Stem","video_ready" to "VIDEO KLAAR","image_ready" to "AFBEELDING KLAAR","video_preview" to "Compacte preview · klaar voor AI-analyse","image_preview" to "Klaar om naar de AI-coach te sturen","analyzing" to "Techniekvideo analyseren…","live_speaking" to "● LIVE · SPREEKT","live_ready" to "● LIVE · KLAAR","save_gallery" to "Opslaan in galerij","delete_chat" to "Verwijderen uit AI-chat","saved" to "Opgeslagen in RS Chat Gallery.")
+    val pt=en+mapOf("settings" to "Definições do Assistente IA","auto_speak" to "Falar respostas IA automaticamente","references" to "Galeria de Referências do Treinador","close" to "Fechar","media" to "Media IA","media_sub" to "Escolhe o que enviar ao teu treinador IA","photo" to "Foto","video" to "Vídeo","voice" to "Voz","video_ready" to "VÍDEO PRONTO","image_ready" to "IMAGEM PRONTA","video_preview" to "Pré-visualização compacta · pronta para análise IA","image_preview" to "Pronta para enviar ao treinador IA","analyzing" to "A analisar vídeo técnico…","live_speaking" to "● AO VIVO · A FALAR","live_ready" to "● AO VIVO · PRONTO","save_gallery" to "Guardar na galeria","delete_chat" to "Eliminar do chat IA","saved" to "Guardado na Galeria RS Chat.")
+    val es=en+mapOf("settings" to "Ajustes del Asistente IA","auto_speak" to "Leer automáticamente las respuestas IA","references" to "Galería de Referencias del Entrenador","close" to "Cerrar","media" to "Media IA","media_sub" to "Elige qué enviar a tu entrenador IA","photo" to "Foto","video" to "Vídeo","voice" to "Voz","video_ready" to "VÍDEO LISTO","image_ready" to "IMAGEN LISTA","video_preview" to "Vista compacta · lista para análisis IA","image_preview" to "Lista para enviar al entrenador IA","analyzing" to "Analizando vídeo técnico…","live_speaking" to "● EN VIVO · HABLANDO","live_ready" to "● EN VIVO · LISTO","save_gallery" to "Guardar en galería","delete_chat" to "Eliminar del chat IA","saved" to "Guardado en RS Chat Gallery.")
+    val fr=en+mapOf("settings" to "Réglages de l’Assistant IA","auto_speak" to "Lire automatiquement les réponses IA","references" to "Galerie de Références Coach","close" to "Fermer","media" to "Média IA","media_sub" to "Choisis ce que tu veux envoyer à ton coach IA","photo" to "Photo","video" to "Vidéo","voice" to "Voix","video_ready" to "VIDÉO PRÊTE","image_ready" to "IMAGE PRÊTE","video_preview" to "Aperçu compact · prêt pour l’analyse IA","image_preview" to "Prête à envoyer au coach IA","analyzing" to "Analyse de la vidéo technique…","live_speaking" to "● EN DIRECT · PARLE","live_ready" to "● EN DIRECT · PRÊT","save_gallery" to "Enregistrer dans la galerie","delete_chat" to "Supprimer du chat IA","saved" to "Enregistré dans RS Chat Gallery.")
+    val de=en+mapOf("settings" to "KI-Assistent Einstellungen","auto_speak" to "KI-Antworten automatisch sprechen","references" to "Trainer-Referenzgalerie","close" to "Schließen","media" to "KI-Medien","media_sub" to "Wähle, was du an deinen KI-Trainer sendest","photo" to "Foto","video" to "Video","voice" to "Sprache","video_ready" to "VIDEO BEREIT","image_ready" to "BILD BEREIT","video_preview" to "Kompakte Vorschau · bereit für KI-Analyse","image_preview" to "Bereit für den KI-Trainer","analyzing" to "Technikvideo wird analysiert…","live_speaking" to "● LIVE · SPRICHT","live_ready" to "● LIVE · BEREIT","save_gallery" to "In Galerie speichern","delete_chat" to "Aus KI-Chat löschen","saved" to "In RS Chat Gallery gespeichert.")
+    val it=en+mapOf("settings" to "Impostazioni Assistente IA","auto_speak" to "Leggi automaticamente le risposte IA","references" to "Galleria Riferimenti Trainer","close" to "Chiudi","media" to "Media IA","media_sub" to "Scegli cosa inviare al tuo allenatore IA","photo" to "Foto","video" to "Video","voice" to "Voce","video_ready" to "VIDEO PRONTO","image_ready" to "IMMAGINE PRONTA","video_preview" to "Anteprima compatta · pronta per analisi IA","image_preview" to "Pronta per l’allenatore IA","analyzing" to "Analisi del video tecnico…","live_speaking" to "● LIVE · PARLA","live_ready" to "● LIVE · PRONTO","save_gallery" to "Salva nella galleria","delete_chat" to "Elimina dalla chat IA","saved" to "Salvato in RS Chat Gallery.")
+    val pl=en+mapOf("settings" to "Ustawienia Asystenta AI","auto_speak" to "Automatycznie odczytuj odpowiedzi AI","references" to "Galeria Referencji Trenera","close" to "Zamknij","media" to "Media AI","media_sub" to "Wybierz, co wysłać trenerowi AI","photo" to "Zdjęcie","video" to "Wideo","voice" to "Głos","video_ready" to "WIDEO GOTOWE","image_ready" to "OBRAZ GOTOWY","video_preview" to "Kompaktowy podgląd · gotowy do analizy AI","image_preview" to "Gotowy do wysłania trenerowi AI","analyzing" to "Analizowanie filmu technicznego…","live_speaking" to "● LIVE · MÓWI","live_ready" to "● LIVE · GOTOWY","save_gallery" to "Zapisz w galerii","delete_chat" to "Usuń z czatu AI","saved" to "Zapisano w RS Chat Gallery.")
+    val tr=en+mapOf("settings" to "YZ Asistan Ayarları","auto_speak" to "YZ yanıtlarını otomatik seslendir","references" to "Antrenör Referans Galerisi","close" to "Kapat","media" to "YZ Medya","media_sub" to "YZ antrenörüne ne göndereceğini seç","photo" to "Fotoğraf","video" to "Video","voice" to "Ses","video_ready" to "VİDEO HAZIR","image_ready" to "GÖRSEL HAZIR","video_preview" to "Kompakt önizleme · YZ analizi için hazır","image_preview" to "YZ antrenöre göndermeye hazır","analyzing" to "Teknik video analiz ediliyor…","live_speaking" to "● CANLI · KONUŞUYOR","live_ready" to "● CANLI · HAZIR","save_gallery" to "Galeriye kaydet","delete_chat" to "YZ sohbetten sil","saved" to "RS Chat Gallery’ye kaydedildi.")
+    val pack=when(code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
+    return pack[key]?:en[key]?:key
+}
