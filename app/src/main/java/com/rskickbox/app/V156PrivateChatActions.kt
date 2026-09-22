@@ -103,6 +103,24 @@ fun RsCloudCoachBubbleV156(
                                     }
                                 )
                             }
+                            if(!message.mediaPath.isNullOrBlank() && !message.mediaKind.isNullOrBlank()){
+                                DropdownMenuItem(
+                                    text={Text("Save to Gallery")},
+                                    onClick={
+                                        menu=false
+                                        scope.launch{
+                                            rsChatMediaLocalUriV92(context,message.mediaPath)
+                                                .onSuccess{local->
+                                                    rsSaveChatMediaToGalleryV163(
+                                                        context,galleryStore,local,message.mediaKind,message.mediaName
+                                                    ).onSuccess{onStatus("Saved to RS Chat Gallery.")}
+                                                     .onFailure{onStatus(it.message.orEmpty())}
+                                                }
+                                                .onFailure{onStatus(it.message.orEmpty())}
+                                        }
+                                    }
+                                )
+                            }
                             DropdownMenuItem(
                                 text={Text("Delete for me")},
                                 onClick={
