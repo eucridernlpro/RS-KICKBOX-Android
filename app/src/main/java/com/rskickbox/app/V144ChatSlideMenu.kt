@@ -31,7 +31,11 @@ fun RsChatSlideMenuV144(
     onAll:()->Unit,
     onPrivate:()->Unit,
     onGroups:()->Unit,
-    onAi:()->Unit
+    onAi:()->Unit,
+    onSettings:()->Unit,
+    onCreateGroup:()->Unit,
+    onClearChat:()->Unit,
+    canClearChat:Boolean
 ){
     if(visible){
         Box(
@@ -84,9 +88,18 @@ fun RsChatSlideMenuV144(
 
                 Text("TEAM SPACES",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp,modifier=Modifier.padding(top=5.dp))
                 RsChatSlideItemV144(c,"Fight Groups","Team rooms · media · moderation","◈",selected=="GROUPS",false,onGroups)
+                if(role==RsRole.TRAINER){
+                    RsChatSlideItemV144(c,"Create / Manage Group","Build groups · members · permissions","＋",false,false,onCreateGroup)
+                }
 
                 Text("INTELLIGENCE",color=Color(0xFF58C9FF),fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp,modifier=Modifier.padding(top=5.dp))
                 RsChatSlideItemV144(c,"RS AI Trainer","Sofia · Marcus · technique coaching","✧",selected=="AI",true,onAi)
+
+                Text("CHAT CONTROL",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp,modifier=Modifier.padding(top=5.dp))
+                RsChatSlideItemV144(c,"Chat Settings","Calls · ringtone · communication preferences","⚙",selected=="SETTINGS",false,onSettings)
+                if(canClearChat){
+                    RsChatSlideItemV144(c,"Clear private chat","Hide all messages from your view","⌫",false,false,onClearChat)
+                }
 
                 Spacer(Modifier.weight(1f))
                 Surface(
