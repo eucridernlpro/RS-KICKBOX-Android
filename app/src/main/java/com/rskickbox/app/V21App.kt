@@ -475,8 +475,8 @@ fun RsKickboxV21App(
                                     "challenges" -> RsStudentChallengesV47(c,store,lang)
                                     "fightcamp" -> RsStudentFightCampV47(c,store,lang)
                                     "finance" -> RsStudentFinanceV39(c,store,lang)
-                                    "community" -> RsCommunityV50(c,store,lang,active)
-                                    "media" -> RsFloatingGlassChatHubV125(c,store,lang,active,"media"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
+                                    "community" -> RsFloatingGlassChatHubV125(c,store,lang,active,"community"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
+                                    "media" -> RsFloatingGlassChatHubV125(c,store,lang,active,"gallery"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
                                     "music", "music_admin" -> RsPersistentMusicCenterV90(c, store, active, lang)
                                     "techniques" -> RsTechniqueLibraryV54(c,lang)
                                     "home_training" -> RsWorkoutHomeHubV89(c,store,lang)
@@ -487,12 +487,12 @@ fun RsKickboxV21App(
                                     "coachchat" -> RsFloatingGlassChatHubV125(c,store,lang,active,"coachchat"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
                                     "events" -> RsStudentEventsV42(c,store,lang)
                                     "promotions" -> RsPromotionPageV45(c,store,lang){route="book"}
-                                    "notifications" -> RsNotificationsV41(c,store,lang,active)
+                                    "notifications" -> RsFloatingGlassChatHubV125(c,store,lang,active,"notifications"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
                                     "analytics" -> RsAnalyticsV53(c,store,lang)
                                     "guide" -> RsTrainerGuideV54(c,store,lang){route=it}
                                     "student_guide" -> RsStudentGuideV81(c,store,lang){route=it}
                                     "documents" -> RsDocumentsV51(c,store,lang,active)
-                                    "support" -> RsSupportV51(c,store,lang,active)
+                                    "support" -> RsFloatingGlassChatHubV125(c,store,lang,active,"support"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
                                     "referrals" -> RsReferralsV51(c,store,lang)
                                     "schedule" -> RsTrainerScheduleV43(c,store,lang)
                                     "content" -> RsContentManagerV48(c,store,lang)
