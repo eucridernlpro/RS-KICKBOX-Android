@@ -730,6 +730,9 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
     var editCanMedia by remember{mutableStateOf(true)}
     var editOpenJoin by remember{mutableStateOf(true)}
     var showMembers by remember{mutableStateOf(false)}
+    var conversationMenu by remember{mutableStateOf(false)}
+    var confirmClearConversation by remember{mutableStateOf(false)}
+    var replyTarget by remember{mutableStateOf<RsCloudGroupMessageV92?>(null)}
 
     val newThumbPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
         if(uri!=null)newThumb=uri.toString()
@@ -771,16 +774,58 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
     val activeGroup=selectedGroup
     if(activeGroup!=null){
         RsScroll(c,activeGroup.name,activeGroup.description.ifBlank{rsGroupChatT(lang,"chat_sub")}){
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment=Alignment.CenterVertically,
+                horizontalArrangement=Arrangement.spacedBy(8.dp)
+            ){
                 OutlinedButton(
-                    onClick={selectedGroup=null;messages=emptyList();members=emptyList();status="";revision++},
-                    modifier=Modifier.weight(1f)
-                ){Text(rsGroupChatT(lang,"back"))}
-                if(role==RsRole.TRAINER){
-                    Button(
-                        onClick={startEdit(activeGroup)},
-                        modifier=Modifier.weight(1f)
-                    ){Text("⚙  Group Settings",fontSize=9.sp)}
+                    onClick={
+                        replyTarget=null
+                        selectedGroup=null
+                        messages=emptyList()
+                        members=emptyList()
+                        status=""
+                        revision++
+                    },
+                    contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp)
+                ){Text("‹  "+rsGroupChatT(lang,"back"),fontSize=9.sp)}
+                Spacer(Modifier.weight(1f))
+                Box{
+                    OutlinedButton(
+                        onClick={conversationMenu=true},
+                        modifier=Modifier.size(40.dp),
+                        shape=CircleShape,
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text("⋮",fontSize=20.sp,fontWeight=FontWeight.Black)}
+                    DropdownMenu(
+                        expanded=conversationMenu,
+                        onDismissRequest={conversationMenu=false}
+                    ){
+                        if(role==RsRole.TRAINER){
+                            DropdownMenuItem(
+                                text={Text("Group settings")},
+                                onClick={
+                                    conversationMenu=false
+                                    startEdit(activeGroup)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text={Text("Members ("+members.size+")")},
+                                onClick={
+                                    conversationMenu=false
+                                    showMembers=!showMembers
+                                }
+                            )
+                        }
+                        DropdownMenuItem(
+                            text={Text("Clear conversation")},
+                            onClick={
+                                conversationMenu=false
+                                confirmClearConversation=true
+                            }
+                        )
+                    }
                 }
             }
 
@@ -861,50 +906,14 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                 RsPanel(c){Text(rsGroupChatT(lang,"no_messages"),color=c.muted)}
             }
 
-            val currentUserId=rsCurrentCloudUserIdV111()
             messages.forEach{m->
-                val mine=m.senderId==currentUserId
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement=if(mine)Arrangement.End else Arrangement.Start,
-                    verticalAlignment=Alignment.Bottom
-                ){
-                    if(!mine){
-                        RsMemberAvatarV68(c,m.senderEmail,m.senderName,size=30.dp)
-                        Spacer(Modifier.width(7.dp))
-                    }
-                    Surface(
-                        color=if(mine)c.gold.copy(alpha=.16f) else c.panel.copy(alpha=.70f),
-                        shape=RoundedCornerShape(
-                            topStart=20.dp,topEnd=20.dp,
-                            bottomStart=if(mine)20.dp else 6.dp,
-                            bottomEnd=if(mine)6.dp else 20.dp
-                        ),
-                        border=BorderStroke(1.dp,if(mine)c.gold.copy(alpha=.25f) else c.gold.copy(alpha=.10f)),
-                        modifier=Modifier.fillMaxWidth(.84f)
-                    ){
-                        Column(Modifier.padding(11.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
-                            Text(m.senderName.ifBlank{m.senderEmail},color=c.bright,fontWeight=FontWeight.Black,fontSize=9.sp)
-                            if(m.body.isNotBlank())Text(m.body,color=c.text,fontSize=13.sp,lineHeight=18.sp)
-                            RsChatAttachmentPreviewV92(c,lang,m.mediaPath,m.mediaKind,m.mediaName)
-                            if(role==RsRole.TRAINER){
-                                RsTrainerMessageAdminV111(
-                                    c=c,lang=lang,body=m.body,canEdit=mine,busy=loading,
-                                    onEdit={body->rsStaffEditGroupMessageV111(m.id,body)},
-                                    onDelete={rsStaffDeleteGroupMessageV111(m.id,m.mediaPath)},
-                                    onChanged={revision++},onStatus={status=it}
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if(role==RsRole.TRAINER && messages.isNotEmpty()){
-                RsTrainerClearConversationV111(
-                    c=c,lang=lang,enabled=!loading,
-                    onClear={rsStaffClearGroupChatRobustV116(activeGroup.id,messages)},
-                    onChanged={messages=emptyList();revision++},
+                RsCloudGroupBubbleV162(
+                    c=c,
+                    lang=lang,
+                    message=m,
+                    viewerRole=role,
+                    onReply={replyTarget=it},
+                    onChanged={revision++},
                     onStatus={status=it}
                 )
             }
@@ -913,9 +922,65 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
             RsChatComposerV92(
                 c=c,lang=lang,scopeType="group",scopeId=activeGroup.id,
                 enabled=!loading&&studentComposerAllowed,
-                onSent={revision++},onStatus={status=it},
-                onSend={body,attachment->rsSendCloudGroupMessageV92(activeGroup.id,body,attachment)}
+                replyPreview=replyTarget?.body?.ifBlank{replyTarget?.mediaName.orEmpty()},
+                onClearReply={replyTarget=null},
+                onSent={replyTarget=null;revision++},onStatus={status=it},
+                onSend={body,attachment->rsSendCloudGroupMessageV92(activeGroup.id,body,attachment,replyTarget?.id)}
             )
+        }
+
+        if(confirmClearConversation){
+            androidx.compose.ui.window.Dialog(
+                onDismissRequest={if(busyId==null)confirmClearConversation=false}
+            ){
+                Surface(
+                    color=Color.Black.copy(alpha=.98f),
+                    shape=RoundedCornerShape(24.dp),
+                    border=BorderStroke(1.dp,c.gold.copy(alpha=.46f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+                        Text("CLEAR GROUP CONVERSATION",color=c.bright,fontWeight=FontWeight.Black,fontSize=16.sp)
+                        Text(
+                            if(role==RsRole.TRAINER)
+                                "Clear this group chat for everyone, or cancel."
+                            else
+                                "Clear this group conversation from your view. Other members keep their copy.",
+                            color=c.muted,fontSize=10.sp,lineHeight=14.sp
+                        )
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                            OutlinedButton(
+                                onClick={confirmClearConversation=false},
+                                enabled=busyId==null,
+                                modifier=Modifier.weight(1f)
+                            ){Text("Cancel")}
+                            Button(
+                                onClick={
+                                    busyId="clear"
+                                    scope.launch{
+                                        val result=if(role==RsRole.TRAINER)
+                                            rsStaffClearGroupChatRobustV116(activeGroup.id,messages)
+                                        else
+                                            rsHideGroupConversationForMeV162(messages)
+                                        result
+                                            .onSuccess{
+                                                confirmClearConversation=false
+                                                replyTarget=null
+                                                messages=emptyList()
+                                                status="Conversation cleared."
+                                                revision++
+                                            }
+                                            .onFailure{status=it.message?:"Could not clear conversation."}
+                                        busyId=null
+                                    }
+                                },
+                                enabled=busyId==null,
+                                modifier=Modifier.weight(1f)
+                            ){Text("Clear")}
+                        }
+                    }
+                }
+            }
         }
 
         val eg=editing
