@@ -399,6 +399,18 @@ fun RsFloatingGlassChatHubV125(
                             },
                             onOpenNotifications={tab=RsChatHubTabV125.NOTIFICATIONS}
                         )
+                        OutlinedButton(
+                            onClick={
+                                store.pb("ai_start_listening_v168",true)
+                                tab=RsChatHubTabV125.AI
+                            },
+                            modifier=Modifier.size(40.dp),
+                            shape=CircleShape,
+                            border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.58f)),
+                            contentPadding=PaddingValues(0.dp)
+                        ){
+                            Text("🎙",color=Color(0xFF58C9FF),fontSize=15.sp)
+                        }
                     }
                     Row(
                         Modifier.fillMaxWidth(),
