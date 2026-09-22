@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -62,12 +65,23 @@ fun RsIncomingCallAvailabilityV152(
         mutableStateOf(store.b("background_calls_enabled",true))
     }
 
-    val canFullScreen=remember{
+    fun checkFullScreenAccess():Boolean =
         if(Build.VERSION.SDK_INT>=34){
             runCatching{
                 context.getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
             }.getOrDefault(false)
         }else true
+
+    var canFullScreen by remember{mutableStateOf(checkFullScreenAccess())}
+    val lifecycleOwner=LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner){
+        val observer=LifecycleEventObserver{_,event->
+            if(event==Lifecycle.Event.ON_RESUME){
+                canFullScreen=checkFullScreenAccess()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose{lifecycleOwner.lifecycle.removeObserver(observer)}
     }
 
     RsPanel(c){
