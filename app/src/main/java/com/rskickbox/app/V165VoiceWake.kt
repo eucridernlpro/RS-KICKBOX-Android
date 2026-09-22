@@ -446,7 +446,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         return NotificationCompat.Builder(this,RS_VOICE_CHANNEL_V165)
-            .setSmallIcon(R.drawable.ic_notification_rs)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("RS Voice Wake")
             .setContentText(text)
             .setContentIntent(pending)
