@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -25,6 +26,8 @@ fun RsCloudGroupBubbleV162(
     onStatus:(String)->Unit
 ){
     val scope=rememberCoroutineScope()
+    val context=LocalContext.current
+    val galleryStore=remember{RsStore(context)}
     val currentId=rsCurrentCloudUserIdV111()
     val mine=message.senderId==currentId
     var menu by remember(message.id){mutableStateOf(false)}
@@ -109,6 +112,24 @@ fun RsCloudGroupBubbleV162(
                                             )
                                                 .onSuccess{onStatus("Saved to RS Chat Gallery.")}
                                                 .onFailure{onStatus(it.message?:"Could not save media.")}
+                                        }
+                                    }
+                                )
+                            }
+                            if(!message.mediaPath.isNullOrBlank() && !message.mediaKind.isNullOrBlank()){
+                                DropdownMenuItem(
+                                    text={Text("Save to Gallery")},
+                                    onClick={
+                                        menu=false
+                                        scope.launch{
+                                            rsChatMediaLocalUriV92(context,message.mediaPath)
+                                                .onSuccess{local->
+                                                    rsSaveChatMediaToGalleryV163(
+                                                        context,galleryStore,local,message.mediaKind,message.mediaName
+                                                    ).onSuccess{onStatus("Saved to RS Chat Gallery.")}
+                                                     .onFailure{onStatus(it.message.orEmpty())}
+                                                }
+                                                .onFailure{onStatus(it.message.orEmpty())}
                                         }
                                     }
                                 )
