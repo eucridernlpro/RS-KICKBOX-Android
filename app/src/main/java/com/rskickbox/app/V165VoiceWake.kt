@@ -31,6 +31,7 @@ private const val RS_VOICE_CHANNEL_V165="rs_voice_wake_v165"
 private const val RS_VOICE_NOTIFICATION_ID_V165=1651
 private const val RS_VOICE_LOGIN_NOTIFICATION_ID_V165=1652
 private const val RS_TRUSTED_LOGIN_MS_V165=72L*60L*60L*1000L
+private const val RS_INACTIVITY_LOGOUT_MS_V165=24L*60L*60L*1000L
 
 private fun rsWakePhrasesV165()=listOf(
     "wake up rs","hey rs","ok rs",
@@ -224,7 +225,13 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         val authMs=store.s("session_password_auth_ms","0").toLongOrNull()?:0L
         val age=System.currentTimeMillis()-authMs
         val role=store.s("session_role","")
-        val localFresh=authMs>0L && age in 0..RS_TRUSTED_LOGIN_MS_V165 && role in setOf("student","trainer")
+        val activityMs=store.s("session_last_activity_ms",authMs.toString()).toLongOrNull()?:authMs
+        val inactivityAge=System.currentTimeMillis()-activityMs
+        val localFresh=authMs>0L &&
+            age in 0..RS_TRUSTED_LOGIN_MS_V165 &&
+            activityMs>0L &&
+            inactivityAge in 0..RS_INACTIVITY_LOGOUT_MS_V165 &&
+            role in setOf("student","trainer")
         val cloudFresh=rsSupabaseClientV60()?.auth?.currentUserOrNull()!=null
         return localFresh && cloudFresh
     }
@@ -351,6 +358,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         }
 
         val now=System.currentTimeMillis()
+        store.ps("session_last_activity_ms",now.toString())
 
         if(awaitingPlaylistName){
             val name=text.trim().take(60)
@@ -541,7 +549,10 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             val authMs=store.s("session_password_auth_ms","0").toLongOrNull()?:0L
             val age=System.currentTimeMillis()-authMs
             val role=store.s("session_role","")
+            val activityMs=store.s("session_last_activity_ms",authMs.toString()).toLongOrNull()?:authMs
+            val inactivityAge=System.currentTimeMillis()-activityMs
             val fresh=authMs>0L && age in 0..RS_TRUSTED_LOGIN_MS_V165 &&
+                activityMs>0L && inactivityAge in 0..RS_INACTIVITY_LOGOUT_MS_V165 &&
                 role in setOf("student","trainer") &&
                 rsSupabaseClientV60()?.auth?.currentUserOrNull()!=null
             if(!fresh){
