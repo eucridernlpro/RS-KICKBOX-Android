@@ -32,6 +32,13 @@ data class RsSavedChatMediaV163(
     val savedAt:Long
 )
 
+data class RsRecentChatMediaV163(
+    val uri:String,
+    val kind:String,
+    val name:String,
+    val modifiedAt:Long
+)
+
 private const val RS_CHAT_GALLERY_KEY_V163="rs_chat_gallery_v163"
 
 private fun rsLoadChatGalleryV163(store:RsStore):List<RsSavedChatMediaV163>{
@@ -68,6 +75,51 @@ private fun rsSaveChatGalleryV163(store:RsStore,items:List<RsSavedChatMediaV163>
         })
     }
     store.ps(RS_CHAT_GALLERY_KEY_V163,a.toString())
+}
+
+fun rsCacheTemporaryAiMediaV163(
+    context:Context,
+    source:Uri,
+    kind:String
+):Result<String> = runCatching{
+    val dir=File(context.cacheDir,"rs_ai_chat_media").apply{mkdirs()}
+    val mime=context.contentResolver.getType(source).orEmpty().lowercase()
+    val ext=when{
+        kind=="IMAGE" && mime.contains("png")->"png"
+        kind=="IMAGE"->"jpg"
+        mime.contains("webm")->"webm"
+        mime.contains("quicktime")->"mov"
+        else->"mp4"
+    }
+    val file=File(dir,"ai_"+UUID.randomUUID()+"."+ext)
+    context.contentResolver.openInputStream(source)?.use{input->
+        file.outputStream().use{output->input.copyTo(output)}
+    } ?: error("Could not read selected media.")
+    require(file.length()>0){"Selected media is empty."}
+    file.setLastModified(System.currentTimeMillis())
+    Uri.fromFile(file).toString()
+}
+
+private fun rsRecentChatMediaV163(context:Context):List<RsRecentChatMediaV163>{
+    val dirs=listOf("rs_chat_media","rs_voice_messages","rs_ai_chat_media")
+    return dirs.flatMap{dirName->
+        File(context.cacheDir,dirName).listFiles()?.mapNotNull{file->
+            if(!file.isFile||file.length()<=0L)return@mapNotNull null
+            val ext=file.extension.lowercase()
+            val kind=when(ext){
+                "jpg","jpeg","png","webp","gif"->"IMAGE"
+                "mp4","webm","mov","3gp"->"VIDEO"
+                "m4a","aac","mp3","ogg","wav"->"AUDIO"
+                else->return@mapNotNull null
+            }
+            RsRecentChatMediaV163(
+                uri=Uri.fromFile(file).toString(),
+                kind=kind,
+                name=file.name,
+                modifiedAt=file.lastModified()
+            )
+        }?:emptyList()
+    }.sortedByDescending{it.modifiedAt}
 }
 
 fun rsCleanupChatMediaCacheV163(context:Context){
@@ -126,6 +178,10 @@ fun RsChatMediaGalleryV163(c:RsPalette,store:RsStore,lang:RsLang){
     var revision by remember{mutableIntStateOf(0)}
     var status by remember{mutableStateOf("")}
     val items=remember(revision){rsLoadChatGalleryV163(store)}
+    val recent=remember(revision){
+        rsCleanupChatMediaCacheV163(context)
+        rsRecentChatMediaV163(context)
+    }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=8.dp,vertical=6.dp),
@@ -137,6 +193,39 @@ fun RsChatMediaGalleryV163(c:RsPalette,store:RsStore,lang:RsLang){
             color=c.muted,fontSize=9.sp,lineHeight=13.sp
         )
         if(status.isNotBlank())Text(status,color=c.muted,fontSize=9.sp)
+
+        Text("RECENT · AUTO-DELETE AFTER 7 DAYS",color=c.gold,fontWeight=FontWeight.Black,fontSize=9.sp,letterSpacing=.7.sp)
+        if(recent.isEmpty()){
+            Text("No temporary chat media on this device.",color=c.muted,fontSize=9.sp)
+        }else{
+            recent.take(50).forEach{item->
+                Surface(
+                    color=Color.Black.copy(alpha=.62f),
+                    shape=RoundedCornerShape(20.dp),
+                    border=BorderStroke(1.dp,c.gold.copy(alpha=.16f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Column(Modifier.padding(9.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){
+                        Text(item.name,color=c.text,fontSize=9.sp,maxLines=1)
+                        RsRecentChatPreviewV163(c,item)
+                        Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+                            val ageDays=((System.currentTimeMillis()-item.modifiedAt)/(24L*60L*60L*1000L)).coerceAtLeast(0L)
+                            Text(
+                                "Expires in "+(7L-ageDays).coerceAtLeast(0L)+" day(s)",
+                                color=c.muted,fontSize=8.sp,modifier=Modifier.weight(1f)
+                            )
+                            TextButton(onClick={
+                                rsSaveChatMediaToGalleryV163(context,store,item.uri,item.kind,item.name)
+                                    .onSuccess{status="Saved to RS Chat Gallery.";revision++}
+                                    .onFailure{status=it.message?:"Could not save media."}
+                            }){Text("☆ Save",fontSize=9.sp)}
+                        }
+                    }
+                }
+            }
+        }
+
+        Text("SAVED GALLERY",color=c.gold,fontWeight=FontWeight.Black,fontSize=9.sp,letterSpacing=.7.sp)
 
         if(items.isEmpty()){
             Surface(
@@ -225,4 +314,20 @@ fun RsMiniLocalVideoV163(uri:String,modifier:Modifier=Modifier){
         update={it.player=player},
         modifier=modifier
     )
+}
+
+
+@Composable
+private fun RsRecentChatPreviewV163(c:RsPalette,item:RsRecentChatMediaV163){
+    when(item.kind){
+        "IMAGE"->RsUriPreviewV21(item.uri,Modifier.fillMaxWidth().height(150.dp),"CENTER")
+        "VIDEO"->RsMiniLocalVideoV163(item.uri,Modifier.fillMaxWidth().height(120.dp))
+        "AUDIO"->Surface(
+            color=c.gold.copy(alpha=.07f),
+            shape=RoundedCornerShape(14.dp),
+            modifier=Modifier.fillMaxWidth()
+        ){
+            Text("🎙  Temporary audio",color=c.text,modifier=Modifier.padding(12.dp))
+        }
+    }
 }
