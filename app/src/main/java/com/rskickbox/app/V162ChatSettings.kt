@@ -1,5 +1,11 @@
 package com.rskickbox.app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +23,28 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang){
     var autoSpeak by remember{mutableStateOf(store.b("ai_auto_speak_v163",true))}
     var avatarMotion by remember{mutableStateOf(store.b("ai_avatar_motion_v163",true))}
     var swipeMenu by remember{mutableStateOf(store.b("chat_swipe_menu_v163",true))}
+    val context=LocalContext.current
+    var voiceWake by remember{mutableStateOf(store.b("rs_voice_wake_enabled_v165",false))}
+    var voiceWakeStatus by remember{mutableStateOf("")}
+    val micPermissionLauncher=rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ){granted->
+        if(granted){
+            voiceWake=true
+            store.pb("rs_voice_wake_enabled_v165",true)
+            runCatching{RsVoiceWakeServiceV165.start(context)}
+                .onSuccess{voiceWakeStatus="RS Voice Wake is listening."}
+                .onFailure{
+                    voiceWake=false
+                    store.pb("rs_voice_wake_enabled_v165",false)
+                    voiceWakeStatus=it.message?:"Could not start RS Voice Wake."
+                }
+        }else{
+            voiceWake=false
+            store.pb("rs_voice_wake_enabled_v165",false)
+            voiceWakeStatus="Microphone permission is required for RS Voice Wake."
+        }
+    }
 
     RsScroll(
         c,
@@ -76,6 +104,49 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang){
                         Text("Subtle breathing / speaking motion for the AI stage.",color=c.muted,fontSize=8.sp)
                     }
                     Switch(avatarMotion,{avatarMotion=it;store.pb("ai_avatar_motion_v163",it)})
+                }
+                HorizontalDivider(color=Color(0xFF58C9FF).copy(alpha=.14f))
+                Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+                    Column(Modifier.weight(1f)){
+                        Text("RS Voice Wake · beta",color=c.text,fontWeight=FontWeight.Bold,fontSize=10.sp)
+                        Text(
+                            "Say “Wake up RS” / “Hey RS” or a supported localized wake phrase while the listening service is active.",
+                            color=c.muted,fontSize=8.sp,lineHeight=12.sp
+                        )
+                    }
+                    Switch(
+                        checked=voiceWake,
+                        onCheckedChange={enabled->
+                            if(enabled){
+                                val granted=ContextCompat.checkSelfPermission(
+                                    context,Manifest.permission.RECORD_AUDIO
+                                )==PackageManager.PERMISSION_GRANTED
+                                if(granted){
+                                    voiceWake=true
+                                    store.pb("rs_voice_wake_enabled_v165",true)
+                                    runCatching{RsVoiceWakeServiceV165.start(context)}
+                                        .onSuccess{voiceWakeStatus="RS Voice Wake is listening."}
+                                        .onFailure{
+                                            voiceWake=false
+                                            store.pb("rs_voice_wake_enabled_v165",false)
+                                            voiceWakeStatus=it.message?:"Could not start RS Voice Wake."
+                                        }
+                                }else micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }else{
+                                voiceWake=false
+                                store.pb("rs_voice_wake_enabled_v165",false)
+                                RsVoiceWakeServiceV165.stop(context)
+                                voiceWakeStatus="RS Voice Wake stopped."
+                            }
+                        }
+                    )
+                }
+                Text(
+                    "Voice Wake uses a foreground microphone service and shows an Android notification. It can continue while RS is minimized and may continue with the screen locked, but Android will stop it after Force Stop.",
+                    color=c.muted,fontSize=8.sp,lineHeight=12.sp
+                )
+                if(voiceWakeStatus.isNotBlank()){
+                    Text(voiceWakeStatus,color=Color(0xFF58C9FF),fontSize=8.sp)
                 }
             }
         }
