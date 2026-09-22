@@ -64,6 +64,11 @@ fun RsKickboxV21App(
     val voiceAssistantLaunch=remember(initialIncomingAction){
         initialIncomingAction=="com.rskickbox.app.OPEN_AI_VOICE"
     }
+    val initialRequestedRoute=remember(initialIncomingAction){
+        if(initialIncomingAction=="com.rskickbox.app.OPEN_RS_ROUTE")
+            (context as? android.app.Activity)?.intent?.getStringExtra("route").orEmpty()
+        else ""
+    }
     val initialIncomingDirectCall=remember(
         initialIncomingAction,
         initialIncomingCallId,
@@ -165,10 +170,11 @@ fun RsKickboxV21App(
     }
 
 
-    val restoredRoute=remember(localSessionRole,backgroundCallRole,voiceAssistantLaunch){
+    val restoredRoute=remember(localSessionRole,backgroundCallRole,voiceAssistantLaunch,initialRequestedRoute){
         when{
             backgroundCallRole!=null->"coachchat"
             voiceAssistantLaunch && localSessionFresh && localSessionRole!=null->"voice"
+            initialRequestedRoute.isNotBlank() && localSessionFresh && localSessionRole!=null->initialRequestedRoute
             else->{
                 val saved=store.s("session_last_route","")
                 if(localSessionRole==RsRole.TRAINER) saved.ifBlank{"trainer"} else saved.ifBlank{"home"}
