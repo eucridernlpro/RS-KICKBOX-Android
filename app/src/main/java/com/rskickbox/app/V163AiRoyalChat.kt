@@ -86,6 +86,7 @@ fun RsAiRoyalChatV163(
     var languageMenu by remember{mutableStateOf(false)}
     var pageMenu by remember{mutableStateOf(false)}
     var speaking by remember{mutableStateOf(false)}
+    val avatarMotionEnabled=store.b("ai_avatar_motion_v163",true)
     var analyzing by remember{mutableStateOf(false)}
     var status by remember{mutableStateOf("")}
     var trainerReferences by remember{mutableStateOf(false)}
@@ -287,9 +288,9 @@ fun RsAiRoyalChatV163(
                     Box(
                         Modifier.fillMaxSize()
                             .graphicsLayer{
-                                scaleX=breathe
-                                scaleY=breathe
-                                translationY=lift
+                                scaleX=if(avatarMotionEnabled)breathe else 1f
+                                scaleY=if(avatarMotionEnabled)breathe else 1f
+                                translationY=if(avatarMotionEnabled)lift else 0f
                             }
                     ){
                         RsUriPreviewV21(avatarVisual,Modifier.fillMaxSize(),"CENTER")
