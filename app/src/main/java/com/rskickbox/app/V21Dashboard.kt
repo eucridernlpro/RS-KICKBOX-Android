@@ -284,7 +284,7 @@ private fun trainerV21()=listOf(
     )),
     SectionV21("Coaching, Content & Music",listOf(
         DashV21("coachchat","RS Chat","Students · groups · voice · AI coach · moderation","ai"),
-        DashV21("content","Content Manager","Lessons · articles · Academy content","brand"),
+        DashV21("content","AI Content Manager","AI coach · trainer references · training knowledge","ai"),
         DashV21("homework_admin","Homework Manager","Assign · review","training"),
         DashV21("session_builder","Session Builder","Create active training sessions","training"),
         DashV21("music_admin","RS Music Manager","Persistent background player","music"),
