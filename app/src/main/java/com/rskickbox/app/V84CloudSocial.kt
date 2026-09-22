@@ -93,7 +93,11 @@ suspend fun rsSaveCloudSocialProfileV84(
 
 suspend fun rsCloudCommunityV84():Result<List<RsCloudCommunityPostV84>> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
-    client.postgrest.rpc("rs_community_feed_v2").decodeList<RsCloudCommunityPostV84>()
+    runCatching{
+        client.postgrest.rpc("rs_community_feed_v2").decodeList<RsCloudCommunityPostV84>()
+    }.getOrElse{
+        client.postgrest.rpc("rs_community_feed").decodeList<RsCloudCommunityPostV84>()
+    }
 }
 
 suspend fun rsCreateCloudCommunityPostV84(
@@ -101,21 +105,30 @@ suspend fun rsCreateCloudCommunityPostV84(
     attachment:RsChatAttachmentV92?=null
 ):Result<Unit> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
-    client.postgrest.rpc(
-        "rs_create_community_post_v2",
-        buildJsonObject{
-            put("p_body",body.trim())
-            if(attachment==null){
-                put("p_media_path",kotlinx.serialization.json.JsonNull)
-                put("p_media_kind",kotlinx.serialization.json.JsonNull)
-                put("p_media_name",kotlinx.serialization.json.JsonNull)
-            }else{
-                put("p_media_path",attachment.path)
-                put("p_media_kind",attachment.kind)
-                put("p_media_name",attachment.name)
+    val v2=runCatching{
+        client.postgrest.rpc(
+            "rs_create_community_post_v2",
+            buildJsonObject{
+                put("p_body",body.trim())
+                if(attachment==null){
+                    put("p_media_path",kotlinx.serialization.json.JsonNull)
+                    put("p_media_kind",kotlinx.serialization.json.JsonNull)
+                    put("p_media_name",kotlinx.serialization.json.JsonNull)
+                }else{
+                    put("p_media_path",attachment.path)
+                    put("p_media_kind",attachment.kind)
+                    put("p_media_name",attachment.name)
+                }
             }
-        }
-    )
+        )
+    }
+    if(v2.isFailure){
+        require(attachment==null){"Community media requires the latest RS CHAT backend update."}
+        client.postgrest.rpc(
+            "rs_create_community_post",
+            buildJsonObject{put("p_body",body.trim())}
+        )
+    }
     Unit
 }
 
