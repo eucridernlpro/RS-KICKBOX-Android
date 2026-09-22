@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
 
-private enum class RsChatHubTabV125{ALL,PRIVATE,GROUPS,COMMUNITY,NOTIFICATIONS,AI}
+private enum class RsChatHubTabV125{ALL,PRIVATE,GROUPS,COMMUNITY,NOTIFICATIONS,AI,SETTINGS}
 
 private fun rsInitialChatTabV125(route:String)=when(route){
     "groups"->RsChatHubTabV125.GROUPS
@@ -236,11 +236,15 @@ fun RsFloatingGlassChatHubV125(
     var presenceRevision by remember{mutableIntStateOf(0)}
     var searchQuery by remember{mutableStateOf("")}
     var slideMenuOpen by remember{mutableStateOf(false)}
+    var confirmClearChat by remember{mutableStateOf(false)}
+    var menuMessage by remember{mutableStateOf("")}
+    val chatScope=rememberCoroutineScope()
 
-    BackHandler{
+    fun handleChatBack(){
         when{
+            confirmClearChat->confirmClearChat=false
             slideMenuOpen->slideMenuOpen=false
-            tab==RsChatHubTabV125.PRIVATE && privateStudentId!=null->{
+            tab==RsChatHubTabV125.PRIVATE->{
                 privateStudentId=null
                 tab=RsChatHubTabV125.ALL
             }
@@ -248,6 +252,8 @@ fun RsFloatingGlassChatHubV125(
             else->onBack()
         }
     }
+
+    BackHandler{handleChatBack()}
 
     LaunchedEffect(Unit){
         val pending=store.s("chat_open_peer_id_v156","").trim()
@@ -358,7 +364,7 @@ fun RsFloatingGlassChatHubV125(
                         horizontalArrangement=Arrangement.spacedBy(8.dp)
                     ){
                         OutlinedButton(
-                            onClick=onBack,
+                            onClick={handleChatBack()},
                             modifier=Modifier.size(38.dp),
                             shape=CircleShape,
                             border=BorderStroke(1.dp,c.gold.copy(alpha=.34f)),
@@ -520,7 +526,11 @@ fun RsFloatingGlassChatHubV125(
                 RsChatHubTabV125.GROUPS->RsGroupsV50(c,store,lang,role)
                 RsChatHubTabV125.COMMUNITY->RsCommunityV50(c,store,lang,role)
                 RsChatHubTabV125.NOTIFICATIONS->RsChatNotificationsV156(c,lang)
-                RsChatHubTabV125.AI->if(role==RsRole.TRAINER) RsTrainerAiReferenceChatV125(c,lang) else RsStudentAiAssistantSafeV151(c,lang,store)
+                RsChatHubTabV125.AI->if(role==RsRole.TRAINER) RsTrainerAiHubV161(c,lang,store) else RsStudentAiAssistantSafeV151(c,lang,store)
+                RsChatHubTabV125.SETTINGS->RsScroll(c,"CHAT SETTINGS","Calls · ringtone · availability · communication preferences"){
+                    if(menuMessage.isNotBlank())Text(menuMessage,color=c.muted,fontSize=9.sp)
+                    RsCallRingtoneSettingsV138(c,store,lang)
+                }
             }
         }
         }
@@ -534,7 +544,57 @@ fun RsFloatingGlassChatHubV125(
             onAll={tab=RsChatHubTabV125.ALL;slideMenuOpen=false},
             onPrivate={tab=RsChatHubTabV125.PRIVATE;slideMenuOpen=false},
             onGroups={tab=RsChatHubTabV125.GROUPS;slideMenuOpen=false},
-            onAi={tab=RsChatHubTabV125.AI;slideMenuOpen=false}
+            onAi={tab=RsChatHubTabV125.AI;slideMenuOpen=false},
+            onSettings={tab=RsChatHubTabV125.SETTINGS;slideMenuOpen=false},
+            onCreateGroup={tab=RsChatHubTabV125.GROUPS;slideMenuOpen=false},
+            onClearChat={slideMenuOpen=false;confirmClearChat=true},
+            canClearChat=tab==RsChatHubTabV125.PRIVATE
         )
+
+        if(confirmClearChat){
+            androidx.compose.ui.window.Dialog(onDismissRequest={confirmClearChat=false}){
+                Surface(
+                    color=Color.Black.copy(alpha=.98f),
+                    shape=RoundedCornerShape(24.dp),
+                    border=BorderStroke(1.dp,c.gold.copy(alpha=.48f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+                        Text("CLEAR PRIVATE CHAT",color=c.bright,fontWeight=FontWeight.Black,fontSize=16.sp)
+                        Text(
+                            "This hides all messages in this private conversation from your account. It does not delete the other person’s copy.",
+                            color=c.muted,fontSize=10.sp,lineHeight=14.sp
+                        )
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                            OutlinedButton(
+                                onClick={confirmClearChat=false},
+                                modifier=Modifier.weight(1f)
+                            ){Text("Cancel")}
+                            Button(
+                                onClick={
+                                    confirmClearChat=false
+                                    chatScope.launch{
+                                        val studentId=privateStudentId
+                                            ?:rsCloudMyStudentIdV72().getOrNull().orEmpty()
+                                        if(studentId.isBlank()){
+                                            menuMessage="Could not identify this private chat."
+                                        }else{
+                                            rsHideCoachThreadForMeV161(studentId)
+                                                .onSuccess{
+                                                    menuMessage="Private chat cleared from your view."
+                                                    privateStudentId=null
+                                                    tab=RsChatHubTabV125.ALL
+                                                }
+                                                .onFailure{menuMessage=it.message?:"Could not clear private chat."}
+                                        }
+                                    }
+                                },
+                                modifier=Modifier.weight(1f)
+                            ){Text("Clear")}
+                        }
+                    }
+                }
+            }
+        }
     }
 }
