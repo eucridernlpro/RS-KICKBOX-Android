@@ -24,7 +24,7 @@ private fun rsAiGreetingV164(q:String):Boolean{
         "bonjour","bonsoir","salut",
         "hallo","guten morgen","guten abend",
         "ciao","buongiorno","dobry","merhaba"
-    ).any{s==it || s.startsWith(s+" ")}
+    ).any{term->s==term || s.startsWith(term+" ")}
 }
 
 private fun rsAiThanksV164(q:String):Boolean{
