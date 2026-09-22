@@ -1319,12 +1319,7 @@ private fun ShellV21(
                         border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.55f)),
                         contentPadding=PaddingValues(0.dp)
                     ){
-                        Text(
-                            "🎙",
-                            fontSize=16.sp,
-                            color=Color(0xFF58C9FF),
-                            modifier=Modifier.semantics{contentDescription="Wake RS AI"}
-                        )
+                        Text("🎙",fontSize=16.sp,color=Color(0xFF58C9FF))
                     }
                     OutlinedButton(
                         onClick=onLogout,
