@@ -246,8 +246,8 @@ fun RsFloatingGlassChatHubV125(
             confirmClearChat->confirmClearChat=false
             slideMenuOpen->slideMenuOpen=false
             tab==RsChatHubTabV125.PRIVATE->{
-                privateStudentId=null
                 tab=RsChatHubTabV125.ALL
+                privateStudentId=null
             }
             tab!=RsChatHubTabV125.ALL->tab=RsChatHubTabV125.ALL
             else->onBack()
@@ -523,7 +523,9 @@ fun RsFloatingGlassChatHubV125(
                         }
                     }
                 }
-                RsChatHubTabV125.PRIVATE->RsCoachChatV44(c,store,lang,role,privateStudentId)
+                RsChatHubTabV125.PRIVATE->key("private-thread",role,privateStudentId){
+                    RsCoachChatV44(c,store,lang,role,privateStudentId)
+                }
                 RsChatHubTabV125.GROUPS->RsGroupsV50(c,store,lang,role)
                 RsChatHubTabV125.COMMUNITY->RsCommunityV50(c,store,lang,role)
                 RsChatHubTabV125.NOTIFICATIONS->RsChatNotificationsV156(c,lang)
