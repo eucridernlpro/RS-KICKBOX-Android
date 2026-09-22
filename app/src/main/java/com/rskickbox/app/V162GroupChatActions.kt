@@ -96,6 +96,23 @@ fun RsCloudGroupBubbleV162(
                                     onClick={menu=false;editing=true;draft=message.body}
                                 )
                             }
+                            if(!message.mediaPath.isNullOrBlank()&&!message.mediaKind.isNullOrBlank()){
+                                DropdownMenuItem(
+                                    text={Text("Save media to Gallery")},
+                                    onClick={
+                                        menu=false
+                                        scope.launch{
+                                            rsSaveChatMediaToGalleryV163(
+                                                message.mediaPath,
+                                                message.mediaKind,
+                                                message.mediaName
+                                            )
+                                                .onSuccess{onStatus("Saved to RS Chat Gallery.")}
+                                                .onFailure{onStatus(it.message?:"Could not save media.")}
+                                        }
+                                    }
+                                )
+                            }
                             DropdownMenuItem(
                                 text={Text("Delete for me")},
                                 onClick={
