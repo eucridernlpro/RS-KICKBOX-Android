@@ -364,7 +364,11 @@ fun RsCommunityV50(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
 
 @Composable
 fun RsGroupsV50(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
-    if(RsSupabaseV60.configured){RsProfessionalGroupsV144(c,store,lang,role);return}
+    if(RsSupabaseV60.configured){
+        if(role==RsRole.TRAINER)RsCloudGroupsScreenV84(c,lang,role)
+        else RsProfessionalGroupsV144(c,store,lang,role)
+        return
+    }
     var revision by remember{mutableIntStateOf(0)}
     var name by remember{mutableStateOf("")}
     var description by remember{mutableStateOf("")}
