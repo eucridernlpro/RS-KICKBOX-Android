@@ -134,7 +134,7 @@ fun RsCommunityChatV163(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
         loading=true
         rsCloudCommunityV84()
             .onSuccess{posts=it}
-            .onFailure{status=it.message?:"Could not load community."}
+            .onFailure{status=rsChatFriendlyCloudErrorV164(it.message.orEmpty(),"Could not load Community.")}
         loading=false
     }
 
@@ -193,7 +193,7 @@ fun RsCommunityChatV163(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                                                 scope.launch{
                                                     rsSetCloudCommunityPostActiveV84(post.id,!post.active)
                                                         .onSuccess{revision++}
-                                                        .onFailure{status=it.message.orEmpty()}
+                                                        .onFailure{status=rsChatFriendlyCloudErrorV164(it.message.orEmpty(),"Could not update Community.")}
                                                 }
                                             }
                                         )
@@ -237,7 +237,7 @@ fun RsCommunityChatV163(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                 scope.launch{
                     rsCreateCloudCommunityPostV84(text)
                         .onSuccess{revision++}
-                        .onFailure{status=it.message?:"Could not send."}
+                        .onFailure{status=rsChatFriendlyCloudErrorV164(it.message.orEmpty(),"Could not send Community message.")}
                     busy=false
                 }
             }
@@ -267,7 +267,7 @@ fun RsSupportChatV163(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                 tickets=it.sortedBy{row->row.createdAtMillis()}
                 selected?.let{old->selected=it.firstOrNull{row->row.id==old.id}}
             }
-            .onFailure{status=it.message?:"Could not load support."}
+            .onFailure{status=rsChatFriendlyCloudErrorV164(it.message.orEmpty(),"Could not load Support.")}
         loading=false
     }
 
@@ -407,12 +407,12 @@ fun RsSupportChatV163(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                             if(ticket!=null){
                                 rsUpdateCloudSupportTicketV99(ticket.id,text,ticket.status)
                                     .onSuccess{revision++}
-                                    .onFailure{status=it.message?:"Could not send reply."}
+                                    .onFailure{status=rsChatFriendlyCloudErrorV164(it.message.orEmpty(),"Could not send Support reply.")}
                             }
                         }else{
                             rsCreateCloudSupportTicketV99("RS Chat Support",text)
                                 .onSuccess{revision++}
-                                .onFailure{status=it.message?:"Could not send message."}
+                                .onFailure{status=rsChatFriendlyCloudErrorV164(it.message.orEmpty(),"Could not send Support message.")}
                         }
                         busy=false
                     }
