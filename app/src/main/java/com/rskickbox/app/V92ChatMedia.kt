@@ -571,6 +571,14 @@ fun RsChatComposerV92(
         }
     }
 
+    val filePicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        if(uri!=null){
+            picked=uri
+            pickedKind="FILE"
+            onStatus("")
+        }
+    }
+
     val startVoice:()->Unit = start@{
         if(recording||busy)return@start
         runCatching{
@@ -816,77 +824,64 @@ fun RsChatComposerV92(
                             }
                             TextButton(onClick={attachmentMenu=false}){Text("×",color=c.bright,fontSize=25.sp)}
                         }
-                        Row(
+                        Column(
                             Modifier.fillMaxWidth(),
-                            horizontalArrangement=Arrangement.spacedBy(12.dp)
+                            verticalArrangement=Arrangement.spacedBy(8.dp)
                         ){
-                            Surface(
-                                color=c.gold.copy(alpha=.09f),
-                                shape=RoundedCornerShape(24.dp),
-                                border=BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
-                                modifier=Modifier.weight(1f).clickable{
-                                    attachmentMenu=false
-                                    imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                                }
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement=Arrangement.spacedBy(8.dp)
                             ){
-                                Column(
-                                    Modifier.padding(vertical=22.dp,horizontal=12.dp),
-                                    horizontalAlignment=Alignment.CenterHorizontally,
-                                    verticalArrangement=Arrangement.spacedBy(8.dp)
-                                ){
-                                    Surface(
-                                        color=c.gold.copy(alpha=.12f),
-                                        shape=CircleShape,
-                                        border=BorderStroke(1.dp,c.gold.copy(alpha=.50f)),
-                                        modifier=Modifier.size(54.dp)
-                                    ){
-                                        Box(contentAlignment=Alignment.Center){Text("▣",color=c.bright,fontSize=23.sp)}
-                                    }
-                                    Text(rsChatMediaT(lang,"photo").uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
-                                    Text("Gallery · camera image",color=c.muted,fontSize=8.sp)
-                                }
+                                OutlinedButton(
+                                    onClick={
+                                        attachmentMenu=false
+                                        imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                    },
+                                    modifier=Modifier.weight(1f).height(54.dp),
+                                    shape=RoundedCornerShape(16.dp),
+                                    border=BorderStroke(1.dp,c.gold.copy(alpha=.38f))
+                                ){Text("▣  PHOTO",fontSize=9.sp,fontWeight=FontWeight.Black)}
+                                OutlinedButton(
+                                    onClick={
+                                        attachmentMenu=false
+                                        videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+                                    },
+                                    modifier=Modifier.weight(1f).height(54.dp),
+                                    shape=RoundedCornerShape(16.dp),
+                                    border=BorderStroke(1.dp,c.gold.copy(alpha=.38f))
+                                ){Text("▶  VIDEO",fontSize=9.sp,fontWeight=FontWeight.Black)}
                             }
-                            Surface(
-                                color=c.gold.copy(alpha=.09f),
-                                shape=RoundedCornerShape(24.dp),
-                                border=BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
-                                modifier=Modifier.weight(1f).clickable{
-                                    attachmentMenu=false
-                                    videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
-                                }
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement=Arrangement.spacedBy(8.dp)
                             ){
-                                Column(
-                                    Modifier.padding(vertical=22.dp,horizontal=12.dp),
-                                    horizontalAlignment=Alignment.CenterHorizontally,
-                                    verticalArrangement=Arrangement.spacedBy(8.dp)
-                                ){
-                                    Surface(
-                                        color=c.gold.copy(alpha=.12f),
-                                        shape=CircleShape,
-                                        border=BorderStroke(1.dp,c.gold.copy(alpha=.50f)),
-                                        modifier=Modifier.size(54.dp)
-                                    ){
-                                        Box(contentAlignment=Alignment.Center){Text("▶",color=c.bright,fontSize=21.sp)}
-                                    }
-                                    Text(rsChatMediaT(lang,"video").uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
-                                    Text("Training clip · technique",color=c.muted,fontSize=8.sp)
-                                }
+                                OutlinedButton(
+                                    onClick={
+                                        attachmentMenu=false
+                                        if(ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED)startVoice()
+                                        else micPermission.launch(Manifest.permission.RECORD_AUDIO)
+                                    },
+                                    modifier=Modifier.weight(1f).height(54.dp),
+                                    shape=RoundedCornerShape(16.dp),
+                                    border=BorderStroke(1.dp,c.gold.copy(alpha=.38f))
+                                ){Text("🎙  VOICE",fontSize=9.sp,fontWeight=FontWeight.Black)}
+                                OutlinedButton(
+                                    onClick={
+                                        attachmentMenu=false
+                                        filePicker.launch(arrayOf("*/*"))
+                                    },
+                                    modifier=Modifier.weight(1f).height(54.dp),
+                                    shape=RoundedCornerShape(16.dp),
+                                    border=BorderStroke(1.dp,c.gold.copy(alpha=.38f))
+                                ){Text("⌑  FILE",fontSize=9.sp,fontWeight=FontWeight.Black)}
                             }
                         }
-                        Surface(
-                            color=androidx.compose.ui.graphics.Color(0xFF58C9FF).copy(alpha=.06f),
-                            shape=RoundedCornerShape(16.dp),
-                            border=BorderStroke(1.dp,androidx.compose.ui.graphics.Color(0xFF58C9FF).copy(alpha=.18f)),
-                            modifier=Modifier.fillMaxWidth()
-                        ){
-                            Text(
-                                "AI TRAINER READY · media can be used for technique coaching",
-                                color=androidx.compose.ui.graphics.Color(0xFF58C9FF),
-                                fontWeight=FontWeight.Bold,
-                                fontSize=8.sp,
-                                modifier=Modifier.padding(horizontal=12.dp,vertical=9.dp)
-                            )
-                        }
+                        Text(
+                            "Temporary chat media expires after 7 days unless you save it to RS Chat Gallery.",
+                            color=c.muted,
+                            fontSize=8.sp,
+                            lineHeight=11.sp
+                        )
                     }
                 }
             }
