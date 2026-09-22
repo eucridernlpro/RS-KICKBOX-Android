@@ -14,8 +14,9 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang){
     var autoMedia by remember{mutableStateOf(store.b("chat_auto_media_preview_v162",true))}
-    var autoSpeak by remember{mutableStateOf(store.b("voice_auto",true))}
+    var autoSpeak by remember{mutableStateOf(store.b("ai_auto_speak_v163",true))}
     var avatarMotion by remember{mutableStateOf(store.b("ai_avatar_motion_v163",true))}
+    var swipeMenu by remember{mutableStateOf(store.b("chat_swipe_menu_v163",true))}
 
     RsScroll(
         c,
@@ -67,7 +68,7 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang){
                         Text("Speak AI replies automatically",color=c.text,fontWeight=FontWeight.Bold,fontSize=10.sp)
                         Text("Sofia / Marcus speak after a response.",color=c.muted,fontSize=8.sp)
                     }
-                    Switch(autoSpeak,{autoSpeak=it;store.pb("voice_auto",it)})
+                    Switch(autoSpeak,{autoSpeak=it;store.pb("ai_auto_speak_v163",it)})
                 }
                 Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
@@ -107,7 +108,7 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang){
         ){
             Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
                 Text("MEDIA RETENTION",color=c.bright,fontWeight=FontWeight.Black,fontSize=13.sp)
-                Text("Temporary chat media expires after 7 days.",color=c.text,fontSize=9.sp)
+                Text("Temporary downloaded chat media is cleaned from this device after 7 days.",color=c.text,fontSize=9.sp)
                 Text(
                     "Use Save media to Gallery from a message's ⋮ menu to keep a photo, video or audio item permanently.",
                     color=c.muted,fontSize=9.sp,lineHeight=13.sp
@@ -123,8 +124,14 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang){
         ){
             Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
                 Text("GESTURES",color=c.bright,fontWeight=FontWeight.Black,fontSize=13.sp)
-                Text("Swipe from the left edge to open the RS CHAT menu.",color=c.text,fontSize=9.sp)
-                Text("Swipe the open menu to the left to close it. Swipe a message right to reply.",color=c.muted,fontSize=9.sp)
+                Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+                    Column(Modifier.weight(1f)){
+                        Text("Swipe menu gesture",color=c.text,fontWeight=FontWeight.Bold,fontSize=10.sp)
+                        Text("Left → right opens the menu. Right → left closes it.",color=c.muted,fontSize=8.sp)
+                    }
+                    Switch(swipeMenu,{swipeMenu=it;store.pb("chat_swipe_menu_v163",it)})
+                }
+                Text("Swipe a message right to reply.",color=c.muted,fontSize=9.sp)
             }
         }
 
