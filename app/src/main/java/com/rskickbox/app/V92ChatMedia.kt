@@ -76,6 +76,8 @@ data class RsCloudGroupMessageV92(
     @SerialName("media_path") val mediaPath:String?=null,
     @SerialName("media_kind") val mediaKind:String?=null,
     @SerialName("media_name") val mediaName:String?=null,
+    @SerialName("reply_to") val replyTo:String?=null,
+    @SerialName("reply_body") val replyBody:String?=null,
     @SerialName("created_at") val createdAt:String
 )
 
@@ -287,7 +289,7 @@ suspend fun rsChatMediaLocalUriV92(context:Context,path:String):Result<String> =
 suspend fun rsCloudGroupMessagesV92(groupId:String):Result<List<RsCloudGroupMessageV92>> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     client.postgrest.rpc(
-        "rs_group_message_feed",
+        "rs_group_message_feed_v2",
         buildJsonObject{put("p_group_id",groupId)}
     ).decodeList<RsCloudGroupMessageV92>()
 }
@@ -295,12 +297,13 @@ suspend fun rsCloudGroupMessagesV92(groupId:String):Result<List<RsCloudGroupMess
 suspend fun rsSendCloudGroupMessageV92(
     groupId:String,
     body:String,
-    attachment:RsChatAttachmentV92?
+    attachment:RsChatAttachmentV92?,
+    replyTo:String?=null
 ):Result<Unit> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     require(body.trim().isNotBlank()||attachment!=null){"Write a message or add an attachment."}
     client.postgrest.rpc(
-        "rs_send_group_message",
+        "rs_send_group_message_v2",
         buildJsonObject{
             put("p_group_id",groupId)
             put("p_body",body.trim())
@@ -313,6 +316,8 @@ suspend fun rsSendCloudGroupMessageV92(
                 put("p_media_kind",attachment.kind)
                 put("p_media_name",attachment.name)
             }
+            if(replyTo.isNullOrBlank())put("p_reply_to",kotlinx.serialization.json.JsonNull)
+            else put("p_reply_to",replyTo)
         }
     )
     Unit
@@ -881,4 +886,38 @@ fun rsGroupChatT(lang:RsLang,key:String):String{
     val tr=en+mapOf("manage_sub" to "Antrenman gruplarını yönet ve üye sohbetlerini aç.","student_sub" to "Antrenman gruplarına katıl ve üyelerle sohbet et.","syncing" to "Gruplar eşitleniyor…","connected" to "Bulut grupları bağlı","created" to "Grup oluşturuldu.","create_error" to "Grup oluşturulamadı.","creating" to "Oluşturuluyor…","members" to "üye","open_chat" to "Grup sohbetini aç","left" to "Gruptan ayrıldın.","joined" to "Gruba katıldın.","wait" to "Lütfen bekle…","update_error" to "Grup güncellenemedi.","deleted" to "Grup silindi.","delete_error" to "Grup silinemedi.","chat_sub" to "Yalnızca grup üyelerine özel sohbet.","loading_chat" to "Grup sohbeti yükleniyor…","chat_ready" to "Grup sohbeti bağlı","no_messages" to "Henüz mesaj yok. Sohbeti başlat.","back" to "Gruplara dön")
     val pack=when(lang.code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
+}
+
+
+suspend fun rsHideGroupMessageV162(messageId:String):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc(
+        "rs_hide_group_message",
+        buildJsonObject{put("p_message_id",messageId)}
+    )
+    Unit
+}
+
+suspend fun rsEditGroupMessageV162(messageId:String,body:String):Result<Unit> = runCatching{
+    val clean=body.trim()
+    require(clean.isNotBlank()){"Message cannot be empty."}
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc(
+        "rs_edit_group_message",
+        buildJsonObject{
+            put("p_message_id",messageId)
+            put("p_body",clean)
+        }
+    )
+    Unit
+}
+
+suspend fun rsDeleteGroupMessageForEveryoneV162(messageId:String,mediaPath:String?):Result<Unit> = runCatching{
+    val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
+    client.postgrest.rpc(
+        "rs_delete_group_message_for_everyone",
+        buildJsonObject{put("p_message_id",messageId)}
+    )
+    if(!mediaPath.isNullOrBlank())runCatching{rsDeleteChatMediaV108(mediaPath)}
+    Unit
 }
