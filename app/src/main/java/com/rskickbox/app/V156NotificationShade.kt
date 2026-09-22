@@ -103,7 +103,7 @@ fun RsNotificationBellV156(
                     shape=RoundedCornerShape(bottomStart=28.dp,bottomEnd=28.dp),
                     border=BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
                     tonalElevation=20.dp,
-                    modifier=Modifier.fillMaxWidth().fillMaxHeight(.82f)
+                    modifier=Modifier.padding(horizontal=10.dp).fillMaxWidth().fillMaxHeight(.82f)
                 ){
                     Column(
                         Modifier.fillMaxSize().padding(horizontal=12.dp,vertical=10.dp),
