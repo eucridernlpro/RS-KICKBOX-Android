@@ -40,7 +40,8 @@ class MainActivity : ComponentActivity() {
         val isIncomingCallAction=
             intent.action=="com.rskickbox.app.INCOMING_CALL" ||
             intent.action=="com.rskickbox.app.INCOMING_VIDEO_ROOM"
-        if(isAuthCallback || isIncomingCallAction)recreate()
+        val isVoiceAssistantAction=intent.action=="com.rskickbox.app.OPEN_AI_VOICE"
+        if(isAuthCallback || isIncomingCallAction || isVoiceAssistantAction)recreate()
     }
 
     private fun applyIncomingCallWindow(intent:Intent?){
