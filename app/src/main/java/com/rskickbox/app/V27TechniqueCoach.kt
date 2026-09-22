@@ -34,6 +34,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -113,6 +116,13 @@ fun rsRemoveTechniqueHistoryForStudentV40(context:android.content.Context,store:
         if(keep.none{it.uri==uri})rsDeleteTechniqueVideoV36(context,uri)
     }
 }
+
+private fun rsTechniqueSourceSizeV162(context:android.content.Context,uri:Uri):Long = runCatching{
+    if(uri.scheme=="file")return@runCatching uri.path?.let(::File)?.length()?:-1L
+    context.contentResolver.query(uri,arrayOf(OpenableColumns.SIZE),null,null,null)?.use{cur->
+        if(cur.moveToFirst())cur.getLong(0) else -1L
+    } ?: -1L
+}.getOrDefault(-1L)
 
 private fun videoDurationV27(context:android.content.Context,uri:Uri):Long=runCatching{
     val mmr=MediaMetadataRetriever()
@@ -391,6 +401,13 @@ private fun StudentTechniqueCoachV27(c:RsPalette,lang:RsLang,store:RsStore){
     }
 
     fun acceptVideo(uri:Uri,persist:Boolean){
+        val sourceSize=rsTechniqueSourceSizeV162(context,uri)
+        if(sourceSize<=0L || sourceSize>80L*1024L*1024L){
+            feedback=if(sourceSize>80L*1024L*1024L)
+                "Video is too large. Choose a clip under 80 MB."
+            else coachStudentUiV105(lang,"read_fail")
+            return
+        }
         val d=videoDurationV27(context,uri)
         if(d<=0L)feedback=coachStudentUiV105(lang,"read_fail")
         else if(d>RS_TECH_VIDEO_MAX_MS)feedback=coachStudentUiV105(lang,"too_long")
@@ -697,16 +714,26 @@ private fun CoachAvatarV28(c:RsPalette,store:RsStore,gender:String,speaking:Bool
 
 @Composable
 private fun RsTechniqueVideoPreviewV27(uri:String){
+    val context=LocalContext.current
+    val player=remember(uri){
+        ExoPlayer.Builder(context).build().apply{
+            setMediaItem(MediaItem.fromUri(Uri.parse(uri)))
+            playWhenReady=false
+            prepare()
+        }
+    }
+    DisposableEffect(player){
+        onDispose{runCatching{player.release()}}
+    }
     AndroidView(
         factory={ctx->
-            VideoView(ctx).apply{
-                val controller=MediaController(ctx)
-                controller.setAnchorView(this)
-                setMediaController(controller)
-                setVideoURI(Uri.parse(uri))
-                setOnPreparedListener{seekTo(1)}
+            PlayerView(ctx).apply{
+                this.player=player
+                useController=true
+                setShutterBackgroundColor(android.graphics.Color.BLACK)
             }
         },
+        update={it.player=player},
         modifier=Modifier.fillMaxWidth().height(230.dp).background(Color.Black)
     )
 }
