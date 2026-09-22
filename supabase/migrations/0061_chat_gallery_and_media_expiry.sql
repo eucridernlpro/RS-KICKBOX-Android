@@ -293,7 +293,10 @@ begin
         or exists(
             select 1
             from public.rs_support_tickets st
-            where st.media_path=p_media_path
+            where (
+                    st.media_path=p_media_path
+                    or st.trainer_media_path=p_media_path
+                  )
               and st.student_id=v_uid
               and st.created_at < now()-interval '7 days'
         );
@@ -368,9 +371,6 @@ returns table(
     media_path text,
     media_kind text,
     media_name text,
-    trainer_media_path text,
-    trainer_media_kind text,
-    trainer_media_name text,
     created_at timestamptz
 )
 language sql
@@ -454,6 +454,9 @@ returns table(
     media_path text,
     media_kind text,
     media_name text,
+    trainer_media_path text,
+    trainer_media_kind text,
+    trainer_media_name text,
     created_at timestamptz
 )
 language sql
