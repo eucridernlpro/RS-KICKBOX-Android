@@ -190,11 +190,17 @@ private suspend fun rsBookLocalUriV103(context:Context,path:String,kind:String):
     return Uri.fromFile(file).toString()
 }
 
-suspend fun rsCloudBookConfigLocalV103(context:Context):Result<Pair<RsBookConfigV45?,String?>> = runCatching{
+suspend fun rsCloudBookConfigLocalV103(
+    context:Context,
+    forceFullAccess:Boolean=false
+):Result<Pair<RsBookConfigV45?,String?>> = runCatching{
     val row=rsCloudBookV103().getOrThrow() ?: return@runCatching null to null
     val cover=row.coverPath?.takeIf{it.isNotBlank()}?.let{rsBookLocalUriV103(context,it,"cover")}.orEmpty()
     val preview=row.previewPath?.takeIf{it.isNotBlank()}?.let{rsBookLocalUriV103(context,it,"preview")}.orEmpty()
-    val full=row.fullPath?.takeIf{it.isNotBlank()&&row.canReadFull}?.let{rsBookLocalUriV103(context,it,"full")}.orEmpty()
+    val full=row.fullPath
+        ?.takeIf{it.isNotBlank() && (forceFullAccess || row.canReadFull)}
+        ?.let{rsBookLocalUriV103(context,it,"full")}
+        .orEmpty()
     RsBookConfigV45(
         title=row.title,
         coverUri=cover,
