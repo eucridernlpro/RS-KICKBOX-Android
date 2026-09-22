@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -26,6 +27,7 @@ import kotlinx.coroutines.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
+import java.io.File
 
 private const val RS_VOICE_CHANNEL_V165="rs_voice_wake_v165"
 private const val RS_VOICE_NOTIFICATION_ID_V165=1651
@@ -48,6 +50,16 @@ private fun rsWakePhrasesV165()=listOf(
 private fun rsContainsWakePhraseV165(text:String):Boolean{
     val s=text.lowercase(Locale.ROOT).replace(","," ").replace("."," ").trim()
     return rsWakePhrasesV165().any{s.contains(it)}
+}
+
+private fun rsStripWakePhraseV165(text:String):String{
+    var out=text
+    rsWakePhrasesV165()
+        .sortedByDescending{it.length}
+        .forEach{phrase->
+            out=out.replace(Regex("(?i)\\b"+Regex.escape(phrase)+"\\b")," ")
+        }
+    return out.replace(Regex("[,;:.!?]+")," ").replace(Regex("\\s+")," ").trim()
 }
 
 private fun rsVoiceGreetingV165(code:String):String=when(code){
@@ -87,7 +99,8 @@ private fun rsPlaylistSavedV165(code:String,name:String):String=when(code){
 }
 
 private enum class RsVoiceMusicCommandV165{
-    PLAY,PAUSE,STOP,NEXT,PREVIOUS,CREATE_LAST10,UNKNOWN
+    PLAY,PAUSE,STOP,NEXT,PREVIOUS,CREATE_LAST10,
+    VOLUME_UP,VOLUME_DOWN,WHATS_PLAYING,OPEN_MUSIC,SLEEP,UNKNOWN
 }
 
 private fun rsVoiceMusicCommandV165(text:String):RsVoiceMusicCommandV165{
@@ -104,6 +117,16 @@ private fun rsVoiceMusicCommandV165(text:String):RsVoiceMusicCommandV165{
             ->RsVoiceMusicCommandV165.STOP
         listOf("pause music","pauzeer muziek","pausar música","pausa música","mets la musique en pause","musik pausieren","metti in pausa","wstrzymaj muzykę","müziği duraklat").any{s.contains(it)}
             ->RsVoiceMusicCommandV165.PAUSE
+        listOf("volume up","louder","harder","volume hoger","mais alto","sube el volumen","plus fort","lauter","più forte","glosniej","daha yüksek").any{s.contains(it)}
+            ->RsVoiceMusicCommandV165.VOLUME_UP
+        listOf("volume down","quieter","softer","volume lager","mais baixo","baja el volumen","moins fort","leiser","più piano","ciszej","daha düşük").any{s.contains(it)}
+            ->RsVoiceMusicCommandV165.VOLUME_DOWN
+        listOf("what is playing","what's playing","welk nummer speelt","wat speelt er","qual música está tocando","que canción suena","qu'est ce qui joue","was läuft","cosa sta suonando","co teraz gra","hangi şarkı çalıyor").any{s.contains(it)}
+            ->RsVoiceMusicCommandV165.WHATS_PLAYING
+        listOf("open music","open music player","open rs music","open muziek","abrir música","abre la música","ouvre la musique","musik öffnen","apri musica","otwórz muzykę","müziği aç").any{s.contains(it)}
+            ->RsVoiceMusicCommandV165.OPEN_MUSIC
+        listOf("go to sleep","sleep rs","ga slapen rs","vai dormir rs","duerme rs","dors rs","schlaf rs","dormi rs","śpij rs","uyu rs").any{s.contains(it)}
+            ->RsVoiceMusicCommandV165.SLEEP
         listOf("play music","resume music","speel muziek","ga door met muziek","tocar música","reproducir música","joue la musique","musik abspielen","riproduci musica","odtwórz muzykę","müzik çal").any{s.contains(it)}
             ->RsVoiceMusicCommandV165.PLAY
         else->RsVoiceMusicCommandV165.UNKNOWN
@@ -350,6 +373,89 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             }
     }
 
+
+    private fun openRouteV166(route:String){
+        runCatching{
+            startActivity(
+                Intent(this,MainActivity::class.java).apply{
+                    action="com.rskickbox.app.OPEN_RS_ROUTE"
+                    putExtra("route",route)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                }
+            )
+        }
+    }
+
+    private fun adjustVolumeV166(direction:Int){
+        val audio=getSystemService(AudioManager::class.java)
+        audio.adjustStreamVolume(
+            AudioManager.STREAM_MUSIC,
+            if(direction>0)AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER,
+            AudioManager.FLAG_SHOW_UI
+        )
+    }
+
+    private fun playTrackByNameV166(text:String):Boolean{
+        val lower=text.lowercase(Locale.ROOT)
+        val tracks=rsTrackMapV165(store)
+        val match=tracks.entries
+            .sortedByDescending{it.value.length}
+            .firstOrNull{lower.contains(it.value.lowercase(Locale.ROOT))}
+            ?:return false
+        val p=controller?:return false
+        val item=MediaItem.Builder()
+            .setUri(match.key)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(match.value)
+                    .setArtist("RS KICKBOXING")
+                    .build()
+            )
+            .build()
+        p.setMediaItem(item)
+        p.prepare()
+        p.play()
+        return true
+    }
+
+    private fun playPlaylistByNameV166(text:String):String?{
+        val raw=store.s("music_named_playlists_v108","")
+        val arr=runCatching{if(raw.isBlank())JSONArray() else JSONArray(raw)}.getOrDefault(JSONArray())
+        val lower=text.lowercase(Locale.ROOT)
+        for(i in 0 until arr.length()){
+            val o=arr.optJSONObject(i)?:continue
+            val name=o.optString("name")
+            if(name.isBlank()||!lower.contains(name.lowercase(Locale.ROOT)))continue
+            val uris=o.optJSONArray("uris")?:JSONArray()
+            val titleMap=rsTrackMapV165(store)
+            val items=buildList{
+                for(j in 0 until uris.length()){
+                    val uri=uris.optString(j)
+                    if(uri.isBlank())continue
+                    add(
+                        MediaItem.Builder()
+                            .setUri(uri)
+                            .setMediaMetadata(
+                                MediaMetadata.Builder()
+                                    .setTitle(titleMap[uri]?:File(Uri.parse(uri).path.orEmpty()).nameWithoutExtension.ifBlank{"RS Music"})
+                                    .setArtist("RS KICKBOXING")
+                                    .build()
+                            )
+                            .build()
+                    )
+                }
+            }
+            if(items.isEmpty())return null
+            val p=controller?:return null
+            p.setMediaItems(items)
+            p.prepare()
+            p.play()
+            store.ps("music_active_playlist_v108",name)
+            return name
+        }
+        return null
+    }
+
     private fun handleTranscript(text:String){
         if(!requireFreshLoginOrStop())return
         if(text.isBlank()){
@@ -375,18 +481,58 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             return
         }
 
+        var commandText=text
         if(now>awakeUntil){
             if(rsContainsWakePhraseV165(text)){
                 awakeUntil=now+45_000L
-                speak(rsVoiceGreetingV165(language().code))
+                commandText=rsStripWakePhraseV165(text)
+                if(commandText.isBlank()){
+                    speak(rsVoiceGreetingV165(language().code))
+                    return
+                }
             }else{
                 startListening()
+                return
             }
-            return
         }
 
         awakeUntil=now+45_000L
-        when(rsVoiceMusicCommandV165(text)){
+
+        val playlistName=playPlaylistByNameV166(commandText)
+        if(playlistName!=null){
+            speak(
+                when(language().code){
+                    "nl"->"Playlist "+playlistName+" gestart."
+                    "pt"->"Playlist "+playlistName+" iniciada."
+                    "es"->"Playlist "+playlistName+" iniciada."
+                    "fr"->"Playlist "+playlistName+" lancée."
+                    else->"Playlist "+playlistName+" started."
+                }
+            )
+            return
+        }
+
+        if(
+            (commandText.contains("play",true)||commandText.contains("speel",true)||
+             commandText.contains("tocar",true)||commandText.contains("reproducir",true)||
+             commandText.contains("joue",true)||commandText.contains("abspielen",true)||
+             commandText.contains("riproduci",true)||commandText.contains("odtwórz",true)||
+             commandText.contains("çal",true)) &&
+            playTrackByNameV166(commandText)
+        ){
+            speak(
+                when(language().code){
+                    "nl"->"Nummer gestart."
+                    "pt"->"Música iniciada."
+                    "es"->"Canción iniciada."
+                    "fr"->"Morceau lancé."
+                    else->"Track started."
+                }
+            )
+            return
+        }
+
+        when(rsVoiceMusicCommandV165(commandText)){
             RsVoiceMusicCommandV165.PLAY->{
                 ensureMusicLoadedAndPlay()
                 speak(
@@ -448,11 +594,77 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 awaitingPlaylistName=true
                 speak(rsPlaylistNamePromptV165(language().code))
             }
+            RsVoiceMusicCommandV165.VOLUME_UP->{
+                adjustVolumeV166(1)
+                speak(
+                    when(language().code){
+                        "nl"->"Volume hoger."
+                        "pt"->"Volume aumentado."
+                        "es"->"Volumen aumentado."
+                        "fr"->"Volume augmenté."
+                        else->"Volume up."
+                    }
+                )
+            }
+            RsVoiceMusicCommandV165.VOLUME_DOWN->{
+                adjustVolumeV166(-1)
+                speak(
+                    when(language().code){
+                        "nl"->"Volume lager."
+                        "pt"->"Volume reduzido."
+                        "es"->"Volumen reducido."
+                        "fr"->"Volume réduit."
+                        else->"Volume down."
+                    }
+                )
+            }
+            RsVoiceMusicCommandV165.WHATS_PLAYING->{
+                val title=controller?.currentMediaItem?.mediaMetadata?.title?.toString().orEmpty()
+                speak(
+                    if(title.isBlank()){
+                        when(language().code){
+                            "nl"->"Er speelt nu geen nummer."
+                            "pt"->"Nenhuma música está a tocar agora."
+                            "es"->"No hay ninguna canción reproduciéndose ahora."
+                            else->"Nothing is playing right now."
+                        }
+                    }else{
+                        when(language().code){
+                            "nl"->"Nu speelt "+title+"."
+                            "pt"->"Está a tocar "+title+"."
+                            "es"->"Está sonando "+title+"."
+                            else->"Now playing "+title+"."
+                        }
+                    }
+                )
+            }
+            RsVoiceMusicCommandV165.OPEN_MUSIC->{
+                openRouteV166("music")
+                speak(
+                    when(language().code){
+                        "nl"->"RS Music geopend."
+                        "pt"->"RS Music aberto."
+                        "es"->"RS Music abierto."
+                        else->"Opening RS Music."
+                    }
+                )
+            }
+            RsVoiceMusicCommandV165.SLEEP->{
+                awakeUntil=0L
+                speak(
+                    when(language().code){
+                        "nl"->"Oké. Ik luister weer alleen naar de wekzin."
+                        "pt"->"Está bem. Vou voltar a ouvir apenas a frase de ativação."
+                        "es"->"De acuerdo. Volveré a escuchar solo la frase de activación."
+                        else->"Okay. I’ll go back to listening only for the wake phrase."
+                    }
+                )
+            }
             RsVoiceMusicCommandV165.UNKNOWN->{
                 scope.launch{
                     val lang=language()
-                    val local=rsAiLocalCoachAnswerV164(lang.code,text)
-                    val answer=rsOnlineAiCoachV164(text,lang,"")
+                    val local=rsAiLocalCoachAnswerV164(lang.code,commandText)
+                    val answer=rsOnlineAiCoachV164(commandText,lang,"")
                         .getOrElse{local}
                     speak(answer)
                 }
