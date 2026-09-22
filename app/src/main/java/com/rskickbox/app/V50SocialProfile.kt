@@ -9,6 +9,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -773,7 +775,14 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
 
     val activeGroup=selectedGroup
     if(activeGroup!=null){
-        RsScroll(c,activeGroup.name,activeGroup.description.ifBlank{rsGroupChatT(lang,"chat_sub")}){
+        Column(
+            Modifier.fillMaxSize(),
+            verticalArrangement=Arrangement.spacedBy(6.dp)
+        ){
+            Column(
+                Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+                verticalArrangement=Arrangement.spacedBy(7.dp)
+            ){
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment=Alignment.CenterVertically,
@@ -918,6 +927,7 @@ private fun RsCloudGroupsScreenV84(c:RsPalette,lang:RsLang,role:RsRole){
                 )
             }
 
+            }
             val studentComposerAllowed=role==RsRole.TRAINER || activeGroup.studentsCanPost || activeGroup.studentsCanMedia
             RsChatComposerV92(
                 c=c,lang=lang,scopeType="group",scopeId=activeGroup.id,
