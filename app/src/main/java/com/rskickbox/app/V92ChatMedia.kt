@@ -763,7 +763,7 @@ fun RsChatComposerV92(
                     shape=RoundedCornerShape(topStart=30.dp,topEnd=30.dp),
                     border=BorderStroke(1.dp,c.gold.copy(alpha=.56f)),
                     tonalElevation=18.dp,
-                    modifier=Modifier.fillMaxWidth().navigationBarsPadding()
+                    modifier=Modifier.padding(horizontal=10.dp,bottom=6.dp).fillMaxWidth().navigationBarsPadding()
                 ){
                     Column(
                         Modifier.fillMaxWidth().padding(18.dp),
