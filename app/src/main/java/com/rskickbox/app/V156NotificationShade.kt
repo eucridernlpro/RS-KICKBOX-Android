@@ -117,6 +117,20 @@ fun RsNotificationBellV156(
                                 Text("RS NOTIFICATIONS",color=c.bright,fontWeight=FontWeight.Black,fontSize=17.sp)
                                 Text("Calls · messages · club updates",color=c.muted,fontSize=9.sp)
                             }
+                            if(calls.isNotEmpty() || cloud.isNotEmpty()){
+                                TextButton(
+                                    onClick={
+                                        scope.launch{
+                                            calls.forEach{call->runCatching{rsHideCallHistoryV156(call.id)}}
+                                            val allCloud=(dismissedCloud+cloud.map{it.id}).joinToString(",")
+                                            store.ps("rs_notification_hidden_v156",allCloud)
+                                            calls=emptyList()
+                                            cloud=emptyList()
+                                            revision++
+                                        }
+                                    }
+                                ){Text("CLEAR ALL",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black)}
+                            }
                             TextButton(onClick={open=false}){Text("×",color=c.bright,fontSize=24.sp)}
                         }
 
