@@ -73,7 +73,7 @@ fun RsTrainerAiReferenceChatV125(c:RsPalette,lang:RsLang){
     }
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=8.dp,vertical=4.dp),
         verticalArrangement=Arrangement.spacedBy(10.dp)
     ){
         Surface(
