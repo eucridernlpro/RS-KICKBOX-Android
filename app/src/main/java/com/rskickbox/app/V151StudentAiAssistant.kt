@@ -60,6 +60,7 @@ fun RsStudentAiAssistantSafeV151(
         )
     }
     val selectedLanguage=languages.firstOrNull{it.first==aiLanguage}?:languages.first()
+    val selectedRsLang=rsLangs.firstOrNull{it.code==aiLanguage}?:rsLangs.first()
     var ttsReady by remember{mutableStateOf(false)}
     val tts=remember{
         TextToSpeech(context){status->
@@ -86,7 +87,7 @@ fun RsStudentAiAssistantSafeV151(
             val spoken=result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
             if(spoken.isNotBlank()){
                 question=spoken.take(600)
-                voiceStatus="Voice question ready."
+                voiceStatus=rsAiUiV162(aiLanguage,"voice_ready")
             }
         }
     }
@@ -97,7 +98,7 @@ fun RsStudentAiAssistantSafeV151(
             putExtra(RecognizerIntent.EXTRA_LANGUAGE,selectedLanguage.second.second)
         }
         runCatching{voiceLauncher.launch(intent)}
-            .onFailure{voiceStatus="Voice input is not available on this device."}
+            .onFailure{voiceStatus=rsAiUiV162(aiLanguage,"voice_unavailable")}
     }
 
     if(openTechnique){
@@ -110,16 +111,16 @@ fun RsStudentAiAssistantSafeV151(
                 OutlinedButton(
                     onClick={openTechnique=false},
                     contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp)
-                ){Text("‹  AI Assistant")}
+                ){Text("‹  "+rsAiUiV162(aiLanguage,"title"))}
                 Text(
-                    "TECHNIQUE ANALYSIS",
+                    rsAiUiV162(aiLanguage,"analysis"),
                     color=c.bright,
                     fontWeight=FontWeight.Black,
                     fontSize=11.sp
                 )
             }
             Box(Modifier.fillMaxWidth().weight(1f)){
-                RsTechniqueCoachV27(c,lang,store,RsRole.STUDENT)
+                RsTechniqueCoachV27(c,selectedRsLang,store,RsRole.STUDENT)
             }
         }
         return
@@ -163,7 +164,7 @@ fun RsStudentAiAssistantSafeV151(
                         Modifier.align(Alignment.BottomStart).padding(12.dp)
                     ){
                         Text(avatarName,color=Color.White,fontWeight=FontWeight.Black,fontSize=20.sp,letterSpacing=1.sp)
-                        Text("RS AI TRAINER · "+selectedLanguage.second.first,color=Color(0xFF58C9FF),fontSize=9.sp,fontWeight=FontWeight.Bold)
+                        Text(rsAiUiV162(aiLanguage,"title")+" · "+selectedLanguage.second.first,color=Color(0xFF58C9FF),fontSize=9.sp,fontWeight=FontWeight.Bold)
                     }
                 }
 
@@ -188,7 +189,7 @@ fun RsStudentAiAssistantSafeV151(
                     ){Text("Marcus",fontWeight=FontWeight.Black,fontSize=9.sp)}
                 }
 
-                Text("VOICE LANGUAGE",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=.8.sp)
+                Text(rsAiUiV162(aiLanguage,"voice_language"),color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=.8.sp)
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement=Arrangement.spacedBy(6.dp)
@@ -208,7 +209,7 @@ fun RsStudentAiAssistantSafeV151(
                 }
 
                 Text(
-                    "Ask by text or voice, analyze technique video, and hear the coach answer in the selected language.",
+                    rsAiUiV162(aiLanguage,"desc"),
                     color=c.muted,
                     fontSize=10.sp,
                     lineHeight=14.sp
@@ -226,11 +227,11 @@ fun RsStudentAiAssistantSafeV151(
                 Modifier.padding(14.dp),
                 verticalArrangement=Arrangement.spacedBy(9.dp)
             ){
-                Text("ASK YOUR COACH",color=c.gold,fontWeight=FontWeight.Black,fontSize=9.sp,letterSpacing=1.sp)
+                Text(rsAiUiV162(aiLanguage,"ask_title"),color=c.gold,fontWeight=FontWeight.Black,fontSize=9.sp,letterSpacing=1.sp)
                 OutlinedTextField(
                     value=question,
                     onValueChange={question=it.take(600)},
-                    label={Text("Kickboxing question")},
+                    label={Text(rsAiUiV162(aiLanguage,"question"))},
                     minLines=3,
                     modifier=Modifier.fillMaxWidth()
                 )
@@ -238,29 +239,20 @@ fun RsStudentAiAssistantSafeV151(
                     OutlinedButton(
                         onClick={startVoiceQuestion()},
                         modifier=Modifier.weight(1f)
-                    ){Text("🎙  Ask with voice")}
+                    ){Text("🎙  "+rsAiUiV162(aiLanguage,"ask_voice"))}
                     OutlinedButton(
                         onClick={openTechnique=true},
                         modifier=Modifier.weight(1f)
-                    ){Text("🎥  Upload video")}
+                    ){Text("🎥  "+rsAiUiV162(aiLanguage,"upload_video"))}
                 }
                 if(voiceStatus.isNotBlank())Text(voiceStatus,color=Color(0xFF58C9FF),fontSize=9.sp)
                 Button(
                     onClick={
-                        answer=when{
-                            question.contains("kick",true)->
-                                "Keep your base stable, rotate through the hip, keep the opposite hand high, and return immediately to stance after the kick."
-                            question.contains("jab",true)||question.contains("cross",true)->
-                                "Stay relaxed through the shoulders, rotate from the floor and hip, keep your guard compact, and recover the hand straight back to your face."
-                            question.contains("guard",true)->
-                                "Keep the chin protected, elbows controlled, hands returning to position after every strike, and avoid letting your stance become too narrow."
-                            else->
-                                "Focus first on balance, guard, controlled rotation, distance and a clean recovery to stance. Use Technique Analysis for a more specific movement review."
-                        }
+                        answer=rsAiAnswerV162(aiLanguage,question)
                     },
                     enabled=question.isNotBlank(),
                     modifier=Modifier.fillMaxWidth()
-                ){Text("Ask RS AI Trainer")}
+                ){Text(rsAiUiV162(aiLanguage,"ask_button"))}
                 if(answer.isNotBlank()){
                     Surface(
                         color=Color(0xFF58C9FF).copy(alpha=.07f),
@@ -274,7 +266,7 @@ fun RsStudentAiAssistantSafeV151(
                                 onClick={speakAnswer()},
                                 enabled=ttsReady,
                                 modifier=Modifier.fillMaxWidth()
-                            ){Text("🔊  Speak answer · "+selectedLanguage.second.first,fontSize=9.sp)}
+                            ){Text("🔊  "+rsAiUiV162(aiLanguage,"speak")+" · "+selectedLanguage.second.first,fontSize=9.sp)}
                         }
                     }
                 }
@@ -297,9 +289,9 @@ fun RsStudentAiAssistantSafeV151(
                     .padding(14.dp)
             ){
                 Column(verticalArrangement=Arrangement.spacedBy(7.dp)){
-                    Text("TECHNIQUE ANALYSIS",color=c.bright,fontWeight=FontWeight.Black,fontSize=14.sp)
+                    Text(rsAiUiV162(aiLanguage,"analysis"),color=c.bright,fontWeight=FontWeight.Black,fontSize=14.sp)
                     Text(
-                        "Upload a short technique video, review correction points and use trainer-approved reference media.",
+                        rsAiUiV162(aiLanguage,"analysis_desc"),
                         color=c.muted,
                         fontSize=10.sp,
                         lineHeight=14.sp
@@ -307,7 +299,7 @@ fun RsStudentAiAssistantSafeV151(
                     Button(
                         onClick={openTechnique=true},
                         modifier=Modifier.fillMaxWidth()
-                    ){Text("Open Technique Analysis")}
+                    ){Text(rsAiUiV162(aiLanguage,"open_analysis"))}
                 }
             }
         }
