@@ -25,6 +25,7 @@ fun RsCloudCoachBubbleV156(
     onStatus:(String)->Unit
 ){
     val scope=rememberCoroutineScope()
+    val context=androidx.compose.ui.platform.LocalContext.current
     val currentId=rsCurrentCloudUserIdV111()
     val trainer=message.senderRole=="trainer"||message.senderRole=="admin"
     val mine=message.senderId==currentId || (message.senderId.isBlank() && if(viewerRole==RsRole.TRAINER)trainer else !trainer)
@@ -84,6 +85,23 @@ fun RsCloudCoachBubbleV156(
                             DropdownMenuItem(text={Text("Reply")},onClick={menu=false;onReply(message)})
                             if(mine || viewerRole==RsRole.TRAINER){
                                 DropdownMenuItem(text={Text("Edit")},onClick={menu=false;editing=true;draft=message.body})
+                            }
+                            if(!message.mediaPath.isNullOrBlank()&&!message.mediaKind.isNullOrBlank()){
+                                DropdownMenuItem(
+                                    text={Text("Save media to Gallery")},
+                                    onClick={
+                                        menu=false
+                                        scope.launch{
+                                            rsSaveChatMediaToGalleryV163(
+                                                message.mediaPath,
+                                                message.mediaKind,
+                                                message.mediaName
+                                            )
+                                                .onSuccess{onStatus("Saved to RS Chat Gallery.")}
+                                                .onFailure{onStatus(it.message?:"Could not save media.")}
+                                        }
+                                    }
+                                )
                             }
                             DropdownMenuItem(
                                 text={Text("Delete for me")},
