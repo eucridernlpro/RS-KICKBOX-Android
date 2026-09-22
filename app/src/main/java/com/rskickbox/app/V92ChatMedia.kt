@@ -921,3 +921,11 @@ suspend fun rsDeleteGroupMessageForEveryoneV162(messageId:String,mediaPath:Strin
     if(!mediaPath.isNullOrBlank())runCatching{rsDeleteChatMediaV108(mediaPath)}
     Unit
 }
+
+
+suspend fun rsHideGroupConversationForMeV162(messages:List<RsCloudGroupMessageV92>):Result<Unit> = runCatching{
+    messages.forEach{message->
+        rsHideGroupMessageV162(message.id).getOrThrow()
+    }
+    Unit
+}
