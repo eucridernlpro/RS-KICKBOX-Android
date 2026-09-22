@@ -9,6 +9,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -32,6 +36,8 @@ fun RsChatSlideMenuV144(
     onPrivate:()->Unit,
     onGroups:()->Unit,
     onCommunity:()->Unit,
+    onSupport:()->Unit,
+    onGallery:()->Unit,
     onNotifications:()->Unit,
     onAi:()->Unit,
     onSettings:()->Unit,
@@ -60,8 +66,27 @@ fun RsChatSlideMenuV144(
             tonalElevation=20.dp,
             modifier=Modifier.fillMaxHeight().fillMaxWidth()
         ){
+            var drawerDrag by androidx.compose.runtime.remember{androidx.compose.runtime.mutableFloatStateOf(0f)}
             Column(
-                Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(14.dp),
+                Modifier.fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(14.dp)
+                    .verticalScroll(rememberScrollState())
+                    .pointerInput(Unit){
+                        detectHorizontalDragGestures(
+                            onDragStart={drawerDrag=0f},
+                            onHorizontalDrag={change,amount->
+                                drawerDrag+=amount
+                                change.consume()
+                            },
+                            onDragEnd={
+                                if(drawerDrag < -75f)onClose()
+                                drawerDrag=0f
+                            },
+                            onDragCancel={drawerDrag=0f}
+                        )
+                    },
                 verticalArrangement=Arrangement.spacedBy(9.dp)
             ){
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
@@ -87,6 +112,7 @@ fun RsChatSlideMenuV144(
                 Text("COMMUNICATION",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp,modifier=Modifier.padding(top=5.dp))
                 RsChatSlideItemV144(c,"All Chats","Overview · live contacts · calls","◆",selected=="ALL",false,onAll)
                 RsChatSlideItemV144(c,"Private","Direct trainer/student conversation","✦",selected=="PRIVATE",false,onPrivate)
+                RsChatSlideItemV144(c,"Support","Private RS support conversation","?",selected=="SUPPORT",false,onSupport)
 
                 Text("TEAM SPACES",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp,modifier=Modifier.padding(top=5.dp))
                 RsChatSlideItemV144(c,"Fight Groups","Team rooms · media · moderation","◈",selected=="GROUPS",false,onGroups)
@@ -98,14 +124,15 @@ fun RsChatSlideMenuV144(
                 Text("INTELLIGENCE",color=Color(0xFF58C9FF),fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp,modifier=Modifier.padding(top=5.dp))
                 RsChatSlideItemV144(c,"RS AI Trainer","Sofia · Marcus · technique coaching","✧",selected=="AI",true,onAi)
 
-                Text("CHAT CONTROL",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp,modifier=Modifier.padding(top=5.dp))
+                Text("MEDIA & CONTROL",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp,modifier=Modifier.padding(top=5.dp))
+                RsChatSlideItemV144(c,"RS Chat Gallery","Saved photos · videos · audio","▣",selected=="GALLERY",false,onGallery)
                 RsChatSlideItemV144(c,"Notifications","Calls · messages · club alerts","●",selected=="NOTIFICATIONS",false,onNotifications)
-                RsChatSlideItemV144(c,"Chat Settings","Calls · ringtone · media · privacy controls","⚙",selected=="SETTINGS",false,onSettings)
+                RsChatSlideItemV144(c,"Chat Settings","Calls · media · privacy · appearance","⚙",selected=="SETTINGS",false,onSettings)
                 if(canClearChat){
                     RsChatSlideItemV144(c,"Clear private chat","Hide all messages from your view","⌫",false,false,onClearChat)
                 }
 
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.height(8.dp))
                 Surface(
                     color=Color.Black.copy(alpha=.62f),
                     shape=RoundedCornerShape(18.dp),
