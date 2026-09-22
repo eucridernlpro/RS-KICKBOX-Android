@@ -1310,6 +1310,23 @@ private fun ShellV21(
                         onOpenNotifications={onRoute("notifications")}
                     )
                     OutlinedButton(
+                        onClick={
+                            store.pb("ai_start_listening_v168",true)
+                            onRoute("voice")
+                        },
+                        modifier=Modifier.size(44.dp),
+                        shape=CircleShape,
+                        border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.55f)),
+                        contentPadding=PaddingValues(0.dp)
+                    ){
+                        Text(
+                            "🎙",
+                            fontSize=16.sp,
+                            color=Color(0xFF58C9FF),
+                            modifier=Modifier.semantics{contentDescription="Wake RS AI"}
+                        )
+                    }
+                    OutlinedButton(
                         onClick=onLogout,
                         modifier=Modifier.widthIn(min=68.dp,max=106.dp).heightIn(min=40.dp),
                         contentPadding=PaddingValues(horizontal=6.dp)
