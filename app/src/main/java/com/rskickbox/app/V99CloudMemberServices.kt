@@ -81,7 +81,11 @@ suspend fun rsDeleteCloudDocumentV99(id:String):Result<Unit> = runCatching{
 
 suspend fun rsCloudSupportFeedV99():Result<List<RsCloudSupportTicketV99>> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
-    client.postgrest.rpc("rs_support_feed_v2").decodeList<RsCloudSupportTicketV99>()
+    runCatching{
+        client.postgrest.rpc("rs_support_feed_v2").decodeList<RsCloudSupportTicketV99>()
+    }.getOrElse{
+        client.postgrest.rpc("rs_support_feed").decodeList<RsCloudSupportTicketV99>()
+    }
 }
 
 suspend fun rsCreateCloudSupportTicketV99(
@@ -90,22 +94,34 @@ suspend fun rsCreateCloudSupportTicketV99(
     attachment:RsChatAttachmentV92?=null
 ):Result<Unit> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
-    client.postgrest.rpc(
-        "rs_create_support_ticket_v2",
-        buildJsonObject{
-            put("p_subject",subject.trim())
-            put("p_message",message.trim())
-            if(attachment==null){
-                put("p_media_path",kotlinx.serialization.json.JsonNull)
-                put("p_media_kind",kotlinx.serialization.json.JsonNull)
-                put("p_media_name",kotlinx.serialization.json.JsonNull)
-            }else{
-                put("p_media_path",attachment.path)
-                put("p_media_kind",attachment.kind)
-                put("p_media_name",attachment.name)
+    val v2=runCatching{
+        client.postgrest.rpc(
+            "rs_create_support_ticket_v2",
+            buildJsonObject{
+                put("p_subject",subject.trim())
+                put("p_message",message.trim())
+                if(attachment==null){
+                    put("p_media_path",kotlinx.serialization.json.JsonNull)
+                    put("p_media_kind",kotlinx.serialization.json.JsonNull)
+                    put("p_media_name",kotlinx.serialization.json.JsonNull)
+                }else{
+                    put("p_media_path",attachment.path)
+                    put("p_media_kind",attachment.kind)
+                    put("p_media_name",attachment.name)
+                }
             }
-        }
-    )
+        )
+    }
+    if(v2.isFailure){
+        require(attachment==null){"Support media requires the latest RS CHAT backend update."}
+        client.postgrest.rpc(
+            "rs_create_support_ticket",
+            buildJsonObject{
+                put("p_subject",subject.trim())
+                put("p_message",message.trim())
+            }
+        )
+    }
     Unit
 }
 
@@ -116,23 +132,36 @@ suspend fun rsUpdateCloudSupportTicketV99(
     attachment:RsChatAttachmentV92?=null
 ):Result<Unit> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
-    client.postgrest.rpc(
-        "rs_staff_update_support_ticket_v2",
-        buildJsonObject{
-            put("p_ticket_id",id)
-            put("p_trainer_reply",reply)
-            put("p_status",status)
-            if(attachment==null){
-                put("p_media_path",kotlinx.serialization.json.JsonNull)
-                put("p_media_kind",kotlinx.serialization.json.JsonNull)
-                put("p_media_name",kotlinx.serialization.json.JsonNull)
-            }else{
-                put("p_media_path",attachment.path)
-                put("p_media_kind",attachment.kind)
-                put("p_media_name",attachment.name)
+    val v2=runCatching{
+        client.postgrest.rpc(
+            "rs_staff_update_support_ticket_v2",
+            buildJsonObject{
+                put("p_ticket_id",id)
+                put("p_trainer_reply",reply)
+                put("p_status",status)
+                if(attachment==null){
+                    put("p_media_path",kotlinx.serialization.json.JsonNull)
+                    put("p_media_kind",kotlinx.serialization.json.JsonNull)
+                    put("p_media_name",kotlinx.serialization.json.JsonNull)
+                }else{
+                    put("p_media_path",attachment.path)
+                    put("p_media_kind",attachment.kind)
+                    put("p_media_name",attachment.name)
+                }
             }
-        }
-    )
+        )
+    }
+    if(v2.isFailure){
+        require(attachment==null){"Support media requires the latest RS CHAT backend update."}
+        client.postgrest.rpc(
+            "rs_staff_update_support_ticket",
+            buildJsonObject{
+                put("p_ticket_id",id)
+                put("p_trainer_reply",reply)
+                put("p_status",status)
+            }
+        )
+    }
     Unit
 }
 
