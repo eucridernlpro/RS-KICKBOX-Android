@@ -40,6 +40,19 @@ class RsMusicPlaybackServiceV90 : MediaSessionService() {
             repeatMode=Player.REPEAT_MODE_ALL
             setWakeMode(C.WAKE_MODE_LOCAL)
         }
+        val historyStore=RsStore(this)
+        player.addListener(object:Player.Listener{
+            override fun onMediaItemTransition(mediaItem:MediaItem?,reason:Int){
+                val uri=mediaItem?.localConfiguration?.uri?.toString().orEmpty()
+                if(uri.isBlank())return
+                val current=historyStore.s("rs_music_recent_history_v165","")
+                    .split("§")
+                    .filter{it.isNotBlank()&&it!=uri}
+                    .toMutableList()
+                current.add(0,uri)
+                historyStore.ps("rs_music_recent_history_v165",current.take(30).joinToString("§"))
+            }
+        })
         mediaSession=MediaSession.Builder(this,player).build()
     }
 
