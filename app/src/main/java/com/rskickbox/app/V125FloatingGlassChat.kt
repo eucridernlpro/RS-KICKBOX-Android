@@ -585,7 +585,10 @@ fun RsFloatingGlassChatHubV125(
                 RsChatHubTabV125.GALLERY->RsChatGalleryV163(c,lang)
                 RsChatHubTabV125.NOTIFICATIONS->RsChatNotificationsV156(c,lang)
                 RsChatHubTabV125.AI->RsAiRoyalChatV163(c,store,lang,role)
-                RsChatHubTabV125.SETTINGS->RsChatSettingsV162(c,store,lang)
+                RsChatHubTabV125.SETTINGS->RsChatSettingsV162(c,store,lang){
+                    store.pb("ai_start_listening_v168",true)
+                    tab=RsChatHubTabV125.AI
+                }
             }
         }
         }
