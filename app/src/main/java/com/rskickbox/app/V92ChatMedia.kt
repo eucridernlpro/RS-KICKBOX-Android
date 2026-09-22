@@ -375,13 +375,31 @@ fun RsChatAttachmentPreviewV92(
 ){
     if(mediaPath.isNullOrBlank()||mediaKind.isNullOrBlank())return
     val context=LocalContext.current
+    val previewStore=remember{RsStore(context)}
+    val autoPreview=previewStore.b("chat_auto_media_preview_v162",true)
+    var requested by remember(mediaPath,autoPreview){mutableStateOf(autoPreview)}
     var localUri by remember(mediaPath){mutableStateOf("")}
     var error by remember(mediaPath){mutableStateOf("")}
 
-    LaunchedEffect(mediaPath){
-        rsChatMediaLocalUriV92(context,mediaPath)
-            .onSuccess{localUri=it}
-            .onFailure{error=rsChatMediaT(lang,"download_error")}
+    LaunchedEffect(mediaPath,requested){
+        if(requested && localUri.isBlank()){
+            rsChatMediaLocalUriV92(context,mediaPath)
+                .onSuccess{localUri=it}
+                .onFailure{error=rsChatMediaT(lang,"download_error")}
+        }
+    }
+
+    if(!requested){
+        OutlinedButton(
+            onClick={requested=true},
+            modifier=Modifier.fillMaxWidth()
+        ){
+            Text(
+                "Load "+when(mediaKind){"IMAGE"->"image";"VIDEO"->"video";"AUDIO"->"audio";else->"file"},
+                fontSize=9.sp
+            )
+        }
+        return
     }
 
     if(error.isNotBlank()){
