@@ -516,7 +516,6 @@ fun RsChatAttachmentPreviewV92(
             }
         }
     }
-    }
 }
 
 @Composable
