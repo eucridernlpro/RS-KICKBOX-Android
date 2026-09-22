@@ -566,8 +566,11 @@ private fun RsAiAvatarStageV163(
     onOptions:()->Unit
 ){
     val context=LocalContext.current
-    val slot=if(avatar=="FEMALE")"ai_trainer_female" else "ai_trainer_male"
-    val visual=rsVisualUriWithBundledFallbackV113(context,store,slot)
+    val idleSlot=if(avatar=="FEMALE")"ai_trainer_female" else "ai_trainer_male"
+    val speakingSlot=if(avatar=="FEMALE")"ai_trainer_female_speaking" else "ai_trainer_male_speaking"
+    val speakingVisual=if(speaking)rsVisualUriWithBundledFallbackV113(context,store,speakingSlot) else ""
+    val visual=if(speakingVisual.isNotBlank())speakingVisual
+        else rsVisualUriWithBundledFallbackV113(context,store,idleSlot)
     val avatarMotion=store.b("ai_avatar_motion_v163",true)
     val transition=rememberInfiniteTransition(label="ai-stage")
     val breath by transition.animateFloat(
