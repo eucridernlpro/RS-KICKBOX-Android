@@ -30,6 +30,9 @@ data class RsCloudCommunityPostV84(
     @SerialName("author_name") val authorName:String,
     val body:String,
     val active:Boolean,
+    @SerialName("media_path") val mediaPath:String?=null,
+    @SerialName("media_kind") val mediaKind:String?=null,
+    @SerialName("media_name") val mediaName:String?=null,
     @SerialName("created_at") val createdAt:String
 ){
     fun createdMillis():Long=runCatching{Instant.parse(createdAt).toEpochMilli()}.getOrDefault(0L)
@@ -90,14 +93,28 @@ suspend fun rsSaveCloudSocialProfileV84(
 
 suspend fun rsCloudCommunityV84():Result<List<RsCloudCommunityPostV84>> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
-    client.postgrest.rpc("rs_community_feed").decodeList<RsCloudCommunityPostV84>()
+    client.postgrest.rpc("rs_community_feed_v2").decodeList<RsCloudCommunityPostV84>()
 }
 
-suspend fun rsCreateCloudCommunityPostV84(body:String):Result<Unit> = runCatching{
+suspend fun rsCreateCloudCommunityPostV84(
+    body:String,
+    attachment:RsChatAttachmentV92?=null
+):Result<Unit> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS KICKBOX cloud backend is not configured.")
     client.postgrest.rpc(
-        "rs_create_community_post",
-        buildJsonObject{put("p_body",body.trim())}
+        "rs_create_community_post_v2",
+        buildJsonObject{
+            put("p_body",body.trim())
+            if(attachment==null){
+                put("p_media_path",kotlinx.serialization.json.JsonNull)
+                put("p_media_kind",kotlinx.serialization.json.JsonNull)
+                put("p_media_name",kotlinx.serialization.json.JsonNull)
+            }else{
+                put("p_media_path",attachment.path)
+                put("p_media_kind",attachment.kind)
+                put("p_media_name",attachment.name)
+            }
+        }
     )
     Unit
 }
