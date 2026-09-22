@@ -16,6 +16,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.awaitPointerEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -118,10 +120,18 @@ fun RsKickboxV21App(
         ActivityResultContracts.RequestPermission()
     ){}
     val trustedSessionMaxAgeMs=72L*60L*60L*1000L
-    val localSessionFresh=remember(localSessionAuthMs,currentVersionCode){
+    val inactivityLogoutMs=24L*60L*60L*1000L
+    val localSessionActivityMs=remember(localSessionAuthMs){
+        store.s("session_last_activity_ms",localSessionAuthMs.toString()).toLongOrNull()
+            ?:localSessionAuthMs
+    }
+    val localSessionFresh=remember(localSessionAuthMs,localSessionActivityMs,currentVersionCode){
         val age=System.currentTimeMillis()-localSessionAuthMs
+        val inactivityAge=System.currentTimeMillis()-localSessionActivityMs
         localSessionAuthMs>0L &&
             age in 0..trustedSessionMaxAgeMs &&
+            localSessionActivityMs>0L &&
+            inactivityAge in 0..inactivityLogoutMs &&
             rsSupabaseClientV60()?.auth?.currentUserOrNull()!=null
     }
     val localSessionRole=remember(localSessionFresh){
@@ -140,6 +150,22 @@ fun RsKickboxV21App(
         )
     }
     var callOnlyMode by remember { mutableStateOf(incomingCallLaunch && backgroundCallRole!=null) }
+    var lastActivityWriteMs by remember{
+        mutableLongStateOf(
+            store.s("session_last_activity_ms",localSessionAuthMs.toString()).toLongOrNull()
+                ?:localSessionAuthMs
+        )
+    }
+    fun markSessionActivityV166(){
+        if(role==null)return
+        val now=System.currentTimeMillis()
+        if(now-lastActivityWriteMs>=15_000L){
+            lastActivityWriteMs=now
+            store.ps("session_last_activity_ms",now.toString())
+        }
+    }
+
+
     val restoredRoute=remember(localSessionRole,backgroundCallRole,voiceAssistantLaunch){
         when{
             backgroundCallRole!=null->"coachchat"
@@ -233,6 +259,7 @@ fun RsKickboxV21App(
             authRestoring=false
             if(!localSessionFresh){
                 store.ps("session_password_auth_ms","0")
+                store.ps("session_last_activity_ms","0")
                 store.ps("session_role","")
                 role=null
             }
@@ -319,7 +346,10 @@ fun RsKickboxV21App(
     }
 
     LaunchedEffect(role,route){
-        if(role!=null)store.ps("session_last_route",route)
+        if(role!=null){
+            store.ps("session_last_route",route)
+            markSessionActivityV166()
+        }
     }
 
     LaunchedEffect(role,route,cloudControlsRevision){
@@ -352,10 +382,38 @@ fun RsKickboxV21App(
         }
     }
 
+    LaunchedEffect(role){
+        if(role!=null){
+            while(true){
+                delay(60_000L)
+                val authMs=store.s("session_password_auth_ms","0").toLongOrNull()?:0L
+                val activityMs=store.s("session_last_activity_ms",authMs.toString()).toLongOrNull()?:authMs
+                val now=System.currentTimeMillis()
+                val authExpired=authMs<=0L || now-authMs>trustedSessionMaxAgeMs
+                val inactive=activityMs<=0L || now-activityMs>inactivityLogoutMs
+                if(authExpired || inactive){
+                    runCatching{RsVoiceWakeServiceV165.stop(context)}
+                    runCatching{RsCallMonitorServiceV134.stop(context)}
+                    store.ps("session_password_auth_ms","0")
+                    store.ps("session_last_activity_ms","0")
+                    store.ps("session_last_route","")
+                    store.ps("session_role","")
+                    store.pb("rs_voice_wake_enabled_v165",false)
+                    rsCloudLogoutV63()
+                    role=null
+                    route="home"
+                    preLoginStage=RsPreLoginStageV147.LOGIN
+                    break
+                }
+            }
+        }
+    }
+
     val lifecycleOwner=LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner){
         val observer=LifecycleEventObserver{_,event->
             if(event==Lifecycle.Event.ON_RESUME && introDone && role!=null && RsSupabaseV60.configured){
+                markSessionActivityV166()
                 // Resume must be lightweight and must never rewrite visual files while
                 // Compose/VideoView/Media3 surfaces are being restored.
                 appScope.launch{runCatching{rsTouchPresenceV125()}}
@@ -367,7 +425,18 @@ fun RsKickboxV21App(
 
     MaterialTheme(colorScheme = darkColorScheme(primary=c.bright,secondary=c.gold,background=c.bg,surface=c.panel,onBackground=c.text,onSurface=c.text)) {
         val currentBrandRevision=brandRevision
-        Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier.fillMaxSize().pointerInput(role){
+                if(role!=null){
+                    awaitPointerEventScope{
+                        while(true){
+                            awaitPointerEvent()
+                            markSessionActivityV166()
+                        }
+                    }
+                }
+            }
+        ) {
             when {
                 brandAssetsRestoring -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
                     Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(10.dp)){
@@ -558,6 +627,7 @@ fun RsKickboxV21App(
                         route="home"
                         preLoginStage=RsPreLoginStageV147.LOGIN
                         store.ps("session_password_auth_ms","0")
+                        store.ps("session_last_activity_ms","0")
                         store.ps("session_role","")
                         if(store.b("background_calls_enabled",true)){
                             RsCallMonitorServiceV134.start(context)
@@ -619,7 +689,9 @@ private fun LoginV21(
         store.ps("session_role",roleName)
         store.ps("background_call_role",roleName)
         store.pb("background_calls_enabled",true)
-        store.ps("session_password_auth_ms",System.currentTimeMillis().toString())
+        val loginNow=System.currentTimeMillis()
+        store.ps("session_password_auth_ms",loginNow.toString())
+        store.ps("session_last_activity_ms",loginNow.toString())
         rsRefreshAndRegisterFcmTokenV155()
         statusIsError=false
         status="✓ "+rsEnrollMsg(lang,"welcome",name=session.displayName)
