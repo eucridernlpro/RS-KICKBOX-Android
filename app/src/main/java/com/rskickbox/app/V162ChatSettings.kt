@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang){
+fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,onOpenAi:()->Unit){
     var autoMedia by remember{mutableStateOf(store.b("chat_auto_media_preview_v162",true))}
     var autoSpeak by remember{mutableStateOf(store.b("ai_auto_speak_v163",true))}
     var avatarMotion by remember{mutableStateOf(store.b("ai_avatar_motion_v163",true))}
@@ -185,6 +185,7 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang){
                                 onClick={
                                     store.pb("ai_start_listening_v168",true)
                                     voiceWakeStatus="Opening RS AI microphone…"
+                                    onOpenAi()
                                 },
                                 modifier=Modifier.weight(1f)
                             ){Text("Test RS AI Mic",fontSize=8.sp)}
