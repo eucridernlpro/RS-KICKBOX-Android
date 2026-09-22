@@ -43,6 +43,7 @@ private fun rsInitialChatTabV125(route:String)=when(route){
     "gallery"->RsChatHubTabV125.GALLERY
     "media"->RsChatHubTabV125.GALLERY
     "notifications"->RsChatHubTabV125.NOTIFICATIONS
+    "coachchat"->RsChatHubTabV125.PRIVATE
     else->RsChatHubTabV125.ALL
 }
 
@@ -265,7 +266,7 @@ fun RsFloatingGlassChatHubV125(
     BackHandler{handleChatBack()}
 
     LaunchedEffect(Unit){
-        if(RsSupabaseV60.configured)rsCleanupExpiredChatMediaV163()
+        rsCleanupChatMediaCacheV163(context)
         val pending=store.s("chat_open_peer_id_v156","").trim()
         if(pending.isNotBlank()){
             privateStudentId=pending
