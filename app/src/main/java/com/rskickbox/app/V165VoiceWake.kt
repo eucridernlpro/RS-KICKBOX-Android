@@ -208,29 +208,17 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private val store by lazy{RsStore(this)}
 
     private fun setWakeStatusV168(status:String){
+        // Keep diagnostics in local state without constantly re-posting the
+        // foreground notification. Re-notifying on every recognizer cycle made
+        // Android repeatedly animate/chime the notification shade.
         store.ps("rs_voice_wake_status_v168",status)
         store.ps("rs_voice_wake_status_ms_v168",System.currentTimeMillis().toString())
-        val nm=getSystemService(NotificationManager::class.java)
-        runCatching{
-            nm.notify(
-                RS_VOICE_NOTIFICATION_ID_V165,
-                notification(
-                    when(status){
-                        "LISTENING"->"RS Voice Wake · listening"
-                        "HEARD_WAKE"->"RS Voice Wake · awake"
-                        "SPEAKING"->"RS Voice Wake · speaking"
-                        "LOGIN_REQUIRED"->"RS Voice Wake · login required"
-                        else->"RS Voice Wake · "+status.lowercase().replace('_',' ')
-                    }
-                )
-            )
-        }
     }
 
     override fun onCreate(){
         super.onCreate()
         createChannel()
-        startForeground(RS_VOICE_NOTIFICATION_ID_V165,notification("RS Voice Wake is listening"))
+        startForeground(RS_VOICE_NOTIFICATION_ID_V165,notification("Voice wake ready"))
         tts=TextToSpeech(this,this)
 
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
@@ -858,6 +846,9 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             .setContentText(text)
             .setContentIntent(pending)
             .setOngoing(true)
+            .setSilent(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .addAction(0,"Stop",stopPending)
             .build()
