@@ -68,7 +68,10 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy(){
-        isAlive=false
+        // A configuration/recreate handoff briefly destroys the old Activity.
+        // Do not mark the whole app as closed during that transition or the
+        // call monitor may incorrectly switch to notification-only mode.
+        if(!isChangingConfigurations)isAlive=false
         super.onDestroy()
     }
 
