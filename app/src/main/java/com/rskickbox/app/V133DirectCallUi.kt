@@ -172,7 +172,7 @@ fun RsDirectCallControlsV133(
                 .onFailure{
                     if(status.isBlank())status=rsCallT133(lang,"unavailable")
                 }
-            delay(if(inPip)250 else 700)
+            delay(1500)
         }
     }
 
@@ -384,7 +384,7 @@ fun RsActiveCallDialogV133(
                     onClosed()
                 }
             }
-            delay(1500)
+            delay(if(inPip)250 else 900)
         }
     }
     DisposableEffect(engine){
