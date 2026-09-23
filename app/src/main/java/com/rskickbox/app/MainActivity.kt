@@ -58,12 +58,13 @@ class MainActivity : ComponentActivity() {
         // tear down Compose state and could bounce a valid user back to Login.
         val isAuthCallback=intent.data?.scheme.equals("rskickbox",ignoreCase=true) &&
             intent.data?.host.equals("auth-callback",ignoreCase=true)
-        val isIncomingCallAction=
-            intent.action=="com.rskickbox.app.INCOMING_CALL" ||
-            intent.action=="com.rskickbox.app.INCOMING_VIDEO_ROOM"
+        // Direct calls are already observed by the global call host. Recreating
+        // a live Activity here can tear down Compose/WebRTC during the exact
+        // transition when the user is trying to answer.
+        val isIncomingVideoRoomAction=intent.action=="com.rskickbox.app.INCOMING_VIDEO_ROOM"
         val isVoiceAssistantAction=intent.action=="com.rskickbox.app.OPEN_AI_VOICE"
         val isRsRouteAction=intent.action=="com.rskickbox.app.OPEN_RS_ROUTE"
-        if(isAuthCallback || isIncomingCallAction || isVoiceAssistantAction || isRsRouteAction)recreate()
+        if(isAuthCallback || isIncomingVideoRoomAction || isVoiceAssistantAction || isRsRouteAction)recreate()
     }
 
     override fun onDestroy(){
