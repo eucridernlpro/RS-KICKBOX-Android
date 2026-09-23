@@ -71,6 +71,11 @@ fun RsAiAssistantChatV163(
     var autoSpeak by remember{mutableStateOf(store.b("ai_auto_speak_v163",true))}
     var status by remember{mutableStateOf("")}
     var aiMessageMenuId by remember{mutableStateOf<Long?>(null)}
+    val musicController=rememberRsMusicControllerV90()
+    var pendingMusic by remember{mutableStateOf<RsPersistentTrackV90?>(null)}
+    var musicDialog by remember{mutableStateOf(false)}
+    var newPlaylistName by remember{mutableStateOf("")}
+    var playlistMenu by remember{mutableStateOf(false)}
 
     var tts by remember{mutableStateOf<TextToSpeech?>(null)}
     var ttsReady by remember{mutableStateOf(false)}
@@ -142,6 +147,21 @@ fun RsAiAssistantChatV163(
                     status=""
                 }else status="Could not prepare video."
             }
+        }
+    }
+
+    val musicPicker=rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ){uri->
+        if(uri!=null){
+            attachMenu=false
+            rsPrepareMusicTrackV169(context,uri,"RS Music")
+                .onSuccess{
+                    pendingMusic=it
+                    musicDialog=true
+                    status=it.name
+                }
+                .onFailure{status=it.message?:"Could not open music file."}
         }
     }
     val voiceLauncher=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
@@ -565,6 +585,10 @@ fun RsAiAssistantChatV163(
                         ){Text("▶  "+rsAiExtraV163(aiLang,"video"),fontSize=9.sp)}
                     }
                     OutlinedButton(
+                        onClick={musicPicker.launch(arrayOf("audio/*"))},
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text("♫  Music",fontSize=9.sp)}
+                    OutlinedButton(
                         onClick={attachMenu=false;startVoice()},
                         modifier=Modifier.fillMaxWidth()
                     ){Text("🎙  "+rsAiExtraV163(aiLang,"voice"),fontSize=9.sp)}
@@ -573,6 +597,116 @@ fun RsAiAssistantChatV163(
         }
     }
 }
+
+    if(musicDialog && pendingMusic!=null){
+        val track=pendingMusic!!
+        val playlists=rsMusicPlaylistNamesV169(store)
+
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest={
+                musicDialog=false
+                pendingMusic=null
+                playlistMenu=false
+                newPlaylistName=""
+            }
+        ){
+            Surface(
+                color=Color.Black.copy(alpha=.98f),
+                shape=RoundedCornerShape(26.dp),
+                border=BorderStroke(1.dp,c.gold.copy(alpha=.48f)),
+                modifier=Modifier.fillMaxWidth()
+            ){
+                Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
+                    Text("RS AI MUSIC",color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp)
+                    Text(track.name,color=c.text,fontSize=11.sp,maxLines=2)
+                    Text(
+                        "Choose what RS should do with this music.",
+                        color=c.muted,fontSize=9.sp
+                    )
+
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                        Button(
+                            onClick={
+                                rsPlayMusicTrackV169(musicController,track)
+                                    .onSuccess{status="Playing "+track.name}
+                                    .onFailure{status=it.message?:"Could not play music."}
+                            },
+                            modifier=Modifier.weight(1f)
+                        ){Text("▶ Play",fontSize=9.sp)}
+
+                        OutlinedButton(
+                            onClick={
+                                rsSaveMusicTrackV169(store,track)
+                                    .onSuccess{status="Saved to RS Music."}
+                                    .onFailure{status=it.message?:"Could not save music."}
+                            },
+                            modifier=Modifier.weight(1f)
+                        ){Text("☆ Save",fontSize=9.sp)}
+                    }
+
+                    if(playlists.isNotEmpty()){
+                        Box{
+                            OutlinedButton(
+                                onClick={playlistMenu=true},
+                                modifier=Modifier.fillMaxWidth()
+                            ){Text("Add to existing playlist",fontSize=9.sp)}
+                            DropdownMenu(
+                                expanded=playlistMenu,
+                                onDismissRequest={playlistMenu=false}
+                            ){
+                                playlists.forEach{name->
+                                    DropdownMenuItem(
+                                        text={Text(name)},
+                                        onClick={
+                                            playlistMenu=false
+                                            rsAddMusicTrackToPlaylistV169(store,name,track)
+                                                .onSuccess{
+                                                    status="Added to "+name+"."
+                                                    musicDialog=false
+                                                    pendingMusic=null
+                                                }
+                                                .onFailure{status=it.message?:"Could not update playlist."}
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value=newPlaylistName,
+                        onValueChange={newPlaylistName=it.take(60)},
+                        label={Text("New playlist name")},
+                        singleLine=true,
+                        modifier=Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick={
+                            rsAddMusicTrackToPlaylistV169(store,newPlaylistName,track)
+                                .onSuccess{
+                                    status="Playlist "+newPlaylistName.trim()+" created."
+                                    musicDialog=false
+                                    pendingMusic=null
+                                    newPlaylistName=""
+                                }
+                                .onFailure{status=it.message?:"Could not create playlist."}
+                        },
+                        enabled=newPlaylistName.isNotBlank(),
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text("Create playlist with this music")}
+
+                    TextButton(
+                        onClick={
+                            musicDialog=false
+                            pendingMusic=null
+                            newPlaylistName=""
+                        },
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text("Close")}
+                }
+            }
+        }
+    }
 
 @Composable
 private fun RsAiAvatarStageV163(
