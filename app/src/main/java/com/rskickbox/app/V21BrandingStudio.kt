@@ -827,12 +827,27 @@ fun RsPerPageBackgroundV21(store:RsStore,route:String,content:@Composable ()->Un
 fun RsBrandedHeaderV21(c:RsPalette,store:RsStore,content:@Composable ColumnScope.()->Unit){
     val context=LocalContext.current
     val uri=rsVisualUriWithBundledFallbackV113(context,store,"header")
-    val compactLogo=store.s("brand_asset_header_letters_logo","")
-    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.panel)){
-        if(uri.isNotBlank())RsUriPreviewV21(uri,Modifier.matchParentSize(),store.s(posKeyV21("header"),"CENTER"))
-        Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=store.s(opacityKeyV21("header"),"0.34").toFloatOrNull()?:.34f)))
-        Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
-            if(compactLogo.isNotBlank())RsUriPreviewV21(compactLogo,Modifier.height(42.dp).width(82.dp),"CENTER")
+    Box(
+        Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(c.panel)
+    ){
+        if(uri.isNotBlank())RsUriPreviewV21(
+            uri,
+            Modifier.matchParentSize(),
+            store.s(posKeyV21("header"),"CENTER")
+        )
+        Box(
+            Modifier.matchParentSize().background(
+                Color.Black.copy(
+                    alpha=store.s(opacityKeyV21("header"),"0.46").toFloatOrNull()?:.46f
+                )
+            )
+        )
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal=9.dp,vertical=7.dp),
+            verticalArrangement=Arrangement.spacedBy(4.dp)
+        ){
             content()
         }
     }
