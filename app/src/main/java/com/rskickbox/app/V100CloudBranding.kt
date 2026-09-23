@@ -35,10 +35,19 @@ suspend fun rsSyncCloudBrandV100(store:RsStore):Result<RsCloudBrandSettingsV100>
     store.ps("brand_login_subtitle",settings.loginSubtitle)
     store.ps("brand_footer_text",settings.footerText)
     val localThemeOverrideMs=store.s("theme_local_override_ms_v170","0").toLongOrNull()?:0L
-    val preserveLocalTheme=
-        localThemeOverrideMs>0L &&
-        System.currentTimeMillis()-localThemeOverrideMs < 24L*60L*60L*1000L
-    if(!preserveLocalTheme)store.ps("theme",settings.themeName)
+    val localTheme=store.s("theme","ELITE_GOLD")
+    val preserveLocalTheme=localThemeOverrideMs>0L
+    if(preserveLocalTheme){
+        // A theme explicitly confirmed on this device remains authoritative
+        // until cloud returns the same value. This prevents delayed cloud
+        // refreshes from undoing a newly selected style.
+        if(settings.themeName==localTheme){
+            store.ps("theme_cloud_confirmed_v176",localTheme)
+            store.ps("theme_local_override_ms_v170","0")
+        }
+    }else{
+        store.ps("theme",settings.themeName)
+    }
     store.ps("login_form_opacity",settings.loginFormOpacity.coerceIn(.20,1.0).toString())
     store.pb("intro_enabled",settings.introEnabled)
     store.pb("intro_every_launch",settings.introEveryLaunch)
