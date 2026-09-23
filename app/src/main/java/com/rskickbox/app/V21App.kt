@@ -541,7 +541,15 @@ fun RsKickboxV21App(
                                         store.pb("ai_immersive_v171",false)
                                         route=target
                                     },
-                                    onBack={route=if(active==RsRole.TRAINER)"trainer" else "home"}
+                                    onBack={
+                                        // Tear down the chat composition first, then return to
+                                        // dashboard on the next frame. This avoids a race between
+                                        // chat/call media cleanup and the dashboard background.
+                                        appScope.launch{
+                                            kotlinx.coroutines.delay(80)
+                                            route=if(active==RsRole.TRAINER)"trainer" else "home"
+                                        }
+                                    }
                                 )
                             }else ShellV21(c, store, active, lang, route, { selected -> store.pb("lang_manual_override_v111",true);lang=selected;store.ps("lang",selected.code) }, { route=it }, {
                                 passwordRecoveryLaunch=false
@@ -583,7 +591,7 @@ fun RsKickboxV21App(
                                     "backgrounds" -> RsVisualAssetStudioV21(c, store, lang)
                                     "branding" -> RsBrandSiteSettingsV21(c, store, lang)
                                     "intro_settings" -> RsIntroSettingsV21(c, store, lang)
-                                    "voice" -> RsFloatingGlassChatHubV125(c,store,lang,active,"voice"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
+                                    "voice" -> RsFloatingGlassChatHubV125(c,store,lang,active,"voice"){appScope.launch{kotlinx.coroutines.delay(80);route=if(active==RsRole.TRAINER)"trainer" else "home"}}
                                     "session" -> if(active==RsRole.TRAINER) RsSessionBuilderV52(c,store,lang) else RsSessionPlayerV52(c,store,lang)
                                     "access" -> RsAccessControlV49(c,store,lang)
                                     "payments" -> RsTrainerPaymentCenterV39(c,store,lang)
@@ -602,8 +610,8 @@ fun RsKickboxV21App(
                                     "challenges" -> RsStudentChallengesV47(c,store,lang)
                                     "fightcamp" -> RsStudentFightCampV47(c,store,lang)
                                     "finance" -> RsStudentFinanceV39(c,store,lang)
-                                    "community" -> RsFloatingGlassChatHubV125(c,store,lang,active,"community"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
-                                    "media" -> RsFloatingGlassChatHubV125(c,store,lang,active,"gallery"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
+                                    "community" -> RsFloatingGlassChatHubV125(c,store,lang,active,"community"){appScope.launch{kotlinx.coroutines.delay(80);route=if(active==RsRole.TRAINER)"trainer" else "home"}}
+                                    "media" -> RsFloatingGlassChatHubV125(c,store,lang,active,"gallery"){appScope.launch{kotlinx.coroutines.delay(80);route=if(active==RsRole.TRAINER)"trainer" else "home"}}
                                     "music", "music_admin" -> RsPersistentMusicCenterV90(c, store, active, lang)
                                     "techniques" -> RsTechniqueLibraryV54(c,lang)
                                     "home_training" -> RsWorkoutHomeHubV89(c,store,lang)
@@ -611,25 +619,25 @@ fun RsKickboxV21App(
                                     "badges" -> RsBadgesV47(c,store,lang)
                                     "vault" -> RsKnowledgeHubV89(c,store,lang)
                                     "compare" -> RsTechniqueCompareV54(c,lang)
-                                    "coachchat" -> RsFloatingGlassChatHubV125(c,store,lang,active,"coachchat"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
+                                    "coachchat" -> RsFloatingGlassChatHubV125(c,store,lang,active,"coachchat"){appScope.launch{kotlinx.coroutines.delay(80);route=if(active==RsRole.TRAINER)"trainer" else "home"}}
                                     "events" -> RsStudentEventsV42(c,store,lang)
                                     "promotions" -> RsPromotionPageV45(c,store,lang){route="book"}
-                                    "notifications" -> RsFloatingGlassChatHubV125(c,store,lang,active,"notifications"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
+                                    "notifications" -> RsFloatingGlassChatHubV125(c,store,lang,active,"notifications"){appScope.launch{kotlinx.coroutines.delay(80);route=if(active==RsRole.TRAINER)"trainer" else "home"}}
                                     "analytics" -> RsAnalyticsV53(c,store,lang)
                                     "guide" -> RsTrainerGuideV54(c,store,lang){route=it}
                                     "student_guide" -> RsStudentGuideV81(c,store,lang){route=it}
                                     "documents" -> RsDocumentsV51(c,store,lang,active)
-                                    "support" -> RsFloatingGlassChatHubV125(c,store,lang,active,"support"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
+                                    "support" -> RsFloatingGlassChatHubV125(c,store,lang,active,"support"){appScope.launch{kotlinx.coroutines.delay(80);route=if(active==RsRole.TRAINER)"trainer" else "home"}}
                                     "referrals" -> RsReferralsV51(c,store,lang)
                                     "schedule" -> RsTrainerScheduleV43(c,store,lang)
-                                    "content" -> RsFloatingGlassChatHubV125(c,store,lang,active,"content"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
+                                    "content" -> RsFloatingGlassChatHubV125(c,store,lang,active,"content"){appScope.launch{kotlinx.coroutines.delay(80);route=if(active==RsRole.TRAINER)"trainer" else "home"}}
                                     "notes" -> RsCoachNotesV46(c,store,lang)
                                     "homework" -> RsStudentHomeworkV46(c,store,lang)
                                     "favorites" -> RsFavoritesV48(c,store,lang)
                                     "history" -> RsHistoryV48(c,store,lang)
                                     "private_lessons" -> RsStudentPrivateLessonsV43(c,store,lang)
                                     "profile" -> RsProfileV50(c,store,lang)
-                                    "groups" -> RsFloatingGlassChatHubV125(c,store,lang,active,"groups"){route=if(active==RsRole.TRAINER)"trainer" else "home"}
+                                    "groups" -> RsFloatingGlassChatHubV125(c,store,lang,active,"groups"){appScope.launch{kotlinx.coroutines.delay(80);route=if(active==RsRole.TRAINER)"trainer" else "home"}}
                                     "search" -> RsSearchV48(c,store,lang)
                                     "homework_admin" -> RsHomeworkManagerV46(c,store,lang)
                                     "lesson_editor" -> RsContentManagerV48(c,store,lang)
