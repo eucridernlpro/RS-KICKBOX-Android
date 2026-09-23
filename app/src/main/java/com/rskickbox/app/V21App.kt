@@ -285,7 +285,12 @@ fun RsKickboxV21App(
         if(introDone && role!=null && !callOnlyMode && RsSupabaseV60.configured){
             rsSyncCloudBrandV100(store)
                 .onSuccess{settings->
-                    theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
+                    val overrideMs=store.s("theme_local_override_ms_v170","0").toLongOrNull()?:0L
+                    val keepLocal=overrideMs>0L &&
+                        System.currentTimeMillis()-overrideMs < 24L*60L*60L*1000L
+                    if(!keepLocal){
+                        theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
+                    }
                     brandRevision++
                 }
             rsSyncCloudVisualAssetsV101(context,store)
@@ -372,7 +377,12 @@ fun RsKickboxV21App(
             while(true){
                 kotlinx.coroutines.delay(60_000)
                 rsSyncCloudBrandV100(store).onSuccess{settings->
-                    theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
+                    val overrideMs=store.s("theme_local_override_ms_v170","0").toLongOrNull()?:0L
+                    val keepLocal=overrideMs>0L &&
+                        System.currentTimeMillis()-overrideMs < 24L*60L*60L*1000L
+                    if(!keepLocal){
+                        theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
+                    }
                     brandRevision++
                 }
                 rsSyncCloudVisualAssetsV101(context,store).onSuccess{brandRevision++}
@@ -534,8 +544,10 @@ fun RsKickboxV21App(
                                 when(route) {
                                     "home", "trainer" -> RsPremiumDashboardV21(c, store, active, lang) { route=it }
                                     "themes" -> RsThemeStudio(c, theme) { selected ->
+                                        val now=System.currentTimeMillis()
                                         theme=selected
                                         store.ps("theme",selected.name)
+                                        store.ps("theme_local_override_ms_v170",now.toString())
                                         brandRevision++
                                         if(RsSupabaseV60.configured){
                                             appScope.launch{
@@ -546,7 +558,10 @@ fun RsKickboxV21App(
                                                     store.s("brand_footer_text","RS KICKBOXING · TRAIN · LEARN · CONNECT · GROW"),
                                                     selected.name,
                                                     store.s("login_form_opacity","0.82").toFloatOrNull()?:.82f
-                                                )
+                                                ).onSuccess{
+                                                    store.ps("theme_local_override_ms_v170","0")
+                                                    store.ps("theme",selected.name)
+                                                }
                                             }
                                         }
                                     }
@@ -1137,7 +1152,9 @@ private fun ShellV21(
     val scope=rememberCoroutineScope()
     val context=LocalContext.current
     var lastBackPressMs by remember{mutableLongStateOf(0L)}
-    val chatFullScreen=route in setOf("coachchat","groups","voice","media")
+    val chatFullScreen=route in setOf(
+        "coachchat","groups","voice","media","community","support","notifications","content"
+    )
 
     BackHandler {
         when{
