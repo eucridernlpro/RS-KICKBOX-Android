@@ -1,6 +1,7 @@
 package com.rskickbox.app
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioManager
@@ -171,7 +172,7 @@ fun RsDirectCallControlsV133(
                 .onFailure{
                     if(status.isBlank())status=rsCallT133(lang,"unavailable")
                 }
-            delay(1500)
+            delay(if(inPip)250 else 700)
         }
     }
 
@@ -360,6 +361,7 @@ fun RsActiveCallDialogV133(
     var cameraOn by remember(call.id){mutableStateOf(isVideo)}
     var speakerOn by remember(call.id){mutableStateOf(isVideo)}
     var closing by remember(call.id){mutableStateOf(false)}
+    var inPip by remember(call.id){mutableStateOf((context as? Activity)?.isInPictureInPictureMode==true)}
     val audioManager=remember{context.getSystemService(Context.AUDIO_SERVICE) as AudioManager}
     val engine=remember(call.id){
         RsWebRtcEngineV132(context,call.id,isCaller,isVideo,scope){engineState=it}
@@ -374,6 +376,7 @@ fun RsActiveCallDialogV133(
     }
     LaunchedEffect(call.id){
         while(isActive){
+            inPip=(context as? Activity)?.isInPictureInPictureMode==true
             rsCallInboxV131().onSuccess{list->
                 val current=list.firstOrNull{it.id==call.id}
                 if(!closing && (current==null||current.status in setOf("ENDED","DECLINED","MISSED","CANCELLED"))){
@@ -401,11 +404,13 @@ fun RsActiveCallDialogV133(
         properties=DialogProperties(usePlatformDefaultWidth=false)
     ){
         Box(Modifier.fillMaxSize().background(Color.Black)){
-            Image(
-                painter=painterResource(R.drawable.rs_launcher_royal_v129),
-                contentDescription="RS KICKBOXING",
-                modifier=Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top=8.dp).size(64.dp)
-            )
+            if(!inPip){
+                Image(
+                    painter=painterResource(R.drawable.rs_launcher_royal_v129),
+                    contentDescription="RS KICKBOXING",
+                    modifier=Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top=8.dp).size(64.dp)
+                )
+            }
 
             if(isVideo){
                 var remoteRenderer by remember{mutableStateOf<SurfaceViewRenderer?>(null)}
@@ -420,15 +425,17 @@ fun RsActiveCallDialogV133(
                     },
                     modifier=Modifier.fillMaxSize()
                 )
-                AndroidView(
-                    factory={ctx->
-                        SurfaceViewRenderer(ctx).also{view->
-                            localRenderer=view
-                            engine.attachRenderers(view,remoteRenderer)
-                        }
-                    },
-                    modifier=Modifier.align(Alignment.TopEnd).padding(14.dp).width(116.dp).height(164.dp)
-                )
+                if(!inPip){
+                    AndroidView(
+                        factory={ctx->
+                            SurfaceViewRenderer(ctx).also{view->
+                                localRenderer=view
+                                engine.attachRenderers(view,remoteRenderer)
+                            }
+                        },
+                        modifier=Modifier.align(Alignment.TopEnd).padding(10.dp).width(92.dp).height(128.dp)
+                    )
+                }
 
                 DisposableEffect(call.id){
                     onDispose{
@@ -458,7 +465,7 @@ fun RsActiveCallDialogV133(
                 }
             }
 
-            Column(
+            if(!inPip) Column(
                 Modifier.align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .background(
