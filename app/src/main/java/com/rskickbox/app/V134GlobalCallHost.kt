@@ -74,19 +74,25 @@ fun RsGlobalCallHostV134(
             if(result.values.all{it}){
                 callActionBusy=true
                 scope.launch{
-                    rsSetCallStatusV131(call.id,"ACCEPTED")
-                        .onSuccess{
-                            rsCancelIncomingCallNotificationV134(context,call.id)
-                            incoming=null
-                            outgoing=null
-                            accepted=call.copy(status="ACCEPTED")
-                            status=""
-                        }
-                        .onFailure{status=it.message.orEmpty().ifBlank{"Could not answer the call."}}
-                    callActionBusy=false
+                    try{
+                        rsSetCallStatusV131(call.id,"ACCEPTED")
+                            .onSuccess{
+                                rsCancelIncomingCallNotificationV134(context,call.id)
+                                incoming=null
+                                outgoing=null
+                                accepted=call.copy(status="ACCEPTED")
+                                status=""
+                            }
+                            .onFailure{status=it.message.orEmpty().ifBlank{"Could not answer the call."}}
+                    }finally{
+                        callActionBusy=false
+                    }
                 }
-            }else status="Microphone/camera permission is required."
-        }
+            }else{
+                callActionBusy=false
+                status="Microphone/camera permission is required."
+            }
+        }else callActionBusy=false
     }
 
     LaunchedEffect(myId,role){
@@ -201,15 +207,18 @@ fun RsGlobalCallHostV134(
                                     if(!callActionBusy){
                                         callActionBusy=true
                                         scope.launch{
-                                            rsSetCallStatusV131(call.id,"DECLINED")
-                                                .onSuccess{
-                                                    rsCancelIncomingCallNotificationV134(context,call.id)
-                                                    incoming=null
-                                                    status=""
-                                                    onCallSessionFinished?.invoke()
-                                                }
-                                                .onFailure{status=it.message.orEmpty().ifBlank{"Could not decline the call."}}
-                                            callActionBusy=false
+                                            try{
+                                                rsSetCallStatusV131(call.id,"DECLINED")
+                                                    .onSuccess{
+                                                        rsCancelIncomingCallNotificationV134(context,call.id)
+                                                        incoming=null
+                                                        status=""
+                                                        onCallSessionFinished?.invoke()
+                                                    }
+                                                    .onFailure{status=it.message.orEmpty().ifBlank{"Could not decline the call."}}
+                                            }finally{
+                                                callActionBusy=false
+                                            }
                                         }
                                     }
                                 }
@@ -236,18 +245,22 @@ fun RsGlobalCallHostV134(
                                     if(needs.isEmpty()){
                                         callActionBusy=true
                                         scope.launch{
-                                            rsSetCallStatusV131(call.id,"ACCEPTED")
-                                                .onSuccess{
-                                                    rsCancelIncomingCallNotificationV134(context,call.id)
-                                                    incoming=null
-                                                    outgoing=null
-                                                    accepted=call.copy(status="ACCEPTED")
-                                                    status=""
-                                                }
-                                                .onFailure{status=it.message.orEmpty().ifBlank{"Could not answer the call."}}
-                                            callActionBusy=false
+                                            try{
+                                                rsSetCallStatusV131(call.id,"ACCEPTED")
+                                                    .onSuccess{
+                                                        rsCancelIncomingCallNotificationV134(context,call.id)
+                                                        incoming=null
+                                                        outgoing=null
+                                                        accepted=call.copy(status="ACCEPTED")
+                                                        status=""
+                                                    }
+                                                    .onFailure{status=it.message.orEmpty().ifBlank{"Could not answer the call."}}
+                                            }finally{
+                                                callActionBusy=false
+                                            }
                                         }
                                     }else{
+                                        callActionBusy=true
                                         pendingAccept=call
                                         permissionLauncher.launch(needs.toTypedArray())
                                     }
@@ -313,14 +326,17 @@ fun RsGlobalCallHostV134(
                             if(!callActionBusy){
                                 callActionBusy=true
                                 scope.launch{
-                                    rsSetCallStatusV131(call.id,"CANCELLED")
-                                        .onSuccess{
-                                            outgoing=null
-                                            status=""
-                                            onCallSessionFinished?.invoke()
-                                        }
-                                        .onFailure{status=it.message.orEmpty().ifBlank{"Could not cancel the call."}}
-                                    callActionBusy=false
+                                    try{
+                                        rsSetCallStatusV131(call.id,"CANCELLED")
+                                            .onSuccess{
+                                                outgoing=null
+                                                status=""
+                                                onCallSessionFinished?.invoke()
+                                            }
+                                            .onFailure{status=it.message.orEmpty().ifBlank{"Could not cancel the call."}}
+                                    }finally{
+                                        callActionBusy=false
+                                    }
                                 }
                             }
                         }
