@@ -337,18 +337,6 @@ class RsCallMonitorServiceV134:Service(){
             this,call.id.hashCode(),fullIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        if(MainActivity.isAlive){
-            val broughtForward=runCatching{
-                startActivity(
-                    Intent(this,MainActivity::class.java).apply{
-                        action="com.rskickbox.app.BRING_RS_CALL"
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-                    }
-                )
-                true
-            }.getOrDefault(false)
-            if(broughtForward)return
-        }
         val answerIntent=Intent(this,RsCallMonitorServiceV134::class.java).apply{
             action=ACTION_ACCEPT_CALL
             putExtra("call_id",call.id)
@@ -374,7 +362,7 @@ class RsCallMonitorServiceV134:Service(){
             .setImportant(true)
             .build()
         val isVideo=call.callType=="VIDEO"
-        val notification=NotificationCompat.Builder(this,CHANNEL_CALLS)
+        val builder=NotificationCompat.Builder(this,CHANNEL_CALLS)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(person.name)
             .setContentText(if(isVideo)"Incoming RS video call" else "Incoming RS audio call")
@@ -394,8 +382,30 @@ class RsCallMonitorServiceV134:Service(){
                 )
             )
             .addPerson(person)
-            .build()
-        getSystemService(NotificationManager::class.java).notify(call.id.hashCode(),notification)
+
+        if(MainActivity.isAlive){
+            // Minimized RS should return to the real full-screen call UI.
+            // Android may silently deny a background Activity launch, so verify
+            // that RS actually became foreground before suppressing the fallback.
+            runCatching{
+                startActivity(
+                    Intent(this,MainActivity::class.java).apply{
+                        action="com.rskickbox.app.BRING_RS_CALL"
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    }
+                )
+            }
+            scope.launch{
+                delay(900)
+                if(!MainActivity.isForeground){
+                    val fallback=builder.setFullScreenIntent(fullPending,true).build()
+                    getSystemService(NotificationManager::class.java).notify(call.id.hashCode(),fallback)
+                }
+            }
+        }else{
+            // Fully closed app: notification/actions only.
+            getSystemService(NotificationManager::class.java).notify(call.id.hashCode(),builder.build())
+        }
     }
 
     private fun showIncomingVideoRoom(room:RsVideoRoomV136){
@@ -409,18 +419,6 @@ class RsCallMonitorServiceV134:Service(){
             this,room.roomId.hashCode(),fullIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        if(MainActivity.isAlive){
-            val broughtForward=runCatching{
-                startActivity(
-                    Intent(this,MainActivity::class.java).apply{
-                        action="com.rskickbox.app.BRING_RS_CALL"
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-                    }
-                )
-                true
-            }.getOrDefault(false)
-            if(broughtForward)return
-        }
         val joinIntent=Intent(this,RsCallMonitorServiceV134::class.java).apply{
             action=ACTION_JOIN_ROOM
             putExtra("room_id",room.roomId)
@@ -441,7 +439,7 @@ class RsCallMonitorServiceV134:Service(){
             .setName(room.hostName.ifBlank{"RS Trainer"})
             .setImportant(true)
             .build()
-        val notification=NotificationCompat.Builder(this,CHANNEL_CALLS)
+        val builder=NotificationCompat.Builder(this,CHANNEL_CALLS)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(room.hostName.ifBlank{"RS Trainer"})
             .setContentText("RS group video · "+room.participantCount+" participants")
@@ -462,8 +460,26 @@ class RsCallMonitorServiceV134:Service(){
                 )
             )
             .addPerson(person)
-            .build()
-        getSystemService(NotificationManager::class.java).notify(room.roomId.hashCode(),notification)
+
+        if(MainActivity.isAlive){
+            runCatching{
+                startActivity(
+                    Intent(this,MainActivity::class.java).apply{
+                        action="com.rskickbox.app.BRING_RS_CALL"
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    }
+                )
+            }
+            scope.launch{
+                delay(900)
+                if(!MainActivity.isForeground){
+                    val fallback=builder.setFullScreenIntent(fullPending,true).build()
+                    getSystemService(NotificationManager::class.java).notify(room.roomId.hashCode(),fallback)
+                }
+            }
+        }else{
+            getSystemService(NotificationManager::class.java).notify(room.roomId.hashCode(),builder.build())
+        }
     }
 
     override fun onDestroy(){
