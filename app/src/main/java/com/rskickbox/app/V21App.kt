@@ -151,9 +151,15 @@ fun RsKickboxV21App(
     }
     // Normal trusted-session restore happens only after crown/splash reaches LOGIN.
     // This prevents heavy authenticated systems from initializing during startup presentation.
+    val externalTrustedLaunch=remember(
+        incomingCallLaunch,voiceAssistantLaunch,initialRequestedRoute,localSessionFresh,localSessionRole
+    ){
+        localSessionFresh && localSessionRole!=null &&
+            (incomingCallLaunch || voiceAssistantLaunch || initialRequestedRoute.isNotBlank())
+    }
     var role by remember {
         mutableStateOf<RsRole?>(
-            backgroundCallRole ?: if(skipIntroOnRestore && localSessionFresh) localSessionRole else null
+            backgroundCallRole ?: if((skipIntroOnRestore || externalTrustedLaunch) && localSessionFresh) localSessionRole else null
         )
     }
     var callOnlyMode by remember { mutableStateOf(incomingCallLaunch && backgroundCallRole!=null) }
@@ -210,7 +216,7 @@ fun RsKickboxV21App(
     var introDone by remember { mutableStateOf(true) }
     var preLoginStage by remember {
         mutableStateOf(
-            if(skipIntroOnRestore || incomingCallLaunch)RsPreLoginStageV147.LOGIN
+            if(skipIntroOnRestore || incomingCallLaunch || externalTrustedLaunch)RsPreLoginStageV147.LOGIN
             else RsPreLoginStageV147.LOGO
         )
     }
@@ -222,7 +228,11 @@ fun RsKickboxV21App(
             authRestoreAttempted=true
             authRestoring=false
             role=localSessionRole
-            route=if(localSessionRole==RsRole.TRAINER)"trainer" else "home"
+            route=when{
+                voiceAssistantLaunch->"voice"
+                initialRequestedRoute.isNotBlank()->initialRequestedRoute
+                else->if(localSessionRole==RsRole.TRAINER)"trainer" else "home"
+            }
             preLoginStage=RsPreLoginStageV147.LOGIN
         }else{
             preLoginStage=RsPreLoginStageV147.LOGIN
