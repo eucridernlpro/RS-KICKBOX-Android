@@ -232,6 +232,7 @@ private fun studentV21()=listOf(
         DashV21("student_guide","App Guide","Learn every available feature step by step","brand")
     )),
     SectionV21("Core Training",listOf(
+        DashV21("music","My RS Music","Full player · playlists · background audio · AI control","music"),
         DashV21("session","Session Player","Rounds · timer · trainer cues","training"),
         DashV21("academy","RS Academy","Structured premium lessons","training"),
         DashV21("techniques","Technique Library","Moves · drills · details","technique"),
@@ -262,7 +263,6 @@ private fun studentV21()=listOf(
     SectionV21("Library, Music & Account",listOf(
         DashV21("vault","Knowledge Vault","Browse · Search · Favorites · History","brand"),
         DashV21("homework","Homework","Coach assignments","training"),
-        DashV21("music","My RS Music","Persistent background player","music"),
         DashV21("finance","Membership & Payments","Plan · payments · history","payment"),
         DashV21("book","Trainer Book","Van Stilte Naar Strijd","brand"),
         DashV21("profile","My Profile","Photo · goals · identity","settings"),
