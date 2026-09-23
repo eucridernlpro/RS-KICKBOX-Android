@@ -827,10 +827,18 @@ fun RsPerPageBackgroundV21(store:RsStore,route:String,content:@Composable ()->Un
 fun RsBrandedHeaderV21(c:RsPalette,store:RsStore,content:@Composable ColumnScope.()->Unit){
     val context=LocalContext.current
     val uri=rsVisualUriWithBundledFallbackV113(context,store,"header")
+    val layout=rsThemeLayoutV175(rsStoredThemeV175(store))
+    val headerBrush=when(layout.mode){
+        "FIGHT_STRIP"->androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(c.bg,c.panel2,c.gold.copy(alpha=.20f),c.bg))
+        "TECH_COMPACT"->androidx.compose.ui.graphics.Brush.linearGradient(listOf(c.panel,c.panel2,c.bg))
+        "HOLO_CARDS"->androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(c.panel2,c.bright.copy(alpha=.10f),c.panel))
+        "PERFORMANCE_STACK"->androidx.compose.ui.graphics.Brush.verticalGradient(listOf(c.panel2,c.panel,c.bg))
+        else->androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(c.panel,c.gold.copy(alpha=.08f),c.panel2))
+    }
     Box(
         Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(c.panel)
+            .clip(RoundedCornerShape(layout.panelRadius.dp))
+            .background(headerBrush)
     ){
         if(uri.isNotBlank())RsUriPreviewV21(
             uri,
@@ -844,8 +852,21 @@ fun RsBrandedHeaderV21(c:RsPalette,store:RsStore,content:@Composable ColumnScope
                 )
             )
         )
+        if(layout.strongLines){
+            Box(
+                Modifier.fillMaxWidth().height(2.dp).align(Alignment.TopCenter)
+                    .background(
+                        androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            listOf(Color.Transparent,c.bright,c.gold,Color.Transparent)
+                        )
+                    )
+            )
+        }
         Column(
-            Modifier.fillMaxWidth().padding(horizontal=9.dp,vertical=7.dp),
+            Modifier.fillMaxWidth().padding(
+                horizontal=when(layout.mode){"TECH_COMPACT"->7.dp;"FIGHT_STRIP"->11.dp;else->9.dp},
+                vertical=when(layout.mode){"TECH_COMPACT"->5.dp;"HOLO_CARDS"->9.dp;else->7.dp}
+            ),
             verticalArrangement=Arrangement.spacedBy(4.dp)
         ){
             content()
