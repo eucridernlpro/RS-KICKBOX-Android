@@ -352,32 +352,82 @@ fun RsFloatingGlassChatHubV125(
         )
         Column(Modifier.fillMaxSize().padding(6.dp)){
         Surface(
-            color=Color.Black.copy(alpha=.74f),
+            color=Color.Black.copy(alpha=.76f),
             border=BorderStroke(1.dp,c.gold.copy(alpha=.34f)),
-            shape=RoundedCornerShape(24.dp),
+            shape=RoundedCornerShape(20.dp),
             modifier=Modifier.fillMaxWidth()
         ){
             Box(Modifier.fillMaxWidth()){
-                if(chatHeaderVisual.isNotBlank())RsUriPreviewV21(chatHeaderVisual,Modifier.matchParentSize().alpha(.48f),"CENTER")
-                Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=.58f)))
+                if(chatHeaderVisual.isNotBlank())RsUriPreviewV21(
+                    chatHeaderVisual,
+                    Modifier.matchParentSize().alpha(.44f),
+                    "CENTER"
+                )
+                Box(Modifier.matchParentSize().background(Color.Black.copy(alpha=.60f)))
                 Column(
-                    Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=9.dp),
-                    verticalArrangement=Arrangement.spacedBy(7.dp)
+                    Modifier.fillMaxWidth().padding(horizontal=9.dp,vertical=6.dp),
+                    verticalArrangement=Arrangement.spacedBy(4.dp)
                 ){
                     Row(
                         Modifier.fillMaxWidth(),
                         verticalAlignment=Alignment.CenterVertically,
-                        horizontalArrangement=Arrangement.spacedBy(10.dp)
+                        horizontalArrangement=Arrangement.spacedBy(7.dp)
                     ){
                         Image(
                             painter=painterResource(R.drawable.rs_launcher_royal_v129),
                             contentDescription="RS",
-                            modifier=Modifier.size(46.dp)
+                            modifier=Modifier.size(39.dp)
                         )
                         Column(Modifier.weight(1f)){
-                            Text("RS CHAT",color=c.bright,fontWeight=FontWeight.Black,fontSize=19.sp,letterSpacing=1.sp)
-                            Text("Private · Groups · Community · Support · AI",color=c.muted,fontSize=8.sp)
+                            Text(
+                                "RS CHAT",
+                                color=c.bright,
+                                fontWeight=FontWeight.Black,
+                                fontSize=17.sp,
+                                letterSpacing=.8.sp,
+                                maxLines=1
+                            )
+                            Text(
+                                "Private · Groups · Community · Support · AI",
+                                color=c.muted,
+                                fontSize=7.sp,
+                                maxLines=1
+                            )
                         }
+                        OutlinedButton(
+                            onClick={
+                                store.pb("ai_start_listening_v168",true)
+                                tab=RsChatHubTabV125.AI
+                            },
+                            modifier=Modifier.size(38.dp),
+                            shape=CircleShape,
+                            border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.62f)),
+                            contentPadding=PaddingValues(0.dp)
+                        ){
+                            Text("🎙",color=Color(0xFF58C9FF),fontSize=14.sp)
+                        }
+                    }
+
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment=Alignment.CenterVertically,
+                        horizontalArrangement=Arrangement.spacedBy(6.dp)
+                    ){
+                        OutlinedButton(
+                            onClick={handleChatBack()},
+                            modifier=Modifier.size(32.dp),
+                            shape=CircleShape,
+                            border=BorderStroke(1.dp,c.gold.copy(alpha=.34f)),
+                            contentPadding=PaddingValues(0.dp)
+                        ){Text("‹",color=c.bright,fontSize=19.sp)}
+                        OutlinedButton(
+                            onClick={slideMenuOpen=true},
+                            modifier=Modifier.size(32.dp),
+                            shape=CircleShape,
+                            border=BorderStroke(1.dp,c.gold.copy(alpha=.50f)),
+                            contentPadding=PaddingValues(0.dp)
+                        ){Text("☰",color=c.bright,fontSize=12.sp,fontWeight=FontWeight.Black)}
+
                         if(tab==RsChatHubTabV125.PRIVATE){
                             RsDirectCallControlsV133(
                                 c=c,
@@ -389,52 +439,23 @@ fun RsFloatingGlassChatHubV125(
                                 compact=true
                             )
                         }
-                        RsNotificationBellV156(
-                            c=c,
-                            store=store,
-                            lang=lang,
-                            onOpenCall={peerId->
-                                privateStudentId=peerId
-                                tab=RsChatHubTabV125.PRIVATE
-                            },
-                            onOpenNotifications={tab=RsChatHubTabV125.NOTIFICATIONS}
-                        )
-                        OutlinedButton(
-                            onClick={
-                                store.pb("ai_start_listening_v168",true)
-                                tab=RsChatHubTabV125.AI
-                            },
-                            modifier=Modifier.size(40.dp),
-                            shape=CircleShape,
-                            border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.58f)),
-                            contentPadding=PaddingValues(0.dp)
-                        ){
-                            Text("🎙",color=Color(0xFF58C9FF),fontSize=15.sp)
-                        }
-                    }
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment=Alignment.CenterVertically,
-                        horizontalArrangement=Arrangement.spacedBy(8.dp)
-                    ){
-                        OutlinedButton(
-                            onClick={handleChatBack()},
-                            modifier=Modifier.size(38.dp),
-                            shape=CircleShape,
-                            border=BorderStroke(1.dp,c.gold.copy(alpha=.34f)),
-                            contentPadding=PaddingValues(0.dp)
-                        ){Text("‹",color=c.bright,fontSize=23.sp)}
-                        OutlinedButton(
-                            onClick={slideMenuOpen=true},
-                            modifier=Modifier.size(38.dp),
-                            shape=CircleShape,
-                            border=BorderStroke(1.dp,c.gold.copy(alpha=.50f)),
-                            contentPadding=PaddingValues(0.dp)
-                        ){Text("☰",color=c.bright,fontSize=15.sp,fontWeight=FontWeight.Black)}
+
                         Spacer(Modifier.weight(1f))
-                        Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)){
-                            Surface(color=Color(0xFF36D27F),shape=CircleShape,modifier=Modifier.size(6.dp)){}
-                            Text("LIVE",color=Color(0xFF36D27F),fontSize=7.sp,fontWeight=FontWeight.Black,letterSpacing=.8.sp)
+                        Row(
+                            verticalAlignment=Alignment.CenterVertically,
+                            horizontalArrangement=Arrangement.spacedBy(4.dp)
+                        ){
+                            Surface(
+                                color=Color(0xFF36D27F),
+                                shape=CircleShape,
+                                modifier=Modifier.size(6.dp)
+                            ){}
+                            Text(
+                                "LIVE",
+                                color=Color(0xFF36D27F),
+                                fontSize=7.sp,
+                                fontWeight=FontWeight.Black
+                            )
                         }
                     }
                 }
