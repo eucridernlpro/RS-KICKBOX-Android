@@ -145,3 +145,44 @@ fun rsAiAppKnowledgeSummaryV175(lang:RsLang,role:RsRole):String =
             val hint=rsRouteHint(lang,route,title)
             route+" | "+title+" | "+hint
         }
+
+
+fun rsAiAppGuideForRouteV177(route:String,lang:RsLang,role:RsRole):RsAiAppGuideResultV175?{
+    if(route.isBlank() || route !in rsAiAppRoutesV175)return null
+    val title=rsRouteTitle(lang,route,route.replace('_',' ').replaceFirstChar{it.uppercase()})
+    val hint=rsRouteHint(lang,route,title)
+    val steps=rsAiGuideSpecialStepsV175(route,role)?:listOf(
+        "Open $title from the dashboard or side menu.",
+        "Review the available controls and information on the page.",
+        "Choose the action that matches what you want to do.",
+        "Check the result/status before leaving the page."
+    )
+    val purpose=when(lang.code){
+        "nl"->"$title helpt je met: $hint."
+        "pt"->"$title ajuda-te com: $hint."
+        "es"->"$title te ayuda con: $hint."
+        "fr"->"$title t'aide avec : $hint."
+        "de"->"$title hilft dir bei: $hint."
+        else->"$title is used for: $hint."
+    }
+    val tip=when(lang.code){
+        "nl"->"Vraag RS AI gerust wat je op deze pagina kunt doen of zeg welke actie je wilt uitvoeren."
+        "pt"->"Podes perguntar à IA RS o que podes fazer nesta página ou dizer a ação que queres executar."
+        "es"->"Puedes preguntar a RS AI qué puedes hacer en esta página o decir la acción que quieres realizar."
+        "fr"->"Tu peux demander à RS AI ce que tu peux faire sur cette page ou lui dire l’action que tu veux effectuer."
+        else->"Ask RS AI what you can do on this page, or tell it the action you want to perform."
+    }
+    return RsAiAppGuideResultV175(route,title,purpose,steps,tip)
+}
+
+fun rsAiGenericCurrentPageHelpV177(text:String):Boolean{
+    val q=text.trim().lowercase()
+    return listOf(
+        "what can i do here","how do i use this page","help me with this page","explain this page",
+        "what is this page","help here","what can i do on this page",
+        "wat kan ik hier","hoe gebruik ik deze pagina","leg deze pagina uit",
+        "o que posso fazer aqui","como uso esta página",
+        "qué puedo hacer aquí","cómo uso esta página",
+        "que puis-je faire ici","comment utiliser cette page"
+    ).any{q.contains(it)}
+}
