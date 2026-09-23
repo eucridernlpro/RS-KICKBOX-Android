@@ -35,6 +35,9 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
             .filter{it.items.isNotEmpty()}
     }else baseSections
     val compactPhone=LocalConfiguration.current.screenWidthDp<380
+    val theme=rsStoredThemeV175(store)
+    val layout=rsThemeLayoutV175(theme)
+    val dashboardColumns=if(compactPhone)1 else layout.dashboardColumns.coerceIn(1,2)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(15.dp)){
         RsPanel(c){
             Text(if(role==RsRole.TRAINER)rsT(lang,"trainer_dashboard") else rsT(lang,"student_dashboard"),color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
@@ -42,10 +45,10 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
         }
         sections.forEach{section->
             Text(sectionTitleV25(lang,section.title).uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=sectionFontV25(sectionTitleV25(lang,section.title)),letterSpacing=.5.sp,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(horizontal=4.dp))
-            section.items.chunked(if(compactPhone)1 else 2).forEach{pair->
+            section.items.chunked(dashboardColumns).forEach{pair->
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
                     pair.forEach{item->Box(Modifier.weight(1f)){TileV21(c,store,role,lang,item,onRoute)}}
-                    if(pair.size==1 && !compactPhone)Spacer(Modifier.weight(1f))
+                    if(pair.size==1 && dashboardColumns==2)Spacer(Modifier.weight(1f))
                 }
             }
         }
@@ -61,8 +64,10 @@ private fun TileV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,item:DashV
     val titleSize=tileTitleFontV25(localizedTitle)
     val titleLine=tileTitleLineV25(localizedTitle)
     val hintSize=tileHintFontV25(localizedHint)
-    val shape=RoundedCornerShape(26.dp)
     val context=LocalContext.current
+    val theme=rsStoredThemeV175(store)
+    val layout=rsThemeLayoutV175(theme)
+    val shape=RoundedCornerShape(layout.tileRadius.dp)
     val custom=store.s("visual_v21_tile_${item.route}","")
     val roleKey=if(role==RsRole.TRAINER)"trainer" else "student"
     // Named bundled artwork can now target the exact dashboard tile. This keeps
@@ -79,9 +84,24 @@ private fun TileV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,item:DashV
     val customUsable=rsVisualUriUsableV116(context,custom)
     val bundledPosition=listOf("LEFT","CENTER","RIGHT")[(item.route.hashCode() and Int.MAX_VALUE)%3]
     val tilePosition=if(customUsable)store.s("visual_v21_pos_tile_${item.route}","CENTER") else bundledPosition
-    Box(Modifier.fillMaxWidth().height(220.dp).clip(shape).background(Brush.linearGradient(listOf(c.panel2,c.gold.copy(alpha=.20f),c.panel))).clickable{onRoute(item.route)}){
+    val tileBrush=when(layout.mode){
+        "FIGHT_STRIP"->Brush.horizontalGradient(listOf(c.panel2,c.bg,c.gold.copy(alpha=.22f)))
+        "TECH_COMPACT"->Brush.linearGradient(listOf(c.panel,c.panel2,c.bg))
+        "HOLO_CARDS"->Brush.linearGradient(listOf(c.panel2,c.bright.copy(alpha=.11f),c.bg))
+        "PERFORMANCE_STACK"->Brush.verticalGradient(listOf(c.panel2,c.gold.copy(alpha=.10f),c.bg))
+        else->Brush.linearGradient(listOf(c.panel2,c.gold.copy(alpha=.20f),c.panel))
+    }
+    Box(Modifier.fillMaxWidth().height(layout.tileHeight.dp).clip(shape).background(tileBrush).clickable{onRoute(item.route)}){
         if(tileVisual.isNotBlank())RsUriPreviewV21(tileVisual,Modifier.fillMaxSize(),tilePosition)
-        else DefaultTileArtworkV21(c,item.kind)
+        else DefaultTileArtworkV21(c,item.kind,layout.mode)
+        if(layout.strongLines){
+            Box(
+                Modifier.fillMaxWidth()
+                    .height(if(layout.mode=="FIGHT_STRIP")4.dp else 2.dp)
+                    .align(Alignment.TopCenter)
+                    .background(Brush.horizontalGradient(listOf(Color.Transparent,c.bright,c.gold,Color.Transparent)))
+            )
+        }
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha=.10f),Color.Black.copy(alpha=.28f),Color.Black.copy(alpha=overlay.coerceIn(.35f,.82f))))))
         Surface(modifier=Modifier.align(Alignment.TopStart).padding(14.dp),shape=RoundedCornerShape(13.dp),color=Color.Black.copy(alpha=.46f),border=androidx.compose.foundation.BorderStroke(1.dp,c.bright.copy(alpha=.45f))){
             Text(glyphV21(item.kind),color=c.bright,fontSize=18.sp,fontWeight=FontWeight.Black,modifier=Modifier.padding(horizontal=10.dp,vertical=6.dp))
@@ -110,8 +130,15 @@ private fun TileV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,item:DashV
 }
 
 @Composable
-private fun DefaultTileArtworkV21(c:RsPalette,kind:String){
-    Canvas(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF080808),Color(0xFF1A1208),Color.Black)))){
+private fun DefaultTileArtworkV21(c:RsPalette,kind:String,mode:String){
+    val bgBrush=when(mode){
+        "FIGHT_STRIP"->Brush.horizontalGradient(listOf(Color.Black,Color(0xFF1A0505),Color.Black))
+        "TECH_COMPACT"->Brush.linearGradient(listOf(Color(0xFF05080B),Color(0xFF111820),Color.Black))
+        "HOLO_CARDS"->Brush.linearGradient(listOf(Color(0xFF05050B),c.gold.copy(alpha=.15f),Color.Black))
+        "PERFORMANCE_STACK"->Brush.verticalGradient(listOf(Color(0xFF030A07),Color(0xFF0C1611),Color.Black))
+        else->Brush.linearGradient(listOf(Color(0xFF080808),Color(0xFF1A1208),Color.Black))
+    }
+    Canvas(Modifier.fillMaxSize().background(bgBrush)){
         val w=size.width;val h=size.height
         drawCircle(c.bright.copy(alpha=.10f),w*.42f,Offset(w*.85f,h*.18f))
         drawCircle(c.gold.copy(alpha=.08f),w*.28f,Offset(w*.28f,h*.72f),style=Stroke(6f))
