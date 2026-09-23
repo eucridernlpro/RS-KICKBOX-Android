@@ -407,7 +407,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         delay(
                             when(error){
                                 SpeechRecognizer.ERROR_NO_MATCH,
-                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT->350
+                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT->2200
                                 SpeechRecognizer.ERROR_RECOGNIZER_BUSY->900
                                 else->1200
                             }
@@ -428,8 +428,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         awakeUntil=System.currentTimeMillis()+45_000L
                         setWakeStatusV168("HEARD_WAKE")
                         val command=rsStripWakePhraseV165(partial)
-                        if(command.isBlank())speak(rsVoiceGreetingV165(language().code))
-                        else handleTranscript(partial)
+                        store.pb("ai_immersive_v171",true)
+                        store.pb("ai_start_listening_v168",true)
+                        if(command.isNotBlank())store.ps("ai_pending_spoken_v171",command)
+                        openRouteV166("voice")
+                        if(command.isBlank())speak(rsVoiceGreetingV165(language().code),thenListen=false)
                     }
                 }
                 override fun onEvent(eventType:Int,params:android.os.Bundle?){}
@@ -454,11 +457,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             putExtra(RecognizerIntent.EXTRA_LANGUAGE,recognitionLocale.toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,5)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,350L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,650L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,450L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,600L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,4200L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,2800L)
         }
-        setWakeStatusV168("LISTENING")
+        setWakeStatusV168("READY")
         runCatching{recognizer?.startListening(intent)}
             .onFailure{
                 setWakeStatusV168("START_FAILED")
