@@ -329,6 +329,37 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
         rsMusicBgT90(lang,"subtitle")
     ){
         RsPanel(c){
+            Text("RS MUSIC · AI CONTROL",color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp)
+            Text(
+                if(playing)"Playing now · voice control ready" else "Player ready · ask Sofia or Marcus to control it",
+                color=c.muted,
+                fontSize=10.sp
+            )
+            val liveTitle=controller?.currentMediaItem?.mediaMetadata?.title?.toString().orEmpty()
+            if(liveTitle.isNotBlank()){
+                Text(liveTitle,color=c.text,fontWeight=FontWeight.Bold,maxLines=1,overflow=TextOverflow.Ellipsis)
+            }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement=Arrangement.SpaceEvenly,
+                verticalAlignment=Alignment.CenterVertically
+            ){
+                FilledTonalButton(onClick={runCatching{controller?.seekToPreviousMediaItem();controller?.play()}}){Text("⏮")}
+                Button(onClick={
+                    val p=controller?:return@Button
+                    if(p.mediaItemCount==0 && visibleTracks.isNotEmpty())playTrack(index.coerceIn(0,visibleTracks.lastIndex))
+                    else if(p.isPlaying)p.pause() else p.play()
+                }){Text(if(playing)"⏸" else "▶")}
+                FilledTonalButton(onClick={runCatching{controller?.seekToNextMediaItem();controller?.play()}}){Text("⏭")}
+            }
+            Text(
+                "Voice examples: “Play music”, “Next song”, “Stop music”, “Open music player”, or “Play [track name]”.",
+                color=c.muted,
+                fontSize=9.sp
+            )
+        }
+
+        RsPanel(c){
             Text(rsMusicBgT90(lang,"background_player"),color=c.bright,fontWeight=FontWeight.Black)
             Text(
                 rsMusicBgT90(lang,"background_desc"),
