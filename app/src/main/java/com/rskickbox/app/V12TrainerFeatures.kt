@@ -2,6 +2,10 @@ package com.rskickbox.app
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -9,6 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -17,17 +23,189 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
-    RsScroll(c,"Visual Theme Studio","Trainer control for the complete app visual identity. Changes apply instantly to student and trainer areas."){
-        RsTheme.entries.forEach{t->
-            val p=paletteFor(t)
-            RsPanel(c){
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
-                    Column{Text(t.name.replace('_',' '),color=c.bright,fontWeight=FontWeight.Bold);Text(if(theme==t)"ACTIVE" else "Premium preset",color=c.muted,fontSize=11.sp)}
-                    Button(onClick={onTheme(t)},enabled=theme!=t){Text(if(theme==t)"Selected" else "Apply")}
+    var pending by remember{mutableStateOf<RsTheme?>(null)}
+    val scroll=rememberScrollState()
+
+    RsScroll(
+        c,
+        "Visual Theme Studio",
+        "Swipe left or right through complete RS visual identities. Tap a style to preview its palette, then confirm before applying."
+    ){
+        Text(
+            "SWIPE THEMES",
+            color=c.gold,
+            fontWeight=FontWeight.Black,
+            fontSize=10.sp,
+            letterSpacing=1.1.sp
+        )
+
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(scroll),
+            horizontalArrangement=Arrangement.spacedBy(14.dp)
+        ){
+            RsTheme.entries.forEach{t->
+                val p=paletteFor(t)
+                val title=when(t){
+                    RsTheme.ELITE_GOLD->"ELITE GOLD"
+                    RsTheme.CRIMSON_FIGHT_NIGHT->"CRIMSON FIGHT NIGHT"
+                    RsTheme.PLATINUM_PRO->"PLATINUM PRO"
+                    RsTheme.EMERALD_PERFORMANCE->"EMERALD PERFORMANCE"
+                    RsTheme.ROYAL_SAPPHIRE->"ROYAL SAPPHIRE"
+                    RsTheme.PURPLE_LEGACY->"PURPLE LEGACY"
+                    RsTheme.ICE_TITANIUM->"ICE TITANIUM"
+                    RsTheme.INFERNO_NEON->"INFERNO NEON"
                 }
-                Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){listOf(p.bg,p.panel,p.gold,p.bright).forEach{x->Surface(modifier=Modifier.size(34.dp),shape=MaterialTheme.shapes.small,color=x){}}}
+                val subtitle=when(t){
+                    RsTheme.ELITE_GOLD->"Royal black · metallic gold · premium neon"
+                    RsTheme.CRIMSON_FIGHT_NIGHT->"Fight-night black · crimson · hot red glow"
+                    RsTheme.PLATINUM_PRO->"Steel graphite · icy silver · pro-tech lines"
+                    RsTheme.EMERALD_PERFORMANCE->"Deep black · emerald · performance glow"
+                    RsTheme.ROYAL_SAPPHIRE->"Midnight navy · electric blue · royal silver"
+                    RsTheme.PURPLE_LEGACY->"Black violet · holographic purple · prestige glow"
+                    RsTheme.ICE_TITANIUM->"Titanium charcoal · cyan-white · ultra-clean neon"
+                    RsTheme.INFERNO_NEON->"Black ember · orange-red · high-energy fight glow"
+                }
+
+                Surface(
+                    color=Color.Transparent,
+                    shape=RoundedCornerShape(28.dp),
+                    border=BorderStroke(
+                        if(theme==t)2.dp else 1.dp,
+                        if(theme==t)p.bright else p.gold.copy(alpha=.55f)
+                    ),
+                    modifier=Modifier.width(286.dp).height(365.dp)
+                ){
+                    Box(
+                        Modifier.fillMaxSize().background(
+                            Brush.verticalGradient(
+                                listOf(p.bg,p.panel2,p.bg)
+                            )
+                        )
+                    ){
+                        Box(
+                            Modifier.fillMaxWidth().height(5.dp)
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(
+                                            Color.Transparent,
+                                            p.bright.copy(alpha=.95f),
+                                            p.gold,
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+                        )
+                        Column(
+                            Modifier.fillMaxSize().padding(18.dp),
+                            verticalArrangement=Arrangement.spacedBy(12.dp)
+                        ){
+                            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                                Surface(
+                                    color=p.panel,
+                                    shape=RoundedCornerShape(18.dp),
+                                    border=BorderStroke(1.dp,p.bright.copy(alpha=.55f)),
+                                    modifier=Modifier.size(64.dp)
+                                ){
+                                    Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
+                                        Text("RS",color=p.bright,fontWeight=FontWeight.Black,fontSize=23.sp)
+                                    }
+                                }
+                                Spacer(Modifier.weight(1f))
+                                Text(
+                                    if(theme==t)"ACTIVE" else "PREVIEW",
+                                    color=if(theme==t)p.bright else p.muted,
+                                    fontSize=9.sp,
+                                    fontWeight=FontWeight.Black
+                                )
+                            }
+
+                            Text(title,color=p.bright,fontWeight=FontWeight.Black,fontSize=22.sp,lineHeight=25.sp)
+                            Text(subtitle,color=p.muted,fontSize=10.sp,lineHeight=14.sp)
+
+                            Surface(
+                                color=p.panel.copy(alpha=.82f),
+                                shape=RoundedCornerShape(20.dp),
+                                border=BorderStroke(1.dp,p.gold.copy(alpha=.38f)),
+                                modifier=Modifier.fillMaxWidth().height(120.dp)
+                            ){
+                                Box(Modifier.fillMaxSize()){
+                                    Box(
+                                        Modifier.fillMaxWidth().height(2.dp).align(Alignment.TopCenter)
+                                            .background(Brush.horizontalGradient(listOf(Color.Transparent,p.bright,Color.Transparent)))
+                                    )
+                                    Box(
+                                        Modifier.width(2.dp).fillMaxHeight().align(Alignment.CenterStart)
+                                            .background(Brush.verticalGradient(listOf(Color.Transparent,p.gold,Color.Transparent)))
+                                    )
+                                    Column(
+                                        Modifier.align(Alignment.Center).padding(12.dp),
+                                        horizontalAlignment=Alignment.CenterHorizontally
+                                    ){
+                                        Text("FUTURISTIC RS UI",color=p.text,fontWeight=FontWeight.Black,fontSize=12.sp)
+                                        Text("Neon lines · glass panels · premium contrast",color=p.muted,fontSize=8.sp)
+                                    }
+                                }
+                            }
+
+                            Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                                listOf(p.bg,p.panel,p.gold,p.bright).forEach{x->
+                                    Surface(
+                                        modifier=Modifier.size(34.dp),
+                                        shape=RoundedCornerShape(10.dp),
+                                        color=x,
+                                        border=BorderStroke(1.dp,Color.White.copy(alpha=.10f))
+                                    ){}
+                                }
+                            }
+
+                            Spacer(Modifier.weight(1f))
+                            Button(
+                                onClick={pending=t},
+                                enabled=theme!=t,
+                                modifier=Modifier.fillMaxWidth()
+                            ){
+                                Text(if(theme==t)"SELECTED" else "APPLY STYLE")
+                            }
+                        }
+                    }
+                }
             }
         }
+
+        Text(
+            "Tip: swipe slowly to compare the full visual identity before applying. The selected palette changes the shared RS interface for trainer and student areas.",
+            color=c.muted,
+            fontSize=9.sp,
+            lineHeight=13.sp
+        )
+    }
+
+    val selected=pending
+    if(selected!=null){
+        val p=paletteFor(selected)
+        AlertDialog(
+            onDismissRequest={pending=null},
+            title={Text("Apply "+selected.name.replace('_',' ')+"?")},
+            text={
+                Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    Text("This changes the active RS visual identity across the app.")
+                    Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                        listOf(p.bg,p.panel,p.gold,p.bright).forEach{x->
+                            Surface(modifier=Modifier.size(34.dp),shape=RoundedCornerShape(10.dp),color=x){}
+                        }
+                    }
+                }
+            },
+            confirmButton={
+                Button(onClick={
+                    onTheme(selected)
+                    pending=null
+                }){Text("Apply")}
+            },
+            dismissButton={
+                OutlinedButton(onClick={pending=null}){Text("Cancel")}
+            }
+        )
     }
 }
 
