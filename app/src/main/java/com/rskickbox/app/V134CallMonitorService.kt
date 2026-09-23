@@ -128,7 +128,7 @@ class RsCallMonitorServiceV134:Service(){
                         putExtra("rs_incoming_caller_id",intent.getStringExtra("caller_id").orEmpty())
                         putExtra("rs_incoming_caller_name",intent.getStringExtra("caller_name").orEmpty())
                         putExtra("rs_incoming_caller_email",intent.getStringExtra("caller_email").orEmpty())
-                        flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        this.flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     }
                     if(!hasMic || !hasCamera){
                         stopRinging()
@@ -168,7 +168,7 @@ class RsCallMonitorServiceV134:Service(){
                     val open=Intent(this@RsCallMonitorServiceV134,MainActivity::class.java).apply{
                         action="com.rskickbox.app.INCOMING_VIDEO_ROOM"
                         putExtra("rs_video_room_id",id)
-                        flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        this.flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     }
                     if(!hasMic || !hasCamera){
                         stopRinging()
