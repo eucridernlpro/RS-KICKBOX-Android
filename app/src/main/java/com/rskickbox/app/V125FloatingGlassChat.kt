@@ -255,6 +255,8 @@ fun RsFloatingGlassChatHubV125(
         mutableStateOf(store.b("ai_immersive_v171",false) || initialRoute=="voice")
     }
     val context=LocalContext.current
+    val activeTheme=rsStoredThemeV175(store)
+    val themeLayout=rsThemeLayoutV175(activeTheme)
     val swipeMenuEnabled=store.b("chat_swipe_menu_v163",true)
 
     fun handleChatBack(){
@@ -392,23 +394,24 @@ fun RsFloatingGlassChatHubV125(
                 )
             }
     ){
-        if(chatVisual.isNotBlank())RsUriPreviewV21(chatVisual,Modifier.fillMaxSize().alpha(.24f),"CENTER")
-        Box(
-            Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color.Black.copy(alpha=.42f),
-                        Color.Black.copy(alpha=.76f),
-                        Color.Black.copy(alpha=.95f)
-                    )
-                )
-            )
+        if(chatVisual.isNotBlank())RsUriPreviewV21(
+            chatVisual,
+            Modifier.fillMaxSize().alpha(if(themeLayout.mode=="HOLO_CARDS").34f else .24f),
+            "CENTER"
         )
+        val chatOverlay=when(themeLayout.mode){
+            "FIGHT_STRIP"->Brush.horizontalGradient(listOf(Color.Black.copy(.90f),c.gold.copy(.10f),Color.Black.copy(.96f)))
+            "TECH_COMPACT"->Brush.verticalGradient(listOf(c.panel.copy(.74f),Color.Black.copy(.90f),Color.Black))
+            "HOLO_CARDS"->Brush.linearGradient(listOf(c.panel2.copy(.58f),Color.Black.copy(.72f),c.gold.copy(.10f)))
+            "PERFORMANCE_STACK"->Brush.verticalGradient(listOf(c.panel.copy(.62f),Color.Black.copy(.82f),Color.Black))
+            else->Brush.verticalGradient(listOf(Color.Black.copy(alpha=.42f),Color.Black.copy(alpha=.76f),Color.Black.copy(alpha=.95f)))
+        }
+        Box(Modifier.fillMaxSize().background(chatOverlay))
         Column(Modifier.fillMaxSize().padding(6.dp)){
         Surface(
             color=Color.Black.copy(alpha=.76f),
             border=BorderStroke(1.dp,c.gold.copy(alpha=.34f)),
-            shape=RoundedCornerShape(20.dp),
+            shape=RoundedCornerShape(themeLayout.panelRadius.dp),
             modifier=Modifier.fillMaxWidth()
         ){
             Box(Modifier.fillMaxWidth()){
@@ -466,7 +469,7 @@ fun RsFloatingGlassChatHubV125(
                                 tab=RsChatHubTabV125.AI
                             },
                             modifier=Modifier.size(38.dp),
-                            shape=CircleShape,
+                            shape=RoundedCornerShape(themeLayout.buttonRadius.dp),
                             border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.62f)),
                             contentPadding=PaddingValues(0.dp)
                         ){
@@ -482,14 +485,14 @@ fun RsFloatingGlassChatHubV125(
                         OutlinedButton(
                             onClick={handleChatBack()},
                             modifier=Modifier.size(32.dp),
-                            shape=CircleShape,
+                            shape=RoundedCornerShape(themeLayout.buttonRadius.dp),
                             border=BorderStroke(1.dp,c.gold.copy(alpha=.34f)),
                             contentPadding=PaddingValues(0.dp)
                         ){Text("‹",color=c.bright,fontSize=19.sp)}
                         OutlinedButton(
                             onClick={slideMenuOpen=true},
                             modifier=Modifier.size(32.dp),
-                            shape=CircleShape,
+                            shape=RoundedCornerShape(themeLayout.buttonRadius.dp),
                             border=BorderStroke(1.dp,c.gold.copy(alpha=.50f)),
                             contentPadding=PaddingValues(0.dp)
                         ){Text("☰",color=c.bright,fontSize=12.sp,fontWeight=FontWeight.Black)}
@@ -530,8 +533,8 @@ fun RsFloatingGlassChatHubV125(
 
         Surface(
             color=c.panel.copy(alpha=.48f),
-            shape=RoundedCornerShape(20.dp),
-            border=BorderStroke(1.dp,c.gold.copy(alpha=.12f)),
+            shape=RoundedCornerShape(themeLayout.panelRadius.dp),
+            border=BorderStroke(1.dp,c.gold.copy(alpha=if(themeLayout.strongLines).28f else .12f)),
             modifier=Modifier.fillMaxWidth().padding(top=7.dp)
         ){
         Row(
