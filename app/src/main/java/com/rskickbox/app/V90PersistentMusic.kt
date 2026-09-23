@@ -201,6 +201,16 @@ fun rsPlayMusicTrackV169(
 fun rsMusicPlaylistNamesV169(store:RsStore):List<String> =
     rsLoadNamedPlaylistsV108(store).map{it.name}
 
+fun rsAllMusicTracksV171(store:RsStore):List<RsPersistentTrackV90> =
+    rsPersistentTracksV90(store)
+
+fun rsFindMusicTrackV171(store:RsStore,query:String):RsPersistentTrackV90?{
+    val q=query.lowercase(java.util.Locale.ROOT)
+    return rsPersistentTracksV90(store)
+        .sortedByDescending{it.name.length}
+        .firstOrNull{q.contains(it.name.lowercase(java.util.Locale.ROOT))}
+}
+
 fun rsAddMusicTrackToPlaylistV169(
     store:RsStore,
     playlistName:String,
