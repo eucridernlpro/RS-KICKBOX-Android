@@ -1369,17 +1369,14 @@ private fun ShellV21(
                     horizontalArrangement=Arrangement.spacedBy(7.dp),
                     verticalAlignment=Alignment.CenterVertically
                 ){
-                    Image(
-                        painter=androidx.compose.ui.res.painterResource(R.drawable.rs_launcher_royal_v129),
-                        contentDescription="RS",
-                        modifier=Modifier.size(38.dp)
+                    RsThemeHeaderMarkV176(
+                        c=c,
+                        store=store,
+                        modifier=Modifier.size(40.dp)
                     )
-                    Text(
-                        store.s("brand_header_name","RS KICKBOXING"),
-                        color=c.bright,
-                        fontWeight=FontWeight.Black,
-                        fontSize=15.sp,
-                        maxLines=1,
+                    RsLettersLogoV111(
+                        c=c,
+                        store=store,
                         modifier=Modifier.weight(1f)
                     )
                     OutlinedButton(
