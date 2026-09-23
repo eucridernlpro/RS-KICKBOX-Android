@@ -34,7 +34,7 @@ class RsCallMonitorServiceV134:Service(){
         const val ACTION_PUSH_CALL="com.rskickbox.app.PUSH_CALL"
         const val ACTION_PUSH_ROOM="com.rskickbox.app.PUSH_ROOM"
         private const val CHANNEL_MONITOR="rs_call_monitor"
-        private const val CHANNEL_CALLS="rs_incoming_calls_v4"
+        private const val CHANNEL_CALLS="rs_incoming_calls_v5"
         private const val FOREGROUND_ID=9134
 
         fun start(context:Context){
@@ -275,14 +275,11 @@ class RsCallMonitorServiceV134:Service(){
                     setShowBadge(true)
                     enableVibration(true)
                     vibrationPattern=longArrayOf(0,700,350,700,350,900)
-                    val ringUri=rsSavedCallRingtoneUriV138(this@RsCallMonitorServiceV134)
-                    setSound(
-                        ringUri,
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .build()
-                    )
+                    // RS plays its ringtone itself so the same sound path is
+                    // used in foreground, minimized, lock-screen and closed-app
+                    // states. Keep the notification channel silent to prevent
+                    // duplicate/overlapping ringing on some Android devices.
+                    setSound(null,null)
                 }
             )
         }
@@ -372,6 +369,7 @@ class RsCallMonitorServiceV134:Service(){
             .setOngoing(true)
             .setAutoCancel(false)
             .setOnlyAlertOnce(true)
+            .setSilent(true)
             .setVibrate(longArrayOf(0,700,350,700,350,900))
             .setContentIntent(fullPending)
             .setStyle(
