@@ -432,6 +432,16 @@ fun RsFloatingGlassChatHubV125(
                                 maxLines=1
                             )
                         }
+                        RsNotificationBellV156(
+                            c=c,
+                            store=store,
+                            lang=lang,
+                            onOpenCall={peerId->
+                                privateStudentId=peerId
+                                tab=RsChatHubTabV125.PRIVATE
+                            },
+                            onOpenNotifications={tab=RsChatHubTabV125.NOTIFICATIONS}
+                        )
                         OutlinedButton(
                             onClick={
                                 store.pb("ai_start_listening_v168",true)
