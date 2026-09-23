@@ -133,11 +133,12 @@ fun rsAiLocalCoachAnswerV164(code:String,question:String):String{
             else->"I can break this down technically. Tell me the exact move or combination and your goal—speed, power, balance, timing, defense or conditioning. If you upload a video, I can give more specific feedback on visible stance, guard, rotation and recovery."
         }
         else->when(code){
-            "nl"->"Ik kan daar kort op reageren, maar mijn sterkste rol hier is kickbokscoaching. Als je wilt, koppel je vraag aan je training: techniek, combinatie, stijl, conditie, pads, zakwerk of sparring."
-            "pt"->"Posso responder brevemente, mas o meu foco principal aqui é treino de kickboxing. Se quiseres, liga a pergunta à tua técnica, combinação, estilo, condição, pads, saco ou sparring."
-            "es"->"Puedo responder brevemente, pero mi especialidad aquí es el coaching de kickboxing. Si quieres, relaciona la pregunta con técnica, combinaciones, estilo, condición, saco, manoplas o sparring."
-            "fr"->"Je peux répondre brièvement, mais ma spécialité ici reste le coaching kickboxing. Relie ta question à une technique, combinaison, style, conditionnement, sacs, pattes d’ours ou sparring."
-            else->"I can answer briefly, but my main role here is kickboxing coaching. If you want, connect the question to technique, combinations, style, conditioning, pads, bag work or sparring."
+            "nl"->"Ik ben je RS-assistent én kickbokscoach. Ik kan met je praten, je door RS KICKBOXING sturen, pagina’s openen, muziek bedienen of toevoegen, instellingen helpen wijzigen en je natuurlijk ook helpen met training, technieken en combinaties. Zeg gewoon wat je wilt doen."
+            "pt"->"Sou o teu assistente RS e também treinador de kickboxing. Posso conversar contigo, navegar pela app, abrir páginas, controlar ou adicionar música, ajudar nas definições e também orientar treinos, técnicas e combinações. Diz apenas o que queres fazer."
+            "es"->"Soy tu asistente RS y también entrenador de kickboxing. Puedo hablar contigo, moverme por la app, abrir páginas, controlar o añadir música, ayudarte con ajustes y también con entrenamientos, técnicas y combinaciones. Solo dime qué quieres hacer."
+            "fr"->"Je suis ton assistant RS et aussi ton coach kickboxing. Je peux discuter avec toi, naviguer dans l’app, ouvrir des pages, contrôler ou ajouter de la musique, t’aider avec les réglages et bien sûr avec l’entraînement. Dis-moi simplement ce que tu veux faire."
+            "de"->"Ich bin dein RS-Assistent und Kickbox-Trainer. Ich kann mit dir sprechen, durch die App navigieren, Seiten öffnen, Musik steuern oder hinzufügen, Einstellungen ändern und dich beim Training unterstützen. Sag einfach, was du tun möchtest."
+            else->"I’m your RS assistant as well as your kickboxing coach. I can talk with you naturally, move through RS KICKBOXING, open pages, control or add music, help with settings, and coach training, techniques and combinations. Just tell me what you want to do."
         }
     }
 }
