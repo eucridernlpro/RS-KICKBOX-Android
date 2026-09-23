@@ -13,7 +13,8 @@ import java.util.Locale
 class RsQuietVoiceControllerV171(
     private val context:Context,
     private val onResult:(String)->Unit,
-    private val onStatus:(String)->Unit
+    private val onStatus:(String)->Unit,
+    private val onIdle:()->Unit={}
 ){
     private var recognizer:SpeechRecognizer?=null
     private var running=false
@@ -38,7 +39,10 @@ class RsQuietVoiceControllerV171(
                     running=false
                     when(error){
                         SpeechRecognizer.ERROR_NO_MATCH,
-                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT->onStatus("")
+                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT->{
+                            onStatus("")
+                            onIdle()
+                        }
                         SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS->onStatus("Microphone permission required.")
                         SpeechRecognizer.ERROR_RECOGNIZER_BUSY->{
                             destroyRecognizer()
