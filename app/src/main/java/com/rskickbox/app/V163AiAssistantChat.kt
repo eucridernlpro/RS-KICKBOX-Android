@@ -304,7 +304,7 @@ fun RsAiAssistantChatV163(
             mediaUri=media?.toString(),
             mediaKind=kind
         )
-        messages=(messages+userMessage).takeLast(30)
+        messages=(messages+userMessage).takeLast(100)
         draft=""
         pickedUri=null
         pickedKind=null
@@ -325,7 +325,7 @@ fun RsAiAssistantChatV163(
                 id=System.currentTimeMillis()+1,
                 mine=false,
                 text=reply
-            )).takeLast(30)
+            )).takeLast(100)
             busy=false
             status=""
             if(autoSpeak)speak(reply) else if(voiceConversationActive)resumeListeningSignal++
@@ -408,7 +408,7 @@ fun RsAiAssistantChatV163(
                 id=System.currentTimeMillis()+1,
                 mine=false,
                 text=reply
-            )).takeLast(30)
+            )).takeLast(100)
             busy=false
             status=""
             if(autoSpeak && reply.isNotBlank())speak(reply) else if(voiceConversationActive)resumeListeningSignal++
@@ -459,7 +459,7 @@ fun RsAiAssistantChatV163(
                 mine=false,
                 text=reply,
                 references=refs
-            )).takeLast(30)
+            )).takeLast(100)
             status=""
             busy=false
             if(autoSpeak)speak(reply) else if(voiceConversationActive)resumeListeningSignal++
@@ -511,7 +511,7 @@ fun RsAiAssistantChatV163(
                 id=System.currentTimeMillis(),
                 mine=false,
                 text=greeting
-            )).takeLast(30)
+            )).takeLast(100)
             speak(greeting)
         }else if(immersiveGreetingPending && !ttsReady){
             kotlinx.coroutines.delay(700)
