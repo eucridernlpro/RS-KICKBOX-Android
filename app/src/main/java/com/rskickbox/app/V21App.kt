@@ -372,6 +372,10 @@ fun RsKickboxV21App(
             store.ps("session_last_route",route)
             store.ps("ai_current_route_v177",route)
             store.ps("ai_current_role_v177",role!!.name)
+            val homeRoute=if(role==RsRole.TRAINER)"trainer" else "home"
+            if(route!=homeRoute && route !in setOf("voice","coachchat","groups","community","support","notifications","content")){
+                store.ps("last_feature_route_v177",route)
+            }
             markSessionActivityV166()
         }
     }
@@ -390,9 +394,12 @@ fun RsKickboxV21App(
                 kotlinx.coroutines.delay(60_000)
                 rsSyncCloudBrandV100(store).onSuccess{settings->
                     val overrideMs=store.s("theme_local_override_ms_v170","0").toLongOrNull()?:0L
-                    val keepLocal=overrideMs>0L &&
-                        System.currentTimeMillis()-overrideMs < 24L*60L*60L*1000L
-                    if(!keepLocal){
+                    val localTheme=store.s("theme",theme.name)
+                    val keepLocal=overrideMs>0L
+                    if(keepLocal && settings.themeName==localTheme){
+                        store.ps("theme_local_override_ms_v170","0")
+                        store.ps("theme_cloud_confirmed_v176",localTheme)
+                    }else if(!keepLocal){
                         theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
                     }
                     brandRevision++
