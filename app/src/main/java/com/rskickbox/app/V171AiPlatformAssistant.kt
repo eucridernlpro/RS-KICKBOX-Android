@@ -18,6 +18,7 @@ class RsQuietVoiceControllerV171(
 ){
     private var recognizer:SpeechRecognizer?=null
     private var running=false
+    private var fallbackToDeviceLocale=false
 
     private fun ensureRecognizer(){
         if(recognizer!=null)return
@@ -46,8 +47,10 @@ class RsQuietVoiceControllerV171(
                         SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS->onStatus("Microphone permission required.")
                         SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED,
                         SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE->{
+                            fallbackToDeviceLocale=true
                             destroyRecognizer()
-                            onStatus("Selected voice language is not installed on this device.")
+                            onStatus("Using the phone voice engine for this language.")
+                            onIdle()
                         }
                         SpeechRecognizer.ERROR_RECOGNIZER_BUSY->{
                             destroyRecognizer()
@@ -88,9 +91,10 @@ class RsQuietVoiceControllerV171(
         }
         if(running)return
         ensureRecognizer()
+        val recognitionLocale=if(fallbackToDeviceLocale)Locale.getDefault() else locale
         val intent=android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE,locale.toLanguageTag())
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE,recognitionLocale.toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,300L)
