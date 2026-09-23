@@ -235,6 +235,7 @@ fun RsFloatingGlassChatHubV125(
     lang:RsLang,
     role:RsRole,
     initialRoute:String="coachchat",
+    onNavigate:(String)->Unit={},
     onBack:()->Unit
 ){
     var tab by remember(initialRoute){mutableStateOf(rsInitialChatTabV125(initialRoute))}
@@ -250,11 +251,19 @@ fun RsFloatingGlassChatHubV125(
     var hubSwipe by remember{mutableFloatStateOf(0f)}
     var hubSwipeStartX by remember{mutableFloatStateOf(Float.MAX_VALUE)}
     var hubSwipeActive by remember{mutableStateOf(false)}
+    var aiImmersive by remember(initialRoute){
+        mutableStateOf(store.b("ai_immersive_v171",false) || initialRoute=="voice")
+    }
     val context=LocalContext.current
     val swipeMenuEnabled=store.b("chat_swipe_menu_v163",true)
 
     fun handleChatBack(){
         when{
+            aiImmersive && tab==RsChatHubTabV125.AI->{
+                aiImmersive=false
+                store.pb("ai_immersive_v171",false)
+                tab=RsChatHubTabV125.ALL
+            }
             confirmClearChat->confirmClearChat=false
             slideMenuOpen->slideMenuOpen=false
             tab==RsChatHubTabV125.PRIVATE->{
@@ -267,6 +276,35 @@ fun RsFloatingGlassChatHubV125(
     }
 
     BackHandler{handleChatBack()}
+
+    if(aiImmersive && tab==RsChatHubTabV125.AI){
+        Box(
+            Modifier.fillMaxSize().background(Color.Black)
+        ){
+            RsAiRoyalChatV163(
+                c=c,
+                store=store,
+                lang=lang,
+                role=role,
+                onNavigate={target->
+                    store.pb("ai_immersive_v171",false)
+                    aiImmersive=false
+                    onNavigate(target)
+                }
+            )
+            OutlinedButton(
+                onClick={
+                    store.pb("ai_immersive_v171",false)
+                    aiImmersive=false
+                    tab=RsChatHubTabV125.ALL
+                },
+                modifier=Modifier.padding(10.dp).size(36.dp),
+                shape=CircleShape,
+                contentPadding=PaddingValues(0.dp)
+            ){Text("‹",fontSize=20.sp)}
+        }
+        return
+    }
 
     LaunchedEffect(Unit){
         rsCleanupChatMediaCacheV163(context)
@@ -397,6 +435,8 @@ fun RsFloatingGlassChatHubV125(
                         OutlinedButton(
                             onClick={
                                 store.pb("ai_start_listening_v168",true)
+                                store.pb("ai_immersive_v171",true)
+                                aiImmersive=true
                                 tab=RsChatHubTabV125.AI
                             },
                             modifier=Modifier.size(38.dp),
@@ -605,9 +645,11 @@ fun RsFloatingGlassChatHubV125(
                 RsChatHubTabV125.SUPPORT->RsSupportChatV163(c,store,lang,role)
                 RsChatHubTabV125.GALLERY->RsChatGalleryV163(c,lang)
                 RsChatHubTabV125.NOTIFICATIONS->RsChatNotificationsV156(c,lang)
-                RsChatHubTabV125.AI->RsAiRoyalChatV163(c,store,lang,role)
+                RsChatHubTabV125.AI->RsAiRoyalChatV163(c,store,lang,role,onNavigate)
                 RsChatHubTabV125.SETTINGS->RsChatSettingsV162(c,store,lang){
                     store.pb("ai_start_listening_v168",true)
+                    store.pb("ai_immersive_v171",true)
+                    aiImmersive=true
                     tab=RsChatHubTabV125.AI
                 }
             }
