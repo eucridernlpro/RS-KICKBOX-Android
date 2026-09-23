@@ -370,6 +370,8 @@ fun RsKickboxV21App(
     LaunchedEffect(role,route){
         if(role!=null){
             store.ps("session_last_route",route)
+            store.ps("ai_current_route_v177",route)
+            store.ps("ai_current_role_v177",role!!.name)
             markSessionActivityV166()
         }
     }
@@ -1419,7 +1421,24 @@ private fun ShellV21(
             if(route!="music" && route!="music_admin"){
                 RsMiniMusicPlayerV90(c,lang){onRoute(if(role==RsRole.TRAINER)"music_admin" else "music")}
             }
-                        if(role==RsRole.STUDENT && rsOpsEnabledV56(store,RsOpsKeysV56.MAINTENANCE,false)){
+            if(route!=home && route !in setOf("voice","coachchat","groups","community","support","notifications","content")){
+                RsPageAssistBarV177(
+                    c=c,
+                    store=store,
+                    role=role,
+                    lang=lang,
+                    route=route,
+                    onGuide={onRoute(if(role==RsRole.TRAINER)"guide" else "student_guide")},
+                    onAiHelp={
+                        val title=rsRouteTitle(lang,route,route.replace('_',' ').replaceFirstChar{it.uppercase()})
+                        store.ps("ai_pending_spoken_v171","Explain what "+title+" is for and show me how to use this page step by step.")
+                        store.pb("ai_start_listening_v168",false)
+                        store.pb("ai_immersive_v171",true)
+                        onRoute("voice")
+                    }
+                )
+            }
+            if(role==RsRole.STUDENT && rsOpsEnabledV56(store,RsOpsKeysV56.MAINTENANCE,false)){
                 Surface(
                     color=c.gold.copy(alpha=.18f),
                     shape=RoundedCornerShape(14.dp),
@@ -1435,8 +1454,100 @@ private fun ShellV21(
                     )
                 }
             }
-            Box(Modifier.fillMaxWidth().weight(1f)){content()}
+            Box(
+                Modifier.fillMaxWidth().weight(1f)
+                    .clip(RoundedCornerShape(shellLayout.panelRadius.dp))
+            ){
+                RsThemePageFrameV177(c,store)
+                Box(Modifier.fillMaxSize().padding(
+                    horizontal=when(shellLayout.mode){"TECH_COMPACT"->2.dp;"FIGHT_STRIP"->4.dp;else->3.dp},
+                    vertical=2.dp
+                )){content()}
+            }
             RsBrandedFooterV21(c,store)
+        }
+    }
+}
+
+@Composable
+private fun RsThemePageFrameV177(c:RsPalette,store:RsStore){
+    val layout=rsThemeLayoutV175(rsStoredThemeV175(store))
+    val brush=when(layout.mode){
+        "FIGHT_STRIP"->androidx.compose.ui.graphics.Brush.horizontalGradient(
+            listOf(Color.Black,c.gold.copy(alpha=.10f),Color.Black)
+        )
+        "TECH_COMPACT"->androidx.compose.ui.graphics.Brush.linearGradient(
+            listOf(c.bg,c.panel.copy(alpha=.72f),c.bg)
+        )
+        "HOLO_CARDS"->androidx.compose.ui.graphics.Brush.radialGradient(
+            listOf(c.bright.copy(alpha=.08f),c.panel.copy(alpha=.62f),c.bg)
+        )
+        "PERFORMANCE_STACK"->androidx.compose.ui.graphics.Brush.verticalGradient(
+            listOf(c.panel2.copy(alpha=.42f),c.bg,c.panel.copy(alpha=.32f))
+        )
+        else->androidx.compose.ui.graphics.Brush.verticalGradient(
+            listOf(c.panel.copy(alpha=.40f),c.bg,c.panel2.copy(alpha=.34f))
+        )
+    }
+    Box(Modifier.fillMaxSize().background(brush)){
+        when(layout.mode){
+            "FIGHT_STRIP"->{
+                Box(Modifier.fillMaxHeight().width(4.dp).align(Alignment.CenterStart).background(c.bright.copy(alpha=.52f)))
+                Box(Modifier.fillMaxHeight().width(1.dp).align(Alignment.CenterEnd).background(c.gold.copy(alpha=.30f)))
+            }
+            "TECH_COMPACT"->{
+                Box(Modifier.fillMaxWidth().height(1.dp).align(Alignment.TopCenter).background(c.bright.copy(alpha=.32f)))
+                Box(Modifier.fillMaxWidth().height(1.dp).align(Alignment.BottomCenter).background(c.gold.copy(alpha=.20f)))
+            }
+            "HOLO_CARDS"->{
+                Box(Modifier.size(150.dp).align(Alignment.TopEnd).background(
+                    androidx.compose.ui.graphics.Brush.radialGradient(listOf(c.bright.copy(alpha=.10f),Color.Transparent))
+                ))
+            }
+            "PERFORMANCE_STACK"->{
+                Box(Modifier.fillMaxWidth(.42f).height(3.dp).align(Alignment.TopStart).background(c.gold.copy(alpha=.46f)))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RsPageAssistBarV177(
+    c:RsPalette,
+    store:RsStore,
+    role:RsRole,
+    lang:RsLang,
+    route:String,
+    onGuide:()->Unit,
+    onAiHelp:()->Unit
+){
+    val layout=rsThemeLayoutV175(rsStoredThemeV175(store))
+    val title=rsRouteTitle(lang,route,route.replace('_',' ').replaceFirstChar{it.uppercase()})
+    Surface(
+        color=c.panel.copy(alpha=layout.glassAlpha.coerceIn(.62f,.96f)),
+        shape=RoundedCornerShape(layout.buttonRadius.dp),
+        border=BorderStroke(1.dp,c.gold.copy(alpha=if(layout.strongLines).38f else .20f)),
+        modifier=Modifier.fillMaxWidth()
+    ){
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal=9.dp,vertical=5.dp),
+            verticalAlignment=Alignment.CenterVertically,
+            horizontalArrangement=Arrangement.spacedBy(6.dp)
+        ){
+            Column(Modifier.weight(1f)){
+                Text(title,color=c.bright,fontWeight=FontWeight.Black,fontSize=10.sp,maxLines=1)
+                Text("PAGE ASSIST",color=c.muted,fontSize=6.sp,fontWeight=FontWeight.Bold,letterSpacing=.8.sp)
+            }
+            TextButton(onClick=onGuide,contentPadding=PaddingValues(horizontal=7.dp,vertical=2.dp)){
+                Text("GUIDE",fontSize=7.sp,fontWeight=FontWeight.Bold)
+            }
+            Button(
+                onClick=onAiHelp,
+                contentPadding=PaddingValues(horizontal=9.dp,vertical=4.dp),
+                shape=RoundedCornerShape(layout.buttonRadius.dp)
+            ){
+                Text("✧ AI HELP",fontSize=7.sp,fontWeight=FontWeight.Black)
+            }
         }
     }
 }
