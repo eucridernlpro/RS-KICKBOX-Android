@@ -298,7 +298,7 @@ fun RsFloatingGlassChatHubV125(
                     aiImmersive=false
                     tab=RsChatHubTabV125.ALL
                 },
-                modifier=Modifier.padding(10.dp).size(36.dp),
+                modifier=Modifier.align(Alignment.TopStart).padding(start=10.dp,top=64.dp).size(36.dp),
                 shape=CircleShape,
                 contentPadding=PaddingValues(0.dp)
             ){Text("‹",fontSize=20.sp)}
