@@ -329,10 +329,12 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
     private fun applyLanguage(){
         val engine=tts?:return
-        val lang=language()
-        engine.language=lang.locale
+        val requested=language().locale
+        val available=runCatching{engine.isLanguageAvailable(requested)}.getOrDefault(TextToSpeech.LANG_NOT_SUPPORTED)
+        val effective=if(available>=TextToSpeech.LANG_AVAILABLE)requested else Locale.ENGLISH
+        engine.language=effective
         val voice=engine.voices
-            ?.filter{it.locale.language.equals(lang.locale.language,true)}
+            ?.filter{it.locale.language.equals(effective.language,true)}
             ?.sortedWith(compareByDescending<android.speech.tts.Voice>{!it.isNetworkConnectionRequired}.thenByDescending{it.quality})
             ?.firstOrNull()
         if(voice!=null)engine.voice=voice
