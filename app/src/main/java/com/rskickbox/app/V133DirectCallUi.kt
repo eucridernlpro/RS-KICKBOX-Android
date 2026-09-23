@@ -362,6 +362,7 @@ fun RsActiveCallDialogV133(
     var speakerOn by remember(call.id){mutableStateOf(isVideo)}
     var closing by remember(call.id){mutableStateOf(false)}
     var inPip by remember(call.id){mutableStateOf((context as? Activity)?.isInPictureInPictureMode==true)}
+    var pipTransition by remember(call.id){mutableStateOf(false)}
     val audioManager=remember{context.getSystemService(Context.AUDIO_SERVICE) as AudioManager}
     val engine=remember(call.id){
         RsWebRtcEngineV132(context,call.id,isCaller,isVideo,scope){engineState=it}
@@ -377,6 +378,11 @@ fun RsActiveCallDialogV133(
     LaunchedEffect(call.id){
         while(isActive){
             inPip=(context as? Activity)?.isInPictureInPictureMode==true
+            if(inPip)pipTransition=true
+            else if(pipTransition){
+                delay(500)
+                if((context as? Activity)?.isInPictureInPictureMode!=true)pipTransition=false
+            }
             rsCallInboxV131().onSuccess{list->
                 val current=list.firstOrNull{it.id==call.id}
                 if(!closing && (current==null||current.status in setOf("ENDED","DECLINED","MISSED","CANCELLED"))){
@@ -404,7 +410,7 @@ fun RsActiveCallDialogV133(
         properties=DialogProperties(usePlatformDefaultWidth=false)
     ){
         Box(Modifier.fillMaxSize().background(Color.Black)){
-            if(!inPip){
+            if(!inPip && !pipTransition){
                 Image(
                     painter=painterResource(R.drawable.rs_launcher_royal_v129),
                     contentDescription="RS KICKBOXING",
@@ -425,7 +431,7 @@ fun RsActiveCallDialogV133(
                     },
                     modifier=Modifier.fillMaxSize()
                 )
-                if(!inPip){
+                if(!inPip && !pipTransition){
                     AndroidView(
                         factory={ctx->
                             SurfaceViewRenderer(ctx).also{view->
@@ -465,7 +471,7 @@ fun RsActiveCallDialogV133(
                 }
             }
 
-            if(!inPip) Column(
+            if(!inPip && !pipTransition) Column(
                 Modifier.align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .background(
@@ -503,6 +509,7 @@ fun RsActiveCallDialogV133(
                             border=BorderStroke(1.5.dp,c.gold.copy(alpha=.48f)),
                             tonalElevation=10.dp,
                             modifier=Modifier.size(58.dp).clickable{
+                                pipTransition=true
                                 rsEnterCallPipV154(context,if(isVideo)9 else 1,if(isVideo)16 else 1)
                             }
                         ){Box(contentAlignment=Alignment.Center){Text("↙",color=c.bright,fontSize=21.sp,fontWeight=FontWeight.Black)}}
