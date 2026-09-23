@@ -2,6 +2,7 @@ package com.rskickbox.app
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
