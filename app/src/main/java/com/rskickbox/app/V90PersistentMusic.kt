@@ -9,11 +9,15 @@ import org.json.JSONArray
 import org.json.JSONObject
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -244,6 +248,9 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
     var volume by remember{mutableFloatStateOf(store.s("music_volume_v108","1.0").toFloatOrNull()?.coerceIn(0f,1f)?:1f)}
     var feedback by remember{mutableStateOf("")}
     var revision by remember{mutableIntStateOf(0)}
+    var searchQuery by remember{mutableStateOf("")}
+    var shuffleOn by remember{mutableStateOf(controller?.shuffleModeEnabled==true)}
+    var repeatMode by remember{mutableIntStateOf(controller?.repeatMode?:Player.REPEAT_MODE_ALL)}
 
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()){uris->
         if(uris.isNotEmpty()){
@@ -308,9 +315,12 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
         }
     }
 
-    val visibleTracks=if(activePlaylist=="ALL")tracks else {
+    val playlistTracks=if(activePlaylist=="ALL")tracks else {
         val allowed=playlists.firstOrNull{it.name==activePlaylist}?.uris.orEmpty()
         tracks.filter{it.uri in allowed}
+    }
+    val visibleTracks=playlistTracks.filter{
+        searchQuery.isBlank() || it.name.contains(searchQuery.trim(),ignoreCase=true)
     }
 
     fun playTrack(i:Int){
@@ -328,35 +338,103 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
         if(role==RsRole.TRAINER)rsMusicT(lang,"trainer_title") else rsMusicT(lang,"student_title"),
         rsMusicBgT90(lang,"subtitle")
     ){
-        RsPanel(c){
-            Text("RS MUSIC · AI CONTROL",color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp)
-            Text(
-                if(playing)"Playing now · voice control ready" else "Player ready · ask Sofia or Marcus to control it",
-                color=c.muted,
-                fontSize=10.sp
-            )
-            val liveTitle=controller?.currentMediaItem?.mediaMetadata?.title?.toString().orEmpty()
-            if(liveTitle.isNotBlank()){
-                Text(liveTitle,color=c.text,fontWeight=FontWeight.Bold,maxLines=1,overflow=TextOverflow.Ellipsis)
-            }
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement=Arrangement.SpaceEvenly,
-                verticalAlignment=Alignment.CenterVertically
+        Surface(
+            color=Color.Black.copy(alpha=.88f),
+            shape=RoundedCornerShape(30.dp),
+            border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
+            tonalElevation=18.dp,
+            modifier=Modifier.fillMaxWidth()
+        ){
+            Column(
+                Modifier.fillMaxWidth()
+                    .background(Brush.verticalGradient(listOf(c.gold.copy(alpha=.10f),Color.Black.copy(alpha=.96f))))
+                    .padding(16.dp),
+                horizontalAlignment=Alignment.CenterHorizontally,
+                verticalArrangement=Arrangement.spacedBy(12.dp)
             ){
-                FilledTonalButton(onClick={runCatching{controller?.seekToPreviousMediaItem();controller?.play()}}){Text("⏮")}
-                Button(onClick={
-                    val p=controller?:return@Button
-                    if(p.mediaItemCount==0 && visibleTracks.isNotEmpty())playTrack(index.coerceIn(0,visibleTracks.lastIndex))
-                    else if(p.isPlaying)p.pause() else p.play()
-                }){Text(if(playing)"⏸" else "▶")}
-                FilledTonalButton(onClick={runCatching{controller?.seekToNextMediaItem();controller?.play()}}){Text("⏭")}
+                Surface(
+                    shape=CircleShape,
+                    color=Color.Black,
+                    border=androidx.compose.foundation.BorderStroke(3.dp,c.gold.copy(alpha=.72f)),
+                    modifier=Modifier.size(128.dp)
+                ){
+                    Box(contentAlignment=Alignment.Center){
+                        Text("♫",color=c.bright,fontSize=48.sp,fontWeight=FontWeight.Black)
+                    }
+                }
+                Text("RS MUSIC",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp,letterSpacing=1.5.sp)
+                val liveTitle=controller?.currentMediaItem?.mediaMetadata?.title?.toString().orEmpty()
+                Text(
+                    liveTitle.ifBlank{if(visibleTracks.isEmpty())"Choose or import a track" else visibleTracks.getOrNull(index.coerceIn(0,visibleTracks.lastIndex))?.name.orEmpty()},
+                    color=Color.White,fontWeight=FontWeight.Bold,fontSize=15.sp,maxLines=2,overflow=TextOverflow.Ellipsis
+                )
+                Text(
+                    if(playing)"PLAYING · AI CONTROL READY" else "READY · SOFIA / MARCUS VOICE CONTROL",
+                    color=if(playing)Color(0xFF55D58A) else c.muted,
+                    fontSize=9.sp,fontWeight=FontWeight.Black
+                )
+                Slider(
+                    value=if(duration>0)(position.toFloat()/duration.toFloat()).coerceIn(0f,1f) else 0f,
+                    onValueChange={fraction->runCatching{controller?.seekTo((duration*fraction).toLong())}},
+                    modifier=Modifier.fillMaxWidth()
+                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.SpaceEvenly,
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    FilledTonalButton(onClick={runCatching{controller?.seekToPreviousMediaItem();controller?.play()}}){Text("⏮")}
+                    Button(
+                        onClick={
+                            val p=controller?:return@Button
+                            if(p.mediaItemCount==0 && visibleTracks.isNotEmpty())playTrack(index.coerceIn(0,visibleTracks.lastIndex))
+                            else if(p.isPlaying)p.pause() else p.play()
+                        },
+                        modifier=Modifier.size(66.dp),
+                        shape=CircleShape,
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text(if(playing)"⏸" else "▶",fontSize=24.sp)}
+                    FilledTonalButton(onClick={runCatching{controller?.seekToNextMediaItem();controller?.play()}}){Text("⏭")}
+                }
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.SpaceEvenly,
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    FilterChip(
+                        selected=shuffleOn,
+                        onClick={
+                            shuffleOn=!shuffleOn
+                            runCatching{controller?.shuffleModeEnabled=shuffleOn}
+                        },
+                        label={Text("🔀 Shuffle",fontSize=9.sp)}
+                    )
+                    FilterChip(
+                        selected=repeatMode!=Player.REPEAT_MODE_OFF,
+                        onClick={
+                            repeatMode=when(repeatMode){
+                                Player.REPEAT_MODE_OFF->Player.REPEAT_MODE_ALL
+                                Player.REPEAT_MODE_ALL->Player.REPEAT_MODE_ONE
+                                else->Player.REPEAT_MODE_OFF
+                            }
+                            runCatching{controller?.repeatMode=repeatMode}
+                        },
+                        label={Text(if(repeatMode==Player.REPEAT_MODE_ONE)"🔂 One" else if(repeatMode==Player.REPEAT_MODE_ALL)"🔁 All" else "↪ Repeat",fontSize=9.sp)}
+                    )
+                }
+                OutlinedTextField(
+                    value=searchQuery,
+                    onValueChange={searchQuery=it.take(80)},
+                    singleLine=true,
+                    placeholder={Text("Search RS Music…")},
+                    modifier=Modifier.fillMaxWidth(),
+                    shape=RoundedCornerShape(18.dp)
+                )
+                Text(
+                    "Voice: “Play music”, “Next song”, “Stop music”, “Open music player”, or “Play [track name]”.",
+                    color=c.muted,fontSize=8.sp
+                )
             }
-            Text(
-                "Voice examples: “Play music”, “Next song”, “Stop music”, “Open music player”, or “Play [track name]”.",
-                color=c.muted,
-                fontSize=9.sp
-            )
         }
 
         RsPanel(c){
