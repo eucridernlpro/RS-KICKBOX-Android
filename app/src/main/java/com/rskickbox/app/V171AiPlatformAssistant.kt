@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -18,6 +20,9 @@ class RsQuietVoiceControllerV171(
 ){
     private var recognizer:SpeechRecognizer?=null
     private var running=false
+    private var preferOfflineRecognition=true
+    private var lastLocale=Locale.getDefault()
+    private var closed=false
 
     private fun ensureRecognizer(){
         if(recognizer!=null)return
@@ -48,6 +53,17 @@ class RsQuietVoiceControllerV171(
                             destroyRecognizer()
                             onStatus("Microphone was busy. Try again.")
                         }
+                        SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE,
+                        SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED->{
+                            if(preferOfflineRecognition){
+                                preferOfflineRecognition=false
+                                destroyRecognizer()
+                                onStatus("Trying online voice recognition…")
+                                Handler(Looper.getMainLooper()).postDelayed({
+                                    if(!closed)start(lastLocale)
+                                },800)
+                            }else onStatus("Voice recognition for this language is unavailable. Try another language or install its speech pack.")
+                        }
                         else->onStatus("Voice input unavailable. Error "+error)
                     }
                 }
@@ -68,6 +84,8 @@ class RsQuietVoiceControllerV171(
     }
 
     fun start(locale:Locale){
+        closed=false
+        lastLocale=locale
         if(
             ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)
             !=PackageManager.PERMISSION_GRANTED
@@ -77,13 +95,15 @@ class RsQuietVoiceControllerV171(
         }
         if(running)return
         ensureRecognizer()
+        if(recognizer==null)return
         val intent=android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE,locale.toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,true)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,preferOfflineRecognition)
         }
+        running=true
         runCatching{recognizer?.startListening(intent)}
             .onFailure{
                 destroyRecognizer()
@@ -97,6 +117,7 @@ class RsQuietVoiceControllerV171(
     }
 
     fun destroy(){
+        closed=true
         destroyRecognizer()
     }
 

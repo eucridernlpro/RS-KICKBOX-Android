@@ -198,6 +198,7 @@ private fun rsAllMusicItemsV165(context:Context):List<MediaItem>{
 class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
     private var recognizer:SpeechRecognizer?=null
+    private var preferOfflineRecognition=true
     private var tts:TextToSpeech?=null
     private var wakeLock:PowerManager.WakeLock?=null
     private var awakeUntil=0L
@@ -381,9 +382,26 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         SpeechRecognizer.ERROR_RECOGNIZER_BUSY->"ERROR_BUSY"
                         SpeechRecognizer.ERROR_SERVER->"ERROR_SERVER"
                         SpeechRecognizer.ERROR_SPEECH_TIMEOUT->"NO_SPEECH"
+                        SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED->"LANGUAGE_NOT_SUPPORTED"
+                        SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE->"LANGUAGE_UNAVAILABLE"
                         else->"ERROR_"+error
                     }
                     setWakeStatusV168(label)
+                    // Unsupported or unavailable recognition languages cannot be fixed
+                    // by retrying; that would create an endless microphone/beep loop.
+                    if(error==SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE ||
+                        error==SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED){
+                        if(preferOfflineRecognition){
+                            preferOfflineRecognition=false
+                            scope.launch{
+                                runCatching{recognizer?.destroy()}
+                                recognizer=null
+                                delay(900)
+                                startListening()
+                            }
+                        }
+                        return
+                    }
                     scope.launch{
                         if(
                             error==SpeechRecognizer.ERROR_CLIENT ||
@@ -396,9 +414,9 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         delay(
                             when(error){
                                 SpeechRecognizer.ERROR_NO_MATCH,
-                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT->350
-                                SpeechRecognizer.ERROR_RECOGNIZER_BUSY->900
-                                else->1200
+                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT->1800
+                                SpeechRecognizer.ERROR_RECOGNIZER_BUSY->2500
+                                else->3000
                             }
                         )
                         startListening()
@@ -442,7 +460,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             putExtra(RecognizerIntent.EXTRA_LANGUAGE,lang.locale.toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,5)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,true)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,preferOfflineRecognition)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,350L)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,650L)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,450L)
