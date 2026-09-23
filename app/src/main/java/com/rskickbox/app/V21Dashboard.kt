@@ -109,6 +109,7 @@ private fun RsDashboardCommandCenterV176(
                 }
             }
         }
+        val lastFeature=store.s("last_feature_route_v177","")
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
             OutlinedButton(
                 onClick={onRoute(if(role==RsRole.TRAINER)"guide" else "student_guide")},
@@ -122,6 +123,27 @@ private fun RsDashboardCommandCenterV176(
                 onClick={onRoute(if(role==RsRole.TRAINER)"music_admin" else "music")},
                 modifier=Modifier.weight(1f)
             ){Text("RS MUSIC",fontSize=8.sp)}
+        }
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+            Button(
+                onClick={
+                    store.ps("ai_pending_spoken_v171","What can you help me with inside RS KICKBOXING?")
+                    store.pb("ai_immersive_v171",true)
+                    onRoute("voice")
+                },
+                modifier=Modifier.weight(1f)
+            ){Text("✧ RS AI",fontSize=8.sp,fontWeight=FontWeight.Black)}
+            OutlinedButton(
+                onClick={if(lastFeature.isNotBlank())({onRoute(lastFeature)}) else ({})},
+                enabled=lastFeature.isNotBlank(),
+                modifier=Modifier.weight(1f)
+            ){
+                Text(
+                    if(lastFeature.isBlank())"NO RECENT PAGE" else "↗ CONTINUE",
+                    fontSize=8.sp,
+                    fontWeight=FontWeight.Bold
+                )
+            }
         }
     }
 }
