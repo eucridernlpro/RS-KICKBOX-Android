@@ -31,7 +31,7 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
     val baseSections=if(role==RsRole.TRAINER)trainerV21() else studentV21()
     val sections=if(role==RsRole.STUDENT){
         baseSections
-            .map{section->section.copy(items=section.items.filter{rsStudentRouteEnabledV82(store,it.route)})}
+            .map{section->section.copy(items=section.items.filter{it.route=="music" || rsStudentRouteEnabledV82(store,it.route)})}
             .filter{it.items.isNotEmpty()}
     }else baseSections
     val compactPhone=LocalConfiguration.current.screenWidthDp<380
