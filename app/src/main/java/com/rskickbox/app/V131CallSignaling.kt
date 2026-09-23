@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.coroutines.delay
 
 @Serializable
 data class RsCallV131(
@@ -89,6 +90,26 @@ suspend fun rsSetCallStatusV131(callId:String,status:String):Result<Unit> = runC
         }
     )
     Unit
+}
+
+suspend fun rsSetCallStatusReliableV173(callId:String,status:String):Result<Unit>{
+    val target=status.uppercase()
+    val first=rsSetCallStatusV131(callId,target)
+    if(first.isSuccess)return first
+
+    delay(350)
+    val snapshot=rsCallInboxV131().getOrNull()
+    val current=snapshot?.firstOrNull{it.id==callId}
+    if(current?.status?.uppercase()==target)return Result.success(Unit)
+
+    // Terminal calls often disappear from the active inbox after the server
+    // accepted the transition. Treat disappearance as confirmation for these
+    // states rather than making the UI look unresponsive.
+    if(target in setOf("DECLINED","CANCELLED","ENDED","MISSED") && snapshot!=null && current==null){
+        return Result.success(Unit)
+    }
+
+    return rsSetCallStatusV131(callId,target)
 }
 
 suspend fun rsAddCallSignalV131(
