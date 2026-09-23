@@ -124,6 +124,7 @@ fun RsDirectCallControlsV133(
     var pendingType by remember{mutableStateOf<String?>(null)}
     var pendingAcceptCallId by remember{mutableStateOf<String?>(null)}
     var refresh by remember{mutableIntStateOf(0)}
+    var actionBusy by remember{mutableStateOf(false)}
 
     LaunchedEffect(role,peerId){
         if(role==RsRole.STUDENT&&resolvedPeerId.isBlank()){
@@ -177,14 +178,16 @@ fun RsDirectCallControlsV133(
     }
 
     fun beginCall(type:String){
-        if(resolvedPeerId.isBlank())return
+        if(resolvedPeerId.isBlank() || actionBusy || active!=null)return
         // FCM can wake the peer even when they are not actively present in the app.
         // Presence is informative only; it must not block a real call.
+        actionBusy=true
         scope.launch{
             status=rsCallT133(lang,"calling")
             rsStartDirectCallV131(resolvedPeerId,type)
                 .onSuccess{refresh++}
                 .onFailure{status=it.message?:rsCallT133(lang,"unavailable")}
+            actionBusy=false
         }
     }
 
@@ -230,7 +233,7 @@ fun RsDirectCallControlsV133(
                 border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.48f)),
                 shadowElevation=10.dp,
                 modifier=Modifier.size(39.dp).clickable(
-                    enabled=allowAudio&&resolvedPeerId.isNotBlank()
+                    enabled=allowAudio&&resolvedPeerId.isNotBlank()&&call==null&&!actionBusy
                 ){requestAndCall("AUDIO")}
             ){Box(contentAlignment=Alignment.Center){Text("☎",color=c.bright,fontSize=17.sp,fontWeight=FontWeight.Black)}}
             Surface(
@@ -239,7 +242,7 @@ fun RsDirectCallControlsV133(
                 border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.48f)),
                 shadowElevation=10.dp,
                 modifier=Modifier.size(39.dp).clickable(
-                    enabled=allowVideo&&resolvedPeerId.isNotBlank()
+                    enabled=allowVideo&&resolvedPeerId.isNotBlank()&&call==null&&!actionBusy
                 ){requestAndCall("VIDEO")}
             ){Box(contentAlignment=Alignment.Center){Text("📹",color=c.bright,fontSize=16.sp,fontWeight=FontWeight.Black)}}
         }
@@ -305,35 +308,24 @@ fun RsDirectCallControlsV133(
                     color=c.bright,fontWeight=FontWeight.Black
                 )
                 if(incoming){
-                    val type=call.callType
-                    val acceptNeeds=buildList{
-                        if(ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)add(Manifest.permission.RECORD_AUDIO)
-                        if(type=="VIDEO"&&ContextCompat.checkSelfPermission(context,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED)add(Manifest.permission.CAMERA)
-                    }
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                        Button(
-                            onClick={
-                                if(acceptNeeds.isEmpty()){
-                                    scope.launch{
-                                        rsSetCallStatusV131(call.id,"ACCEPTED")
-                                        refresh++
-                                    }
-                                }else{
-                                    pendingType=null
-                                    pendingAcceptCallId=call.id
-                                    permissionLauncher.launch(acceptNeeds.toTypedArray())
-                                }
-                            },
-                            modifier=Modifier.weight(1f)
-                        ){Text(rsCallT133(lang,"accept"))}
-                        OutlinedButton(
-                            onClick={scope.launch{rsSetCallStatusV131(call.id,"DECLINED");refresh++}},
-                            modifier=Modifier.weight(1f)
-                        ){Text(rsCallT133(lang,"decline"))}
-                    }
+                    Text(
+                        "Incoming call is handled in the full-screen RS call view.",
+                        color=c.muted,fontSize=9.sp
+                    )
                 }else{
                     OutlinedButton(
-                        onClick={scope.launch{rsSetCallStatusV131(call.id,"CANCELLED");refresh++}},
+                        onClick={
+                            if(!actionBusy){
+                                actionBusy=true
+                                scope.launch{
+                                    rsSetCallStatusV131(call.id,"CANCELLED")
+                                        .onSuccess{refresh++}
+                                        .onFailure{status=it.message?:rsCallT133(lang,"unavailable")}
+                                    actionBusy=false
+                                }
+                            }
+                        },
+                        enabled=!actionBusy,
                         modifier=Modifier.fillMaxWidth()
                     ){Text(rsCallT133(lang,"cancel"))}
                 }
