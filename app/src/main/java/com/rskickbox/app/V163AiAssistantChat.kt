@@ -75,13 +75,14 @@ fun RsAiAssistantChatV163(
     val musicController=rememberRsMusicControllerV90()
     var pendingMusic by remember{mutableStateOf<RsPersistentTrackV90?>(null)}
     var musicDialog by remember{mutableStateOf(false)}
+    var voiceMusicImport by remember{mutableStateOf(false)}
     var newPlaylistName by remember{mutableStateOf("")}
     var playlistMenu by remember{mutableStateOf(false)}
     var voiceConversationActive by remember{mutableStateOf(false)}
     var voiceResult by remember{mutableStateOf<String?>(null)}
     var resumeListeningSignal by remember{mutableIntStateOf(0)}
     var immersiveGreetingPending by remember{
-        mutableStateOf(store.b("ai_start_listening_v168",false))
+        mutableStateOf(true)
     }
 
     var tts by remember{mutableStateOf<TextToSpeech?>(null)}
@@ -127,6 +128,7 @@ fun RsAiAssistantChatV163(
     fun speak(text:String){
         if(!ttsReady||text.isBlank())return
         applySelectedVoice()
+        speaking=true
         tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,"rs-ai-chat")
     }
 
@@ -174,19 +176,37 @@ fun RsAiAssistantChatV163(
             attachMenu=false
             rsPrepareMusicTrackV169(context,uri,"RS Music")
                 .onSuccess{
-                    pendingMusic=it
-                    musicDialog=true
-                    status=it.name
+                    if(voiceMusicImport){
+                        voiceMusicImport=false
+                        val track=it
+                        val saved=rsSaveMusicTrackV169(store,track)
+                        val played=if(saved.isSuccess)rsPlayMusicTrackV169(musicController,track) else null
+                        val reply=when{
+                            saved.isFailure->"I couldn't save that music file."
+                            played?.isFailure==true->"I saved ${track.name} to RS Music, but couldn't play it."
+                            else->"I saved ${track.name} to RS Music and started playing it."
+                        }
+                        messages=(messages+RsAiChatMessageV163(System.currentTimeMillis(),false,reply)).takeLast(30)
+                        voiceConversationActive=true
+                        speak(reply)
+                    }else{
+                        pendingMusic=it
+                        musicDialog=true
+                        status=it.name
+                    }
                 }
-                .onFailure{status=it.message?:"Could not open music file."}
-        }
+                .onFailure{voiceMusicImport=false;status=it.message?:"Could not open music file."}
+        }else voiceMusicImport=false
     }
     val quietVoice=remember(context){
         RsQuietVoiceControllerV171(
             context=context,
             onResult={spoken->voiceResult=spoken.take(1800)},
             onStatus={value->status=value},
-            onIdle={resumeListeningSignal++}
+            onIdle={
+                voiceConversationActive=false
+                status=""
+            }
         )
     }
     DisposableEffect(quietVoice){
@@ -239,7 +259,7 @@ fun RsAiAssistantChatV163(
             )).takeLast(30)
             busy=false
             status=""
-            if(autoSpeak)speak(reply)
+            if(autoSpeak||voiceConversationActive)speak(reply)
             return
         }
 
@@ -271,6 +291,8 @@ fun RsAiAssistantChatV163(
                     else "Sofia is active now. I’m ready."
                 }
                 is RsAiPlatformIntentV171.UploadMusic->{
+                    voiceMusicImport=voiceConversationActive && textOverride!=null
+                    voiceConversationActive=false
                     musicPicker.launch(arrayOf("audio/*"))
                     "I’m opening your music files. Choose the track you want and I’ll handle the rest."
                 }
@@ -322,7 +344,7 @@ fun RsAiAssistantChatV163(
             )).takeLast(30)
             busy=false
             status=""
-            if(autoSpeak && reply.isNotBlank())speak(reply)
+            if((autoSpeak||voiceConversationActive) && reply.isNotBlank())speak(reply)
             return
         }
 
@@ -373,7 +395,7 @@ fun RsAiAssistantChatV163(
             )).takeLast(30)
             status=""
             busy=false
-            if(autoSpeak)speak(reply)
+            if(autoSpeak||voiceConversationActive)speak(reply)
         }
     }
 
@@ -386,17 +408,25 @@ fun RsAiAssistantChatV163(
         }
     }
 
-    LaunchedEffect(voiceResult){
+    LaunchedEffect(voiceResult,busy){
         val spoken=voiceResult?.trim().orEmpty()
         if(spoken.isNotBlank()&&!busy){
             voiceResult=null
-            send(spoken)
+            val command=spoken.replace(
+                Regex("(?i)^\\s*(wake up rs|hey rs|ok rs)[,!.?\\s]*"),""
+            ).trim()
+            if(command.isNotBlank())send(command)
+            else{
+                val name=if(avatar=="FEMALE")"Sofia" else "Marcus"
+                speak("Hi, I’m $name. What can I do for you?")
+            }
         }
     }
 
     LaunchedEffect(resumeListeningSignal,voiceConversationActive,aiLang){
         if(voiceConversationActive && !speaking && !busy){
-            kotlinx.coroutines.delay(320)
+            kotlinx.coroutines.delay(750)
+            if(speaking||busy)return@LaunchedEffect
             startVoice()
         }
     }
