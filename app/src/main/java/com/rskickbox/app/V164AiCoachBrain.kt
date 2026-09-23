@@ -61,15 +61,15 @@ fun rsAiLocalCoachAnswerV164(code:String,question:String):String{
     }
 
     if(rsAiGreetingV164(q))return when(code){
-        "nl"->"Hoi! Goed je te zien. Ik ben je RS AI-coach. Vraag me gerust naar een techniek, combinatie, trainingsvorm of upload een video zodat we iets specifieks kunnen bekijken."
-        "pt"->"Olá! Bom ter-te aqui. Sou o teu treinador IA RS. Pergunta sobre uma técnica, combinação, tipo de treino ou envia um vídeo para analisarmos algo específico."
+        "nl"->"Hoi! Ik ben je RS-assistent. Zeg gewoon wat je wilt doen — ik kan met je praten, door de app navigeren, muziek bedienen, chats openen, instellingen helpen aanpassen en natuurlijk ook kickbokstraining coachen."
+        "pt"->"Olá! Sou o teu assistente RS. Diz simplesmente o que queres fazer — posso conversar contigo, navegar na app, controlar música, abrir chats, ajudar nas definições e também orientar o teu treino de kickboxing."
         "es"->"¡Hola! Me alegra verte. Soy tu entrenador IA RS. Pregúntame por una técnica, combinación, tipo de entrenamiento o sube un vídeo para revisar algo concreto."
         "fr"->"Salut ! Heureux de te voir. Je suis ton coach IA RS. Demande-moi une technique, une combinaison, un type d’entraînement ou envoie une vidéo."
         "de"->"Hallo! Schön, dass du da bist. Ich bin dein RS KI-Trainer. Frag mich nach Technik, Kombinationen, Trainingsformen oder lade ein Video hoch."
         "it"->"Ciao! Sono il tuo allenatore IA RS. Chiedimi una tecnica, combinazione, tipo di allenamento oppure carica un video."
         "pl"->"Cześć! Jestem trenerem AI RS. Zapytaj o technikę, kombinację, trening albo prześlij film."
         "tr"->"Merhaba! Ben RS YZ antrenörünüm. Teknik, kombinasyon veya antrenman hakkında sorabilir ya da video yükleyebilirsin."
-        else->"Hi! Good to see you. I’m your RS AI coach. Ask me about a technique, combination or training style, or upload a video if you want specific feedback."
+        else->"Hi! I’m your RS assistant. Just tell me what you want to do — I can talk with you naturally, navigate the app, control music, open chats, help with settings, and coach your kickboxing training too."
     }
 
     if(rsAiThanksV164(q))return when(code){
