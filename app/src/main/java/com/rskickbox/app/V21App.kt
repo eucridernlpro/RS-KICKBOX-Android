@@ -297,8 +297,7 @@ fun RsKickboxV21App(
             rsSyncCloudBrandV100(store)
                 .onSuccess{settings->
                     val overrideMs=store.s("theme_local_override_ms_v170","0").toLongOrNull()?:0L
-                    val keepLocal=overrideMs>0L &&
-                        System.currentTimeMillis()-overrideMs < 24L*60L*60L*1000L
+                    val keepLocal=overrideMs>0L
                     if(!keepLocal){
                         theme=runCatching{RsTheme.valueOf(settings.themeName)}.getOrDefault(theme)
                     }
