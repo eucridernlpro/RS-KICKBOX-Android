@@ -349,7 +349,11 @@ fun RsAiAssistantChatV163(
         pickedUri=null
         pickedKind=null
 
-        val guideRequest=if(kind==null)rsAiAppGuideMatchV175(body,selectedLang,role) else null
+        val currentRoute=store.s("ai_current_route_v177","")
+        val guideRequest=if(kind==null){
+            rsAiAppGuideMatchV175(body,selectedLang,role)
+                ?:if(rsAiGenericCurrentPageHelpV177(body))rsAiAppGuideForRouteV177(currentRoute,selectedLang,role) else null
+        }else null
         if(guideRequest!=null){
             val guideText=rsAiAppGuideTextV175(guideRequest,selectedLang)
             val guideVisual=rsVisualUriWithBundledFallbackV113(context,store,guideRequest.route)
@@ -499,8 +503,13 @@ fun RsAiAssistantChatV163(
             val trainerReferenceSummary=earlyRefs.joinToString("\n"){ref->
                 ref.item.title+" | tags: "+ref.item.techniqueTags.joinToString(", ")+" | trainer note: "+ref.item.description
             }
+            val currentPage=store.s("ai_current_route_v177","")
+            val currentPageTitle=if(currentPage.isBlank())"" else rsRouteTitle(
+                selectedLang,currentPage,currentPage.replace('_',' ').replaceFirstChar{it.uppercase()}
+            )
             val referenceSummary=(
-                "RS APP FEATURES:\n"+rsAiAppKnowledgeSummaryV175(selectedLang,role).take(2300)+
+                "CURRENT RS PAGE: "+currentPage+" | "+currentPageTitle+
+                "\n\nRS APP FEATURES:\n"+rsAiAppKnowledgeSummaryV175(selectedLang,role).take(2300)+
                 "\n\nTRAINER REFERENCES:\n"+trainerReferenceSummary.take(1100)
             )
 
@@ -624,6 +633,8 @@ fun RsAiAssistantChatV163(
             store=store,
             avatar=avatar,
             speaking=speaking,
+            listening=voiceConversationActive && !speaking && !busy,
+            thinking=busy && !speaking,
             avatarMotion=avatarMotionEnabled,
             renderMode=avatarRenderMode,
             language=selectedLang,
@@ -907,7 +918,7 @@ fun RsAiAssistantChatV163(
                                 avatarRenderMode="CINEMATIC_3D"
                                 store.ps("ai_avatar_render_mode_v176","CINEMATIC_3D")
                             },
-                            label={Text("Cinematic 3D",fontSize=8.sp)},
+                            label={Text("Realistic 3D",fontSize=8.sp)},
                             modifier=Modifier.weight(1f)
                         )
                         FilterChip(
@@ -1132,6 +1143,8 @@ private fun RsAiAvatarStageV163(
     store:RsStore,
     avatar:String,
     speaking:Boolean,
+    listening:Boolean,
+    thinking:Boolean,
     avatarMotion:Boolean,
     renderMode:String,
     language:RsLang,
@@ -1165,6 +1178,24 @@ private fun RsAiAvatarStageV163(
         targetValue=5f,
         animationSpec=infiniteRepeatable(tween(4200,easing=FastOutSlowInEasing),RepeatMode.Reverse),
         label="ai-parallax"
+    )
+    val headTurn by transition.animateFloat(
+        initialValue=-1.8f,
+        targetValue=1.8f,
+        animationSpec=infiniteRepeatable(tween(5200,easing=FastOutSlowInEasing),RepeatMode.Reverse),
+        label="ai-head-turn"
+    )
+    val focusTilt by transition.animateFloat(
+        initialValue=-.8f,
+        targetValue=.8f,
+        animationSpec=infiniteRepeatable(tween(3900,easing=FastOutSlowInEasing),RepeatMode.Reverse),
+        label="ai-focus-tilt"
+    )
+    val lightSweep by transition.animateFloat(
+        initialValue=.10f,
+        targetValue=.32f,
+        animationSpec=infiniteRepeatable(tween(1800,easing=LinearEasing),RepeatMode.Reverse),
+        label="ai-light-sweep"
     )
     val aura by transition.animateFloat(
         initialValue=.22f,
@@ -1213,7 +1244,10 @@ private fun RsAiAvatarStageV163(
                     scaleY=if(avatarMotion)breath*1.035f else 1.035f
                     translationY=if(avatarMotion)floatY else 0f
                     translationX=if(avatarMotion && renderMode=="CINEMATIC_3D")parallaxX else 0f
-                    shadowElevation=if(renderMode=="CINEMATIC_3D")18f else 0f
+                    rotationY=if(avatarMotion && renderMode=="CINEMATIC_3D")headTurn else 0f
+                    rotationX=if(avatarMotion && renderMode=="CINEMATIC_3D")focusTilt else 0f
+                    cameraDistance=if(renderMode=="CINEMATIC_3D")18f*density else cameraDistance
+                    shadowElevation=if(renderMode=="CINEMATIC_3D")24f else 0f
                 }
             ){
                 if(visual.isNotBlank()){
@@ -1238,6 +1272,31 @@ private fun RsAiAvatarStageV163(
                     )
                 )
             )
+            if(renderMode=="CINEMATIC_3D"){
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.linearGradient(
+                            listOf(
+                                Color.Transparent,
+                                c.bright.copy(alpha=lightSweep*.18f),
+                                Color.Transparent,
+                                c.gold.copy(alpha=lightSweep*.12f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+                )
+                Box(
+                    Modifier.fillMaxWidth(.46f).height(1.dp)
+                        .align(Alignment.Center)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent,c.bright.copy(alpha=.26f),Color.Transparent)
+                            )
+                        )
+                )
+            }
+
             // Speaking pulse / holographic depth rings.
             if(renderMode=="CINEMATIC_3D"){
                 Surface(
@@ -1293,9 +1352,20 @@ private fun RsAiAvatarStageV163(
                         if(avatar=="FEMALE")"SOFIA" else "MARCUS",
                         color=Color.White,fontWeight=FontWeight.Black,fontSize=21.sp,letterSpacing=1.sp
                     )
+                    val assistantState=when{
+                        speaking->"SPEAKING"
+                        thinking->"THINKING"
+                        listening->"LISTENING"
+                        else->"READY"
+                    }
                     Text(
-                        if(speaking)rsAiExtraV163(language.code,"live_speaking") else rsAiExtraV163(language.code,"live_ready"),
-                        color=if(speaking)Color(0xFF58C9FF) else Color(0xFF36D27F),
+                        assistantState+" · "+if(renderMode=="CINEMATIC_3D")"REALISTIC 3D BETA" else "AI ASSISTANT",
+                        color=when{
+                            speaking->Color(0xFF58C9FF)
+                            thinking->c.gold
+                            listening->Color(0xFF7EE8B5)
+                            else->Color(0xFF36D27F)
+                        },
                         fontSize=8.sp,fontWeight=FontWeight.Black
                     )
                 }
