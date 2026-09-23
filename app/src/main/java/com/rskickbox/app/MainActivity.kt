@@ -7,6 +7,21 @@ import androidx.activity.compose.setContent
 import io.github.jan.supabase.auth.handleDeeplinks
 
 class MainActivity : ComponentActivity() {
+    companion object{
+        @Volatile var isForeground:Boolean=false
+            private set
+    }
+
+    override fun onStart(){
+        super.onStart()
+        isForeground=true
+    }
+
+    override fun onStop(){
+        isForeground=false
+        super.onStop()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applyIncomingCallWindow(intent)
