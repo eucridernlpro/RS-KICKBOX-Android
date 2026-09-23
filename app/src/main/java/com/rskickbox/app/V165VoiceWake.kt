@@ -30,7 +30,7 @@ import org.json.JSONObject
 import java.util.Locale
 import java.io.File
 
-private const val RS_VOICE_CHANNEL_V165="rs_voice_wake_v165"
+private const val RS_VOICE_CHANNEL_V165="rs_voice_wake_v172"
 private const val RS_VOICE_NOTIFICATION_ID_V165=1651
 private const val RS_VOICE_LOGIN_NOTIFICATION_ID_V165=1652
 private const val RS_TRUSTED_LOGIN_MS_V165=72L*60L*60L*1000L
@@ -797,7 +797,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 NotificationChannel(
                     RS_VOICE_CHANNEL_V165,
                     "RS Voice Wake",
-                    NotificationManager.IMPORTANCE_LOW
+                    NotificationManager.IMPORTANCE_MIN
                 ).apply{
                     description="Keeps RS Voice Wake listening while enabled."
                     setSound(null,null)
