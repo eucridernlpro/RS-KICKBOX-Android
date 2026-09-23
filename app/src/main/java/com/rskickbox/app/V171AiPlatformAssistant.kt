@@ -81,6 +81,7 @@ class RsQuietVoiceControllerV171(
         }
         if(running)return
         ensureRecognizer()
+        if(recognizer==null)return
         val intent=android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE,locale.toLanguageTag())
@@ -88,6 +89,7 @@ class RsQuietVoiceControllerV171(
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3)
             putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,true)
         }
+        running=true
         runCatching{recognizer?.startListening(intent)}
             .onFailure{
                 destroyRecognizer()
