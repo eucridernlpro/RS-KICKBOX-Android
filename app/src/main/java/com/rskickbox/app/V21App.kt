@@ -451,7 +451,24 @@ fun RsKickboxV21App(
         onDispose{lifecycleOwner.lifecycle.removeObserver(observer)}
     }
 
-    MaterialTheme(colorScheme = darkColorScheme(primary=c.bright,secondary=c.gold,background=c.bg,surface=c.panel,onBackground=c.text,onSurface=c.text)) {
+    val appThemeLayout=rsThemeLayoutV175(theme)
+    MaterialTheme(
+        colorScheme = darkColorScheme(
+            primary=c.bright,
+            secondary=c.gold,
+            background=c.bg,
+            surface=c.panel,
+            onBackground=c.text,
+            onSurface=c.text
+        ),
+        shapes=Shapes(
+            extraSmall=RoundedCornerShape((appThemeLayout.buttonRadius/2).coerceAtLeast(4).dp),
+            small=RoundedCornerShape(appThemeLayout.buttonRadius.dp),
+            medium=RoundedCornerShape(appThemeLayout.panelRadius.dp),
+            large=RoundedCornerShape(appThemeLayout.tileRadius.dp),
+            extraLarge=RoundedCornerShape((appThemeLayout.tileRadius+6).dp)
+        )
+    ) {
         val currentBrandRevision=brandRevision
         Box(
             Modifier.fillMaxSize().pointerInput(role){
