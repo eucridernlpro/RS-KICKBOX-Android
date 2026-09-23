@@ -1,8 +1,10 @@
 package com.rskickbox.app
 
 import android.app.*
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.media.AudioAttributes
 import android.media.Ringtone
@@ -11,6 +13,7 @@ import android.net.Uri
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
+import androidx.core.content.ContextCompat
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.*
 
@@ -110,15 +113,35 @@ class RsCallMonitorServiceV134:Service(){
             }
             ACTION_ACCEPT_CALL->{
                 val id=intent.getStringExtra("call_id").orEmpty()
+                val type=intent.getStringExtra("call_type").orEmpty().ifBlank{"AUDIO"}
                 if(id.isNotBlank())scope.launch{
-                    rsSetCallStatusV131(id,"ACCEPTED")
-                    stopRinging()
+                    val hasMic=ContextCompat.checkSelfPermission(
+                        this@RsCallMonitorServiceV134,Manifest.permission.RECORD_AUDIO
+                    )==PackageManager.PERMISSION_GRANTED
+                    val hasCamera=type!="VIDEO" || ContextCompat.checkSelfPermission(
+                        this@RsCallMonitorServiceV134,Manifest.permission.CAMERA
+                    )==PackageManager.PERMISSION_GRANTED
                     val open=Intent(this@RsCallMonitorServiceV134,MainActivity::class.java).apply{
                         action="com.rskickbox.app.INCOMING_CALL"
                         putExtra("rs_incoming_call_id",id)
-                        this.flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        putExtra("rs_incoming_call_type",type)
+                        putExtra("rs_incoming_caller_id",intent.getStringExtra("caller_id").orEmpty())
+                        putExtra("rs_incoming_caller_name",intent.getStringExtra("caller_name").orEmpty())
+                        putExtra("rs_incoming_caller_email",intent.getStringExtra("caller_email").orEmpty())
+                        flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     }
-                    runCatching{startActivity(open)}
+                    if(!hasMic || !hasCamera){
+                        stopRinging()
+                        getSystemService(NotificationManager::class.java).cancel(id.hashCode())
+                        runCatching{startActivity(open)}
+                    }else{
+                        rsSetCallStatusV131(id,"ACCEPTED")
+                            .onSuccess{
+                                stopRinging()
+                                getSystemService(NotificationManager::class.java).cancel(id.hashCode())
+                                runCatching{startActivity(open)}
+                            }
+                    }
                 }
                 return START_STICKY
             }
@@ -126,22 +149,39 @@ class RsCallMonitorServiceV134:Service(){
                 val id=intent.getStringExtra("call_id").orEmpty()
                 if(id.isNotBlank())scope.launch{
                     rsSetCallStatusV131(id,"DECLINED")
-                    stopRinging()
-                    getSystemService(NotificationManager::class.java).cancel(id.hashCode())
+                        .onSuccess{
+                            stopRinging()
+                            getSystemService(NotificationManager::class.java).cancel(id.hashCode())
+                        }
                 }
                 return START_STICKY
             }
             ACTION_JOIN_ROOM->{
                 val id=intent.getStringExtra("room_id").orEmpty()
                 if(id.isNotBlank())scope.launch{
-                    rsSetVideoRoomStatusV136(id,"JOINED")
-                    stopRinging()
+                    val hasMic=ContextCompat.checkSelfPermission(
+                        this@RsCallMonitorServiceV134,Manifest.permission.RECORD_AUDIO
+                    )==PackageManager.PERMISSION_GRANTED
+                    val hasCamera=ContextCompat.checkSelfPermission(
+                        this@RsCallMonitorServiceV134,Manifest.permission.CAMERA
+                    )==PackageManager.PERMISSION_GRANTED
                     val open=Intent(this@RsCallMonitorServiceV134,MainActivity::class.java).apply{
                         action="com.rskickbox.app.INCOMING_VIDEO_ROOM"
                         putExtra("rs_video_room_id",id)
-                        this.flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     }
-                    runCatching{startActivity(open)}
+                    if(!hasMic || !hasCamera){
+                        stopRinging()
+                        getSystemService(NotificationManager::class.java).cancel(id.hashCode())
+                        runCatching{startActivity(open)}
+                    }else{
+                        rsSetVideoRoomStatusV136(id,"JOINED")
+                            .onSuccess{
+                                stopRinging()
+                                getSystemService(NotificationManager::class.java).cancel(id.hashCode())
+                                runCatching{startActivity(open)}
+                            }
+                    }
                 }
                 return START_STICKY
             }
@@ -299,7 +339,12 @@ class RsCallMonitorServiceV134:Service(){
         )
         if(MainActivity.isAlive){
             val broughtForward=runCatching{
-                startActivity(fullIntent)
+                startActivity(
+                    Intent(this,MainActivity::class.java).apply{
+                        action="com.rskickbox.app.BRING_RS_CALL"
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    }
+                )
                 true
             }.getOrDefault(false)
             if(broughtForward)return
@@ -307,6 +352,10 @@ class RsCallMonitorServiceV134:Service(){
         val answerIntent=Intent(this,RsCallMonitorServiceV134::class.java).apply{
             action=ACTION_ACCEPT_CALL
             putExtra("call_id",call.id)
+            putExtra("call_type",call.callType)
+            putExtra("caller_id",call.peerId.ifBlank{call.callerId})
+            putExtra("caller_name",call.peerName)
+            putExtra("caller_email",call.peerEmail)
         }
         val declineIntent=Intent(this,RsCallMonitorServiceV134::class.java).apply{
             action=ACTION_DECLINE_CALL
@@ -337,7 +386,6 @@ class RsCallMonitorServiceV134:Service(){
             .setOnlyAlertOnce(true)
             .setVibrate(longArrayOf(0,700,350,700,350,900))
             .setContentIntent(fullPending)
-            .setFullScreenIntent(fullPending,true)
             .setStyle(
                 NotificationCompat.CallStyle.forIncomingCall(
                     person,
@@ -363,7 +411,12 @@ class RsCallMonitorServiceV134:Service(){
         )
         if(MainActivity.isAlive){
             val broughtForward=runCatching{
-                startActivity(fullIntent)
+                startActivity(
+                    Intent(this,MainActivity::class.java).apply{
+                        action="com.rskickbox.app.BRING_RS_CALL"
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    }
+                )
                 true
             }.getOrDefault(false)
             if(broughtForward)return
