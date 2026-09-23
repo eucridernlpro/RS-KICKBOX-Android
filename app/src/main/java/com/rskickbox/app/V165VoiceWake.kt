@@ -381,9 +381,15 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         SpeechRecognizer.ERROR_RECOGNIZER_BUSY->"ERROR_BUSY"
                         SpeechRecognizer.ERROR_SERVER->"ERROR_SERVER"
                         SpeechRecognizer.ERROR_SPEECH_TIMEOUT->"NO_SPEECH"
+                        SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED->"LANGUAGE_NOT_SUPPORTED"
+                        SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE->"LANGUAGE_UNAVAILABLE"
                         else->"ERROR_"+error
                     }
                     setWakeStatusV168(label)
+                    // Unsupported or unavailable recognition languages cannot be fixed
+                    // by retrying; that would create an endless microphone/beep loop.
+                    if(error==SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE ||
+                        error==SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED)return
                     scope.launch{
                         if(
                             error==SpeechRecognizer.ERROR_CLIENT ||
@@ -396,9 +402,9 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         delay(
                             when(error){
                                 SpeechRecognizer.ERROR_NO_MATCH,
-                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT->350
-                                SpeechRecognizer.ERROR_RECOGNIZER_BUSY->900
-                                else->1200
+                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT->1800
+                                SpeechRecognizer.ERROR_RECOGNIZER_BUSY->2500
+                                else->3000
                             }
                         )
                         startListening()
