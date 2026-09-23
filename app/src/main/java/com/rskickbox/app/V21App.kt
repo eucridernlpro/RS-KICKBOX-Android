@@ -527,6 +527,10 @@ fun RsKickboxV21App(
                                     lang=lang,
                                     role=active,
                                     initialRoute=route,
+                                    onNavigate={target->
+                                        store.pb("ai_immersive_v171",false)
+                                        route=target
+                                    },
                                     onBack={route=if(active==RsRole.TRAINER)"trainer" else "home"}
                                 )
                             }else ShellV21(c, store, active, lang, route, { selected -> store.pb("lang_manual_override_v111",true);lang=selected;store.ps("lang",selected.code) }, { route=it }, {
@@ -890,9 +894,18 @@ private fun LoginV21(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().navigationBarsPadding().padding(16.dp),
         verticalArrangement=Arrangement.spacedBy(14.dp)
     ) {
-        val mainLogo=store.s("brand_asset_main_logo","")
-        if(mainLogo.isNotBlank())RsUriPreviewV21(mainLogo,Modifier.fillMaxWidth().height(120.dp),"CENTER")
-        RsLettersLogoV111(c,store,Modifier.fillMaxWidth())
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment=Alignment.CenterVertically,
+            horizontalArrangement=Arrangement.spacedBy(10.dp)
+        ){
+            Image(
+                painter=androidx.compose.ui.res.painterResource(R.drawable.rs_launcher_royal_v129),
+                contentDescription="RS",
+                modifier=Modifier.size(52.dp)
+            )
+            RsLettersLogoV111(c,store,Modifier.weight(1f))
+        }
         Text(store.s("brand_login_title","Premium cinematic kickboxing"),color=Color.White,style=MaterialTheme.typography.headlineMedium)
         Text(store.s("brand_login_subtitle","TRAIN · LEARN · CONNECT · GROW"),color=Color.White.copy(alpha=.78f),fontSize=11.sp)
 
@@ -1345,6 +1358,7 @@ private fun ShellV21(
                     OutlinedButton(
                         onClick={
                             store.pb("ai_start_listening_v168",true)
+                            store.pb("ai_immersive_v171",true)
                             onRoute("voice")
                         },
                         modifier=Modifier.size(38.dp),
