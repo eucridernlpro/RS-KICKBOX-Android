@@ -129,6 +129,10 @@ private fun DefaultTileArtworkV21(c:RsPalette,kind:String){
 }
 
 private fun sectionTitleV25(lang:RsLang,title:String)=when(title){
+    "Quick Access"->when(lang.code){
+        "nl"->"Snelle Toegang";"pt"->"Acesso Rápido";"es"->"Acceso Rápido";"fr"->"Accès Rapide";
+        "de"->"Schnellzugriff";"it"->"Accesso Rapido";"pl"->"Szybki Dostęp";"tr"->"Hızlı Erişim";else->"Quick Access"
+    }
     "Core Training"->rsT(lang,"core_training")
     "Club & Coaching"->rsT(lang,"club_coaching")
     "Performance"->rsT(lang,"performance")
@@ -228,11 +232,14 @@ private fun rsDashboardBadgeCountV55(store:RsStore,role:RsRole,route:String):Int
 private fun glyphV21(kind:String)=when(kind){"ai"->"AI";"music"->"♫";"payment"->"€";"progress"->"↗";"fight"->"FX";"training"->"TR";"technique"->"TK";"settings"->"⚙";"brand"->"♛";else->"RS"}
 
 private fun studentV21()=listOf(
+    SectionV21("Quick Access",listOf(
+        DashV21("coachchat","RS Chat","Private · groups · calls · media · RS AI","ai"),
+        DashV21("music","My RS Music","Full player · playlists · background audio · AI control","music")
+    )),
     SectionV21("Student Help",listOf(
         DashV21("student_guide","App Guide","Learn every available feature step by step","brand")
     )),
     SectionV21("Core Training",listOf(
-        DashV21("music","My RS Music","Full player · playlists · background audio · AI control","music"),
         DashV21("session","Session Player","Rounds · timer · trainer cues","training"),
         DashV21("academy","RS Academy","Structured premium lessons","training"),
         DashV21("techniques","Technique Library","Moves · drills · details","technique"),
@@ -241,7 +248,6 @@ private fun studentV21()=listOf(
     SectionV21("Club & Coaching",listOf(
         DashV21("classes","Classes & Training","Book club training","training"),
         DashV21("events","Club Events & Seminars","Special events · seminars","brand"),
-        DashV21("coachchat","RS Chat","Private · groups · voice · AI coach · media","ai"),
         DashV21("community","Community","Club feed · connection","brand"),
         DashV21("private_lessons","Private Lessons","1-to-1 coaching","training")
     )),
@@ -271,6 +277,9 @@ private fun studentV21()=listOf(
 )
 
 private fun trainerV21()=listOf(
+    SectionV21("Quick Access",listOf(
+        DashV21("music_admin","RS Music Manager","Full player · playlists · background audio · AI control","music")
+    )),
     SectionV21("Trainer Help",listOf(
         DashV21("guide","App Guide","Examples · workflows · how every section works","brand")
     )),
@@ -287,7 +296,6 @@ private fun trainerV21()=listOf(
         DashV21("content","AI Content Manager","AI coach · trainer references · training knowledge","ai"),
         DashV21("homework_admin","Homework Manager","Assign · review","training"),
         DashV21("session_builder","Session Builder","Create active training sessions","training"),
-        DashV21("music_admin","RS Music Manager","Persistent background player","music"),
         DashV21("notes","Coach Notes","Private observations","brand")
     )),
     SectionV21("Members & Access",listOf(
