@@ -44,11 +44,22 @@ class RsQuietVoiceControllerV171(
                             onIdle()
                         }
                         SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS->onStatus("Microphone permission required.")
+                        SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED,
+                        SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE->{
+                            destroyRecognizer()
+                            onStatus("Selected voice language is not installed on this device.")
+                        }
                         SpeechRecognizer.ERROR_RECOGNIZER_BUSY->{
                             destroyRecognizer()
-                            onStatus("Microphone was busy. Try again.")
+                            onStatus("Microphone was busy. Reconnecting…")
+                            onIdle()
                         }
-                        else->onStatus("Voice input unavailable. Error "+error)
+                        SpeechRecognizer.ERROR_NETWORK,
+                        SpeechRecognizer.ERROR_NETWORK_TIMEOUT->{
+                            onStatus("Voice connection interrupted. Reconnecting…")
+                            onIdle()
+                        }
+                        else->onStatus("Voice input is temporarily unavailable.")
                     }
                 }
                 override fun onResults(results:Bundle?){
@@ -59,7 +70,7 @@ class RsQuietVoiceControllerV171(
                         .orEmpty()
                         .trim()
                     onStatus("")
-                    if(text.isNotBlank())onResult(text)
+                    if(text.isNotBlank())onResult(text) else onIdle()
                 }
                 override fun onPartialResults(partialResults:Bundle?){}
                 override fun onEvent(eventType:Int,params:Bundle?){}
@@ -80,9 +91,11 @@ class RsQuietVoiceControllerV171(
         val intent=android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE,locale.toLanguageTag())
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false)
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,true)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,300L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,850L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,600L)
         }
         runCatching{recognizer?.startListening(intent)}
             .onFailure{
