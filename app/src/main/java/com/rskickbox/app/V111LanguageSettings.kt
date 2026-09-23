@@ -1,6 +1,9 @@
 package com.rskickbox.app
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -122,32 +125,59 @@ fun RsThemeHeaderMarkV176(
     val theme=rsStoredThemeV175(store)
     val layout=rsThemeLayoutV175(theme)
     val radius=when(layout.mode){
-        "FIGHT_STRIP"->10.dp
-        "TECH_COMPACT"->8.dp
-        "HOLO_CARDS"->18.dp
-        "PERFORMANCE_STACK"->14.dp
-        else->16.dp
+        "FIGHT_STRIP"->8.dp
+        "TECH_COMPACT"->5.dp
+        "HOLO_CARDS"->20.dp
+        "PERFORMANCE_STACK"->13.dp
+        else->17.dp
     }
-    Surface(
-        color=c.panel2,
-        shape=RoundedCornerShape(radius),
-        border=androidx.compose.foundation.BorderStroke(
-            if(layout.strongLines)2.dp else 1.dp,
-            c.bright.copy(alpha=.78f)
-        ),
-        tonalElevation=10.dp,
-        modifier=modifier
+    val markBrush=when(theme){
+        RsTheme.ELITE_GOLD->Brush.linearGradient(listOf(c.gold.copy(.92f),c.panel2,c.bright.copy(.35f)))
+        RsTheme.CRIMSON_FIGHT_NIGHT->Brush.linearGradient(listOf(Color(0xFF36040B),c.gold,Color.Black))
+        RsTheme.PLATINUM_PRO->Brush.linearGradient(listOf(Color(0xFFEEF4F8),c.panel2,Color(0xFF758A99)))
+        RsTheme.EMERALD_PERFORMANCE->Brush.linearGradient(listOf(Color(0xFF061A10),c.gold.copy(.90f),Color.Black))
+        RsTheme.ROYAL_SAPPHIRE->Brush.linearGradient(listOf(Color(0xFF03152F),c.gold,Color(0xFF08111E)))
+        RsTheme.PURPLE_LEGACY->Brush.linearGradient(listOf(Color(0xFF20052D),c.gold,Color.Black))
+        RsTheme.ICE_TITANIUM->Brush.linearGradient(listOf(Color(0xFFE7FCFF),c.gold.copy(.78f),Color(0xFF0A1820)))
+        RsTheme.INFERNO_NEON->Brush.linearGradient(listOf(Color(0xFF2C0700),c.gold,Color(0xFF080100)))
+    }
+    val rsColor=when(theme){
+        RsTheme.PLATINUM_PRO,RsTheme.ICE_TITANIUM->Color.Black
+        else->c.bright
+    }
+    Box(
+        modifier.clip(RoundedCornerShape(radius))
+            .background(markBrush)
+            .then(
+                Modifier
+            ),
+        contentAlignment=Alignment.Center
     ){
         Box(
-            Modifier.fillMaxSize(),
-            contentAlignment=Alignment.Center
-        ){
+            Modifier.matchParentSize()
+                .clip(RoundedCornerShape(radius))
+                .background(Color.Black.copy(alpha=if(theme in setOf(RsTheme.PLATINUM_PRO,RsTheme.ICE_TITANIUM)).08f else .18f))
+        )
+        Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy((-2).dp)){
             Text(
                 "RS",
-                color=c.bright,
+                color=rsColor,
                 fontWeight=FontWeight.Black,
-                fontSize=17.sp,
-                letterSpacing=.6.sp
+                fontSize=18.sp,
+                letterSpacing=.8.sp
+            )
+            Text(
+                when(layout.mode){
+                    "FIGHT_STRIP"->"FIGHT"
+                    "TECH_COMPACT"->"PRO"
+                    "HOLO_CARDS"->"ROYAL"
+                    "PERFORMANCE_STACK"->"PERF"
+                    else->"ELITE"
+                },
+                color=rsColor.copy(alpha=.82f),
+                fontWeight=FontWeight.Bold,
+                fontSize=5.sp,
+                letterSpacing=.7.sp
             )
         }
     }
@@ -157,36 +187,63 @@ fun RsThemeHeaderMarkV176(
 fun RsLettersLogoV111(c:RsPalette,store:RsStore,modifier:Modifier=Modifier){
     val raw=rsVisibleBrandNameV111(store).uppercase(Locale.ROOT)
     val standard=raw=="RS KICKBOXING"
+    val theme=rsStoredThemeV175(store)
+    val primary=when(theme){
+        RsTheme.CRIMSON_FIGHT_NIGHT->c.bright
+        RsTheme.PLATINUM_PRO->Color.White
+        RsTheme.EMERALD_PERFORMANCE->c.bright
+        RsTheme.ROYAL_SAPPHIRE->c.bright
+        RsTheme.PURPLE_LEGACY->c.bright
+        RsTheme.ICE_TITANIUM->c.bright
+        RsTheme.INFERNO_NEON->c.bright
+        else->c.gold
+    }
     if(standard){
-        Column(modifier,verticalArrangement=Arrangement.spacedBy(0.dp)){
-            Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)){
+        BoxWithConstraints(modifier){
+            val compact=maxWidth<110.dp
+            Column(
+                Modifier.fillMaxWidth(),
+                verticalArrangement=Arrangement.spacedBy((-1).dp)
+            ){
                 Text(
                     "RS",
-                    color=c.gold,
+                    color=primary,
                     fontWeight=FontWeight.Black,
-                    fontSize=11.sp,
-                    letterSpacing=1.2.sp
+                    fontSize=if(compact)9.sp else 10.sp,
+                    letterSpacing=1.4.sp,
+                    maxLines=1
                 )
                 Text(
                     "KICKBOXING",
                     color=c.bright,
                     fontWeight=FontWeight.Black,
-                    fontSize=16.sp,
-                    letterSpacing=1.1.sp,
-                    maxLines=1
+                    fontSize=if(compact)11.sp else 14.sp,
+                    letterSpacing=if(compact).45.sp else .9.sp,
+                    maxLines=1,
+                    overflow=TextOverflow.Clip
                 )
             }
         }
     }else{
-        Text(
-            text=raw.ifBlank{"RS KICKBOXING"},
-            color=c.bright,
-            fontWeight=FontWeight.Black,
-            fontSize=17.sp,
-            letterSpacing=1.0.sp,
-            maxLines=1,
-            overflow=TextOverflow.Ellipsis,
-            modifier=modifier
-        )
+        Column(modifier,verticalArrangement=Arrangement.spacedBy((-1).dp)){
+            Text(
+                text=raw.ifBlank{"RS"},
+                color=primary,
+                fontWeight=FontWeight.Black,
+                fontSize=13.sp,
+                letterSpacing=.7.sp,
+                maxLines=1,
+                overflow=TextOverflow.Ellipsis
+            )
+            Text(
+                text="KICKBOXING",
+                color=c.bright,
+                fontWeight=FontWeight.Black,
+                fontSize=9.sp,
+                letterSpacing=.7.sp,
+                maxLines=1
+            )
+        }
     }
 }
+
