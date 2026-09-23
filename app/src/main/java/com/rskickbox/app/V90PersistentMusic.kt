@@ -4,22 +4,29 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.media.MediaMetadataRetriever
+import android.graphics.BitmapFactory
 import android.provider.OpenableColumns
 import org.json.JSONArray
 import org.json.JSONObject
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.animation.core.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,6 +41,9 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionToken
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlin.math.sin
 
 class RsMusicPlaybackServiceV90 : MediaSessionService() {
     private var mediaSession:MediaSession?=null
@@ -237,6 +247,52 @@ fun rsAddMusicTrackToPlaylistV169(
 }
 
 
+private fun rsEmbeddedArtworkV175(context:Context,uri:String):androidx.compose.ui.graphics.ImageBitmap?{
+    if(uri.isBlank())return null
+    return runCatching{
+        val retriever=MediaMetadataRetriever()
+        try{
+            retriever.setDataSource(context,Uri.parse(uri))
+            val bytes=retriever.embeddedPicture?:return@runCatching null
+            BitmapFactory.decodeByteArray(bytes,0,bytes.size)?.asImageBitmap()
+        }finally{
+            runCatching{retriever.release()}
+        }
+    }.getOrNull()
+}
+
+@Composable
+private fun RsMusicVisualizerV175(c:RsPalette,playing:Boolean){
+    val transition=rememberInfiniteTransition(label="rs-music-viz")
+    val phase by transition.animateFloat(
+        initialValue=0f,
+        targetValue=6.28318f,
+        animationSpec=infiniteRepeatable(
+            animation=tween(durationMillis=1100,easing=LinearEasing),
+            repeatMode=RepeatMode.Restart
+        ),
+        label="music-phase"
+    )
+    Canvas(Modifier.fillMaxWidth().height(56.dp)){
+        val bars=24
+        val gap=size.width/(bars*2f)
+        val barW=(size.width-gap*(bars+1))/bars
+        repeat(bars){i->
+            val base=if(playing){
+                .22f+.72f*((sin(phase+i*.72f)+1f)/2f)
+            }else .16f+.08f*((i%4)/3f)
+            val h=size.height*base
+            val left=gap+i*(barW+gap)
+            drawRoundRect(
+                color=if(i%3==0)c.bright.copy(alpha=.92f) else c.gold.copy(alpha=.72f),
+                topLeft=androidx.compose.ui.geometry.Offset(left,(size.height-h)/2f),
+                size=androidx.compose.ui.geometry.Size(barW.coerceAtLeast(2f),h),
+                cornerRadius=androidx.compose.ui.geometry.CornerRadius(barW/2f,barW/2f)
+            )
+        }
+    }
+}
+
 @Composable
 fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang){
     val context=LocalContext.current
@@ -333,6 +389,15 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
         }.onFailure{feedback=rsMusicBgT90(lang,"player_error")}
     }
 
+    val currentUri=controller?.currentMediaItem?.localConfiguration?.uri?.toString()
+        ?: visibleTracks.getOrNull(index.coerceAtLeast(0))?.uri.orEmpty()
+    var albumArtwork by remember{mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)}
+    LaunchedEffect(currentUri){
+        albumArtwork=if(currentUri.isBlank())null else withContext(Dispatchers.IO){
+            rsEmbeddedArtworkV175(context,currentUri)
+        }
+    }
+
     RsScroll(
         c,
         if(role==RsRole.TRAINER)rsMusicT(lang,"trainer_title") else rsMusicT(lang,"student_title"),
@@ -353,15 +418,49 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
                 verticalArrangement=Arrangement.spacedBy(12.dp)
             ){
                 Surface(
-                    shape=CircleShape,
+                    shape=RoundedCornerShape(28.dp),
                     color=Color.Black,
-                    border=androidx.compose.foundation.BorderStroke(3.dp,c.gold.copy(alpha=.72f)),
-                    modifier=Modifier.size(128.dp)
+                    border=androidx.compose.foundation.BorderStroke(2.dp,c.gold.copy(alpha=.72f)),
+                    modifier=Modifier.fillMaxWidth().height(220.dp)
                 ){
-                    Box(contentAlignment=Alignment.Center){
-                        Text("♫",color=c.bright,fontSize=48.sp,fontWeight=FontWeight.Black)
+                    Box(Modifier.fillMaxSize()){
+                        if(albumArtwork!=null){
+                            Image(
+                                bitmap=albumArtwork!!,
+                                contentDescription="Album artwork",
+                                contentScale=ContentScale.Crop,
+                                modifier=Modifier.fillMaxSize()
+                            )
+                            Box(
+                                Modifier.matchParentSize().background(
+                                    Brush.verticalGradient(
+                                        listOf(Color.Transparent,Color.Black.copy(alpha=.18f),Color.Black.copy(alpha=.74f))
+                                    )
+                                )
+                            )
+                        }else{
+                            Box(
+                                Modifier.fillMaxSize().background(
+                                    Brush.radialGradient(
+                                        listOf(c.gold.copy(alpha=.28f),Color(0xFF121212),Color.Black)
+                                    )
+                                ),
+                                contentAlignment=Alignment.Center
+                            ){
+                                Text("RS ♫",color=c.bright,fontSize=54.sp,fontWeight=FontWeight.Black)
+                            }
+                        }
+                        Surface(
+                            shape=RoundedCornerShape(14.dp),
+                            color=Color.Black.copy(alpha=.62f),
+                            border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.38f)),
+                            modifier=Modifier.align(Alignment.TopStart).padding(12.dp)
+                        ){
+                            Text("ROYAL SOUND",color=c.bright,fontSize=8.sp,fontWeight=FontWeight.Black,modifier=Modifier.padding(horizontal=10.dp,vertical=6.dp))
+                        }
                     }
                 }
+                RsMusicVisualizerV175(c,playing)
                 Text("RS MUSIC",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp,letterSpacing=1.5.sp)
                 val liveTitle=controller?.currentMediaItem?.mediaMetadata?.title?.toString().orEmpty()
                 Text(
@@ -536,39 +635,6 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
         }else{
             val safeList=visibleTracks.ifEmpty{tracks}
             val safeIndex=index.coerceIn(0,safeList.lastIndex)
-            val current=safeList[safeIndex]
-            RsPanel(c){
-                Text(rsMusicBgT90(lang,"now_playing"),color=c.muted,fontSize=9.sp,fontWeight=FontWeight.Bold)
-                Text(current.name,color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp,maxLines=2,overflow=TextOverflow.Ellipsis)
-                Slider(
-                    value=if(duration>0)position.toFloat()/duration else 0f,
-                    onValueChange={fraction->
-                        runCatching{controller?.seekTo((duration*fraction).toLong())}
-                    },
-                    modifier=Modifier.fillMaxWidth()
-                )
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=Alignment.CenterVertically){
-                    FilledTonalButton(onClick={runCatching{controller?.seekToPreviousMediaItem()}}){Text("⏮")}
-                    Button(onClick={
-                        val p=controller?:return@Button
-                        runCatching{
-                            if(p.mediaItemCount==0)playTrack(safeIndex)
-                            else if(p.isPlaying)p.pause() else p.play()
-                        }.onFailure{feedback=rsMusicBgT90(lang,"player_error")}
-                    }){Text(if(playing)"⏸ "+rsMusicT(lang,"pause") else "▶ "+rsMusicT(lang,"play"))}
-                    FilledTonalButton(onClick={runCatching{controller?.seekToNextMediaItem()}}){Text("⏭")}
-                }
-                OutlinedButton(
-                    onClick={
-                        runCatching{
-                            controller?.stop()
-                            controller?.clearMediaItems()
-                        }
-                    },
-                    modifier=Modifier.fillMaxWidth()
-                ){Text(rsMusicBgT90(lang,"stop_close"))}
-            }
-
             Text(rsMusicT(lang,"playlist"),color=c.bright,fontWeight=FontWeight.Black)
             visibleTracks.forEachIndexed{i,track->
                 RsPanel(c){
