@@ -135,7 +135,7 @@ class RsCallMonitorServiceV134:Service(){
                         getSystemService(NotificationManager::class.java).cancel(id.hashCode())
                         runCatching{startActivity(open)}
                     }else{
-                        rsSetCallStatusV131(id,"ACCEPTED")
+                        rsSetCallStatusReliableV173(id,"ACCEPTED")
                             .onSuccess{
                                 stopRinging()
                                 getSystemService(NotificationManager::class.java).cancel(id.hashCode())
@@ -148,7 +148,7 @@ class RsCallMonitorServiceV134:Service(){
             ACTION_DECLINE_CALL->{
                 val id=intent.getStringExtra("call_id").orEmpty()
                 if(id.isNotBlank())scope.launch{
-                    rsSetCallStatusV131(id,"DECLINED")
+                    rsSetCallStatusReliableV173(id,"DECLINED")
                         .onSuccess{
                             stopRinging()
                             getSystemService(NotificationManager::class.java).cancel(id.hashCode())
