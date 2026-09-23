@@ -280,6 +280,10 @@ class RsCallMonitorServiceV134:Service(){
     }
 
     private fun showIncomingCall(call:RsCallV131){
+        // When RS is already visible, the in-app full-screen call host is the
+        // single source of answer/decline controls. Android call actions are
+        // reserved for background/minimized state.
+        if(MainActivity.isForeground)return
         val fullIntent=Intent(this,MainActivity::class.java).apply{
             action="com.rskickbox.app.INCOMING_CALL"
             putExtra("rs_incoming_call_id",call.id)
