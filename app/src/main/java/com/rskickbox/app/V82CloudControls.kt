@@ -111,7 +111,7 @@ fun rsStudentRouteEnabledV82(store:RsStore,route:String):Boolean{
     // switched off without changing the route architecture.
     if(store.b("student_full_access_test_v142",true))return true
 
-    if(route in setOf("home","student_guide","profile","settings","support"))return true
+    if(route in setOf("home","student_guide","profile","settings","support","music"))return true
     if(route in rsDisabledStudentRoutesV82(store))return false
     return when(route){
         "private_lessons"->rsOpsEnabledV56(store,RsOpsKeysV56.PRIVATE_LESSONS,true)
