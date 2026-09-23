@@ -351,12 +351,12 @@ fun RsFloatingGlassChatHubV125(
     Box(
         Modifier.fillMaxSize()
             .background(Color.Black)
-            .pointerInput(slideMenuOpen){
+            .pointerInput(slideMenuOpen,swipeMenuEnabled){
                 detectHorizontalDragGestures(
                     onDragStart={offset->
                         hubSwipe=0f
                         hubSwipeStartX=offset.x
-                        hubSwipeActive=swipeMenuEnabled && !slideMenuOpen && offset.x<90f
+                        hubSwipeActive=swipeMenuEnabled
                     },
                     onHorizontalDrag={change,amount->
                         if(hubSwipeActive){
@@ -365,7 +365,21 @@ fun RsFloatingGlassChatHubV125(
                         }
                     },
                     onDragEnd={
-                        if(hubSwipeActive && hubSwipe>85f)slideMenuOpen=true
+                        if(hubSwipeActive){
+                            when{
+                                // Menu open: swipe right -> left closes it.
+                                slideMenuOpen && hubSwipe < -85f -> slideMenuOpen=false
+                                // Menu closed: swipe left -> right opens RS Chat menu.
+                                !slideMenuOpen && hubSwipe > 85f -> slideMenuOpen=true
+                                // Menu closed: swipe right -> left exits RS Chat to dashboard.
+                                !slideMenuOpen && hubSwipe < -110f -> {
+                                    privateStudentId=null
+                                    store.pb("ai_immersive_v171",false)
+                                    aiImmersive=false
+                                    onBack()
+                                }
+                            }
+                        }
                         hubSwipe=0f
                         hubSwipeStartX=Float.MAX_VALUE
                         hubSwipeActive=false
