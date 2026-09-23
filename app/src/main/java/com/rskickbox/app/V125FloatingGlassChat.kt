@@ -267,8 +267,10 @@ fun RsFloatingGlassChatHubV125(
             confirmClearChat->confirmClearChat=false
             slideMenuOpen->slideMenuOpen=false
             tab==RsChatHubTabV125.PRIVATE->{
-                tab=RsChatHubTabV125.ALL
+                // Release the selected thread/call peer before switching the
+                // visible tab so media/call effects are disposed in a stable order.
                 privateStudentId=null
+                tab=RsChatHubTabV125.ALL
             }
             tab!=RsChatHubTabV125.ALL->tab=RsChatHubTabV125.ALL
             else->onBack()
