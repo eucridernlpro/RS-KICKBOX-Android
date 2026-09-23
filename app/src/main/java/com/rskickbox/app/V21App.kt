@@ -1215,6 +1215,8 @@ private fun ShellV21(
 
     val rawDrawerItems=if(role==RsRole.TRAINER) listOf(
         "trainer" to "Trainer Dashboard",
+        "coachchat" to "RS Chat",
+        "music_admin" to "RS Music Manager",
         "guide" to "App Guide",
         "members" to "Student Manager",
         "access" to "Access & Subscriptions",
@@ -1239,13 +1241,14 @@ private fun ShellV21(
         "community" to "Community Moderation",
         "landing_admin" to "Promotion Manager",
         "book" to "Book Manager",
-        "coachchat" to "RS Chat",
         "schedule" to "Trainer Schedule",
         "release" to "Release & Legal Center",
         "privacy_admin" to "Privacy Requests",
         "settings" to "App Settings"
     ) else listOf(
         "home" to "RS Live Dashboard",
+        "coachchat" to "RS Chat",
+        "music" to "My RS Music",
         "session" to "Session Player",
         "academy" to "RS Academy",
         "techniques" to "Technique Library",
@@ -1261,7 +1264,6 @@ private fun ShellV21(
         "community" to "Community",
         "vault" to "Knowledge Vault",
 
-        "music" to "My RS Music",
         "finance" to "Membership & Payments",
         "promotions" to "Promotions",
         "book" to "Trainer Book",
@@ -1269,7 +1271,6 @@ private fun ShellV21(
         "documents" to "Club Documents",
         "support" to "Support",
         "referrals" to "Referrals",
-        "coachchat" to "RS Chat",
         "private_lessons" to "Private Lessons",
         "profile" to "My Profile",
         "settings" to "Settings & Privacy"
