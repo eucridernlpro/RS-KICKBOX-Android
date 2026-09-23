@@ -155,6 +155,74 @@ private fun rsMediaItemsV90(tracks:List<RsPersistentTrackV90>)=tracks.map{track-
         .build()
 }
 
+fun rsPrepareMusicTrackV169(
+    context:Context,
+    uri:Uri,
+    fallbackName:String="RS Music"
+):Result<RsPersistentTrackV90> = runCatching{
+    runCatching{
+        context.contentResolver.takePersistableUriPermission(
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
+        )
+    }
+    val name=rsTrackDisplayNameV90(context,uri,fallbackName)
+    RsPersistentTrackV90(uri.toString(),name)
+}
+
+fun rsSaveMusicTrackV169(
+    store:RsStore,
+    track:RsPersistentTrackV90
+):Result<Unit> = runCatching{
+    val current=rsPersistentTracksV90(store).toMutableList()
+    if(current.none{it.uri==track.uri})current.add(track)
+    rsSavePersistentTracksV90(store,current)
+}
+
+fun rsPlayMusicTrackV169(
+    controller:MediaController?,
+    track:RsPersistentTrackV90
+):Result<Unit> = runCatching{
+    val p=controller?:error("RS Music player is not ready yet.")
+    val item=MediaItem.Builder()
+        .setUri(track.uri)
+        .setMediaMetadata(
+            MediaMetadata.Builder()
+                .setTitle(track.name)
+                .setArtist("RS KICKBOXING")
+                .build()
+        )
+        .build()
+    p.setMediaItem(item)
+    p.prepare()
+    p.play()
+}
+
+fun rsMusicPlaylistNamesV169(store:RsStore):List<String> =
+    rsLoadNamedPlaylistsV108(store).map{it.name}
+
+fun rsAddMusicTrackToPlaylistV169(
+    store:RsStore,
+    playlistName:String,
+    track:RsPersistentTrackV90
+):Result<Unit> = runCatching{
+    val clean=playlistName.trim().take(60)
+    require(clean.isNotBlank()){"Playlist name is required."}
+    rsSaveMusicTrackV169(store,track).getOrThrow()
+
+    val current=rsLoadNamedPlaylistsV108(store).toMutableList()
+    val index=current.indexOfFirst{it.name.equals(clean,true)}
+    if(index>=0){
+        val old=current[index]
+        current[index]=old.copy(uris=old.uris+track.uri)
+    }else{
+        current.add(RsNamedPlaylistV108(clean,setOf(track.uri)))
+    }
+    rsSaveNamedPlaylistsV108(store,current)
+    store.ps("music_active_playlist_v108",clean)
+}
+
+
 @Composable
 fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang){
     val context=LocalContext.current
