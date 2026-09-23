@@ -454,7 +454,6 @@ class RsCallMonitorServiceV134:Service(){
             .setSilent(true)
             .setVibrate(longArrayOf(0,700,350,700,350,900))
             .setContentIntent(fullPending)
-            .setFullScreenIntent(fullPending,true)
             .setStyle(
                 NotificationCompat.CallStyle.forIncomingCall(
                     person,
