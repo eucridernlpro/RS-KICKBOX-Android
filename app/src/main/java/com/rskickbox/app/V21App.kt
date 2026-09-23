@@ -1215,9 +1215,9 @@ private fun ShellV21(
 
     val rawDrawerItems=if(role==RsRole.TRAINER) listOf(
         "trainer" to "Trainer Dashboard",
+        "guide" to "App Guide",
         "coachchat" to "RS Chat",
         "music_admin" to "RS Music Manager",
-        "guide" to "App Guide",
         "members" to "Student Manager",
         "access" to "Access & Subscriptions",
         "plans_admin" to "Membership Plans",
@@ -1247,6 +1247,7 @@ private fun ShellV21(
         "settings" to "App Settings"
     ) else listOf(
         "home" to "RS Live Dashboard",
+        "student_guide" to "App Guide",
         "coachchat" to "RS Chat",
         "music" to "My RS Music",
         "session" to "Session Player",
@@ -1275,7 +1276,9 @@ private fun ShellV21(
         "profile" to "My Profile",
         "settings" to "Settings & Privacy"
     )
-    val drawerItems=if(role==RsRole.STUDENT)rawDrawerItems.filter{(target,_)->rsStudentRouteEnabledV82(store,target)} else rawDrawerItems
+    val drawerItems=if(role==RsRole.STUDENT)rawDrawerItems.filter{(target,_)->
+        target in setOf("home","student_guide","coachchat","music") || rsStudentRouteEnabledV82(store,target)
+    } else rawDrawerItems
 
     ModalNavigationDrawer(
         drawerState=drawerState,
