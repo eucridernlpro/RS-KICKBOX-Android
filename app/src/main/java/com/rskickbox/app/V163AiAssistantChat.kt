@@ -143,6 +143,8 @@ fun RsAiAssistantChatV163(
     var optionsMenu by remember{mutableStateOf(false)}
     var trainerReferences by remember{mutableStateOf(false)}
     var autoSpeak by remember{mutableStateOf(store.b("ai_auto_speak_v163",true))}
+    var avatarMotionEnabled by remember{mutableStateOf(store.b("ai_avatar_motion_v163",true))}
+    var avatarRenderMode by remember{mutableStateOf(store.s("ai_avatar_render_mode_v176","CINEMATIC_3D"))}
     var status by remember{mutableStateOf("")}
     var aiMessageMenuId by remember{mutableStateOf<Long?>(null)}
     val musicController=rememberRsMusicControllerV90()
@@ -622,6 +624,8 @@ fun RsAiAssistantChatV163(
             store=store,
             avatar=avatar,
             speaking=speaking,
+            avatarMotion=avatarMotionEnabled,
+            renderMode=avatarRenderMode,
             language=selectedLang,
             onAvatarChange={
                 avatar=it
@@ -885,6 +889,37 @@ fun RsAiAssistantChatV163(
                             store.pb("ai_auto_speak_v163",it)
                         })
                     }
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                        Column(Modifier.weight(1f)){
+                            Text("Natural avatar motion",color=c.text,fontSize=10.sp)
+                            Text("Breathing · depth · floating movement",color=c.muted,fontSize=8.sp)
+                        }
+                        Switch(avatarMotionEnabled,{
+                            avatarMotionEnabled=it
+                            store.pb("ai_avatar_motion_v163",it)
+                        })
+                    }
+                    Text("VIRTUAL ASSISTANT RENDER",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black)
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                        FilterChip(
+                            selected=avatarRenderMode=="CINEMATIC_3D",
+                            onClick={
+                                avatarRenderMode="CINEMATIC_3D"
+                                store.ps("ai_avatar_render_mode_v176","CINEMATIC_3D")
+                            },
+                            label={Text("Cinematic 3D",fontSize=8.sp)},
+                            modifier=Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected=avatarRenderMode=="CLEAN",
+                            onClick={
+                                avatarRenderMode="CLEAN"
+                                store.ps("ai_avatar_render_mode_v176","CLEAN")
+                            },
+                            label={Text("Clean",fontSize=8.sp)},
+                            modifier=Modifier.weight(1f)
+                        )
+                    }
                     if(role==RsRole.TRAINER){
                         OutlinedButton(
                             onClick={optionsMenu=false;trainerReferences=true},
@@ -1097,6 +1132,8 @@ private fun RsAiAvatarStageV163(
     store:RsStore,
     avatar:String,
     speaking:Boolean,
+    avatarMotion:Boolean,
+    renderMode:String,
     language:RsLang,
     onAvatarChange:(String)->Unit,
     onLanguageChange:(RsLang)->Unit,
@@ -1109,8 +1146,6 @@ private fun RsAiAvatarStageV163(
     val speakingVisual=if(speaking)rsVisualUriWithBundledFallbackV113(context,store,speakingSlot) else ""
     val visual=if(speakingVisual.isNotBlank())speakingVisual
         else rsVisualUriWithBundledFallbackV113(context,store,idleSlot)
-    val avatarMotion=store.b("ai_avatar_motion_v163",true)
-    val renderMode=store.s("ai_avatar_render_mode_v176","CINEMATIC_3D")
     val themeLayout=rsThemeLayoutV175(rsStoredThemeV175(store))
     val transition=rememberInfiniteTransition(label="ai-stage")
     val breath by transition.animateFloat(
