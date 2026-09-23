@@ -599,8 +599,11 @@ fun RsKickboxV21App(
                                                     selected.name,
                                                     store.s("login_form_opacity","0.82").toFloatOrNull()?:.82f
                                                 ).onSuccess{
-                                                    store.ps("theme_local_override_ms_v170","0")
+                                                    // Keep the confirmed local theme protected.
+                                                    // Cloud sync may confirm the same value later, but
+                                                    // it must never undo a theme the user just applied.
                                                     store.ps("theme",selected.name)
+                                                    store.ps("theme_cloud_confirmed_v176",selected.name)
                                                 }
                                             }
                                         }
