@@ -43,6 +43,7 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
             Text(if(role==RsRole.TRAINER)rsT(lang,"trainer_dashboard") else rsT(lang,"student_dashboard"),color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
             Text("${lang.name} · ${if(role==RsRole.TRAINER)rsT(lang,"trainer_admin") else rsT(lang,"student")} · ${rsT(lang,"premium_experience")}",color=c.muted)
         }
+        RsDashboardCommandCenterV176(c,store,role,lang,onRoute)
         sections.forEach{section->
             Text(sectionTitleV25(lang,section.title).uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=sectionFontV25(sectionTitleV25(lang,section.title)),letterSpacing=.5.sp,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(horizontal=4.dp))
             section.items.chunked(dashboardColumns).forEach{pair->
@@ -53,6 +54,75 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
             }
         }
         Spacer(Modifier.height(30.dp))
+    }
+}
+
+@Composable
+private fun RsDashboardCommandCenterV176(
+    c:RsPalette,
+    store:RsStore,
+    role:RsRole,
+    lang:RsLang,
+    onRoute:(String)->Unit
+){
+    val chat=rsDashboardBadgeCountV55(store,role,"coachchat")
+    val support=rsDashboardBadgeCountV55(store,role,"support")
+    val homework=rsDashboardBadgeCountV55(store,role,if(role==RsRole.TRAINER)"homework_admin" else "homework")
+    val finance=if(role==RsRole.TRAINER)rsDashboardBadgeCountV55(store,role,"invoices") else rsDashboardBadgeCountV55(store,role,"finance")
+    RsPanel(c){
+        Text(
+            if(role==RsRole.TRAINER)"OWNER COMMAND CENTER" else "MY RS TODAY",
+            color=c.bright,
+            fontWeight=FontWeight.Black,
+            fontSize=13.sp,
+            letterSpacing=.6.sp
+        )
+        Text(
+            if(role==RsRole.TRAINER)
+                "Live shortcuts to communication, coaching workload and club operations."
+            else
+                "Quick access to your guide, coach communication, music and current activity.",
+            color=c.muted,
+            fontSize=9.sp
+        )
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+            listOf(
+                Triple("CHAT",chat,"coachchat"),
+                Triple("TASKS",homework,if(role==RsRole.TRAINER)"homework_admin" else "homework"),
+                Triple("SUPPORT",support,"support"),
+                Triple(if(role==RsRole.TRAINER)"INVOICES" else "PAYMENTS",finance,if(role==RsRole.TRAINER)"invoices" else "finance")
+            ).forEach{(label,count,target)->
+                Surface(
+                    color=c.panel2,
+                    shape=MaterialTheme.shapes.medium,
+                    border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.24f)),
+                    modifier=Modifier.weight(1f).clickable{onRoute(target)}
+                ){
+                    Column(
+                        Modifier.padding(horizontal=7.dp,vertical=9.dp),
+                        horizontalAlignment=Alignment.CenterHorizontally,
+                        verticalArrangement=Arrangement.spacedBy(2.dp)
+                    ){
+                        Text(if(count>99)"99+" else count.toString(),color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp)
+                        Text(label,color=c.muted,fontSize=7.sp,fontWeight=FontWeight.Bold,maxLines=1)
+                    }
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+            OutlinedButton(
+                onClick={onRoute(if(role==RsRole.TRAINER)"guide" else "student_guide")},
+                modifier=Modifier.weight(1f)
+            ){Text("APP GUIDE",fontSize=8.sp)}
+            OutlinedButton(
+                onClick={onRoute("coachchat")},
+                modifier=Modifier.weight(1f)
+            ){Text("RS CHAT",fontSize=8.sp)}
+            OutlinedButton(
+                onClick={onRoute(if(role==RsRole.TRAINER)"music_admin" else "music")},
+                modifier=Modifier.weight(1f)
+            ){Text("RS MUSIC",fontSize=8.sp)}
+        }
     }
 }
 
