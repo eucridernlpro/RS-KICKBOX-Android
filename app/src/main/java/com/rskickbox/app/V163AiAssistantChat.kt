@@ -220,6 +220,29 @@ fun RsAiAssistantChatV163(
         pickedUri=null
         pickedKind=null
 
+        val namedTrackRequest=if(
+            kind==null &&
+            listOf("play ","speel ","tocar ","reproducir ","joue ","abspielen ","riproduci ","odtwórz ","çal ")
+                .any{body.lowercase().contains(it)}
+        )rsFindMusicTrackV171(store,body) else null
+
+        if(namedTrackRequest!=null){
+            val reply=rsPlayMusicTrackV169(musicController,namedTrackRequest)
+                .fold(
+                    onSuccess={"Playing "+namedTrackRequest.name+"."},
+                    onFailure={it.message?:"I couldn't start that track."}
+                )
+            messages=(messages+RsAiChatMessageV163(
+                id=System.currentTimeMillis()+1,
+                mine=false,
+                text=reply
+            )).takeLast(30)
+            busy=false
+            status=""
+            if(autoSpeak)speak(reply)
+            return
+        }
+
         val platformIntent=if(kind==null)rsAiPlatformIntentV171(body) else RsAiPlatformIntentV171.None
         if(platformIntent !is RsAiPlatformIntentV171.None){
             val reply=when(platformIntent){
@@ -351,6 +374,15 @@ fun RsAiAssistantChatV163(
             status=""
             busy=false
             if(autoSpeak)speak(reply)
+        }
+    }
+
+    LaunchedEffect(Unit){
+        val pending=store.s("ai_pending_spoken_v171","").trim()
+        if(pending.isNotBlank()){
+            store.ps("ai_pending_spoken_v171","")
+            kotlinx.coroutines.delay(650)
+            voiceResult=pending
         }
     }
 
