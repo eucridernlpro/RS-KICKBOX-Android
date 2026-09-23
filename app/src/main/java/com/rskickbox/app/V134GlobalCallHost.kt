@@ -75,7 +75,7 @@ fun RsGlobalCallHostV134(
                 callActionBusy=true
                 scope.launch{
                     try{
-                        rsSetCallStatusV131(call.id,"ACCEPTED")
+                        rsSetCallStatusReliableV173(call.id,"ACCEPTED")
                             .onSuccess{
                                 rsCancelIncomingCallNotificationV134(context,call.id)
                                 incoming=null
@@ -208,7 +208,7 @@ fun RsGlobalCallHostV134(
                                         callActionBusy=true
                                         scope.launch{
                                             try{
-                                                rsSetCallStatusV131(call.id,"DECLINED")
+                                                rsSetCallStatusReliableV173(call.id,"DECLINED")
                                                     .onSuccess{
                                                         rsCancelIncomingCallNotificationV134(context,call.id)
                                                         incoming=null
@@ -246,7 +246,7 @@ fun RsGlobalCallHostV134(
                                         callActionBusy=true
                                         scope.launch{
                                             try{
-                                                rsSetCallStatusV131(call.id,"ACCEPTED")
+                                                rsSetCallStatusReliableV173(call.id,"ACCEPTED")
                                                     .onSuccess{
                                                         rsCancelIncomingCallNotificationV134(context,call.id)
                                                         incoming=null
@@ -327,7 +327,7 @@ fun RsGlobalCallHostV134(
                                 callActionBusy=true
                                 scope.launch{
                                     try{
-                                        rsSetCallStatusV131(call.id,"CANCELLED")
+                                        rsSetCallStatusReliableV173(call.id,"CANCELLED")
                                             .onSuccess{
                                                 outgoing=null
                                                 status=""
