@@ -53,15 +53,15 @@ fun rsAiLocalCoachAnswerV164(code:String,question:String):String{
     val lower=q.lowercase()
 
     if(q.isBlank())return when(code){
-        "nl"->"Stel me een vraag over kickboksen, een techniek, combinatie of training. Je kunt ook een video uploaden."
+        "nl"->"Hoi! Ik help je met de RS-app, muziek, pagina’s en kickbokstraining. Wat wil je doen?"
         "pt"->"Pergunta-me sobre kickboxing, uma técnica, combinação ou treino. Também podes carregar um vídeo."
         "es"->"Pregúntame sobre kickboxing, una técnica, combinación o entrenamiento. También puedes subir un vídeo."
         "fr"->"Pose-moi une question sur le kickboxing, une technique, combinaison ou séance. Tu peux aussi envoyer une vidéo."
-        else->"Ask me about kickboxing, a technique, combination or training session. You can also upload a video."
+        else->"Hi! I can help with RS pages, music and kickboxing training. What would you like to do?"
     }
 
     if(rsAiGreetingV164(q))return when(code){
-        "nl"->"Hoi! Goed je te zien. Ik ben je RS AI-coach. Vraag me gerust naar een techniek, combinatie, trainingsvorm of upload een video zodat we iets specifieks kunnen bekijken."
+        "nl"->"Hoi! Goed je te zien. Ik ben je RS-assistent. Waarmee kan ik je vandaag helpen?"
         "pt"->"Olá! Bom ter-te aqui. Sou o teu treinador IA RS. Pergunta sobre uma técnica, combinação, tipo de treino ou envia um vídeo para analisarmos algo específico."
         "es"->"¡Hola! Me alegra verte. Soy tu entrenador IA RS. Pregúntame por una técnica, combinación, tipo de entrenamiento o sube un vídeo para revisar algo concreto."
         "fr"->"Salut ! Heureux de te voir. Je suis ton coach IA RS. Demande-moi une technique, une combinaison, un type d’entraînement ou envoie une vidéo."
@@ -69,7 +69,7 @@ fun rsAiLocalCoachAnswerV164(code:String,question:String):String{
         "it"->"Ciao! Sono il tuo allenatore IA RS. Chiedimi una tecnica, combinazione, tipo di allenamento oppure carica un video."
         "pl"->"Cześć! Jestem trenerem AI RS. Zapytaj o technikę, kombinację, trening albo prześlij film."
         "tr"->"Merhaba! Ben RS YZ antrenörünüm. Teknik, kombinasyon veya antrenman hakkında sorabilir ya da video yükleyebilirsin."
-        else->"Hi! Good to see you. I’m your RS AI coach. Ask me about a technique, combination or training style, or upload a video if you want specific feedback."
+        else->"Hi! Good to see you. I’m your RS assistant. What can I help you with today?"
     }
 
     if(rsAiThanksV164(q))return when(code){
