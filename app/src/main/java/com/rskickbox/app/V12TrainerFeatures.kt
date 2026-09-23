@@ -23,12 +23,13 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
+    var pending by remember(theme){mutableStateOf<RsTheme?>(null)}
     val scroll=rememberScrollState()
 
     RsScroll(
         c,
         "Visual Theme Studio",
-        "Swipe through complete RS themes. Each theme changes dashboard layout, chat geometry, button shapes, panel density and colors. Tap Select Style to apply immediately."
+        "Swipe through complete RS themes. Tap a theme to select it, review the preview, then confirm Apply. The whole RS interface changes only after confirmation."
     ){
         Text(
             "SWIPE THEMES",
@@ -66,14 +67,20 @@ fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
                     RsTheme.INFERNO_NEON->"Black ember · orange-red · high-energy fight glow"
                 }
 
+                val isPending=pending==t
                 Surface(
                     color=Color.Transparent,
                     shape=RoundedCornerShape(28.dp),
                     border=BorderStroke(
-                        if(theme==t)2.dp else 1.dp,
-                        if(theme==t)p.bright else p.gold.copy(alpha=.55f)
+                        if(theme==t || isPending)2.dp else 1.dp,
+                        when{
+                            isPending->p.bright
+                            theme==t->p.gold
+                            else->p.gold.copy(alpha=.55f)
+                        }
                     ),
                     modifier=Modifier.width(286.dp).height(365.dp)
+                        .clickable(enabled=theme!=t){pending=t}
                 ){
                     Box(
                         Modifier.fillMaxSize().background(
@@ -112,8 +119,12 @@ fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
                                 }
                                 Spacer(Modifier.weight(1f))
                                 Text(
-                                    if(theme==t)"ACTIVE" else "PREVIEW",
-                                    color=if(theme==t)p.bright else p.muted,
+                                    when{
+                                        theme==t->"ACTIVE"
+                                        isPending->"SELECTED"
+                                        else->"PREVIEW"
+                                    },
+                                    color=if(theme==t || isPending)p.bright else p.muted,
                                     fontSize=9.sp,
                                     fontWeight=FontWeight.Black
                                 )
@@ -172,12 +183,18 @@ fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
 
                             Spacer(Modifier.weight(1f))
                             Button(
-                                onClick={onTheme(t)},
+                                onClick={pending=t},
                                 enabled=theme!=t,
                                 modifier=Modifier.fillMaxWidth(),
                                 shape=RoundedCornerShape(layout.buttonRadius.dp)
                             ){
-                                Text(if(theme==t)"ACTIVE STYLE" else "SELECT STYLE")
+                                Text(
+                                    when{
+                                        theme==t->"ACTIVE STYLE"
+                                        isPending->"READY TO APPLY"
+                                        else->"SELECT STYLE"
+                                    }
+                                )
                             }
                         }
                     }
@@ -186,10 +203,75 @@ fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
         }
 
         Text(
-            "Select a theme to change the app structure immediately. The active theme is saved locally first so the interface changes even before cloud sync completes.",
+            "Choose a theme first. RS will ask for confirmation before changing the complete interface.",
             color=c.muted,
             fontSize=9.sp,
             lineHeight=13.sp
+        )
+    }
+
+    pending?.let{selected->
+        val p=paletteFor(selected)
+        val layout=rsThemeLayoutV175(selected)
+        AlertDialog(
+            onDismissRequest={pending=null},
+            containerColor=p.panel,
+            title={
+                Column(verticalArrangement=Arrangement.spacedBy(4.dp)){
+                    Text("APPLY THIS RS THEME?",color=p.bright,fontWeight=FontWeight.Black)
+                    Text(selected.name.replace('_',' '),color=p.text,fontSize=13.sp)
+                }
+            },
+            text={
+                Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
+                    Text(
+                        "This will change colors, dashboard layout, chat appearance, buttons, panels and visual geometry across RS KICKBOXING.",
+                        color=p.text,
+                        fontSize=11.sp
+                    )
+                    Surface(
+                        color=p.panel2,
+                        shape=RoundedCornerShape(layout.panelRadius.dp),
+                        border=BorderStroke(1.dp,p.gold.copy(alpha=.55f)),
+                        modifier=Modifier.fillMaxWidth()
+                    ){
+                        Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+                            Text(layout.mode.replace('_',' '),color=p.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                                repeat(layout.dashboardColumns.coerceIn(1,2)){idx->
+                                    Surface(
+                                        color=if(idx==0)p.bg else p.panel,
+                                        shape=RoundedCornerShape(layout.tileRadius.dp),
+                                        modifier=Modifier.weight(1f).height(42.dp)
+                                    ){}
+                                }
+                            }
+                            Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                                listOf(p.bg,p.panel,p.gold,p.bright).forEach{color->
+                                    Surface(
+                                        color=color,
+                                        shape=RoundedCornerShape(9.dp),
+                                        modifier=Modifier.size(30.dp)
+                                    ){}
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton={
+                Button(
+                    onClick={
+                        val target=selected
+                        pending=null
+                        onTheme(target)
+                    },
+                    colors=ButtonDefaults.buttonColors(containerColor=p.gold,contentColor=p.bg)
+                ){Text("APPLY")}
+            },
+            dismissButton={
+                OutlinedButton(onClick={pending=null}){Text("CANCEL")}
+            }
         )
     }
 }
