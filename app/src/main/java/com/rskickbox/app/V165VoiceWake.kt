@@ -140,6 +140,7 @@ private fun rsVoiceRouteV167(text:String):String?{
         listOf("open ai","open ai coach","open rs ai","open coach","open assistant","open de ai","open ai coach","abrir ai","abrir treinador ai","abre la ia","abre el entrenador ia","ouvre l'ia","ouvre le coach ia","ki öffnen","apri ai","otwórz ai","yapay zekayı aç").any{s.contains(it)}->"voice"
         listOf("open support","open hulp","open ondersteuning","abrir suporte","abre soporte","ouvre support","support öffnen","apri supporto","otwórz pomoc","desteği aç").any{s.contains(it)}->"support"
         listOf("open groups","open groepen","abrir grupos","abre grupos","ouvre groupes","gruppen öffnen","apri gruppi","otwórz grupy","grupları aç").any{s.contains(it)}->"groups"
+        listOf("open private chat","open private chats","private chat","private chats","open direct chat","open direct chats","open coach chat","open privé chat","open prive chat","abrir chat privado","abre chat privado","ouvre chat privé","privaten chat öffnen").any{s.contains(it)}->"coachchat"
         listOf("open community","open community","abrir comunidade","abre comunidad","ouvre communauté","community öffnen","apri community","otwórz społeczność","topluluğu aç").any{s.contains(it)}->"community"
         listOf("open notifications","open meldingen","abrir notificações","abre notificaciones","ouvre notifications","benachrichtigungen öffnen","apri notifiche","otwórz powiadomienia","bildirimleri aç").any{s.contains(it)}->"notifications"
         else->null
@@ -469,7 +470,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 Intent(this,MainActivity::class.java).apply{
                     action="com.rskickbox.app.OPEN_RS_ROUTE"
                     putExtra("route",route)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                 }
             )
         }
