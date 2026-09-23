@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -465,150 +466,249 @@ fun RsActiveCallDialogV133(
                     }
                 }
             }else{
-                Column(
-                    Modifier.align(Alignment.Center),
-                    horizontalAlignment=Alignment.CenterHorizontally,
-                    verticalArrangement=Arrangement.spacedBy(12.dp)
-                ){
-                    RsMemberAvatarV68(
-                        c,
-                        call.peerEmail,
-                        call.peerName.ifBlank{call.peerEmail},
-                        size=138.dp
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFF050505),c.gold.copy(alpha=.08f),Color.Black)
+                        )
                     )
-                    Text(call.peerName.ifBlank{call.peerEmail},color=Color.White,fontSize=22.sp,fontWeight=FontWeight.Black)
-                    Text("RS AUDIO CALL",color=c.gold,fontSize=11.sp,fontWeight=FontWeight.Black)
+                )
+                Column(
+                    Modifier.align(Alignment.Center).padding(bottom=150.dp),
+                    horizontalAlignment=Alignment.CenterHorizontally,
+                    verticalArrangement=Arrangement.spacedBy(14.dp)
+                ){
+                    Surface(
+                        shape=CircleShape,
+                        color=Color.Black.copy(alpha=.82f),
+                        border=BorderStroke(3.dp,c.gold.copy(alpha=.78f)),
+                        tonalElevation=20.dp,
+                        modifier=Modifier.size(214.dp)
+                    ){
+                        Box(contentAlignment=Alignment.Center){
+                            RsMemberAvatarV68(
+                                c,
+                                call.peerEmail,
+                                call.peerName.ifBlank{call.peerEmail},
+                                size=204.dp
+                            )
+                        }
+                    }
+                    Text(
+                        call.peerName.ifBlank{call.peerEmail.ifBlank{"RS Member"}},
+                        color=Color.White,
+                        fontSize=27.sp,
+                        fontWeight=FontWeight.Black,
+                        maxLines=1
+                    )
+                    Text("RS AUDIO CALL · SECURE",color=c.gold,fontSize=10.sp,fontWeight=FontWeight.Black,letterSpacing=1.2.sp)
                 }
             }
 
-            if(!inPip && !pipTransition) Column(
-                Modifier.align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha=.86f),
-                                Color.Black.copy(alpha=.97f)
+            if(!inPip && !pipTransition){
+                val screenWidth=LocalConfiguration.current.screenWidthDp
+                val compactControls=screenWidth<380
+                val controlSize=if(compactControls)62.dp else 70.dp
+                val labelSize=if(compactControls)8.sp else 9.sp
+
+                Column(
+                    Modifier.align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha=.82f),
+                                    Color.Black.copy(alpha=.98f)
+                                )
                             )
                         )
-                    )
-                    .padding(horizontal=16.dp,vertical=18.dp),
-                horizontalAlignment=Alignment.CenterHorizontally,
-                verticalArrangement=Arrangement.spacedBy(14.dp)
-            ){
-                Text(
-                    when(engineState){
-                        "CONNECTED"->rsCallT133(lang,"connected")
-                        "RECONNECTING"->rsCallT133(lang,"reconnecting")
-                        "FAILED"->rsCallT133(lang,"failed")
-                        "ENDED"->rsCallT133(lang,"ended")
-                        else->rsCallT133(lang,"connecting")
-                    },
-                    color=Color.White,fontWeight=FontWeight.Bold
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement=Arrangement.SpaceEvenly,
-                    verticalAlignment=Alignment.CenterVertically
+                        .navigationBarsPadding()
+                        .padding(horizontal=if(compactControls)10.dp else 18.dp,vertical=16.dp),
+                    horizontalAlignment=Alignment.CenterHorizontally,
+                    verticalArrangement=Arrangement.spacedBy(12.dp)
                 ){
-                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
-                        Surface(
-                            shape=CircleShape,
-                            color=Color.Black.copy(alpha=.72f),
-                            border=BorderStroke(1.5.dp,c.gold.copy(alpha=.48f)),
-                            tonalElevation=10.dp,
-                            modifier=Modifier.size(58.dp).clickable{
-                                pipTransition=true
-                                rsEnterCallPipV154(context,if(isVideo)9 else 1,if(isVideo)16 else 1)
+                    Surface(
+                        color=Color.Black.copy(alpha=.74f),
+                        shape=RoundedCornerShape(24.dp),
+                        border=BorderStroke(1.dp,c.gold.copy(alpha=.32f)),
+                        modifier=Modifier.fillMaxWidth()
+                    ){
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal=14.dp,vertical=9.dp),
+                            verticalAlignment=Alignment.CenterVertically
+                        ){
+                            Column(Modifier.weight(1f)){
+                                Text(
+                                    call.peerName.ifBlank{call.peerEmail.ifBlank{"RS Member"}},
+                                    color=Color.White,fontWeight=FontWeight.Black,fontSize=14.sp,maxLines=1
+                                )
+                                Text(
+                                    when(engineState){
+                                        "CONNECTED"->rsCallT133(lang,"connected")
+                                        "RECONNECTING"->rsCallT133(lang,"reconnecting")
+                                        "FAILED"->rsCallT133(lang,"failed")
+                                        "ENDED"->rsCallT133(lang,"ended")
+                                        else->rsCallT133(lang,"connecting")
+                                    },
+                                    color=if(engineState=="CONNECTED")Color(0xFF55D58A) else c.gold,
+                                    fontSize=9.sp,fontWeight=FontWeight.Bold
+                                )
                             }
-                        ){Box(contentAlignment=Alignment.Center){Text("↙",color=c.bright,fontSize=21.sp,fontWeight=FontWeight.Black)}}
-                        Text("MINIMIZE",color=c.bright,fontSize=7.sp,fontWeight=FontWeight.Black)
-                    }
-                    fun premiumControl(
-                        symbol:String,
-                        label:String,
-                        active:Boolean=true,
-                        danger:Boolean=false,
-                        action:()->Unit
-                    ) = Unit
-
-                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
-                        Surface(
-                            shape=CircleShape,
-                            color=if(micOn)c.gold.copy(alpha=.15f) else Color(0xFF2A1010),
-                            border=BorderStroke(1.5.dp,if(micOn)c.bright.copy(alpha=.72f) else Color(0xFFFF7777).copy(alpha=.60f)),
-                            tonalElevation=10.dp,
-                            modifier=Modifier.size(58.dp).clickable{
-                                micOn=!micOn
-                                engine.setMicEnabled(micOn)
-                            }
-                        ){Box(contentAlignment=Alignment.Center){Text(if(micOn)"🎙" else "🔇",fontSize=20.sp)}}
-                        Text("MIC",color=if(micOn)c.bright else Color(0xFFFF9999),fontSize=7.sp,fontWeight=FontWeight.Black)
+                            Text(if(isVideo)"VIDEO" else "AUDIO",color=c.bright,fontSize=9.sp,fontWeight=FontWeight.Black,letterSpacing=1.sp)
+                        }
                     }
 
-                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
-                        Surface(
-                            shape=CircleShape,
-                            color=if(speakerOn)c.gold.copy(alpha=.15f) else Color.Black.copy(alpha=.72f),
-                            border=BorderStroke(1.5.dp,c.gold.copy(alpha=.48f)),
-                            tonalElevation=10.dp,
-                            modifier=Modifier.size(58.dp).clickable{
-                                speakerOn=!speakerOn
-                                @Suppress("DEPRECATION")
-                                audioManager.isSpeakerphoneOn=speakerOn
-                            }
-                        ){Box(contentAlignment=Alignment.Center){Text(if(speakerOn)"🔊" else "🔈",fontSize=20.sp)}}
-                        Text("SPEAKER",color=c.bright,fontSize=7.sp,fontWeight=FontWeight.Black)
-                    }
-
-                    if(isVideo){
-                        Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
-                            Surface(
-                                shape=CircleShape,
-                                color=if(cameraOn)c.gold.copy(alpha=.15f) else Color(0xFF2A1010),
-                                border=BorderStroke(1.5.dp,if(cameraOn)c.bright.copy(alpha=.72f) else Color(0xFFFF7777).copy(alpha=.60f)),
-                                tonalElevation=10.dp,
-                                modifier=Modifier.size(58.dp).clickable{
-                                    cameraOn=!cameraOn
-                                    engine.setCameraEnabled(cameraOn)
+                    Surface(
+                        color=Color(0xFF111416).copy(alpha=.96f),
+                        shape=RoundedCornerShape(34.dp),
+                        border=BorderStroke(1.dp,c.gold.copy(alpha=.28f)),
+                        tonalElevation=18.dp,
+                        modifier=Modifier.fillMaxWidth()
+                    ){
+                        Column(
+                            Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=14.dp),
+                            verticalArrangement=Arrangement.spacedBy(12.dp)
+                        ){
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement=Arrangement.SpaceEvenly,
+                                verticalAlignment=Alignment.Top
+                            ){
+                                RsRoyalCallControlV174(
+                                    c,if(speakerOn)"🔊" else "🔈","SPEAKER",
+                                    controlSize,labelSize,speakerOn,false
+                                ){
+                                    speakerOn=!speakerOn
+                                    @Suppress("DEPRECATION")
+                                    audioManager.isSpeakerphoneOn=speakerOn
                                 }
-                            ){Box(contentAlignment=Alignment.Center){Text(if(cameraOn)"📹" else "🚫",color=c.bright,fontSize=19.sp,fontWeight=FontWeight.Black)}}
-                            Text("CAMERA",color=if(cameraOn)c.bright else Color(0xFFFF9999),fontSize=7.sp,fontWeight=FontWeight.Black)
-                        }
-
-                        Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
-                            Surface(
-                                shape=CircleShape,
-                                color=Color.Black.copy(alpha=.72f),
-                                border=BorderStroke(1.5.dp,c.gold.copy(alpha=.48f)),
-                                tonalElevation=10.dp,
-                                modifier=Modifier.size(58.dp).clickable{engine.switchCamera()}
-                            ){Box(contentAlignment=Alignment.Center){Text("↻",color=c.bright,fontSize=22.sp,fontWeight=FontWeight.Black)}}
-                            Text("SWITCH",color=c.bright,fontSize=7.sp,fontWeight=FontWeight.Black)
-                        }
-                    }
-
-                    Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
-                        Surface(
-                            shape=CircleShape,
-                            color=Color(0xFF4A0C0C),
-                            border=BorderStroke(2.dp,Color(0xFFFF5C5C).copy(alpha=.78f)),
-                            tonalElevation=12.dp,
-                            modifier=Modifier.size(64.dp).clickable(enabled=!closing){
-                                if(!closing){
-                                    closing=true
-                                    scope.launch{
-                                        runCatching{rsSetCallStatusReliableV173(call.id,"ENDED")}
-                                        onClosed()
+                                RsRoyalCallControlV174(
+                                    c,if(micOn)"🎙" else "🔇","MUTE",
+                                    controlSize,labelSize,micOn.not(),false
+                                ){
+                                    micOn=!micOn
+                                    engine.setMicEnabled(micOn)
+                                }
+                                if(isVideo){
+                                    RsRoyalCallControlV174(
+                                        c,if(cameraOn)"📹" else "🚫","VIDEO",
+                                        controlSize,labelSize,cameraOn.not(),false
+                                    ){
+                                        cameraOn=!cameraOn
+                                        engine.setCameraEnabled(cameraOn)
+                                    }
+                                }else{
+                                    RsRoyalCallControlV174(
+                                        c,"↙","MINIMIZE",
+                                        controlSize,labelSize,false,false
+                                    ){
+                                        pipTransition=true
+                                        if(!rsEnterCallPipV154(context,1,1))pipTransition=false
                                     }
                                 }
                             }
-                        ){Box(contentAlignment=Alignment.Center){Text("✕",color=Color.White,fontSize=23.sp,fontWeight=FontWeight.Black)}}
-                        Text("END",color=Color(0xFFFF8A80),fontSize=7.sp,fontWeight=FontWeight.Black)
+
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement=Arrangement.SpaceEvenly,
+                                verticalAlignment=Alignment.Top
+                            ){
+                                if(isVideo){
+                                    RsRoyalCallControlV174(
+                                        c,"↙","MINIMIZE",
+                                        controlSize,labelSize,false,false
+                                    ){
+                                        pipTransition=true
+                                        if(!rsEnterCallPipV154(context,9,16))pipTransition=false
+                                    }
+                                    RsRoyalCallControlV174(
+                                        c,"↻","SWITCH",
+                                        controlSize,labelSize,false,false
+                                    ){engine.switchCamera()}
+                                }else{
+                                    RsRoyalCallControlV174(
+                                        c,"•••","MORE",
+                                        controlSize,labelSize,false,false
+                                    ){}
+                                    RsRoyalCallControlV174(
+                                        c,"♛","RS CALL",
+                                        controlSize,labelSize,false,false
+                                    ){}
+                                }
+                                RsRoyalCallControlV174(
+                                    c,"☎","END",
+                                    controlSize,labelSize,false,true,
+                                    enabled=!closing
+                                ){
+                                    if(!closing){
+                                        closing=true
+                                        scope.launch{
+                                            runCatching{rsSetCallStatusReliableV173(call.id,"ENDED")}
+                                            onClosed()
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+
+@Composable
+private fun RsRoyalCallControlV174(
+    c:RsPalette,
+    symbol:String,
+    label:String,
+    size:androidx.compose.ui.unit.Dp,
+    labelSize:androidx.compose.ui.unit.TextUnit,
+    active:Boolean=false,
+    danger:Boolean=false,
+    enabled:Boolean=true,
+    onClick:()->Unit
+){
+    Column(
+        horizontalAlignment=Alignment.CenterHorizontally,
+        verticalArrangement=Arrangement.spacedBy(6.dp),
+        modifier=Modifier.width(size+18.dp)
+    ){
+        Surface(
+            shape=CircleShape,
+            color=when{
+                danger->Color(0xFFB11226)
+                active->c.gold.copy(alpha=.26f)
+                else->Color(0xFF20272A)
+            },
+            border=BorderStroke(
+                if(danger)2.dp else 1.5.dp,
+                when{
+                    danger->Color(0xFFFF5168)
+                    active->c.bright.copy(alpha=.88f)
+                    else->c.gold.copy(alpha=.44f)
+                }
+            ),
+            tonalElevation=14.dp,
+            modifier=Modifier.size(size).clickable(enabled=enabled,onClick=onClick)
+        ){
+            Box(contentAlignment=Alignment.Center){
+                Text(
+                    symbol,
+                    color=if(danger)Color.White else c.bright,
+                    fontSize=if(symbol.length<=2)23.sp else 18.sp,
+                    fontWeight=FontWeight.Black
+                )
+            }
+        }
+        Text(
+            label,
+            color=if(danger)Color(0xFFFF8A91) else c.bright,
+            fontSize=labelSize,
+            fontWeight=FontWeight.Black,
+            maxLines=1
+        )
     }
 }
