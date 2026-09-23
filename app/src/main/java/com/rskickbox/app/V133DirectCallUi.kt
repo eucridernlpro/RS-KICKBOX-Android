@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioManager
+import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -362,7 +363,10 @@ fun RsActiveCallDialogV133(
 
     LaunchedEffect(engine){
         rsConfigureCallPipV154(context,true,if(isVideo)9 else 1,if(isVideo)16 else 1)
+        (context as? Activity)?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         audioManager.mode=AudioManager.MODE_IN_COMMUNICATION
+        @Suppress("DEPRECATION")
+        audioManager.requestAudioFocus(null,AudioManager.STREAM_VOICE_CALL,AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
         @Suppress("DEPRECATION")
         audioManager.isSpeakerphoneOn=speakerOn
         engine.start()
@@ -392,7 +396,10 @@ fun RsActiveCallDialogV133(
             runCatching{
                 @Suppress("DEPRECATION")
                 audioManager.isSpeakerphoneOn=false
+                @Suppress("DEPRECATION")
+                audioManager.abandonAudioFocus(null)
                 audioManager.mode=AudioManager.MODE_NORMAL
+                (context as? Activity)?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
         }
     }
@@ -433,6 +440,17 @@ fun RsActiveCallDialogV133(
                         },
                         modifier=Modifier.align(Alignment.TopEnd).padding(10.dp).width(92.dp).height(128.dp)
                     )
+                }
+
+                LaunchedEffect(inPip,pipTransition){
+                    if(inPip || pipTransition){
+                        val local=localRenderer
+                        if(local!=null){
+                            engine.detachRenderers(local,null)
+                            runCatching{local.release()}
+                            localRenderer=null
+                        }
+                    }
                 }
 
                 DisposableEffect(call.id){
