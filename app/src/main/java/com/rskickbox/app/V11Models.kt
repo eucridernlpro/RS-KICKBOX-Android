@@ -53,6 +53,33 @@ fun paletteFor(theme:RsTheme)=when(theme){
     RsTheme.INFERNO_NEON->infernoPalette
 }
 
+data class RsThemeLayoutV175(
+    val mode:String,
+    val dashboardColumns:Int,
+    val tileHeight:Int,
+    val tileRadius:Int,
+    val panelRadius:Int,
+    val buttonRadius:Int,
+    val chatBubbleRadius:Int,
+    val glassAlpha:Float,
+    val strongLines:Boolean
+)
+
+fun rsThemeLayoutV175(theme:RsTheme)=when(theme){
+    RsTheme.ELITE_GOLD->RsThemeLayoutV175("ROYAL_GRID",2,220,28,28,24,20,.82f,true)
+    RsTheme.CRIMSON_FIGHT_NIGHT->RsThemeLayoutV175("FIGHT_STRIP",1,176,14,16,12,12,.92f,true)
+    RsTheme.PLATINUM_PRO->RsThemeLayoutV175("TECH_COMPACT",2,174,16,14,10,14,.88f,false)
+    RsTheme.EMERALD_PERFORMANCE->RsThemeLayoutV175("PERFORMANCE_STACK",1,188,22,20,18,18,.84f,false)
+    RsTheme.ROYAL_SAPPHIRE->RsThemeLayoutV175("HOLO_CARDS",1,202,32,30,28,28,.72f,true)
+    RsTheme.PURPLE_LEGACY->RsThemeLayoutV175("HOLO_CARDS",2,210,34,32,30,30,.70f,true)
+    RsTheme.ICE_TITANIUM->RsThemeLayoutV175("TECH_COMPACT",2,164,12,12,8,12,.90f,false)
+    RsTheme.INFERNO_NEON->RsThemeLayoutV175("FIGHT_STRIP",1,184,10,12,10,10,.94f,true)
+}
+
+fun rsStoredThemeV175(store:RsStore):RsTheme =
+    runCatching{RsTheme.valueOf(store.s("theme","ELITE_GOLD"))}.getOrDefault(RsTheme.ELITE_GOLD)
+
+
 class RsStore(context:Context){
     private val p=context.getSharedPreferences("rs_v12",Context.MODE_PRIVATE)
     fun s(k:String,d:String="")=p.getString(k,d)?:d
