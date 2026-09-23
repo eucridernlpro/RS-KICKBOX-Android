@@ -33,8 +33,14 @@ fun RsChatGalleryV163(c:RsPalette,lang:RsLang){
 }
 
 @Composable
-fun RsAiRoyalChatV163(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
-    RsAiAssistantChatV163(c,lang,store,role)
+fun RsAiRoyalChatV163(
+    c:RsPalette,
+    store:RsStore,
+    lang:RsLang,
+    role:RsRole,
+    onNavigate:(String)->Unit={}
+){
+    RsAiAssistantChatV163(c,lang,store,role,onNavigate)
 }
 
 @Composable
