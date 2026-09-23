@@ -1246,7 +1246,7 @@ private fun RsAiAvatarStageV163(
                     translationX=if(avatarMotion && renderMode=="CINEMATIC_3D")parallaxX else 0f
                     rotationY=if(avatarMotion && renderMode=="CINEMATIC_3D")headTurn else 0f
                     rotationX=if(avatarMotion && renderMode=="CINEMATIC_3D")focusTilt else 0f
-                    cameraDistance=if(renderMode=="CINEMATIC_3D")18f*density else cameraDistance
+                    cameraDistance=if(renderMode=="CINEMATIC_3D")18f*density else 8f*density
                     shadowElevation=if(renderMode=="CINEMATIC_3D")24f else 0f
                 }
             ){
