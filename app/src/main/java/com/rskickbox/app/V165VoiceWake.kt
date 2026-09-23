@@ -574,10 +574,12 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 awakeUntil=now+45_000L
                 setWakeStatusV168("HEARD_WAKE")
                 commandText=rsStripWakePhraseV165(text)
-                if(commandText.isBlank()){
-                    speak(rsVoiceGreetingV165(language().code))
-                    return
-                }
+                store.pb("ai_immersive_v171",true)
+                store.pb("ai_start_listening_v168",true)
+                if(commandText.isNotBlank())store.ps("ai_pending_spoken_v171",commandText)
+                openRouteV166("voice")
+                recognizer?.cancel()
+                return
             }else{
                 startListening()
                 return
