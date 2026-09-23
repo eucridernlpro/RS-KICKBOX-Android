@@ -1,6 +1,8 @@
 package com.rskickbox.app
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -85,11 +87,13 @@ class RsWebRtcEngineV132(
             previousLocal?.let{old->runCatching{videoTrack?.removeSink(old)}}
             localRenderer=local
             local?.let{renderer->
-                runCatching{renderer.init(eglContext,null)}
-                renderer.setMirror(true)
-                renderer.setEnableHardwareScaler(true)
-                renderer.setScalingType(org.webrtc.RendererCommon.ScalingType.SCALE_ASPECT_FILL)
-                videoTrack?.addSink(renderer)
+                runCatching{
+                    renderer.init(eglContext,null)
+                    renderer.setMirror(true)
+                    renderer.setEnableHardwareScaler(true)
+                    renderer.setScalingType(org.webrtc.RendererCommon.ScalingType.SCALE_ASPECT_FILL)
+                    videoTrack?.addSink(renderer)
+                }
             }
         }
 
@@ -97,11 +101,13 @@ class RsWebRtcEngineV132(
             previousRemote?.let{old->runCatching{remoteVideoTrack?.removeSink(old)}}
             remoteRenderer=remote
             remote?.let{renderer->
-                runCatching{renderer.init(eglContext,null)}
-                renderer.setMirror(false)
-                renderer.setEnableHardwareScaler(true)
-                renderer.setScalingType(org.webrtc.RendererCommon.ScalingType.SCALE_ASPECT_FILL)
-                remoteVideoTrack?.addSink(renderer)
+                runCatching{
+                    renderer.init(eglContext,null)
+                    renderer.setMirror(false)
+                    renderer.setEnableHardwareScaler(true)
+                    renderer.setScalingType(org.webrtc.RendererCommon.ScalingType.SCALE_ASPECT_FILL)
+                    remoteVideoTrack?.addSink(renderer)
+                }
             }
         }
     }
@@ -172,17 +178,19 @@ class RsWebRtcEngineV132(
             override fun onDataChannel(channel:DataChannel?){}
             override fun onRenegotiationNeeded(){}
             override fun onAddTrack(receiver:RtpReceiver?,mediaStreams:Array<out MediaStream>?){
+                if(disposed)return
                 val track=receiver?.track()
                 if(track is VideoTrack){
                     remoteVideoTrack=track
-                    remoteRenderer?.let{track.addSink(it)}
+                    remoteRenderer?.let{renderer->runCatching{track.addSink(renderer)}}
                 }
             }
             override fun onTrack(transceiver:RtpTransceiver?){
+                if(disposed)return
                 val track=transceiver?.receiver?.track()
                 if(track is VideoTrack){
                     remoteVideoTrack=track
-                    remoteRenderer?.let{track.addSink(it)}
+                    remoteRenderer?.let{renderer->runCatching{track.addSink(renderer)}}
                 }
             }
         })
@@ -361,15 +369,18 @@ class RsWebRtcEngineV132(
     }
 
     fun setMicEnabled(enabled:Boolean){
-        audioTrack?.setEnabled(enabled)
+        if(disposed)return
+        runCatching{audioTrack?.setEnabled(enabled)}
     }
 
     fun setCameraEnabled(enabled:Boolean){
-        videoTrack?.setEnabled(enabled)
+        if(disposed)return
+        runCatching{videoTrack?.setEnabled(enabled)}
     }
 
     fun switchCamera(){
-        (videoCapturer as? CameraVideoCapturer)?.switchCamera(null)
+        if(disposed)return
+        runCatching{(videoCapturer as? CameraVideoCapturer)?.switchCamera(null)}
     }
 
     fun dispose(){
@@ -377,6 +388,16 @@ class RsWebRtcEngineV132(
         disposed=true
         signalJob?.cancel()
         signalJob=null
+
+        val local=localRenderer
+        val remote=remoteRenderer
+        val localTrack=videoTrack
+        val remoteTrack=remoteVideoTrack
+        localRenderer=null
+        remoteRenderer=null
+        runCatching{local?.let{localTrack?.removeSink(it)}}
+        runCatching{remote?.let{remoteTrack?.removeSink(it)}}
+
         runCatching{videoCapturer?.stopCapture()}
         runCatching{videoCapturer?.dispose()}
         videoCapturer=null
@@ -384,26 +405,24 @@ class RsWebRtcEngineV132(
         surfaceTextureHelper=null
         remoteVideoTrack=null
         videoSender=null
-        videoTrack?.dispose()
+        runCatching{videoTrack?.dispose()}
         videoTrack=null
-        videoSource?.dispose()
+        runCatching{videoSource?.dispose()}
         videoSource=null
         audioSender=null
-        audioTrack?.dispose()
+        runCatching{audioTrack?.dispose()}
         audioTrack=null
-        audioSource?.dispose()
+        runCatching{audioSource?.dispose()}
         audioSource=null
-        peerConnection?.close()
-        peerConnection?.dispose()
+        runCatching{peerConnection?.close()}
+        runCatching{peerConnection?.dispose()}
         peerConnection=null
-        // Renderer lifecycle belongs to the Compose AndroidView. Detach only;
-        // releasing a SurfaceViewRenderer here while the UI still owns it can
-        // crash the Activity during call teardown.
-        localRenderer?.let{runCatching{videoTrack?.removeSink(it)}}
-        remoteRenderer?.let{runCatching{remoteVideoTrack?.removeSink(it)}}
-        localRenderer=null
-        remoteRenderer=null
-        factory.dispose()
-        eglBase.release()
+
+        // Compose owns SurfaceViewRenderer.release(). Give AndroidView teardown
+        // a short head start before releasing the shared native EGL/factory.
+        Handler(Looper.getMainLooper()).postDelayed({
+            runCatching{factory.dispose()}
+            runCatching{eglBase.release()}
+        },500L)
     }
 }
