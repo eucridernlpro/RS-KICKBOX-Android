@@ -71,6 +71,31 @@ private fun rsLoadAiChatHistoryV174(store:RsStore,key:String):List<RsAiChatMessa
     }.getOrDefault(emptyList())
 }
 
+private fun rsPruneAiChatV176(
+    input:List<RsAiChatMessageV163>,
+    now:Long=System.currentTimeMillis()
+):List<RsAiChatMessageV163>{
+    // Guide/media examples are temporary: keep them for at most 90 minutes.
+    var items=input.sortedBy{it.id}.filterNot{message->
+        val visual=message.mediaUri!=null || message.references.isNotEmpty()
+        visual && now-message.id>90L*60L*1000L
+    }.toMutableList()
+
+    fun visualCount()=items.count{it.mediaUri!=null || it.references.isNotEmpty()}
+    fun textWeight()=items.sumOf{it.text.length}
+
+    // If the conversation becomes heavy, remove oldest content first.
+    while(
+        items.size>100 ||
+        visualCount()>8 ||
+        textWeight()>30_000
+    ){
+        if(items.isEmpty())break
+        items.removeAt(0)
+    }
+    return items
+}
+
 private fun rsSaveAiChatHistoryV174(store:RsStore,key:String,messages:List<RsAiChatMessageV163>){
     val arr=JSONArray()
     messages.takeLast(100).forEach{message->
@@ -133,10 +158,23 @@ fun RsAiAssistantChatV163(
     }
 
     LaunchedEffect(messages,aiHistoryKey){
-        rsSaveAiChatHistoryV174(store,aiHistoryKey,messages)
-        if(messages.isNotEmpty()){
+        val pruned=rsPruneAiChatV176(messages)
+        if(pruned!=messages){
+            messages=pruned
+            return@LaunchedEffect
+        }
+        rsSaveAiChatHistoryV174(store,aiHistoryKey,pruned)
+        if(pruned.isNotEmpty()){
             kotlinx.coroutines.delay(40)
-            runCatching{aiListState.animateScrollToItem(messages.lastIndex)}
+            runCatching{aiListState.animateScrollToItem(pruned.lastIndex)}
+        }
+    }
+
+    LaunchedEffect(aiHistoryKey){
+        while(true){
+            kotlinx.coroutines.delay(10*60*1000L)
+            val pruned=rsPruneAiChatV176(messages)
+            if(pruned!=messages)messages=pruned
         }
     }
 
@@ -309,6 +347,25 @@ fun RsAiAssistantChatV163(
         pickedUri=null
         pickedKind=null
 
+        val guideRequest=if(kind==null)rsAiAppGuideMatchV175(body,selectedLang,role) else null
+        if(guideRequest!=null){
+            val guideText=rsAiAppGuideTextV175(guideRequest,selectedLang)
+            val guideVisual=rsVisualUriWithBundledFallbackV113(context,store,guideRequest.route)
+            messages=rsPruneAiChatV176(
+                messages+RsAiChatMessageV163(
+                    id=System.currentTimeMillis()+1,
+                    mine=false,
+                    text=guideText,
+                    mediaUri=guideVisual.takeIf{it.isNotBlank()},
+                    mediaKind=guideVisual.takeIf{it.isNotBlank()}?.let{"GUIDE"}
+                )
+            )
+            busy=false
+            status=""
+            if(autoSpeak)speak(guideText) else if(voiceConversationActive)resumeListeningSignal++
+            return
+        }
+
         val namedTrackRequest=if(
             kind==null &&
             listOf("play ","speel ","tocar ","reproducir ","joue ","abspielen ","riproduci ","odtwórz ","çal ")
@@ -437,9 +494,13 @@ fun RsAiAssistantChatV163(
                 rsAiReferencePreviewsV164(context,body,localFirst)
             else emptyList()
 
-            val referenceSummary=earlyRefs.joinToString("\n"){ref->
+            val trainerReferenceSummary=earlyRefs.joinToString("\n"){ref->
                 ref.item.title+" | tags: "+ref.item.techniqueTags.joinToString(", ")+" | trainer note: "+ref.item.description
             }
+            val referenceSummary=(
+                "RS APP FEATURES:\n"+rsAiAppKnowledgeSummaryV175(selectedLang,role).take(2300)+
+                "\n\nTRAINER REFERENCES:\n"+trainerReferenceSummary.take(1100)
+            )
 
             val reply=if(kind=="VIDEO"){
                 localFirst
@@ -665,7 +726,7 @@ fun RsAiAssistantChatV163(
                                     }
                                 }
                                 if(message.mediaUri!=null){
-                                    if(message.mediaKind=="IMAGE"){
+                                    if(message.mediaKind=="IMAGE"||message.mediaKind=="GUIDE"){
                                         RsUriPreviewV21(
                                             message.mediaUri,
                                             Modifier.fillMaxWidth().heightIn(min=70.dp,max=140.dp),
