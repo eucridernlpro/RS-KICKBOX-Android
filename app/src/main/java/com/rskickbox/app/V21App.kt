@@ -1183,6 +1183,7 @@ private fun ShellV21(
     val drawerState=rememberDrawerState(initialValue=DrawerValue.Closed)
     val scope=rememberCoroutineScope()
     val context=LocalContext.current
+    val shellLayout=rsThemeLayoutV175(rsStoredThemeV175(store))
     var lastBackPressMs by remember{mutableLongStateOf(0L)}
     val chatFullScreen=route in setOf(
         "coachchat","groups","voice","media","community","support","notifications","content"
@@ -1288,7 +1289,13 @@ private fun ShellV21(
                 drawerContentColor=c.text
             ){
                 Column(
-                    Modifier.fillMaxHeight().widthIn(max=330.dp).statusBarsPadding().navigationBarsPadding().padding(12.dp),
+                    Modifier.fillMaxHeight().widthIn(
+                        max=when(shellLayout.mode){
+                            "TECH_COMPACT"->292.dp
+                            "FIGHT_STRIP"->312.dp
+                            else->330.dp
+                        }
+                    ).statusBarsPadding().navigationBarsPadding().padding(12.dp),
                     verticalArrangement=Arrangement.spacedBy(6.dp)
                 ){
                     RsPanel(c){
@@ -1312,6 +1319,7 @@ private fun ShellV21(
                                     onRoute(target)
                                     scope.launch{drawerState.close()}
                                 },
+                                shape=RoundedCornerShape(shellLayout.buttonRadius.dp),
                                 colors=NavigationDrawerItemDefaults.colors(
                                     selectedContainerColor=c.gold.copy(alpha=.22f),
                                     selectedTextColor=c.bright,
