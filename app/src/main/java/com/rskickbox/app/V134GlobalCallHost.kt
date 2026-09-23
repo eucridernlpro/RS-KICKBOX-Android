@@ -32,10 +32,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-fun rsCancelIncomingCallNotificationV134(context:Context,callId:String){
+fun rsHideIncomingCallNotificationV134(context:Context,callId:String){
     runCatching{
         context.getSystemService(NotificationManager::class.java).cancel(callId.hashCode())
     }
+}
+
+fun rsCancelIncomingCallNotificationV134(context:Context,callId:String){
+    rsHideIncomingCallNotificationV134(context,callId)
     RsCallMonitorServiceV134.stopRing(context)
 }
 
@@ -55,7 +59,11 @@ fun RsGlobalCallHostV134(
     var status by remember{mutableStateOf("")}
     var pendingAccept by remember{mutableStateOf<RsCallV131?>(null)}
 
-    val permissionLauncher=rememberLauncherForActivityResult(
+    LaunchedEffect(incoming?.id){
+        incoming?.id?.takeIf{it.isNotBlank()}?.let{rsHideIncomingCallNotificationV134(context,it)}
+    }
+
+        val permissionLauncher=rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ){result->
         val call=pendingAccept
