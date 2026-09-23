@@ -297,6 +297,13 @@ class RsCallMonitorServiceV134:Service(){
             this,call.id.hashCode(),fullIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        if(MainActivity.isAlive){
+            val broughtForward=runCatching{
+                startActivity(fullIntent)
+                true
+            }.getOrDefault(false)
+            if(broughtForward)return
+        }
         val answerIntent=Intent(this,RsCallMonitorServiceV134::class.java).apply{
             action=ACTION_ACCEPT_CALL
             putExtra("call_id",call.id)
@@ -354,6 +361,13 @@ class RsCallMonitorServiceV134:Service(){
             this,room.roomId.hashCode(),fullIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        if(MainActivity.isAlive){
+            val broughtForward=runCatching{
+                startActivity(fullIntent)
+                true
+            }.getOrDefault(false)
+            if(broughtForward)return
+        }
         val joinIntent=Intent(this,RsCallMonitorServiceV134::class.java).apply{
             action=ACTION_JOIN_ROOM
             putExtra("room_id",room.roomId)
