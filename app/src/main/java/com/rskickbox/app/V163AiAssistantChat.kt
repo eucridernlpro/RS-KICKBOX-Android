@@ -1,7 +1,9 @@
 package com.rskickbox.app
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
@@ -27,9 +29,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 private data class RsAiChatMessageV163(
     val id:Long,
@@ -109,9 +113,12 @@ fun RsAiAssistantChatV163(
     }
     fun applySelectedVoice(){
         val engine=tts?:return
-        engine.language=selectedLang.locale
+        val requested=selectedLang.locale
+        val available=runCatching{engine.isLanguageAvailable(requested)}.getOrDefault(TextToSpeech.LANG_NOT_SUPPORTED)
+        val effective=if(available>=TextToSpeech.LANG_AVAILABLE)requested else Locale.ENGLISH
+        engine.language=effective
         val matching=engine.voices
-            ?.filter{it.locale.language.equals(selectedLang.locale.language,true)}
+            ?.filter{it.locale.language.equals(effective.language,true)}
             ?.sortedWith(
                 compareByDescending<android.speech.tts.Voice>{!it.isNetworkConnectionRequired}
                     .thenByDescending{it.quality}
@@ -125,9 +132,14 @@ fun RsAiAssistantChatV163(
     }
 
     fun speak(text:String){
-        if(!ttsReady||text.isBlank())return
+        if(text.isBlank())return
+        if(!ttsReady){
+            if(voiceConversationActive)resumeListeningSignal++
+            return
+        }
         applySelectedVoice()
-        tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,"rs-ai-chat")
+        val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,"rs-ai-chat")
+        if(result==TextToSpeech.ERROR && voiceConversationActive)resumeListeningSignal++
     }
 
     val imagePicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
@@ -193,11 +205,30 @@ fun RsAiAssistantChatV163(
         onDispose{quietVoice.destroy()}
     }
 
+    val microphonePermissionLauncher=rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ){granted->
+        if(granted){
+            voiceConversationActive=true
+            quietVoice.start(selectedLang.locale)
+        }else{
+            voiceConversationActive=false
+            status="Microphone permission is required for hands-free RS AI."
+        }
+    }
+
     fun startVoice(){
         if(speaking)runCatching{tts?.stop()}
         speaking=false
         voiceConversationActive=true
-        quietVoice.start(selectedLang.locale)
+        if(
+            ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)
+            ==PackageManager.PERMISSION_GRANTED
+        ){
+            quietVoice.start(selectedLang.locale)
+        }else{
+            microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
     }
 
     fun send(textOverride:String?=null){
@@ -239,7 +270,7 @@ fun RsAiAssistantChatV163(
             )).takeLast(30)
             busy=false
             status=""
-            if(autoSpeak)speak(reply)
+            if(autoSpeak)speak(reply) else if(voiceConversationActive)resumeListeningSignal++
             return
         }
 
@@ -322,7 +353,7 @@ fun RsAiAssistantChatV163(
             )).takeLast(30)
             busy=false
             status=""
-            if(autoSpeak && reply.isNotBlank())speak(reply)
+            if(autoSpeak && reply.isNotBlank())speak(reply) else if(voiceConversationActive)resumeListeningSignal++
             return
         }
 
@@ -373,7 +404,7 @@ fun RsAiAssistantChatV163(
             )).takeLast(30)
             status=""
             busy=false
-            if(autoSpeak)speak(reply)
+            if(autoSpeak)speak(reply) else if(voiceConversationActive)resumeListeningSignal++
         }
     }
 
@@ -694,12 +725,19 @@ fun RsAiAssistantChatV163(
                 )
 
                 OutlinedButton(
-                    onClick={startVoice()},
+                    onClick={
+                        if(voiceConversationActive){
+                            voiceConversationActive=false
+                            quietVoice.stop()
+                            status=""
+                        }else startVoice()
+                    },
                     enabled=!busy,
                     modifier=Modifier.size(44.dp),
                     shape=CircleShape,
+                    border=BorderStroke(1.dp,if(voiceConversationActive)Color(0xFF58C9FF) else c.gold.copy(alpha=.55f)),
                     contentPadding=PaddingValues(0.dp)
-                ){Text("🎙",fontSize=15.sp)}
+                ){Text(if(voiceConversationActive)"◉" else "🎙",fontSize=15.sp)}
 
                 Button(
                     onClick={send()},
