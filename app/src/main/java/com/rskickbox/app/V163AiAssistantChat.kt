@@ -830,7 +830,46 @@ fun RsAiAssistantChatV163(
                             modifier=Modifier.fillMaxWidth()
                         ){Text(rsAiExtraV163(aiLang,"references"))}
                     }
+                    OutlinedButton(
+                        onClick={optionsMenu=false;confirmClearAiChat=true},
+                        enabled=messages.isNotEmpty(),
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text("Delete entire conversation")}
                     OutlinedButton(onClick={optionsMenu=false},modifier=Modifier.fillMaxWidth()){Text(rsAiExtraV163(aiLang,"close"))}
+                }
+            }
+        }
+    }
+
+    if(confirmClearAiChat){
+        androidx.compose.ui.window.Dialog(onDismissRequest={confirmClearAiChat=false}){
+            Surface(
+                color=Color.Black.copy(alpha=.98f),
+                shape=RoundedCornerShape(24.dp),
+                border=BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
+                modifier=Modifier.fillMaxWidth()
+            ){
+                Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+                    Text("DELETE AI CONVERSATION",color=c.bright,fontWeight=FontWeight.Black,fontSize=16.sp)
+                    Text(
+                        "Delete all messages in this RS AI conversation on this device?",
+                        color=c.text,fontSize=10.sp
+                    )
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                        OutlinedButton(
+                            onClick={confirmClearAiChat=false},
+                            modifier=Modifier.weight(1f)
+                        ){Text("Cancel")}
+                        Button(
+                            onClick={
+                                messages=emptyList()
+                                rsSaveAiChatHistoryV174(store,aiHistoryKey,emptyList())
+                                confirmClearAiChat=false
+                                status="Conversation deleted."
+                            },
+                            modifier=Modifier.weight(1f)
+                        ){Text("Delete all")}
+                    }
                 }
             }
         }
