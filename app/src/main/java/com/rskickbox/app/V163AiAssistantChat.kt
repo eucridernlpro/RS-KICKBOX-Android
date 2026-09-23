@@ -45,7 +45,8 @@ fun RsAiAssistantChatV163(
     c:RsPalette,
     lang:RsLang,
     store:RsStore,
-    role:RsRole
+    role:RsRole,
+    onNavigate:(String)->Unit={}
 ){
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
@@ -76,6 +77,12 @@ fun RsAiAssistantChatV163(
     var musicDialog by remember{mutableStateOf(false)}
     var newPlaylistName by remember{mutableStateOf("")}
     var playlistMenu by remember{mutableStateOf(false)}
+    var voiceConversationActive by remember{mutableStateOf(false)}
+    var voiceResult by remember{mutableStateOf<String?>(null)}
+    var resumeListeningSignal by remember{mutableIntStateOf(0)}
+    var immersiveGreetingPending by remember{
+        mutableStateOf(store.b("ai_start_listening_v168",false))
+    }
 
     var tts by remember{mutableStateOf<TextToSpeech?>(null)}
     var ttsReady by remember{mutableStateOf(false)}
@@ -83,9 +90,19 @@ fun RsAiAssistantChatV163(
         val engine=TextToSpeech(context){state->ttsReady=state==TextToSpeech.SUCCESS}
         engine.setOnUtteranceProgressListener(object:UtteranceProgressListener(){
             override fun onStart(utteranceId:String?){scope.launch{speaking=true}}
-            override fun onDone(utteranceId:String?){scope.launch{speaking=false}}
+            override fun onDone(utteranceId:String?){
+                scope.launch{
+                    speaking=false
+                    if(voiceConversationActive)resumeListeningSignal++
+                }
+            }
             @Deprecated("Deprecated in Java")
-            override fun onError(utteranceId:String?){scope.launch{speaking=false}}
+            override fun onError(utteranceId:String?){
+                scope.launch{
+                    speaking=false
+                    if(voiceConversationActive)resumeListeningSignal++
+                }
+            }
         })
         tts=engine
         onDispose{runCatching{engine.stop()};runCatching{engine.shutdown()}}
@@ -164,36 +181,27 @@ fun RsAiAssistantChatV163(
                 .onFailure{status=it.message?:"Could not open music file."}
         }
     }
-    val voiceLauncher=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
-        if(result.resultCode==Activity.RESULT_OK){
-            val spoken=result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
-            if(spoken.isNotBlank()){
-                draft=spoken.take(1200)
-                status=rsAiUiV162(aiLang,"voice_ready")
-            }
-        }
+    val quietVoice=remember(context){
+        RsQuietVoiceControllerV171(
+            context=context,
+            onResult={spoken->voiceResult=spoken.take(1800)},
+            onStatus={value->status=value},
+            onIdle={resumeListeningSignal++}
+        )
+    }
+    DisposableEffect(quietVoice){
+        onDispose{quietVoice.destroy()}
     }
 
     fun startVoice(){
-        val intent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE,selectedLang.locale.toLanguageTag())
-            putExtra(RecognizerIntent.EXTRA_PROMPT,rsAiUiV162(aiLang,"ask_voice"))
-        }
-        runCatching{voiceLauncher.launch(intent)}
-            .onFailure{status=rsAiUiV162(aiLang,"voice_unavailable")}
+        if(speaking)runCatching{tts?.stop()}
+        speaking=false
+        voiceConversationActive=true
+        quietVoice.start(selectedLang.locale)
     }
 
-    LaunchedEffect(Unit){
-        if(store.b("ai_start_listening_v168",false)){
-            store.pb("ai_start_listening_v168",false)
-            kotlinx.coroutines.delay(350)
-            startVoice()
-        }
-    }
-
-    fun send(){
-        val body=draft.trim()
+    fun send(textOverride:String?=null){
+        val body=(textOverride?:draft).trim()
         val media=pickedUri
         val kind=pickedKind
         if(body.isBlank()&&media==null)return
@@ -211,6 +219,89 @@ fun RsAiAssistantChatV163(
         draft=""
         pickedUri=null
         pickedKind=null
+
+        val platformIntent=if(kind==null)rsAiPlatformIntentV171(body) else RsAiPlatformIntentV171.None
+        if(platformIntent !is RsAiPlatformIntentV171.None){
+            val reply=when(platformIntent){
+                is RsAiPlatformIntentV171.ChangeLanguage->{
+                    val target=languages.firstOrNull{it.code==platformIntent.code}
+                    if(target!=null){
+                        aiLang=target.code
+                        store.ps("ai_voice_language_v161",target.code)
+                        when(target.code){
+                            "nl"->"Natuurlijk. Ik spreek nu Nederlands."
+                            "pt"->"Claro. Agora vou falar em português."
+                            "es"->"Claro. Ahora hablaré en español."
+                            "fr"->"Bien sûr. Je parle maintenant français."
+                            "de"->"Natürlich. Ich spreche jetzt Deutsch."
+                            "it"->"Certo. Ora parlerò in italiano."
+                            "pl"->"Oczywiście. Teraz będę mówić po polsku."
+                            "tr"->"Elbette. Artık Türkçe konuşacağım."
+                            else->"Of course. I’ll speak English now."
+                        }
+                    }else "I couldn’t switch to that language."
+                }
+                is RsAiPlatformIntentV171.ChangeAvatar->{
+                    avatar=platformIntent.avatar
+                    store.ps("ai_avatar_gender_v161",platformIntent.avatar)
+                    if(platformIntent.avatar=="MALE")"Marcus is active now. I’m ready."
+                    else "Sofia is active now. I’m ready."
+                }
+                is RsAiPlatformIntentV171.UploadMusic->{
+                    musicPicker.launch(arrayOf("audio/*"))
+                    "I’m opening your music files. Choose the track you want and I’ll handle the rest."
+                }
+                is RsAiPlatformIntentV171.PlayMusic->{
+                    val named=rsFindMusicTrackV171(store,body)
+                    if(named!=null){
+                        rsPlayMusicTrackV169(musicController,named)
+                        "Playing "+named.name+"."
+                    }else{
+                        val first=rsAllMusicTracksV171(store).firstOrNull()
+                        if(first!=null){
+                            rsPlayMusicTrackV169(musicController,first)
+                            "Playing "+first.name+"."
+                        }else "Your RS Music library is empty. Say “upload music” and I’ll open your music files."
+                    }
+                }
+                is RsAiPlatformIntentV171.PauseMusic->{
+                    runCatching{musicController?.pause()}
+                    "Music paused."
+                }
+                is RsAiPlatformIntentV171.StopMusic->{
+                    runCatching{musicController?.stop()}
+                    "Music stopped."
+                }
+                is RsAiPlatformIntentV171.NextMusic->{
+                    runCatching{musicController?.seekToNextMediaItem();musicController?.play()}
+                    "Playing the next track."
+                }
+                is RsAiPlatformIntentV171.PreviousMusic->{
+                    runCatching{musicController?.seekToPreviousMediaItem();musicController?.play()}
+                    "Going back to the previous track."
+                }
+                is RsAiPlatformIntentV171.OpenRoute->{
+                    scope.launch{
+                        kotlinx.coroutines.delay(250)
+                        onNavigate(platformIntent.route)
+                    }
+                    "Opening "+platformIntent.label+"."
+                }
+                is RsAiPlatformIntentV171.Help->{
+                    "I can navigate through RS KICKBOXING, open pages, control or upload music, switch Sofia or Marcus, change my spoken language, help with settings and app features, and coach your kickboxing training. Tell me naturally what you want me to do."
+                }
+                RsAiPlatformIntentV171.None->""
+            }
+            messages=(messages+RsAiChatMessageV163(
+                id=System.currentTimeMillis()+1,
+                mine=false,
+                text=reply
+            )).takeLast(30)
+            busy=false
+            status=""
+            if(autoSpeak && reply.isNotBlank())speak(reply)
+            return
+        }
 
         scope.launch{
             val localFirst=when{
@@ -263,6 +354,55 @@ fun RsAiAssistantChatV163(
         }
     }
 
+    LaunchedEffect(voiceResult){
+        val spoken=voiceResult?.trim().orEmpty()
+        if(spoken.isNotBlank()&&!busy){
+            voiceResult=null
+            send(spoken)
+        }
+    }
+
+    LaunchedEffect(resumeListeningSignal,voiceConversationActive,aiLang){
+        if(voiceConversationActive && !speaking && !busy){
+            kotlinx.coroutines.delay(320)
+            startVoice()
+        }
+    }
+
+    LaunchedEffect(ttsReady,immersiveGreetingPending){
+        if(immersiveGreetingPending && ttsReady){
+            store.pb("ai_start_listening_v168",false)
+            immersiveGreetingPending=false
+            voiceConversationActive=true
+            val name=if(avatar=="FEMALE")"Sofia" else "Marcus"
+            val greeting=when(aiLang){
+                "nl"->"Hoi, ik ben "+name+". Wat kan ik vandaag voor je doen?"
+                "pt"->"Olá, sou "+name+". O que posso fazer por ti hoje?"
+                "es"->"Hola, soy "+name+". ¿Qué puedo hacer por ti hoy?"
+                "fr"->"Salut, je suis "+name+". Que puis-je faire pour toi aujourd’hui ?"
+                "de"->"Hallo, ich bin "+name+". Was kann ich heute für dich tun?"
+                "it"->"Ciao, sono "+name+". Cosa posso fare per te oggi?"
+                "pl"->"Cześć, jestem "+name+". Co mogę dziś dla ciebie zrobić?"
+                "tr"->"Merhaba, ben "+name+". Bugün senin için ne yapabilirim?"
+                else->"Hi, I’m "+name+". What can I do for you today?"
+            }
+            messages=(messages+RsAiChatMessageV163(
+                id=System.currentTimeMillis(),
+                mine=false,
+                text=greeting
+            )).takeLast(30)
+            speak(greeting)
+        }else if(immersiveGreetingPending && !ttsReady){
+            kotlinx.coroutines.delay(700)
+            if(!ttsReady){
+                store.pb("ai_start_listening_v168",false)
+                immersiveGreetingPending=false
+                voiceConversationActive=true
+                startVoice()
+            }
+        }
+    }
+
     if(trainerReferences && role==RsRole.TRAINER){
         Column(Modifier.fillMaxSize()){
             Row(
@@ -280,6 +420,17 @@ fun RsAiAssistantChatV163(
         return
     }
 
+    Box(
+        Modifier.fillMaxSize().background(
+            Brush.verticalGradient(
+                listOf(
+                    Color(0xFF02060A),
+                    c.panel.copy(alpha=.72f),
+                    Color.Black
+                )
+            )
+        )
+    ){
     Column(
         Modifier.fillMaxSize().padding(horizontal=6.dp),
         verticalArrangement=Arrangement.spacedBy(6.dp)
@@ -595,6 +746,9 @@ fun RsAiAssistantChatV163(
                 }
             }
         }
+    }
+
+    }
     }
 
     if(musicDialog && pendingMusic!=null){
