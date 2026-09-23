@@ -575,11 +575,37 @@ fun RsAiAssistantChatV163(
         )
 
         Box(Modifier.fillMaxWidth().weight(1f)){
-            Column(
-                Modifier.fillMaxSize(),
-                verticalArrangement=Arrangement.Bottom
+            LazyColumn(
+                state=aiListState,
+                modifier=Modifier.fillMaxSize(),
+                verticalArrangement=Arrangement.spacedBy(6.dp),
+                contentPadding=PaddingValues(top=6.dp,bottom=8.dp)
             ){
-                messages.takeLast(6).forEach{message->
+                if(messages.isEmpty()){
+                    item{
+                        val coachName=if(avatar=="FEMALE")"Sofia" else "Marcus"
+                        Surface(
+                            color=Color.Black.copy(alpha=.52f),
+                            shape=RoundedCornerShape(18.dp),
+                            border=BorderStroke(1.dp,c.gold.copy(alpha=.16f)),
+                            modifier=Modifier.fillMaxWidth()
+                        ){
+                            Text(
+                                when(aiLang){
+                                    "nl"->"Praat met "+coachName+" alsof je met je echte coach praat."
+                                    "pt"->"Fala com "+coachName+" como falarias com o teu treinador real."
+                                    "es"->"Habla con "+coachName+" como con tu entrenador real."
+                                    "fr"->"Parle à "+coachName+" comme à ton vrai coach."
+                                    else->"Talk to "+coachName+" like you would to a real coach."
+                                },
+                                color=c.muted,
+                                fontSize=9.sp,
+                                modifier=Modifier.padding(12.dp)
+                            )
+                        }
+                    }
+                }
+                items(messages,key={it.id}){message->
                     Row(
                         Modifier.fillMaxWidth().padding(vertical=2.dp),
                         horizontalArrangement=if(message.mine)Arrangement.End else Arrangement.Start
@@ -591,7 +617,7 @@ fun RsAiAssistantChatV163(
                                 1.dp,
                                 if(message.mine)c.gold.copy(alpha=.24f) else Color(0xFF58C9FF).copy(alpha=.22f)
                             ),
-                            modifier=Modifier.fillMaxWidth(.86f)
+                            modifier=Modifier.fillMaxWidth(.88f)
                         ){
                             Column(Modifier.padding(9.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
                                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
@@ -629,7 +655,7 @@ fun RsAiAssistantChatV163(
                                                 )
                                             }
                                             DropdownMenuItem(
-                                                text={Text(rsAiExtraV163(aiLang,"delete_chat"))},
+                                                text={Text("Delete this message")},
                                                 onClick={
                                                     aiMessageMenuId=null
                                                     messages=messages.filterNot{it.id==message.id}
@@ -642,13 +668,13 @@ fun RsAiAssistantChatV163(
                                     if(message.mediaKind=="IMAGE"){
                                         RsUriPreviewV21(
                                             message.mediaUri,
-                                            Modifier.fillMaxWidth().heightIn(min=70.dp,max=120.dp),
+                                            Modifier.fillMaxWidth().heightIn(min=70.dp,max=140.dp),
                                             "CENTER"
                                         )
                                     }else if(message.mediaKind=="VIDEO"){
                                         RsMiniLocalVideoV163(
                                             message.mediaUri,
-                                            Modifier.fillMaxWidth().height(96.dp)
+                                            Modifier.fillMaxWidth().height(110.dp)
                                         )
                                     }
                                 }
@@ -663,45 +689,17 @@ fun RsAiAssistantChatV163(
                                         modifier=Modifier.fillMaxWidth()
                                     ){
                                         Column(Modifier.padding(7.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
-                                            Text(
-                                                "TRAINER REFERENCE · "+ref.item.title,
-                                                color=c.gold,fontWeight=FontWeight.Black,fontSize=8.sp
-                                            )
-                                            if(ref.item.kind=="VIDEO"){
-                                                RsMiniLocalVideoV163(ref.localUri,Modifier.fillMaxWidth().height(105.dp))
-                                            }else{
-                                                RsUriPreviewV21(ref.localUri,Modifier.fillMaxWidth().height(105.dp),"CENTER")
-                                            }
-                                            if(ref.item.description.isNotBlank()){
-                                                Text(ref.item.description,color=c.text,fontSize=9.sp,lineHeight=13.sp)
-                                            }
-                                            if(ref.item.techniqueTags.isNotEmpty()){
-                                                Text(
-                                                    ref.item.techniqueTags.take(8).joinToString(" · "),
-                                                    color=c.muted,fontSize=7.sp
-                                                )
-                                            }
+                                            Text("TRAINER REFERENCE · "+ref.item.title,color=c.gold,fontWeight=FontWeight.Black,fontSize=8.sp)
+                                            if(ref.item.kind=="VIDEO")RsMiniLocalVideoV163(ref.localUri,Modifier.fillMaxWidth().height(105.dp))
+                                            else RsUriPreviewV21(ref.localUri,Modifier.fillMaxWidth().height(105.dp),"CENTER")
+                                            if(ref.item.description.isNotBlank())Text(ref.item.description,color=c.text,fontSize=9.sp,lineHeight=13.sp)
+                                            if(ref.item.techniqueTags.isNotEmpty())Text(ref.item.techniqueTags.take(8).joinToString(" · "),color=c.muted,fontSize=7.sp)
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                if(messages.isEmpty()){
-                    val coachName=if(avatar=="FEMALE")"Sofia" else "Marcus"
-                    Text(
-                        when(aiLang){
-                            "nl"->"Praat met "+coachName+" alsof je met je echte coach praat."
-                            "pt"->"Fala com "+coachName+" como falarias com o teu treinador real."
-                            "es"->"Habla con "+coachName+" como con tu entrenador real."
-                            "fr"->"Parle à "+coachName+" comme à ton vrai coach."
-                            else->"Talk to "+coachName+" like you would to a real coach."
-                        },
-                        color=c.muted,
-                        fontSize=9.sp,
-                        modifier=Modifier.padding(horizontal=8.dp,vertical=4.dp)
-                    )
                 }
             }
         }
