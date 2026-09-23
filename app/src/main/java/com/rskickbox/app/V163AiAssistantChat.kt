@@ -185,10 +185,14 @@ fun RsAiAssistantChatV163(
         if(uri!=null){
             attachMenu=false
             rsPrepareMusicTrackV169(context,uri,"RS Music")
-                .onSuccess{
-                    pendingMusic=it
-                    musicDialog=true
-                    status=it.name
+                .onSuccess{track->
+                    rsSaveMusicTrackV169(store,track)
+                        .onSuccess{
+                            pendingMusic=track
+                            musicDialog=true
+                            status="Saved to RS Music · "+track.name
+                        }
+                        .onFailure{status=it.message?:"Could not save music."}
                 }
                 .onFailure{status=it.message?:"Could not open music file."}
         }
@@ -427,7 +431,7 @@ fun RsAiAssistantChatV163(
 
     LaunchedEffect(resumeListeningSignal,voiceConversationActive,aiLang){
         if(voiceConversationActive && !speaking && !busy){
-            kotlinx.coroutines.delay(320)
+            kotlinx.coroutines.delay(1200)
             startVoice()
         }
     }
@@ -859,11 +863,15 @@ fun RsAiAssistantChatV163(
                         OutlinedButton(
                             onClick={
                                 rsSaveMusicTrackV169(store,track)
-                                    .onSuccess{status="Saved to RS Music."}
+                                    .onSuccess{
+                                        status="Saved to RS Music."
+                                        musicDialog=false
+                                        pendingMusic=null
+                                    }
                                     .onFailure{status=it.message?:"Could not save music."}
                             },
                             modifier=Modifier.weight(1f)
-                        ){Text("☆ Save",fontSize=9.sp)}
+                        ){Text("✓ Saved",fontSize=9.sp)}
                     }
 
                     if(playlists.isNotEmpty()){
