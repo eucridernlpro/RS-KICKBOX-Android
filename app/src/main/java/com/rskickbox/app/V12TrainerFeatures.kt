@@ -23,13 +23,12 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
-    var pending by remember{mutableStateOf<RsTheme?>(null)}
     val scroll=rememberScrollState()
 
     RsScroll(
         c,
         "Visual Theme Studio",
-        "Swipe left or right through complete RS visual identities. Tap a style to preview its palette, then confirm before applying."
+        "Swipe through complete RS themes. Each theme changes dashboard layout, chat geometry, button shapes, panel density and colors. Tap Select Style to apply immediately."
     ){
         Text(
             "SWIPE THEMES",
@@ -45,6 +44,7 @@ fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
         ){
             RsTheme.entries.forEach{t->
                 val p=paletteFor(t)
+                val layout=rsThemeLayoutV175(t)
                 val title=when(t){
                     RsTheme.ELITE_GOLD->"ELITE GOLD"
                     RsTheme.CRIMSON_FIGHT_NIGHT->"CRIMSON FIGHT NIGHT"
@@ -123,27 +123,39 @@ fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
                             Text(subtitle,color=p.muted,fontSize=10.sp,lineHeight=14.sp)
 
                             Surface(
-                                color=p.panel.copy(alpha=.82f),
-                                shape=RoundedCornerShape(20.dp),
-                                border=BorderStroke(1.dp,p.gold.copy(alpha=.38f)),
-                                modifier=Modifier.fillMaxWidth().height(120.dp)
+                                color=p.panel.copy(alpha=layout.glassAlpha),
+                                shape=RoundedCornerShape(layout.panelRadius.dp),
+                                border=BorderStroke(1.dp,p.gold.copy(alpha=.42f)),
+                                modifier=Modifier.fillMaxWidth().height(126.dp)
                             ){
-                                Box(Modifier.fillMaxSize()){
-                                    Box(
-                                        Modifier.fillMaxWidth().height(2.dp).align(Alignment.TopCenter)
-                                            .background(Brush.horizontalGradient(listOf(Color.Transparent,p.bright,Color.Transparent)))
-                                    )
-                                    Box(
-                                        Modifier.width(2.dp).fillMaxHeight().align(Alignment.CenterStart)
-                                            .background(Brush.verticalGradient(listOf(Color.Transparent,p.gold,Color.Transparent)))
-                                    )
-                                    Column(
-                                        Modifier.align(Alignment.Center).padding(12.dp),
-                                        horizontalAlignment=Alignment.CenterHorizontally
-                                    ){
-                                        Text("FUTURISTIC RS UI",color=p.text,fontWeight=FontWeight.Black,fontSize=12.sp)
-                                        Text("Neon lines · glass panels · premium contrast",color=p.muted,fontSize=8.sp)
+                                Column(
+                                    Modifier.fillMaxSize().padding(10.dp),
+                                    verticalArrangement=Arrangement.spacedBy(7.dp)
+                                ){
+                                    Text(layout.mode.replace('_',' '),color=p.bright,fontWeight=FontWeight.Black,fontSize=10.sp)
+                                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                                        repeat(layout.dashboardColumns.coerceIn(1,2)){idx->
+                                            Surface(
+                                                color=if(idx==0)p.panel2 else p.bg,
+                                                shape=RoundedCornerShape(layout.tileRadius.dp),
+                                                border=BorderStroke(1.dp,p.bright.copy(alpha=.32f)),
+                                                modifier=Modifier.weight(1f).height(38.dp)
+                                            ){}
+                                        }
                                     }
+                                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                                        Surface(
+                                            color=p.panel2,
+                                            shape=RoundedCornerShape(layout.chatBubbleRadius.dp),
+                                            modifier=Modifier.weight(1f).height(24.dp)
+                                        ){}
+                                        Surface(
+                                            color=p.gold.copy(alpha=.28f),
+                                            shape=RoundedCornerShape(layout.buttonRadius.dp),
+                                            modifier=Modifier.width(62.dp).height(24.dp)
+                                        ){}
+                                    }
+                                    Text("Dashboard · chat · buttons · panels",color=p.muted,fontSize=8.sp)
                                 }
                             }
 
@@ -160,11 +172,12 @@ fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
 
                             Spacer(Modifier.weight(1f))
                             Button(
-                                onClick={pending=t},
+                                onClick={onTheme(t)},
                                 enabled=theme!=t,
-                                modifier=Modifier.fillMaxWidth()
+                                modifier=Modifier.fillMaxWidth(),
+                                shape=RoundedCornerShape(layout.buttonRadius.dp)
                             ){
-                                Text(if(theme==t)"SELECTED" else "APPLY STYLE")
+                                Text(if(theme==t)"ACTIVE STYLE" else "SELECT STYLE")
                             }
                         }
                     }
@@ -173,38 +186,10 @@ fun RsThemeStudio(c:RsPalette,theme:RsTheme,onTheme:(RsTheme)->Unit){
         }
 
         Text(
-            "Tip: swipe slowly to compare the full visual identity before applying. The selected palette changes the shared RS interface for trainer and student areas.",
+            "Select a theme to change the app structure immediately. The active theme is saved locally first so the interface changes even before cloud sync completes.",
             color=c.muted,
             fontSize=9.sp,
             lineHeight=13.sp
-        )
-    }
-
-    val selected=pending
-    if(selected!=null){
-        val p=paletteFor(selected)
-        AlertDialog(
-            onDismissRequest={pending=null},
-            title={Text("Apply "+selected.name.replace('_',' ')+"?")},
-            text={
-                Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
-                    Text("This changes the active RS visual identity across the app.")
-                    Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                        listOf(p.bg,p.panel,p.gold,p.bright).forEach{x->
-                            Surface(modifier=Modifier.size(34.dp),shape=RoundedCornerShape(10.dp),color=x){}
-                        }
-                    }
-                }
-            },
-            confirmButton={
-                Button(onClick={
-                    onTheme(selected)
-                    pending=null
-                }){Text("Apply")}
-            },
-            dismissButton={
-                OutlinedButton(onClick={pending=null}){Text("Cancel")}
-            }
         )
     }
 }
