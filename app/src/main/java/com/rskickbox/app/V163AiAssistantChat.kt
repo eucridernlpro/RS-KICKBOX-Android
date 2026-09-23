@@ -596,7 +596,6 @@ fun RsAiAssistantChatV163(
             }
         }
     }
-}
 
     if(musicDialog && pendingMusic!=null){
         val track=pendingMusic!!
@@ -707,6 +706,7 @@ fun RsAiAssistantChatV163(
             }
         }
     }
+}
 
 @Composable
 private fun RsAiAvatarStageV163(
