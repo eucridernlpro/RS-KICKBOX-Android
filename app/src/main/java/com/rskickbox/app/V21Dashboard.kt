@@ -134,7 +134,7 @@ private fun RsDashboardCommandCenterV176(
                 modifier=Modifier.weight(1f)
             ){Text("✧ RS AI",fontSize=8.sp,fontWeight=FontWeight.Black)}
             OutlinedButton(
-                onClick={if(lastFeature.isNotBlank())({onRoute(lastFeature)}) else ({})},
+                onClick={if(lastFeature.isNotBlank())onRoute(lastFeature)},
                 enabled=lastFeature.isNotBlank(),
                 modifier=Modifier.weight(1f)
             ){
