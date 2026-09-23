@@ -19,6 +19,7 @@ class RsQuietVoiceControllerV171(
     private var recognizer:SpeechRecognizer?=null
     private var running=false
     private var fallbackToDeviceLocale=false
+    private var lastStartAt=0L
 
     private fun ensureRecognizer(){
         if(recognizer!=null)return
@@ -30,12 +31,12 @@ class RsQuietVoiceControllerV171(
             setRecognitionListener(object:RecognitionListener{
                 override fun onReadyForSpeech(params:Bundle?){
                     running=true
-                    onStatus("LISTENING")
+                    onStatus("")
                 }
-                override fun onBeginningOfSpeech(){onStatus("HEARING YOU")}
+                override fun onBeginningOfSpeech(){onStatus("")}
                 override fun onRmsChanged(rmsdB:Float){}
                 override fun onBufferReceived(buffer:ByteArray?){}
-                override fun onEndOfSpeech(){onStatus("PROCESSING")}
+                override fun onEndOfSpeech(){onStatus("")}
                 override fun onError(error:Int){
                     running=false
                     when(error){
@@ -49,20 +50,20 @@ class RsQuietVoiceControllerV171(
                         SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE->{
                             fallbackToDeviceLocale=true
                             destroyRecognizer()
-                            onStatus("Using the phone voice engine for this language.")
+                            onStatus("")
                             onIdle()
                         }
                         SpeechRecognizer.ERROR_RECOGNIZER_BUSY->{
                             destroyRecognizer()
-                            onStatus("Microphone was busy. Reconnecting…")
+                            onStatus("")
                             onIdle()
                         }
                         SpeechRecognizer.ERROR_NETWORK,
                         SpeechRecognizer.ERROR_NETWORK_TIMEOUT->{
-                            onStatus("Voice connection interrupted. Reconnecting…")
+                            onStatus("")
                             onIdle()
                         }
-                        else->onStatus("Voice input is temporarily unavailable.")
+                        else->{ onStatus(""); onIdle() }
                     }
                 }
                 override fun onResults(results:Bundle?){
@@ -90,6 +91,9 @@ class RsQuietVoiceControllerV171(
             return
         }
         if(running)return
+        val now=System.currentTimeMillis()
+        if(now-lastStartAt<900L)return
+        lastStartAt=now
         ensureRecognizer()
         val recognitionLocale=if(fallbackToDeviceLocale)Locale.getDefault() else locale
         val intent=android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
@@ -97,9 +101,9 @@ class RsQuietVoiceControllerV171(
             putExtra(RecognizerIntent.EXTRA_LANGUAGE,recognitionLocale.toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,300L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,850L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,600L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,500L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,1800L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,1200L)
         }
         runCatching{recognizer?.startListening(intent)}
             .onFailure{
@@ -178,6 +182,7 @@ fun rsAiPlatformIntentV171(raw:String):RsAiPlatformIntentV171{
 
     val routes=listOf(
         Triple("music","RS Music",arrayOf("music page","music player","rs music","muziek","música","musica","musique")),
+        Triple("coachchat","Private Chats",arrayOf("private chat","private chats","private messages","direct chat","direct chats","coach chat","private coach","privé chat","prive chat","privé chats","prive chats")),
         Triple("support","Support",arrayOf("support","help desk","hulp","suporte","soporte")),
         Triple("groups","Groups",arrayOf("groups","groepen","grupos","groupes")),
         Triple("community","Community",arrayOf("community","comunidade","comunidad","communauté")),
