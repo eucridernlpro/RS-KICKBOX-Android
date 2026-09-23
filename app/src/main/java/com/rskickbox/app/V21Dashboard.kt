@@ -304,6 +304,7 @@ private fun studentV21()=listOf(
 private fun trainerV21()=listOf(
     SectionV21("Top Features",listOf(
         DashV21("guide","App Guide","Examples · workflows · how every section works","brand"),
+        DashV21("coachchat","RS Chat","Students · groups · voice · AI coach · moderation","ai"),
         DashV21("music_admin","RS Music Manager","Full player · playlists · background audio · AI control","music")
     )),
     SectionV21("Brand & Experience",listOf(
@@ -315,7 +316,6 @@ private fun trainerV21()=listOf(
         DashV21("book","Book Manager","Trainer book experience","brand")
     )),
     SectionV21("Coaching, Content & Music",listOf(
-        DashV21("coachchat","RS Chat","Students · groups · voice · AI coach · moderation","ai"),
         DashV21("content","AI Content Manager","AI coach · trainer references · training knowledge","ai"),
         DashV21("homework_admin","Homework Manager","Assign · review","training"),
         DashV21("session_builder","Session Builder","Create active training sessions","training"),
