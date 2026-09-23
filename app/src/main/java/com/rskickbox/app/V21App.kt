@@ -1301,23 +1301,36 @@ private fun ShellV21(
             verticalArrangement=Arrangement.spacedBy(7.dp)
         ) {
             RsBrandedHeaderV21(c,store) {
-                RsLettersLogoV111(c,store,Modifier.fillMaxWidth())
                 Row(
                     Modifier.fillMaxWidth(),
-                    horizontalArrangement=Arrangement.spacedBy(6.dp),
+                    horizontalArrangement=Arrangement.spacedBy(7.dp),
                     verticalAlignment=Alignment.CenterVertically
-                ) {
+                ){
+                    Image(
+                        painter=androidx.compose.ui.res.painterResource(R.drawable.rs_launcher_royal_v129),
+                        contentDescription="RS",
+                        modifier=Modifier.size(38.dp)
+                    )
+                    Text(
+                        store.s("brand_header_name","RS KICKBOXING"),
+                        color=c.bright,
+                        fontWeight=FontWeight.Black,
+                        fontSize=15.sp,
+                        maxLines=1,
+                        modifier=Modifier.weight(1f)
+                    )
                     OutlinedButton(
                         onClick={scope.launch{drawerState.open()}},
-                        modifier=Modifier.widthIn(min=42.dp,max=50.dp).heightIn(min=40.dp),
-                        contentPadding=PaddingValues(horizontal=8.dp)
-                    ){Text("☰")}
-                    Spacer(Modifier.weight(1f))
-                    if(route!=home) OutlinedButton(
+                        modifier=Modifier.size(36.dp),
+                        shape=CircleShape,
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text("☰",fontSize=13.sp)}
+                    if(route!=home)OutlinedButton(
                         onClick={onRoute(home)},
-                        modifier=Modifier.widthIn(min=42.dp,max=50.dp).heightIn(min=40.dp),
-                        contentPadding=PaddingValues(horizontal=8.dp)
-                    ){Text("‹")}
+                        modifier=Modifier.size(36.dp),
+                        shape=CircleShape,
+                        contentPadding=PaddingValues(0.dp)
+                    ){Text("‹",fontSize=20.sp)}
                     RsNotificationBellV156(
                         c=c,
                         store=store,
@@ -1333,20 +1346,12 @@ private fun ShellV21(
                             store.pb("ai_start_listening_v168",true)
                             onRoute("voice")
                         },
-                        modifier=Modifier.size(44.dp),
+                        modifier=Modifier.size(38.dp),
                         shape=CircleShape,
-                        border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.55f)),
+                        border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.58f)),
                         contentPadding=PaddingValues(0.dp)
                     ){
-                        Text("🎙",fontSize=16.sp,color=Color(0xFF58C9FF))
-                    }
-                    OutlinedButton(
-                        onClick=onLogout,
-                        modifier=Modifier.widthIn(min=68.dp,max=106.dp).heightIn(min=40.dp),
-                        contentPadding=PaddingValues(horizontal=6.dp)
-                    ){
-                        val logout=rsT(lang,"logout")
-                        Text(logout,fontSize=adaptiveLabelSp(logout,9f).sp,maxLines=1)
+                        Text("🎙",fontSize=14.sp,color=Color(0xFF58C9FF))
                     }
                 }
             }
