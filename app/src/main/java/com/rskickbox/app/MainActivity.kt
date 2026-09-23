@@ -11,6 +11,8 @@ class MainActivity : ComponentActivity() {
     companion object{
         @Volatile var isForeground:Boolean=false
             private set
+        @Volatile var isAlive:Boolean=false
+            private set
     }
 
     override fun onStart(){
@@ -25,6 +27,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        isAlive=true
         applyIncomingCallWindow(intent)
         dismissIncomingCallNotification(intent)
         RsSupabaseV60.client?.handleDeeplinks(intent)
@@ -61,6 +64,11 @@ class MainActivity : ComponentActivity() {
         val isVoiceAssistantAction=intent.action=="com.rskickbox.app.OPEN_AI_VOICE"
         val isRsRouteAction=intent.action=="com.rskickbox.app.OPEN_RS_ROUTE"
         if(isAuthCallback || isIncomingCallAction || isVoiceAssistantAction || isRsRouteAction)recreate()
+    }
+
+    override fun onDestroy(){
+        isAlive=false
+        super.onDestroy()
     }
 
     private fun dismissIncomingCallNotification(intent:Intent?){
