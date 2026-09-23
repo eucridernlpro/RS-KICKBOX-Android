@@ -117,6 +117,8 @@ fun RsAiAssistantChatV163(
         val available=runCatching{engine.isLanguageAvailable(requested)}.getOrDefault(TextToSpeech.LANG_NOT_SUPPORTED)
         val effective=if(available>=TextToSpeech.LANG_AVAILABLE)requested else Locale.ENGLISH
         engine.language=effective
+        engine.setSpeechRate(.94f)
+        engine.setPitch(if(avatar=="MALE").96f else 1.02f)
         val matching=engine.voices
             ?.filter{it.locale.language.equals(effective.language,true)}
             ?.sortedWith(
@@ -871,7 +873,7 @@ fun RsAiAssistantChatV163(
                                     .onFailure{status=it.message?:"Could not save music."}
                             },
                             modifier=Modifier.weight(1f)
-                        ){Text("✓ Saved",fontSize=9.sp)}
+                        ){Text("✓ Done",fontSize=9.sp)}
                     }
 
                     if(playlists.isNotEmpty()){
