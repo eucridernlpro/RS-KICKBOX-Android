@@ -48,6 +48,10 @@ class RsQuietVoiceControllerV171(
                             destroyRecognizer()
                             onStatus("Microphone was busy. Try again.")
                         }
+                        SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE,
+                        SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED->{
+                            onStatus("Voice recognition for this language is unavailable on this device. Try another language or install its speech pack.")
+                        }
                         else->onStatus("Voice input unavailable. Error "+error)
                     }
                 }
