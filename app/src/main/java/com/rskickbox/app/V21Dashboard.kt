@@ -129,9 +129,9 @@ private fun DefaultTileArtworkV21(c:RsPalette,kind:String){
 }
 
 private fun sectionTitleV25(lang:RsLang,title:String)=when(title){
-    "Quick Access"->when(lang.code){
-        "nl"->"Snelle Toegang";"pt"->"Acesso Rápido";"es"->"Acceso Rápido";"fr"->"Accès Rapide";
-        "de"->"Schnellzugriff";"it"->"Accesso Rapido";"pl"->"Szybki Dostęp";"tr"->"Hızlı Erişim";else->"Quick Access"
+    "Top Features"->when(lang.code){
+        "nl"->"Belangrijkste Functies";"pt"->"Principais Recursos";"es"->"Funciones Principales";"fr"->"Fonctions Principales";
+        "de"->"Top-Funktionen";"it"->"Funzioni Principali";"pl"->"Najważniejsze Funkcje";"tr"->"Öne Çıkan Özellikler";else->"Top Features"
     }
     "Core Training"->rsT(lang,"core_training")
     "Club & Coaching"->rsT(lang,"club_coaching")
@@ -232,12 +232,10 @@ private fun rsDashboardBadgeCountV55(store:RsStore,role:RsRole,route:String):Int
 private fun glyphV21(kind:String)=when(kind){"ai"->"AI";"music"->"♫";"payment"->"€";"progress"->"↗";"fight"->"FX";"training"->"TR";"technique"->"TK";"settings"->"⚙";"brand"->"♛";else->"RS"}
 
 private fun studentV21()=listOf(
-    SectionV21("Quick Access",listOf(
+    SectionV21("Top Features",listOf(
+        DashV21("student_guide","App Guide","Learn every available feature step by step","brand"),
         DashV21("coachchat","RS Chat","Private · groups · calls · media · RS AI","ai"),
         DashV21("music","My RS Music","Full player · playlists · background audio · AI control","music")
-    )),
-    SectionV21("Student Help",listOf(
-        DashV21("student_guide","App Guide","Learn every available feature step by step","brand")
     )),
     SectionV21("Core Training",listOf(
         DashV21("session","Session Player","Rounds · timer · trainer cues","training"),
@@ -277,11 +275,9 @@ private fun studentV21()=listOf(
 )
 
 private fun trainerV21()=listOf(
-    SectionV21("Quick Access",listOf(
+    SectionV21("Top Features",listOf(
+        DashV21("guide","App Guide","Examples · workflows · how every section works","brand"),
         DashV21("music_admin","RS Music Manager","Full player · playlists · background audio · AI control","music")
-    )),
-    SectionV21("Trainer Help",listOf(
-        DashV21("guide","App Guide","Examples · workflows · how every section works","brand")
     )),
     SectionV21("Brand & Experience",listOf(
         DashV21("themes","Visual Theme Studio","Complete app identity","brand"),
