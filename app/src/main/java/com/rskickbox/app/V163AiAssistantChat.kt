@@ -1110,6 +1110,8 @@ private fun RsAiAvatarStageV163(
     val visual=if(speakingVisual.isNotBlank())speakingVisual
         else rsVisualUriWithBundledFallbackV113(context,store,idleSlot)
     val avatarMotion=store.b("ai_avatar_motion_v163",true)
+    val renderMode=store.s("ai_avatar_render_mode_v176","CINEMATIC_3D")
+    val themeLayout=rsThemeLayoutV175(rsStoredThemeV175(store))
     val transition=rememberInfiniteTransition(label="ai-stage")
     val breath by transition.animateFloat(
         initialValue=.992f,
@@ -1123,20 +1125,60 @@ private fun RsAiAvatarStageV163(
         animationSpec=infiniteRepeatable(tween(2500,easing=FastOutSlowInEasing),RepeatMode.Reverse),
         label="ai-float"
     )
+    val parallaxX by transition.animateFloat(
+        initialValue=-5f,
+        targetValue=5f,
+        animationSpec=infiniteRepeatable(tween(4200,easing=FastOutSlowInEasing),RepeatMode.Reverse),
+        label="ai-parallax"
+    )
+    val aura by transition.animateFloat(
+        initialValue=.22f,
+        targetValue=if(speaking).62f else .38f,
+        animationSpec=infiniteRepeatable(tween(if(speaking)620 else 1500,easing=FastOutSlowInEasing),RepeatMode.Reverse),
+        label="ai-aura"
+    )
     var languageMenu by remember{mutableStateOf(false)}
 
     Surface(
         color=Color.Black,
-        shape=RoundedCornerShape(26.dp),
-        border=BorderStroke(1.dp,if(speaking)Color(0xFF58C9FF).copy(alpha=.58f) else c.gold.copy(alpha=.34f)),
-        modifier=Modifier.fillMaxWidth().height(300.dp)
+        shape=RoundedCornerShape(themeLayout.panelRadius.dp),
+        border=BorderStroke(
+            if(themeLayout.strongLines)2.dp else 1.dp,
+            if(speaking)Color(0xFF58C9FF).copy(alpha=.72f) else c.gold.copy(alpha=.46f)
+        ),
+        tonalElevation=18.dp,
+        modifier=Modifier.fillMaxWidth().height(330.dp)
     ){
-        Box(Modifier.fillMaxSize()){
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.radialGradient(
+                    listOf(
+                        c.bright.copy(alpha=aura*.42f),
+                        c.gold.copy(alpha=.10f),
+                        Color(0xFF07090C),
+                        Color.Black
+                    )
+                )
+            )
+        ){
+            // Rear depth layer: gives the assistant a cinematic 3D stage even
+            // when the trainer uses a normal portrait asset.
+            Box(
+                Modifier.fillMaxSize().padding(horizontal=18.dp,vertical=14.dp)
+                    .clip(RoundedCornerShape((themeLayout.panelRadius+8).dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.White.copy(alpha=.035f),Color.Transparent,Color.Black.copy(alpha=.32f))
+                        )
+                    )
+            )
             Box(
                 Modifier.fillMaxSize().graphicsLayer{
-                    scaleX=if(avatarMotion)breath else 1f
-                    scaleY=if(avatarMotion)breath else 1f
+                    scaleX=if(avatarMotion)breath*1.035f else 1.035f
+                    scaleY=if(avatarMotion)breath*1.035f else 1.035f
                     translationY=if(avatarMotion)floatY else 0f
+                    translationX=if(avatarMotion && renderMode=="CINEMATIC_3D")parallaxX else 0f
+                    shadowElevation=if(renderMode=="CINEMATIC_3D")18f else 0f
                 }
             ){
                 if(visual.isNotBlank()){
@@ -1152,10 +1194,28 @@ private fun RsAiAvatarStageV163(
             Box(
                 Modifier.fillMaxSize().background(
                     Brush.verticalGradient(
-                        listOf(Color.Black.copy(alpha=.06f),Color.Transparent,Color.Black.copy(alpha=.74f))
+                        listOf(
+                            Color.Black.copy(alpha=.04f),
+                            Color.Transparent,
+                            c.gold.copy(alpha=.05f),
+                            Color.Black.copy(alpha=.78f)
+                        )
                     )
                 )
             )
+            // Speaking pulse / holographic depth rings.
+            if(renderMode=="CINEMATIC_3D"){
+                Surface(
+                    color=if(speaking)Color(0xFF58C9FF).copy(alpha=aura*.30f) else c.gold.copy(alpha=aura*.18f),
+                    shape=CircleShape,
+                    border=BorderStroke(1.dp,if(speaking)Color(0xFF58C9FF).copy(alpha=.46f) else c.bright.copy(alpha=.30f)),
+                    modifier=Modifier.align(Alignment.BottomCenter)
+                        .padding(bottom=44.dp)
+                        .fillMaxWidth(.72f)
+                        .height(42.dp)
+                        .graphicsLayer{scaleX=1f+aura*.08f;scaleY=.44f}
+                ){}
+            }
 
             Row(
                 Modifier.align(Alignment.TopStart).fillMaxWidth().padding(9.dp),
@@ -1177,6 +1237,11 @@ private fun RsAiAvatarStageV163(
                         }
                     }
                 }
+                AssistChip(
+                    onClick={},
+                    enabled=false,
+                    label={Text(if(renderMode=="CINEMATIC_3D")"3D VIRTUAL ASSISTANT" else "AI ASSISTANT",fontSize=7.sp,fontWeight=FontWeight.Black)}
+                )
                 Spacer(Modifier.weight(1f))
                 AssistChip(
                     onClick=onOptions,
