@@ -42,12 +42,12 @@ private fun rsGuideItemsV54():List<RsGuideItemV54> = listOf(
         "PLAN"
     ),
     RsGuideItemV54(
-        "COACHING","AI Technique Coach","voice",
-        "Review short technique videos, keep coaching history and support corrections with trainer-approved visual examples.",
-        "In Training Media, mark suitable images/videos as AI correction examples and add clear technique tags such as roundhouse kick, pivot, guard or recovery. The AI reference system only uses media the trainer has approved.",
-        "Students can import a short technique video, select a technique, receive structured feedback, hear coaching and, when a matching approved example exists, use that visual reference to understand the correction.",
-        "Example: a student uploads a roundhouse kick video; feedback about pivot and guard can be paired with a trainer-approved roundhouse/pivot reference clip instead of an invented demonstration.",
-        listOf("Upload or open Training Media","Mark a suitable item as AI correction example","Add technique tags","Save AI example settings","Student uploads up to 20 seconds","Choose technique","Analyze","Use matching approved reference when available","Save result","Trainer reviews history"),
+        "COACHING","RS AI Coach · Sofia & Marcus","voice",
+        "Use one conversational AI coach for normal greetings, kickboxing questions, technique analysis, trainer-approved reference media, voice control and RS Music actions.",
+        "Build the trusted AI reference library by tagging suitable trainer images/videos with the correct move, combination, coaching note and AI-reference status. The AI can match these references automatically when a student asks about that move. Trainer can also use AI Content Manager directly from the AI Coach.",
+        "Students can speak or type naturally, upload image/video, ask about training styles, combinations, drills or technique, hear answers in the selected language and receive matching trainer-approved image/video previews when available.",
+        "Example: student asks about a rear roundhouse. Sofia explains mechanics, guard, balance, common mistakes and a drill, then shows a trainer-approved roundhouse clip if the trainer has tagged one. The student can also upload their own clip for technique analysis.",
+        listOf("Open RS CHAT → AI Coach","Choose Sofia or Marcus","Choose AI language","Ask naturally by text or voice","Use + for image, video, voice or music","Tag trainer reference media carefully","Ask for a known move/combination","Review automatic trainer-reference preview","Use uploaded video for technique analysis","Use ⋮ on AI media to save useful media"),
         "AI_COACH"
     ),
     RsGuideItemV54(
@@ -132,12 +132,12 @@ private fun rsGuideItemsV54():List<RsGuideItemV54> = listOf(
         "CHALLENGE"
     ),
     RsGuideItemV54(
-        "CONTENT","Content Manager & Knowledge Vault","content",
-        "Publish searchable training lessons/articles by membership level.",
-        "Create title, category, long-form content, access tier and published/draft state.",
-        "Students see only unlocked published content, can search it, save favorites and reopen reading history.",
-        "Example: publish Advanced Counter Fighting for PRO/ELITE while Jab Fundamentals remains available to ALL.",
-        listOf("Open Content Manager","Write lesson","Choose access tier","Publish","Student finds it in Knowledge Vault/Search","Student can save favorite"),
+        "CONTENT","AI Content Manager & Trainer Knowledge","content",
+        "Manage training knowledge and trainer-approved AI references from inside the RS AI system instead of a separate standalone content page.",
+        "Use the AI Coach trainer tools and Training Media to prepare trusted move/combination references, descriptions and technique tags. The Content Manager dashboard shortcut now opens directly into AI Coach.",
+        "Students experience the result inside AI: relevant trainer knowledge and approved media can appear automatically in answers without needing to browse a separate content-manager screen.",
+        "Example: tag a low-kick demonstration with low kick, pivot, shin, guard and recovery. When a student later asks about low kicks, AI can use that trainer reference in the conversation.",
+        listOf("Open AI Content Manager from dashboard","AI Coach opens directly","Open Trainer Reference Gallery","Add or review trainer-approved media","Use clear technique tags","Add coaching description","Ask AI the same move to verify retrieval","Update tags when matching is too broad or too narrow"),
         "CONTENT"
     ),
     RsGuideItemV54(
@@ -222,13 +222,31 @@ private fun rsGuideItemsV54():List<RsGuideItemV54> = listOf(
         "ANALYTICS"
     ),
     RsGuideItemV54(
-        "SETTINGS","Branding & Visual Placement","branding",
-        "Control the premium RS visual system without editing Android source.",
-        "Select one visual placement slot, upload image/GIF/video, adjust login form opacity and configure supported visual assets.",
-        "Students see the branded media in the corresponding app locations.",
-        "Example: replace the login background while keeping the login form semi-transparent so the background remains visible.",
-        listOf("Open Branding Studio","Choose placement","Upload media","Review fitted result","Adjust login opacity if needed","Save"),
+        "SETTINGS","Visual Themes, Branding & Placement","branding",
+        "Control the full premium RS identity with swipeable app themes plus per-page image/GIF/video placement.",
+        "Use Visual Theme Studio to swipe large futuristic theme previews left/right, tap a style and confirm Apply. Use Visual Asset Studio/Branding to upload exact page visuals, including separate Sofia/Marcus idle and speaking assets.",
+        "Students and trainers see the selected RS palette across the shared interface while uploaded page visuals remain fitted to their assigned locations.",
+        "Example: switch from Elite Gold to Royal Sapphire for a blue neon identity, then upload a matching full-body Sofia speaking animation without changing the app layout.",
+        listOf("Open Visual Theme Studio","Swipe left/right through large theme cards","Tap Apply Style","Confirm Apply","Review the app-wide result","Open Visual Asset Studio for individual backgrounds","Use AI trainer idle/speaking slots for Sofia and Marcus","Check fit on phone before finalizing"),
         "BRANDING"
+    ),
+    RsGuideItemV54(
+        "SETTINGS","RS Voice Wake & Global AI Mic","settings",
+        "Access RS AI by voice while the app is available, with an optional background Voice Wake service and a reliable one-tap microphone fallback in every main header.",
+        "Enable RS Voice Wake in RS CHAT Settings, grant microphone permission and watch the live listener status. Use the royal AI microphone in the app or RS CHAT header whenever Android blocks background hotword recognition.",
+        "Users can say supported wake phrases such as Wake up RS / Hey RS and localized variants while the listening service is active. Voice access still follows the 72-hour trusted-login maximum and 24-hour inactivity logout.",
+        "Example: user says Hey RS, next song. RS wakes and controls the music player. If the phone blocks background recognition, the user taps the royal mic once and Sofia/Marcus starts listening immediately.",
+        listOf("Open RS CHAT → Settings","Enable RS Voice Wake","Grant microphone permission","Check VOICE WAKE STATUS","Use Battery Settings if Android restricts background listening","Test Wake up RS","Use the royal header mic as guaranteed in-app fallback","Remember Force Stop disables background wake until RS is opened again"),
+        "AI_COACH"
+    ),
+    RsGuideItemV54(
+        "SETTINGS","RS Chat Media Gallery & Retention","coachchat",
+        "Keep recent chat/AI media manageable while allowing important photos, videos and audio to be saved permanently.",
+        "Temporary downloaded chat/AI media appears in Recent and is cleaned from the device after 7 days. Use each media message ⋮ menu or Gallery Save control to keep important media.",
+        "Students see Recent media with expiry information plus a Saved Gallery for items they explicitly keep.",
+        "Example: a student receives a useful trainer technique clip, opens ⋮ → Save to Gallery, and that saved copy remains after temporary cache cleanup.",
+        listOf("Open RS CHAT","Open a media message","Tap ⋮","Choose Save to Gallery","Open Chat Gallery","Review Recent expiry","Keep important media in Saved Gallery","Delete saved copies manually when no longer needed"),
+        "CHAT"
     ),
     RsGuideItemV54(
         "SETTINGS","App Settings & Operations","settings",
