@@ -3,6 +3,7 @@ package com.rskickbox.app
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -112,15 +113,79 @@ fun rsVisibleBrandNameV111(store:RsStore):String{
 }
 
 @Composable
-fun RsLettersLogoV111(c:RsPalette,store:RsStore,modifier:Modifier=Modifier){
-    Text(
-        text=rsVisibleBrandNameV111(store).uppercase(Locale.ROOT),
-        color=c.bright,
-        fontWeight=FontWeight.Black,
-        fontSize=20.sp,
-        letterSpacing=1.2.sp,
-        maxLines=1,
-        overflow=TextOverflow.Ellipsis,
+fun RsThemeHeaderMarkV176(
+    c:RsPalette,
+    store:RsStore,
+    modifier:Modifier=Modifier
+){
+    val theme=rsStoredThemeV175(store)
+    val layout=rsThemeLayoutV175(theme)
+    val radius=when(layout.mode){
+        "FIGHT_STRIP"->10.dp
+        "TECH_COMPACT"->8.dp
+        "HOLO_CARDS"->18.dp
+        "PERFORMANCE_STACK"->14.dp
+        else->16.dp
+    }
+    Surface(
+        color=c.panel2,
+        shape=RoundedCornerShape(radius),
+        border=androidx.compose.foundation.BorderStroke(
+            if(layout.strongLines)2.dp else 1.dp,
+            c.bright.copy(alpha=.78f)
+        ),
+        tonalElevation=10.dp,
         modifier=modifier
-    )
+    ){
+        Box(
+            Modifier.fillMaxSize(),
+            contentAlignment=Alignment.Center
+        ){
+            Text(
+                "RS",
+                color=c.bright,
+                fontWeight=FontWeight.Black,
+                fontSize=17.sp,
+                letterSpacing=.6.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun RsLettersLogoV111(c:RsPalette,store:RsStore,modifier:Modifier=Modifier){
+    val raw=rsVisibleBrandNameV111(store).uppercase(Locale.ROOT)
+    val standard=raw=="RS KICKBOXING"
+    if(standard){
+        Column(modifier,verticalArrangement=Arrangement.spacedBy(0.dp)){
+            Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)){
+                Text(
+                    "RS",
+                    color=c.gold,
+                    fontWeight=FontWeight.Black,
+                    fontSize=11.sp,
+                    letterSpacing=1.2.sp
+                )
+                Text(
+                    "KICKBOXING",
+                    color=c.bright,
+                    fontWeight=FontWeight.Black,
+                    fontSize=16.sp,
+                    letterSpacing=1.1.sp,
+                    maxLines=1
+                )
+            }
+        }
+    }else{
+        Text(
+            text=raw.ifBlank{"RS KICKBOXING"},
+            color=c.bright,
+            fontWeight=FontWeight.Black,
+            fontSize=17.sp,
+            letterSpacing=1.0.sp,
+            maxLines=1,
+            overflow=TextOverflow.Ellipsis,
+            modifier=modifier
+        )
+    }
 }
