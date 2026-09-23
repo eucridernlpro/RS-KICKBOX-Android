@@ -2,6 +2,7 @@ package com.rskickbox.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.app.NotificationManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import io.github.jan.supabase.auth.handleDeeplinks
@@ -25,6 +26,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applyIncomingCallWindow(intent)
+        dismissIncomingCallNotification(intent)
         RsSupabaseV60.client?.handleDeeplinks(intent)
         val restoredFromAndroidState=savedInstanceState!=null
         setContent {
@@ -45,6 +47,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         applyIncomingCallWindow(intent)
+        dismissIncomingCallNotification(intent)
         RsSupabaseV60.client?.handleDeeplinks(intent)
 
         // MediaSession/launcher intents can arrive while music keeps playing.
@@ -58,6 +61,19 @@ class MainActivity : ComponentActivity() {
         val isVoiceAssistantAction=intent.action=="com.rskickbox.app.OPEN_AI_VOICE"
         val isRsRouteAction=intent.action=="com.rskickbox.app.OPEN_RS_ROUTE"
         if(isAuthCallback || isIncomingCallAction || isVoiceAssistantAction || isRsRouteAction)recreate()
+    }
+
+    private fun dismissIncomingCallNotification(intent:Intent?){
+        val id=intent?.getStringExtra("rs_incoming_call_id").orEmpty()
+        if(id.isNotBlank()){
+            runCatching{getSystemService(NotificationManager::class.java).cancel(id.hashCode())}
+            runCatching{RsCallMonitorServiceV134.stopRing(this)}
+        }
+        val roomId=intent?.getStringExtra("rs_video_room_id").orEmpty()
+        if(roomId.isNotBlank()){
+            runCatching{getSystemService(NotificationManager::class.java).cancel(roomId.hashCode())}
+            runCatching{RsCallMonitorServiceV134.stopRing(this)}
+        }
     }
 
     private fun applyIncomingCallWindow(intent:Intent?){
