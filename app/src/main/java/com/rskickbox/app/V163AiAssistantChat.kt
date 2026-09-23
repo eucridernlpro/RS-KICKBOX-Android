@@ -781,7 +781,6 @@ fun RsAiAssistantChatV163(
     }
 
     }
-    }
 
     if(musicDialog && pendingMusic!=null){
         val track=pendingMusic!!
