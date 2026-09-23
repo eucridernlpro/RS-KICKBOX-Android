@@ -355,6 +355,8 @@ fun RsActiveCallDialogV133(
     var cameraOn by remember(call.id){mutableStateOf(isVideo)}
     var speakerOn by remember(call.id){mutableStateOf(isVideo)}
     var closing by remember(call.id){mutableStateOf(false)}
+    var moreOpen by remember(call.id){mutableStateOf(false)}
+    var callSeconds by remember(call.id){mutableLongStateOf(0L)}
     var inPip by remember(call.id){mutableStateOf((context as? Activity)?.isInPictureInPictureMode==true)}
     var pipTransition by remember(call.id){mutableStateOf(false)}
     val audioManager=remember{context.getSystemService(Context.AUDIO_SERVICE) as AudioManager}
@@ -372,6 +374,15 @@ fun RsActiveCallDialogV133(
         audioManager.isSpeakerphoneOn=speakerOn
         engine.start()
     }
+    LaunchedEffect(call.id,engineState){
+        if(engineState=="CONNECTED"){
+            while(isActive){
+                delay(1000)
+                callSeconds++
+            }
+        }
+    }
+
     LaunchedEffect(call.id){
         while(isActive){
             inPip=(context as? Activity)?.isInPictureInPictureMode==true
@@ -545,7 +556,7 @@ fun RsActiveCallDialogV133(
                                 )
                                 Text(
                                     when(engineState){
-                                        "CONNECTED"->rsCallT133(lang,"connected")
+                                        "CONNECTED"->rsCallT133(lang,"connected")+" · "+String.format("%02d:%02d",callSeconds/60,callSeconds%60)
                                         "RECONNECTING"->rsCallT133(lang,"reconnecting")
                                         "FAILED"->rsCallT133(lang,"failed")
                                         "ENDED"->rsCallT133(lang,"ended")
@@ -630,11 +641,7 @@ fun RsActiveCallDialogV133(
                                     RsRoyalCallControlV174(
                                         c,"•••","MORE",
                                         controlSize,labelSize,false,false
-                                    ){}
-                                    RsRoyalCallControlV174(
-                                        c,"♛","RS CALL",
-                                        controlSize,labelSize,false,false
-                                    ){}
+                                    ){moreOpen=true}
                                 }
                                 RsRoyalCallControlV174(
                                     c,"☎","END",
@@ -650,6 +657,32 @@ fun RsActiveCallDialogV133(
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+            if(moreOpen && !inPip && !pipTransition){
+                Dialog(onDismissRequest={moreOpen=false}){
+                    Surface(
+                        color=Color(0xFF101315),
+                        shape=RoundedCornerShape(26.dp),
+                        border=BorderStroke(1.dp,c.gold.copy(alpha=.44f)),
+                        modifier=Modifier.fillMaxWidth()
+                    ){
+                        Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+                            Text("RS CALL CONTROLS",color=c.bright,fontWeight=FontWeight.Black,fontSize=16.sp)
+                            Text(
+                                (if(isVideo)"Video" else "Audio")+" · "+
+                                    (if(micOn)"Mic on" else "Mic muted")+" · "+
+                                    (if(speakerOn)"Speaker on" else "Speaker off"),
+                                color=c.text,fontSize=10.sp
+                            )
+                            Text(
+                                "Connection: "+engineState.lowercase().replaceFirstChar{it.uppercase()}+
+                                    if(callSeconds>0)" · "+String.format("%02d:%02d",callSeconds/60,callSeconds%60) else "",
+                                color=c.muted,fontSize=9.sp
+                            )
+                            OutlinedButton(onClick={moreOpen=false},modifier=Modifier.fillMaxWidth()){Text("Close")}
                         }
                     }
                 }
