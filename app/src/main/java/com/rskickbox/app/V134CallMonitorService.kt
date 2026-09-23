@@ -344,6 +344,7 @@ class RsCallMonitorServiceV134:Service(){
     }
 
     private fun showIncomingVideoRoom(room:RsVideoRoomV136){
+        if(MainActivity.isForeground)return
         val fullIntent=Intent(this,MainActivity::class.java).apply{
             action="com.rskickbox.app.INCOMING_VIDEO_ROOM"
             putExtra("rs_video_room_id",room.roomId)
