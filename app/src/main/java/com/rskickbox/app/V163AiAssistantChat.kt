@@ -15,6 +15,9 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -34,6 +37,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import org.json.JSONArray
+import org.json.JSONObject
 
 private data class RsAiChatMessageV163(
     val id:Long,
@@ -43,6 +48,42 @@ private data class RsAiChatMessageV163(
     val mediaKind:String?=null,
     val references:List<RsAiCoachReferenceV164> = emptyList()
 )
+
+private fun rsLoadAiChatHistoryV174(store:RsStore,key:String):List<RsAiChatMessageV163>{
+    val raw=store.s(key,"")
+    if(raw.isBlank())return emptyList()
+    return runCatching{
+        val arr=JSONArray(raw)
+        buildList{
+            for(i in 0 until arr.length()){
+                val o=arr.optJSONObject(i)?:continue
+                add(
+                    RsAiChatMessageV163(
+                        id=o.optLong("id",System.currentTimeMillis()+i),
+                        mine=o.optBoolean("mine",false),
+                        text=o.optString("text"),
+                        mediaUri=o.optString("mediaUri").takeIf{it.isNotBlank()},
+                        mediaKind=o.optString("mediaKind").takeIf{it.isNotBlank()}
+                    )
+                )
+            }
+        }.takeLast(100)
+    }.getOrDefault(emptyList())
+}
+
+private fun rsSaveAiChatHistoryV174(store:RsStore,key:String,messages:List<RsAiChatMessageV163>){
+    val arr=JSONArray()
+    messages.takeLast(100).forEach{message->
+        arr.put(JSONObject().apply{
+            put("id",message.id)
+            put("mine",message.mine)
+            put("text",message.text)
+            put("mediaUri",message.mediaUri?:"")
+            put("mediaKind",message.mediaKind?:"")
+        })
+    }
+    store.ps(key,arr.toString())
+}
 
 @Composable
 fun RsAiAssistantChatV163(
@@ -64,7 +105,10 @@ fun RsAiAssistantChatV163(
     }
     val selectedLang=languages.firstOrNull{it.code==aiLang}?:lang
     var avatar by remember{mutableStateOf(store.s("ai_avatar_gender_v161","FEMALE"))}
-    var messages by remember{mutableStateOf<List<RsAiChatMessageV163>>(emptyList())}
+    val aiHistoryKey=remember(role){"ai_chat_history_v174_"+role.name.lowercase()}
+    var messages by remember(aiHistoryKey){mutableStateOf(rsLoadAiChatHistoryV174(store,aiHistoryKey))}
+    val aiListState=rememberLazyListState()
+    var confirmClearAiChat by remember{mutableStateOf(false)}
     var draft by remember{mutableStateOf("")}
     var pickedUri by remember{mutableStateOf<Uri?>(null)}
     var pickedKind by remember{mutableStateOf<String?>(null)}
@@ -86,6 +130,14 @@ fun RsAiAssistantChatV163(
     var resumeListeningSignal by remember{mutableIntStateOf(0)}
     var immersiveGreetingPending by remember{
         mutableStateOf(store.b("ai_start_listening_v168",false))
+    }
+
+    LaunchedEffect(messages,aiHistoryKey){
+        rsSaveAiChatHistoryV174(store,aiHistoryKey,messages)
+        if(messages.isNotEmpty()){
+            kotlinx.coroutines.delay(40)
+            runCatching{aiListState.animateScrollToItem(messages.lastIndex)}
+        }
     }
 
     var tts by remember{mutableStateOf<TextToSpeech?>(null)}
