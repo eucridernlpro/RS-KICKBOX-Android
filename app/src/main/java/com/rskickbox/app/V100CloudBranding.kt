@@ -34,7 +34,11 @@ suspend fun rsSyncCloudBrandV100(store:RsStore):Result<RsCloudBrandSettingsV100>
     store.ps("brand_login_title",settings.loginTitle)
     store.ps("brand_login_subtitle",settings.loginSubtitle)
     store.ps("brand_footer_text",settings.footerText)
-    store.ps("theme",settings.themeName)
+    val localThemeOverrideMs=store.s("theme_local_override_ms_v170","0").toLongOrNull()?:0L
+    val preserveLocalTheme=
+        localThemeOverrideMs>0L &&
+        System.currentTimeMillis()-localThemeOverrideMs < 24L*60L*60L*1000L
+    if(!preserveLocalTheme)store.ps("theme",settings.themeName)
     store.ps("login_form_opacity",settings.loginFormOpacity.coerceIn(.20,1.0).toString())
     store.pb("intro_enabled",settings.introEnabled)
     store.pb("intro_every_launch",settings.introEveryLaunch)
