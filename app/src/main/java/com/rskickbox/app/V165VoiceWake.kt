@@ -204,6 +204,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private var awaitingPlaylistName=false
     private var controllerFuture:ListenableFuture<MediaController>?=null
     private var controller:MediaController?=null
+    private var wakeRecognitionFallback=false
     private val store by lazy{RsStore(this)}
 
     private fun setWakeStatusV168(status:String){
@@ -381,6 +382,8 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         SpeechRecognizer.ERROR_RECOGNIZER_BUSY->"ERROR_BUSY"
                         SpeechRecognizer.ERROR_SERVER->"ERROR_SERVER"
                         SpeechRecognizer.ERROR_SPEECH_TIMEOUT->"NO_SPEECH"
+                        SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED->"LANGUAGE_FALLBACK"
+                        SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE->"LANGUAGE_FALLBACK"
                         else->"ERROR_"+error
                     }
                     setWakeStatusV168(label)
@@ -388,8 +391,14 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         if(
                             error==SpeechRecognizer.ERROR_CLIENT ||
                             error==SpeechRecognizer.ERROR_RECOGNIZER_BUSY ||
-                            error==SpeechRecognizer.ERROR_SERVER
+                            error==SpeechRecognizer.ERROR_SERVER ||
+                            error==SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED ||
+                            error==SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE
                         ){
+                            if(
+                                error==SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED ||
+                                error==SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE
+                            )wakeRecognitionFallback=true
                             runCatching{recognizer?.destroy()}
                             recognizer=null
                         }
@@ -437,12 +446,12 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         )return
         createRecognizer()
         val lang=language()
+        val recognitionLocale=if(wakeRecognitionFallback)Locale.getDefault() else lang.locale
         val intent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE,lang.locale.toLanguageTag())
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE,recognitionLocale.toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,5)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,true)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,350L)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,650L)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,450L)
