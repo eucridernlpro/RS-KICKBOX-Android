@@ -203,7 +203,7 @@ fun RsDirectCallControlsV133(
             when{
                 type!=null->beginCall(type)
                 acceptCallId!=null->scope.launch{
-                    rsSetCallStatusV131(acceptCallId,"ACCEPTED")
+                    rsSetCallStatusReliableV173(acceptCallId,"ACCEPTED")
                         .onSuccess{refresh++}
                         .onFailure{status=it.message?:rsCallT133(lang,"unavailable")}
                 }
@@ -319,7 +319,7 @@ fun RsDirectCallControlsV133(
                             if(!actionBusy){
                                 actionBusy=true
                                 scope.launch{
-                                    rsSetCallStatusV131(call.id,"CANCELLED")
+                                    rsSetCallStatusReliableV173(call.id,"CANCELLED")
                                         .onSuccess{refresh++}
                                         .onFailure{status=it.message?:rsCallT133(lang,"unavailable")}
                                     actionBusy=false
@@ -599,7 +599,7 @@ fun RsActiveCallDialogV133(
                                 if(!closing){
                                     closing=true
                                     scope.launch{
-                                        runCatching{rsSetCallStatusV131(call.id,"ENDED")}
+                                        runCatching{rsSetCallStatusReliableV173(call.id,"ENDED")}
                                         onClosed()
                                     }
                                 }
