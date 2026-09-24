@@ -23,6 +23,7 @@ import kotlin.math.sin
 fun RsAiReal3DModelV183(
     avatar:String,
     speaking:Boolean,
+    speechAmplitude:Float,
     listening:Boolean,
     thinking:Boolean,
     sensorX:Float,
@@ -42,6 +43,7 @@ fun RsAiReal3DModelV183(
             it.updateState(
                 avatar=avatar,
                 speaking=speaking,
+                speechAmplitude=speechAmplitude,
                 listening=listening,
                 thinking=thinking,
                 sensorX=sensorX,
@@ -65,6 +67,7 @@ private class RsAi3DViewV183(context:Context):GLSurfaceView(context){
     fun updateState(
         avatar:String,
         speaking:Boolean,
+        speechAmplitude:Float,
         listening:Boolean,
         thinking:Boolean,
         sensorX:Float,
@@ -72,6 +75,7 @@ private class RsAi3DViewV183(context:Context):GLSurfaceView(context){
     ){
         rsRenderer.avatar=avatar
         rsRenderer.speaking=speaking
+        rsRenderer.speechAmplitude=speechAmplitude.coerceIn(0f,1f)
         rsRenderer.listening=listening
         rsRenderer.thinking=thinking
         rsRenderer.sensorX=sensorX
@@ -88,6 +92,7 @@ private data class RsGlMeshV183(
 private class RsAi3DRendererV183:GLSurfaceView.Renderer{
     @Volatile var avatar:String="FEMALE"
     @Volatile var speaking:Boolean=false
+    @Volatile var speechAmplitude:Float=0f
     @Volatile var listening:Boolean=false
     @Volatile var thinking:Boolean=false
     @Volatile var sensorX:Float=0f
@@ -144,7 +149,10 @@ private class RsAi3DRendererV183:GLSurfaceView.Renderer{
 
         val t=SystemClock.uptimeMillis()/1000f
         val breath=sin(t*1.55f)*.018f
-        val talk=if(speaking)(sin(t*12f)*.5f+.5f) else 0f
+        val talk=if(speaking){
+            val fallback=.18f+(sin(t*11f)*.5f+.5f)*.22f
+            maxOf(fallback,speechAmplitude).coerceIn(0f,1f)
+        }else 0f
         val idleYaw=sin(t*.42f)*1.8f
         val eyeFocus=sin(t*.67f)*.014f
         val blinkWindow=t%4.8f
