@@ -333,9 +333,9 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
         ){
             Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
                 Text("MEDIA RETENTION",color=c.bright,fontWeight=FontWeight.Black,fontSize=13.sp)
-                Text("Temporary downloaded chat media is cleaned from this device after 7 days.",color=c.text,fontSize=9.sp)
+                Text("Temporary chat media follows the trainer retention setting: "+retentionDays+" day"+if(retentionDays==1)"" else "s"+".",color=c.text,fontSize=9.sp)
                 Text(
-                    "Use Save media to Gallery from a message's ⋮ menu to keep a photo, video or audio item permanently.",
+                    if(permGallery)"Use Save media to Gallery from a message's ⋮ menu to keep a photo, video or audio item permanently." else "RS Chat Gallery is disabled by the trainer.",
                     color=c.muted,fontSize=9.sp,lineHeight=13.sp
                 )
             }
