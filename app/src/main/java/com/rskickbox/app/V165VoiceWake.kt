@@ -1030,6 +1030,12 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 else when(language().code){
                     "nl"->"Ik heb nog niet genoeg recente muziek gevonden om die playlist te maken."
                     "pt"->"Ainda não encontrei músicas recentes suficientes para criar essa playlist."
+                    "es"->"Todavía no he encontrado suficientes canciones recientes para crear esa playlist."
+                    "fr"->"Je n’ai pas encore trouvé assez de morceaux récents pour créer cette playlist."
+                    "de"->"Ich habe noch nicht genug kürzlich gespielte Titel gefunden, um diese Playlist zu erstellen."
+                    "it"->"Non ho ancora trovato abbastanza brani recenti per creare questa playlist."
+                    "pl"->"Nie znalazłem jeszcze wystarczającej liczby ostatnich utworów, aby utworzyć tę playlistę."
+                    "tr"->"Bu çalma listesini oluşturmak için henüz yeterli son parça bulamadım."
                     else->"I could not find enough recent music to create that playlist yet."
                 }
             )
@@ -1181,6 +1187,10 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                     "pt"->"Música iniciada."
                     "es"->"Canción iniciada."
                     "fr"->"Morceau lancé."
+                    "de"->"Titel gestartet."
+                    "it"->"Brano avviato."
+                    "pl"->"Utwór uruchomiony."
+                    "tr"->"Parça başlatıldı."
                     else->"Track started."
                 }
             )
@@ -1195,6 +1205,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         "nl"->"Muziek gestart."
                         "pt"->"Música iniciada."
                         "es"->"Música iniciada."
+                        "fr"->"Musique lancée."
+                        "de"->"Musik gestartet."
+                        "it"->"Musica avviata."
+                        "pl"->"Muzyka uruchomiona."
+                        "tr"->"Müzik başlatıldı."
                         else->"Music started."
                     }
                 )
@@ -1206,6 +1221,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         "nl"->"Muziek gepauzeerd."
                         "pt"->"Música em pausa."
                         "es"->"Música en pausa."
+                        "fr"->"Musique en pause."
+                        "de"->"Musik pausiert."
+                        "it"->"Musica in pausa."
+                        "pl"->"Muzyka wstrzymana."
+                        "tr"->"Müzik duraklatıldı."
                         else->"Music paused."
                     }
                 )
@@ -1217,6 +1237,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         "nl"->"Muziek gestopt."
                         "pt"->"Música parada."
                         "es"->"Música detenida."
+                        "fr"->"Musique arrêtée."
+                        "de"->"Musik gestoppt."
+                        "it"->"Musica fermata."
+                        "pl"->"Muzyka zatrzymana."
+                        "tr"->"Müzik durduruldu."
                         else->"Music stopped."
                     }
                 )
@@ -1229,6 +1254,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         "nl"->"Volgend nummer."
                         "pt"->"Próxima música."
                         "es"->"Siguiente canción."
+                        "fr"->"Morceau suivant."
+                        "de"->"Nächster Titel."
+                        "it"->"Brano successivo."
+                        "pl"->"Następny utwór."
+                        "tr"->"Sonraki parça."
                         else->"Next track."
                     }
                 )
@@ -1241,6 +1271,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         "nl"->"Vorig nummer."
                         "pt"->"Música anterior."
                         "es"->"Canción anterior."
+                        "fr"->"Morceau précédent."
+                        "de"->"Vorheriger Titel."
+                        "it"->"Brano precedente."
+                        "pl"->"Poprzedni utwór."
+                        "tr"->"Önceki parça."
                         else->"Previous track."
                     }
                 )
@@ -1257,6 +1292,10 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         "pt"->"Volume aumentado."
                         "es"->"Volumen aumentado."
                         "fr"->"Volume augmenté."
+                        "de"->"Lautstärke erhöht."
+                        "it"->"Volume aumentato."
+                        "pl"->"Głośność zwiększona."
+                        "tr"->"Ses yükseltildi."
                         else->"Volume up."
                     }
                 )
@@ -1269,6 +1308,10 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         "pt"->"Volume reduzido."
                         "es"->"Volumen reducido."
                         "fr"->"Volume réduit."
+                        "de"->"Lautstärke verringert."
+                        "it"->"Volume ridotto."
+                        "pl"->"Głośność zmniejszona."
+                        "tr"->"Ses azaltıldı."
                         else->"Volume down."
                     }
                 )
@@ -1281,6 +1324,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                             "nl"->"Er speelt nu geen nummer."
                             "pt"->"Nenhuma música está a tocar agora."
                             "es"->"No hay ninguna canción reproduciéndose ahora."
+                            "fr"->"Aucun morceau n’est en cours de lecture."
+                            "de"->"Im Moment wird kein Titel abgespielt."
+                            "it"->"Al momento non è in riproduzione alcun brano."
+                            "pl"->"W tej chwili nic nie jest odtwarzane."
+                            "tr"->"Şu anda hiçbir parça çalmıyor."
                             else->"Nothing is playing right now."
                         }
                     }else{
@@ -1288,6 +1336,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                             "nl"->"Nu speelt "+title+"."
                             "pt"->"Está a tocar "+title+"."
                             "es"->"Está sonando "+title+"."
+                            "fr"->"Lecture en cours : "+title+"."
+                            "de"->"Jetzt läuft "+title+"."
+                            "it"->"In riproduzione: "+title+"."
+                            "pl"->"Teraz odtwarzany jest "+title+"."
+                            "tr"->"Şimdi çalıyor: "+title+"."
                             else->"Now playing "+title+"."
                         }
                     }
@@ -1300,6 +1353,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         "nl"->"RS Music geopend."
                         "pt"->"RS Music aberto."
                         "es"->"RS Music abierto."
+                        "fr"->"Ouverture de RS Music."
+                        "de"->"RS Music wird geöffnet."
+                        "it"->"Apro RS Music."
+                        "pl"->"Otwieram RS Music."
+                        "tr"->"RS Music açılıyor."
                         else->"Opening RS Music."
                     }
                 )
@@ -1311,6 +1369,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         "nl"->"Oké. Ik luister weer alleen naar de wekzin."
                         "pt"->"Está bem. Vou voltar a ouvir apenas a frase de ativação."
                         "es"->"De acuerdo. Volveré a escuchar solo la frase de activación."
+                        "fr"->"D’accord. Je reviens à l’écoute de la phrase d’activation uniquement."
+                        "de"->"Okay. Ich höre jetzt wieder nur auf das Aktivierungswort."
+                        "it"->"Va bene. Torno ad ascoltare solo la frase di attivazione."
+                        "pl"->"Dobrze. Wracam do nasłuchiwania tylko hasła aktywacyjnego."
+                        "tr"->"Tamam. Yalnızca uyandırma ifadesini dinlemeye dönüyorum."
                         else->"Okay. I’ll go back to listening only for the wake phrase."
                     }
                 )
