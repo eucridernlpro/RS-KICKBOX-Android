@@ -337,7 +337,22 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     override fun onCreate(){
         super.onCreate()
         createChannel()
-        startForeground(RS_VOICE_NOTIFICATION_ID_V165,notification("Voice wake ready"))
+        startForeground(
+            RS_VOICE_NOTIFICATION_ID_V165,
+            notification(
+                when(language().code){
+                    "nl"->"Voice Wake klaar"
+                    "pt"->"Voice Wake pronto"
+                    "es"->"Voice Wake listo"
+                    "fr"->"Voice Wake prêt"
+                    "de"->"Voice Wake bereit"
+                    "it"->"Voice Wake pronto"
+                    "pl"->"Voice Wake gotowy"
+                    "tr"->"Voice Wake hazır"
+                    else->"Voice Wake ready"
+                }
+            )
+        )
         tts=TextToSpeech(this,this)
 
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
@@ -1572,7 +1587,19 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         return NotificationCompat.Builder(this,RS_VOICE_CHANNEL_V165)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("RS KICKBOXING")
-            .setContentText("Login required · tap to open RS KICKBOXING")
+            .setContentText(
+                when(language().code){
+                    "nl"->"Login vereist · tik om RS KICKBOXING te openen"
+                    "pt"->"Login necessário · toca para abrir RS KICKBOXING"
+                    "es"->"Inicio de sesión requerido · toca para abrir RS KICKBOXING"
+                    "fr"->"Connexion requise · touche pour ouvrir RS KICKBOXING"
+                    "de"->"Anmeldung erforderlich · tippe, um RS KICKBOXING zu öffnen"
+                    "it"->"Accesso richiesto · tocca per aprire RS KICKBOXING"
+                    "pl"->"Wymagane logowanie · dotknij, aby otworzyć RS KICKBOXING"
+                    "tr"->"Giriş gerekli · RS KICKBOXING'i açmak için dokun"
+                    else->"Login required · tap to open RS KICKBOXING"
+                }
+            )
             .setContentIntent(pending)
             .setAutoCancel(true)
             .setOngoing(false)
