@@ -37,15 +37,15 @@ private const val RS_TRUSTED_LOGIN_MS_V165=72L*60L*60L*1000L
 private const val RS_INACTIVITY_LOGOUT_MS_V165=24L*60L*60L*1000L
 
 private fun rsWakePhrasesV165()=listOf(
-    "wake up rs","hey rs","ok rs",
-    "word wakker rs","hey rs",
-    "acorda rs","olá rs","ola rs",
-    "despierta rs","hola rs",
-    "réveille toi rs","reveille toi rs","salut rs",
-    "wach auf rs","hallo rs",
-    "svegliati rs","ciao rs",
-    "obudź się rs","obudz sie rs","hej rs",
-    "uyan rs","hey rs"
+    "wake up rs","rs wake up","hey rs","rs hey","ok rs","rs ok",
+    "word wakker rs","rs word wakker",
+    "acorda rs","rs acorda","olá rs","ola rs",
+    "despierta rs","rs despierta","hola rs",
+    "réveille toi rs","reveille toi rs","rs réveille toi","rs reveille toi","salut rs",
+    "wach auf rs","rs wach auf","hallo rs",
+    "svegliati rs","rs svegliati","ciao rs",
+    "obudź się rs","obudz sie rs","rs obudź się","rs obudz sie","hej rs",
+    "uyan rs","rs uyan","hey rs"
 )
 
 private fun rsContainsWakePhraseV165(text:String):Boolean{
@@ -61,6 +61,39 @@ private fun rsStripWakePhraseV165(text:String):String{
             out=out.replace(Regex("(?i)\\b"+Regex.escape(phrase)+"\\b")," ")
         }
     return out.replace(Regex("[,;:.!?]+")," ").replace(Regex("\\s+")," ").trim()
+}
+
+private fun rsDetectSpokenLanguageV182(text:String,fallback:String):String{
+    val s=text.lowercase(Locale.ROOT)
+    val scored=listOf(
+        "nl" to listOf("wat ","waar ","hoe ","open ","muziek","instellingen","training","groep","leerling","sluit","minimaliseer","uitloggen"),
+        "pt" to listOf("o que","como ","abre ","abrir ","música","definições","treino","grupo","aluno","fecha","minimiza","sair","acorda"),
+        "es" to listOf("qué ","como ","abre ","abrir ","música","ajustes","entrenamiento","grupo","alumno","cierra","minimiza","salir","despierta"),
+        "fr" to listOf("quoi ","comment ","ouvre ","musique","réglages","entraînement","groupe","élève","ferme","réduis","déconnexion","réveille"),
+        "de" to listOf("was ","wie ","öffne","musik","einstellungen","training","gruppe","schüler","schließe","minimiere","abmelden","wach auf"),
+        "it" to listOf("cosa ","come ","apri ","musica","impostazioni","allenamento","gruppo","allievo","chiudi","riduci","esci","svegliati"),
+        "pl" to listOf("co ","jak ","otwórz","muzyka","ustawienia","trening","grupa","uczeń","zamknij","zminimalizuj","wyloguj","obudź"),
+        "tr" to listOf("ne ","nasıl ","aç","müzik","ayarlar","antrenman","grup","öğrenci","kapat","küçült","çıkış","uyan"),
+        "en" to listOf("what ","how ","open ","music","settings","training","group","student","close","minimize","logout","wake up")
+    ).map{(code,terms)->code to terms.count{sTerm->s.contains(sTerm)}}
+    return scored.maxByOrNull{it.second}?.takeIf{it.second>0}?.first?:fallback
+}
+
+private fun rsVoiceSystemCommandV182(text:String):String?{
+    val s=text.lowercase(Locale.ROOT)
+    return when{
+        listOf(
+            "minimize app","minimise app","close app","rs close app","rs minimize app",
+            "minimaliseer app","sluit app","minimiza a app","fecha a app","minimiza la app","cierra la app",
+            "réduis l'app","ferme l'app","app minimieren","app schließen","riduci app","chiudi app",
+            "zminimalizuj aplikację","zamknij aplikację","uygulamayı küçült","uygulamayı kapat"
+        ).any{s.contains(it)}->"MINIMIZE"
+        listOf(
+            "log out","logout","sign out","rs log out","uitloggen","sair da conta","cerrar sesión",
+            "déconnexion","abmelden","esci dall'account","wyloguj","çıkış yap"
+        ).any{s.contains(it)}->"LOGOUT"
+        else->null
+    }
 }
 
 private fun rsVoiceGreetingV165(code:String):String=when(code){
@@ -265,7 +298,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun language():RsLang{
-        val code=store.s("lang","en")
+        val code=store.s("ai_voice_language_v161",store.s("lang","en"))
         return rsLangs.firstOrNull{it.code==code}?:rsLangs.first()
     }
 
@@ -446,9 +479,15 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             putExtra(RecognizerIntent.EXTRA_LANGUAGE,recognitionLocale.toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,5)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,600L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,4200L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,2800L)
+            putExtra("android.speech.extra.ENABLE_LANGUAGE_DETECTION",true)
+            putExtra("android.speech.extra.ENABLE_LANGUAGE_SWITCH",true)
+            putExtra(
+                "android.speech.extra.LANGUAGE_SWITCH_ALLOWED_LANGUAGES",
+                arrayListOf("en-US","nl-NL","pt-PT","es-ES","fr-FR","de-DE","it-IT","pl-PL","tr-TR")
+            )
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,1200L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,12000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,8000L)
         }
         setWakeStatusV168("READY")
         runCatching{recognizer?.startListening(intent)}
@@ -471,6 +510,17 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                     action="com.rskickbox.app.OPEN_RS_ROUTE"
                     putExtra("route",route)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                }
+            )
+        }
+    }
+
+    private fun openSystemActionV182(actionName:String){
+        runCatching{
+            startActivity(
+                Intent(this,MainActivity::class.java).apply{
+                    action=actionName
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 }
             )
         }
@@ -555,6 +605,12 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
         val now=System.currentTimeMillis()
         store.ps("session_last_activity_ms",now.toString())
+        val detectedLanguage=rsDetectSpokenLanguageV182(text,language().code)
+        if(detectedLanguage!=language().code){
+            store.ps("ai_voice_language_v161",detectedLanguage)
+            store.ps("lang_last_spoken_v182",detectedLanguage)
+            applyLanguage()
+        }
 
         if(awaitingPlaylistName){
             val name=text.trim().take(60)
@@ -590,6 +646,39 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         }
 
         awakeUntil=now+45_000L
+
+        when(rsVoiceSystemCommandV182(commandText)){
+            "MINIMIZE"->{
+                openSystemActionV182("com.rskickbox.app.MINIMIZE_RS")
+                speak(
+                    when(language().code){
+                        "nl"->"Oké. Ik zet RS op de achtergrond en blijf luisteren."
+                        "pt"->"Está bem. Vou colocar a RS em segundo plano e continuo a ouvir."
+                        "es"->"De acuerdo. Pondré RS en segundo plano y seguiré escuchando."
+                        "fr"->"D’accord. Je mets RS en arrière-plan et je continue d’écouter."
+                        "de"->"Okay. Ich lege RS in den Hintergrund und höre weiter zu."
+                        else->"Okay. I’ll move RS to the background and keep listening."
+                    }
+                )
+                return
+            }
+            "LOGOUT"->{
+                openSystemActionV182("com.rskickbox.app.LOGOUT_RS")
+                awakeUntil=0L
+                speak(
+                    when(language().code){
+                        "nl"->"Je wordt uitgelogd."
+                        "pt"->"Vou terminar a tua sessão."
+                        "es"->"Voy a cerrar tu sesión."
+                        "fr"->"Je vais te déconnecter."
+                        "de"->"Du wirst abgemeldet."
+                        else->"I’m signing you out."
+                    },
+                    thenListen=false
+                )
+                return
+            }
+        }
 
         val requestedRoute=rsVoiceRouteV167(commandText)
         if(requestedRoute!=null){
