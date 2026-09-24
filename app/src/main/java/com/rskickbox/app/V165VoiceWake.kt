@@ -342,8 +342,8 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             },ContextCompat.getMainExecutor(this))
         }
 
-        if(trustedSessionActive()){
-            setWakeStatusV168("STARTING")
+        if(trustedSessionActive() || recoverableLockedIdentityV186()){
+            setWakeStatusV168(if(trustedSessionActive())"STARTING" else "LOCKED_LISTENING")
             startListening()
         }else requireFreshLoginOrStop()
     }
@@ -653,7 +653,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
     private fun startListening(){
         if(serviceSpeaking)return
-        if(!trustedSessionActive()){
+        if(!trustedSessionActive() && !recoverableLockedIdentityV186()){
             requireFreshLoginOrStop()
             return
         }
@@ -838,9 +838,39 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun handleTranscript(text:String){
-        if(!requireFreshLoginOrStop())return
+        val trusted=trustedSessionActive()
+        val recoverable=recoverableLockedIdentityV186()
+        if(!trusted && !recoverable){
+            if(!requireFreshLoginOrStop())return
+        }
         if(text.isBlank()){
             startListening()
+            return
+        }
+
+        if(!trusted && recoverable){
+            if(!rsContainsWakePhraseV165(text)){
+                setWakeStatusV168("LOCKED_LISTENING")
+                scope.launch{
+                    delay(900)
+                    startListening()
+                }
+                return
+            }
+            val detectedLanguage=rsDetectSpokenLanguageV182(text,language().code)
+            if(detectedLanguage!=language().code){
+                store.ps("ai_voice_language_v161",detectedLanguage)
+                store.ps("lang_last_spoken_v182",detectedLanguage)
+                applyLanguage()
+            }
+            val command=rsStripWakePhraseV165(text)
+            val requested=rsVoiceRouteV167(command)
+                ?:rsVoiceDynamicRouteV184(command,language())
+                ?:defaultDashboardRouteV182()
+            val role=store.s("session_role","").ifBlank{store.s("background_call_role","")}
+            if(role in setOf("student","trainer"))store.ps("session_role",role)
+            requestRouteOpenV182(roleAwareRouteV182(requested))
+            setWakeStatusV168("BIOMETRIC_REQUIRED")
             return
         }
 
@@ -911,6 +941,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 store.ps("session_last_activity_ms","0")
                 store.ps("session_last_route","")
                 store.ps("session_role","")
+                store.ps("background_call_role","")
                 store.pb("rs_voice_wake_enabled_v165",false)
                 scope.launch{runCatching{rsCloudLogoutV63()}}
                 speak(
