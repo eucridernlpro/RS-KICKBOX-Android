@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import io.github.jan.supabase.auth.handleDeeplinks
+import java.lang.ref.WeakReference
 
 class MainActivity : ComponentActivity() {
     companion object{
@@ -13,6 +14,13 @@ class MainActivity : ComponentActivity() {
             private set
         @Volatile var isAlive:Boolean=false
             private set
+        private var activeActivity:WeakReference<MainActivity>?=null
+
+        fun moveToBackgroundFromVoice():Boolean{
+            val activity=activeActivity?.get()?:return false
+            activity.runOnUiThread{activity.moveTaskToBack(true)}
+            return true
+        }
     }
 
     override fun onStart(){
@@ -28,6 +36,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         isAlive=true
+        activeActivity=WeakReference(this)
         applyIncomingCallWindow(intent)
         dismissIncomingCallNotification(intent)
         RsSupabaseV60.client?.handleDeeplinks(intent)
@@ -71,7 +80,10 @@ class MainActivity : ComponentActivity() {
         // A configuration/recreate handoff briefly destroys the old Activity.
         // Do not mark the whole app as closed during that transition or the
         // call monitor may incorrectly switch to notification-only mode.
-        if(!isChangingConfigurations)isAlive=false
+        if(!isChangingConfigurations){
+            isAlive=false
+            if(activeActivity?.get()===this)activeActivity=null
+        }
         super.onDestroy()
     }
 
