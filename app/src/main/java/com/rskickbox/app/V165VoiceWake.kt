@@ -270,6 +270,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private var controllerFuture:ListenableFuture<MediaController>?=null
     private var controller:MediaController?=null
     private var wakeRecognitionFallback=false
+    @Volatile private var serviceSpeaking=false
     private val store by lazy{RsStore(this)}
 
     private fun setWakeStatusV168(status:String){
@@ -463,6 +464,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun speak(text:String,thenListen:Boolean=true){
+        serviceSpeaking=true
         setWakeStatusV168("SPEAKING")
         recognizer?.cancel()
         applyLanguage()
@@ -470,25 +472,30 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         tts?.setOnUtteranceProgressListener(object:android.speech.tts.UtteranceProgressListener(){
             override fun onStart(utteranceId:String?){}
             override fun onDone(utteranceId:String?){
+                serviceSpeaking=false
                 if(thenListen)scope.launch{
-                    delay(250)
+                    delay(320)
                     startListening()
                 }
             }
             @Deprecated("Deprecated in Java")
             override fun onError(utteranceId:String?){
+                serviceSpeaking=false
                 if(thenListen)scope.launch{
-                    delay(250)
+                    delay(320)
                     startListening()
                 }
             }
         })
         val utteranceId="rs-voice-wake-"+language().code+"-"+store.s("ai_avatar_gender_v161","FEMALE")+"-"+System.nanoTime()
         val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,utteranceId)
-        if(result==TextToSpeech.ERROR && thenListen){
-            scope.launch{
-                delay(350)
-                startListening()
+        if(result==TextToSpeech.ERROR){
+            serviceSpeaking=false
+            if(thenListen){
+                scope.launch{
+                    delay(350)
+                    startListening()
+                }
             }
         }
     }
@@ -504,6 +511,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 override fun onBufferReceived(buffer:ByteArray?){}
                 override fun onEndOfSpeech(){}
                 override fun onError(error:Int){
+                    if(serviceSpeaking)return
                     val label=when(error){
                         SpeechRecognizer.ERROR_AUDIO->"ERROR_AUDIO"
                         SpeechRecognizer.ERROR_CLIENT->"ERROR_CLIENT"
@@ -546,11 +554,13 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                     }
                 }
                 override fun onResults(results:android.os.Bundle?){
+                    if(serviceSpeaking)return
                     val list=results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).orEmpty()
                     val text=list.firstOrNull().orEmpty()
                     handleTranscript(text)
                 }
                 override fun onPartialResults(partialResults:android.os.Bundle?){
+                    if(serviceSpeaking)return
                     val list=partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).orEmpty()
                     val partial=list.firstOrNull().orEmpty()
                     if(System.currentTimeMillis()>awakeUntil && rsContainsWakePhraseV165(partial)){
@@ -577,6 +587,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun startListening(){
+        if(serviceSpeaking)return
         if(!trustedSessionActive()){
             requireFreshLoginOrStop()
             return
