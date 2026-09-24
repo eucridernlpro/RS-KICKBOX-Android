@@ -1389,17 +1389,52 @@ private fun ShellV21(
                         drawerItems.forEach{(target,fallback)->
                             val title=rsRouteTitle(lang,target,fallback)
                             NavigationDrawerItem(
-                                label={Text(title,maxLines=1,overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis)},
+                                label={
+                                    Text(
+                                        title,
+                                        maxLines=1,
+                                        overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        fontWeight=if(route==target)FontWeight.Black else FontWeight.SemiBold,
+                                        fontSize=12.sp
+                                    )
+                                },
+                                icon={
+                                    Surface(
+                                        color=if(route==target)c.gold.copy(alpha=.20f) else Color.Black.copy(alpha=.30f),
+                                        shape=RoundedCornerShape(9.dp),
+                                        border=BorderStroke(1.dp,c.gold.copy(alpha=if(route==target).46f else .16f)),
+                                        modifier=Modifier.size(28.dp)
+                                    ){
+                                        Box(contentAlignment=Alignment.Center){
+                                            Text(
+                                                when(target){
+                                                    "owner_command"->"♛"
+                                                    "guide","student_guide"->"?"
+                                                    "coachchat"->"◆"
+                                                    "music","music_admin"->"♫"
+                                                    "themes","backgrounds","branding"->"◇"
+                                                    "settings"->"⚙"
+                                                    else->"RS"
+                                                },
+                                                color=if(route==target)c.bright else c.gold,
+                                                fontSize=if(target=="owner_command")13.sp else 8.sp,
+                                                fontWeight=FontWeight.Black
+                                            )
+                                        }
+                                    }
+                                },
+                                badge={Text("›",color=c.gold,fontSize=16.sp,fontWeight=FontWeight.Black)},
                                 selected=route==target,
                                 onClick={
                                     onRoute(target)
                                     scope.launch{drawerState.close()}
                                 },
+                                modifier=Modifier.fillMaxWidth().heightIn(min=46.dp),
                                 shape=RoundedCornerShape(shellLayout.buttonRadius.dp),
                                 colors=NavigationDrawerItemDefaults.colors(
-                                    selectedContainerColor=c.gold.copy(alpha=.22f),
+                                    selectedContainerColor=c.gold.copy(alpha=.18f),
                                     selectedTextColor=c.bright,
-                                    unselectedContainerColor=Color.Transparent,
+                                    unselectedContainerColor=Color.Black.copy(alpha=.18f),
                                     unselectedTextColor=c.text
                                 )
                             )
