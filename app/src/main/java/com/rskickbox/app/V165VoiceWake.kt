@@ -33,6 +33,8 @@ import java.io.File
 private const val RS_VOICE_CHANNEL_V165="rs_voice_wake_v172"
 private const val RS_VOICE_NOTIFICATION_ID_V165=1651
 private const val RS_VOICE_LOGIN_NOTIFICATION_ID_V165=1652
+private const val RS_VOICE_WAKE_ACTION_CHANNEL_V182="rs_voice_wake_action_v182"
+private const val RS_VOICE_WAKE_ACTION_NOTIFICATION_ID_V182=1653
 private const val RS_TRUSTED_LOGIN_MS_V165=72L*60L*60L*1000L
 private const val RS_INACTIVITY_LOGOUT_MS_V165=24L*60L*60L*1000L
 
@@ -571,7 +573,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         store.pb("ai_immersive_v171",true)
                         store.pb("ai_start_listening_v168",true)
                         if(command.isBlank()){
-                            if(!MainActivity.isForeground)openRouteV166(defaultDashboardRouteV182())
+                            if(!MainActivity.isForeground)requestRouteOpenV182(defaultDashboardRouteV182())
                             speak(rsVoiceGreetingV165(language().code),thenListen=true)
                         }else{
                             scope.launch{
@@ -637,6 +639,56 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                 }
             )
+        }
+    }
+
+    private fun requestRouteOpenV182(route:String){
+        openRouteV166(route)
+        scope.launch{
+            delay(800)
+            if(!MainActivity.isForeground){
+                val intent=Intent(this@RsVoiceWakeServiceV165,MainActivity::class.java).apply{
+                    action="com.rskickbox.app.OPEN_RS_ROUTE"
+                    putExtra("route",route)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                val pending=PendingIntent.getActivity(
+                    this@RsVoiceWakeServiceV165,
+                    1820+route.hashCode(),
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                val title=rsRouteTitle(
+                    language(),
+                    route,
+                    route.replace('_',' ').replaceFirstChar{it.uppercase()}
+                )
+                val text=when(language().code){
+                    "nl"->"RS heeft je gehoord · tik om "+title+" te openen"
+                    "pt"->"A RS ouviu-te · toca para abrir "+title
+                    "es"->"RS te ha escuchado · toca para abrir "+title
+                    "fr"->"RS t’a entendu · touche pour ouvrir "+title
+                    "de"->"RS hat dich gehört · tippe, um "+title+" zu öffnen"
+                    "it"->"RS ti ha sentito · tocca per aprire "+title
+                    "pl"->"RS cię usłyszał · dotknij, aby otworzyć "+title
+                    "tr"->"RS seni duydu · "+title+" açmak için dokun"
+                    else->"RS heard you · tap to open "+title
+                }
+                getSystemService(NotificationManager::class.java).notify(
+                    RS_VOICE_WAKE_ACTION_NOTIFICATION_ID_V182,
+                    NotificationCompat.Builder(this@RsVoiceWakeServiceV165,RS_VOICE_WAKE_ACTION_CHANNEL_V182)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle("RS KICKBOXING")
+                        .setContentText(text)
+                        .setContentIntent(pending)
+                        .setAutoCancel(true)
+                        .setSilent(true)
+                        .setOnlyAlertOnce(true)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                        .build()
+                )
+            }
         }
     }
 
@@ -762,7 +814,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 store.pb("ai_start_listening_v168",true)
                 recognizer?.cancel()
                 if(commandText.isBlank()){
-                    if(!MainActivity.isForeground)openRouteV166(defaultDashboardRouteV182())
+                    if(!MainActivity.isForeground)requestRouteOpenV182(defaultDashboardRouteV182())
                     speak(rsVoiceGreetingV165(language().code),thenListen=true)
                     return
                 }
@@ -823,7 +875,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         val requestedRoute=rsVoiceRouteV167(commandText)
         if(requestedRoute!=null){
             val resolvedRoute=roleAwareRouteV182(requestedRoute)
-            openRouteV166(resolvedRoute)
+            requestRouteOpenV182(resolvedRoute)
             val title=rsRouteTitle(
                 language(),
                 resolvedRoute,
@@ -1042,6 +1094,18 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 ).apply{
                     description="Keeps RS Voice Wake listening while enabled."
                     setSound(null,null)
+                    enableVibration(false)
+                }
+            )
+            nm.createNotificationChannel(
+                NotificationChannel(
+                    RS_VOICE_WAKE_ACTION_CHANNEL_V182,
+                    "RS Voice Wake actions",
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply{
+                    description="Silent visual handoff when Android blocks automatic background app opening."
+                    setSound(null,null)
+                    enableVibration(false)
                 }
             )
         }
