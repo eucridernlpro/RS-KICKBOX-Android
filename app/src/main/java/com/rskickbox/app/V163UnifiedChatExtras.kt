@@ -220,32 +220,23 @@ fun RsCommunityChatV163(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                                 }
                             }
                         }
-                        Text(post.body,color=c.text,fontSize=12.sp,lineHeight=17.sp)
+                        if(post.body.isNotBlank())Text(post.body,color=c.text,fontSize=12.sp,lineHeight=17.sp)
+                        RsChatAttachmentPreviewV92(c,lang,post.mediaPath,post.mediaKind,post.mediaName)
                     }
                 }
             }
         }
 
-        RsRoyalTextComposerV163(
+        RsChatComposerV92(
             c=c,
             lang=lang,
+            scopeType="community",
+            scopeId="club",
             enabled=!busy,
-            placeholder=when(lang.code){
-                "nl"->"Bericht aan de community…"
-                "pt"->"Mensagem para a comunidade…"
-                "es"->"Mensaje para la comunidad…"
-                "fr"->"Message à la communauté…"
-                else->"Message the community…"
-            },
-            onPlus=null,
-            onSend={text->
-                busy=true
-                scope.launch{
-                    rsCreateCloudCommunityPostV84(text)
-                        .onSuccess{revision++}
-                        .onFailure{status=rsChatFriendlyCloudErrorV164(it.message.orEmpty(),"Could not send Community message.")}
-                    busy=false
-                }
+            onSent={revision++},
+            onStatus={status=it},
+            onSend={body,attachment->
+                rsCreateCloudCommunityPostV84(body,attachment)
             }
         )
     }
@@ -377,7 +368,8 @@ fun RsSupportChatV163(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                         ){
                             Column(Modifier.padding(10.dp),verticalArrangement=Arrangement.spacedBy(4.dp)){
                                 Text(ticket.subject,color=c.bright,fontWeight=FontWeight.Black,fontSize=9.sp)
-                                Text(ticket.message,color=c.text,fontSize=11.sp)
+                                if(ticket.message.isNotBlank())Text(ticket.message,color=c.text,fontSize=11.sp)
+                                RsChatAttachmentPreviewV92(c,lang,ticket.mediaPath,ticket.mediaKind,ticket.mediaName)
                             }
                         }
                     }
@@ -399,28 +391,21 @@ fun RsSupportChatV163(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole){
                 }
             }
 
-            RsRoyalTextComposerV163(
+            RsChatComposerV92(
                 c=c,
                 lang=lang,
+                scopeType="support",
+                scopeId=if(role==RsRole.TRAINER)selected?.id.orEmpty() else "support",
                 enabled=!busy&&(role==RsRole.STUDENT||selected!=null),
-                placeholder=if(role==RsRole.TRAINER)"Reply to this member…" else "Message RS Support…",
-                onPlus=null,
-                onSend={text->
-                    busy=true
-                    scope.launch{
-                        if(role==RsRole.TRAINER){
-                            val ticket=selected
-                            if(ticket!=null){
-                                rsUpdateCloudSupportTicketV99(ticket.id,text,ticket.status)
-                                    .onSuccess{revision++}
-                                    .onFailure{status=rsChatFriendlyCloudErrorV164(it.message.orEmpty(),"Could not send Support reply.")}
-                            }
-                        }else{
-                            rsCreateCloudSupportTicketV99("RS Chat Support",text)
-                                .onSuccess{revision++}
-                                .onFailure{status=rsChatFriendlyCloudErrorV164(it.message.orEmpty(),"Could not send Support message.")}
-                        }
-                        busy=false
+                onSent={revision++},
+                onStatus={status=it},
+                onSend={body,attachment->
+                    if(role==RsRole.TRAINER){
+                        val ticket=selected
+                        if(ticket==null)Result.failure(IllegalStateException("Choose a support conversation first."))
+                        else rsUpdateCloudSupportTicketV99(ticket.id,body,ticket.status,attachment)
+                    }else{
+                        rsCreateCloudSupportTicketV99("RS Chat Support",body,attachment)
                     }
                 }
             )
