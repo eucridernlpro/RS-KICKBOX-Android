@@ -262,6 +262,50 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                     Switch(avatarMotion,{avatarMotion=it;store.pb("ai_avatar_motion_v163",it)})
                 }
                 HorizontalDivider(color=Color(0xFF58C9FF).copy(alpha=.14f))
+                val silentWakeEnabled=store.b("rs_voice_wake_silent_engine_v188",true)
+                val silentWakeReady=RsOfflineWakeModelV188.installed(context)
+                val silentWakeProgress=store.s("rs_silent_wake_download_progress_v188","0")
+                    .toIntOrNull()?.coerceIn(0,100)?:0
+                Surface(
+                    color=Color.Black.copy(alpha=.52f),
+                    shape=RoundedCornerShape(18.dp),
+                    border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.22f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Column(
+                        Modifier.fillMaxWidth().padding(11.dp),
+                        verticalArrangement=Arrangement.spacedBy(6.dp)
+                    ){
+                        Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+                            Column(Modifier.weight(1f)){
+                                Text("SILENT WAKE ENGINE",color=Color(0xFF58C9FF),fontWeight=FontWeight.Black,fontSize=10.sp)
+                                Text(
+                                    if(silentWakeReady)
+                                        "Offline wake-word model ready · no per-user wake fee"
+                                    else if(silentWakeProgress in 1..99)
+                                        "Preparing offline model · "+silentWakeProgress+"%"
+                                    else
+                                        "One-time ~40 MB offline model prepares when Voice Wake is enabled.",
+                                    color=c.muted,fontSize=8.sp,lineHeight=11.sp
+                                )
+                            }
+                            Switch(
+                                checked=silentWakeEnabled,
+                                onCheckedChange={store.pb("rs_voice_wake_silent_engine_v188",it)}
+                            )
+                        }
+                        Text(
+                            if(silentWakeEnabled)
+                                "Sleeping mode listens locally for Wake up RS / RS wake up / Hey RS. Android speech recognition starts only after wake."
+                            else
+                                "Silent offline wake is disabled; Android recognition fallback may produce system tones on some phones.",
+                            color=c.text.copy(alpha=.78f),
+                            fontSize=8.sp,
+                            lineHeight=11.sp
+                        )
+                    }
+                }
+
                 Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
                     Column(Modifier.weight(1f)){
                         Text("RS Voice Wake · beta",color=c.text,fontWeight=FontWeight.Bold,fontSize=10.sp)
