@@ -145,7 +145,19 @@ class RsOfflineWakeEngineV188(
 
         LibVosk.setLogLevel(LogLevel.WARNINGS)
         val localModel = Model(RsOfflineWakeModelV188.path(context))
-        val grammar = """["wake up rs","rs wake up","hey rs","ok rs","rs hey","rs ok","[unk]"]"""
+        val grammar = """[
+            "wake up rs","rs wake up","hey rs","ok rs","rs hey","rs ok",
+            "wake up rs open dashboard","wake up rs open chat","wake up rs open music",
+            "wake up rs open ai","wake up rs open homework","wake up rs open progress",
+            "wake up rs open settings","wake up rs open groups","wake up rs open community",
+            "rs wake up open dashboard","rs wake up open chat","rs wake up open music",
+            "rs wake up open ai","rs wake up open homework","rs wake up open progress",
+            "rs wake up open settings","rs wake up open groups","rs wake up open community",
+            "hey rs open dashboard","hey rs open chat","hey rs open music",
+            "hey rs open ai","hey rs open homework","hey rs open progress",
+            "hey rs open settings","hey rs open groups","hey rs open community",
+            "[unk]"
+        ]""".replace("\n"," ").replace(Regex("\\s+")," ")
         val localRecognizer = Recognizer(localModel, RS_WAKE_SAMPLE_RATE_V188.toFloat(), grammar)
 
         val min = AudioRecord.getMinBufferSize(
