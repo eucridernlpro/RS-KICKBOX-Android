@@ -1,6 +1,7 @@
 package com.rskickbox.app
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
@@ -12,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.Locale
@@ -248,3 +250,71 @@ fun RsLettersLogoV111(c:RsPalette,store:RsStore,modifier:Modifier=Modifier){
     }
 }
 
+
+
+@Composable
+fun RsPremiumBrandLockupV179(
+    c:RsPalette,
+    store:RsStore,
+    modifier:Modifier=Modifier,
+    compact:Boolean=false,
+    subtitle:String?=null
+){
+    Row(
+        modifier=modifier,
+        verticalAlignment=Alignment.CenterVertically,
+        horizontalArrangement=Arrangement.spacedBy(if(compact)7.dp else 10.dp)
+    ){
+        Surface(
+            color=Color.Black.copy(alpha=.38f),
+            shape=RoundedCornerShape(if(compact)12.dp else 16.dp),
+            border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.62f)),
+            modifier=Modifier.size(if(compact)38.dp else 48.dp)
+        ){
+            Box(contentAlignment=Alignment.Center){
+                Image(
+                    painter=painterResource(R.drawable.rs_launcher_royal_v129),
+                    contentDescription="RS KICKBOXING",
+                    modifier=Modifier.fillMaxSize().padding(if(compact)2.dp else 3.dp)
+                )
+            }
+        }
+        Column(
+            modifier=Modifier.weight(1f),
+            verticalArrangement=Arrangement.spacedBy(0.dp)
+        ){
+            Row(
+                verticalAlignment=Alignment.CenterVertically,
+                horizontalArrangement=Arrangement.spacedBy(if(compact)4.dp else 6.dp)
+            ){
+                Text(
+                    "RS",
+                    color=c.bright,
+                    fontWeight=FontWeight.Black,
+                    fontSize=if(compact)13.sp else 16.sp,
+                    letterSpacing=.8.sp,
+                    maxLines=1
+                )
+                Text(
+                    "KICKBOXING",
+                    color=c.gold,
+                    fontWeight=FontWeight.Black,
+                    fontSize=if(compact)13.sp else 17.sp,
+                    letterSpacing=if(compact).45.sp else .8.sp,
+                    maxLines=1,
+                    softWrap=false
+                )
+            }
+            if(!subtitle.isNullOrBlank()){
+                Text(
+                    subtitle,
+                    color=c.muted,
+                    fontSize=if(compact)7.sp else 9.sp,
+                    fontWeight=FontWeight.SemiBold,
+                    maxLines=1,
+                    overflow=TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
