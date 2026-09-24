@@ -380,7 +380,7 @@ fun RsAiAssistantChatV163(
             quietVoice.start(selectedLang.locale)
         }else{
             voiceConversationActive=false
-            status="Microphone permission is required for hands-free RS AI."
+            status=rsAiExtraV163(aiLang,"mic_required")
         }
     }
 
@@ -845,7 +845,7 @@ fun RsAiAssistantChatV163(
                                                 )
                                             }
                                             DropdownMenuItem(
-                                                text={Text("Delete this message")},
+                                                text={Text(rsAiExtraV163(aiLang,"delete_message"))},
                                                 onClick={
                                                     aiMessageMenuId=null
                                                     messages=messages.filterNot{it.id==message.id}
@@ -1016,15 +1016,15 @@ fun RsAiAssistantChatV163(
                     }
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                         Column(Modifier.weight(1f)){
-                            Text("Natural avatar motion",color=c.text,fontSize=10.sp)
-                            Text("Breathing · depth · floating movement",color=c.muted,fontSize=8.sp)
+                            Text(rsAiExtraV163(aiLang,"avatar_motion"),color=c.text,fontSize=10.sp)
+                            Text(rsAiExtraV163(aiLang,"avatar_motion_sub"),color=c.muted,fontSize=8.sp)
                         }
                         Switch(avatarMotionEnabled,{
                             avatarMotionEnabled=it
                             store.pb("ai_avatar_motion_v163",it)
                         })
                     }
-                    Text("VIRTUAL ASSISTANT RENDER",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black)
+                    Text(rsAiExtraV163(aiLang,"render"),color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black)
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
                         FilterChip(
                             selected=avatarRenderMode=="CINEMATIC_3D",
@@ -1032,7 +1032,7 @@ fun RsAiAssistantChatV163(
                                 avatarRenderMode="CINEMATIC_3D"
                                 store.ps("ai_avatar_render_mode_v176","CINEMATIC_3D")
                             },
-                            label={Text("Realistic 3D",fontSize=8.sp)},
+                            label={Text(rsAiExtraV163(aiLang,"realistic_3d"),fontSize=8.sp)},
                             modifier=Modifier.weight(1f)
                         )
                         FilterChip(
@@ -1041,7 +1041,7 @@ fun RsAiAssistantChatV163(
                                 avatarRenderMode="CLEAN"
                                 store.ps("ai_avatar_render_mode_v176","CLEAN")
                             },
-                            label={Text("Clean",fontSize=8.sp)},
+                            label={Text(rsAiExtraV163(aiLang,"clean"),fontSize=8.sp)},
                             modifier=Modifier.weight(1f)
                         )
                     }
@@ -1055,7 +1055,7 @@ fun RsAiAssistantChatV163(
                         onClick={optionsMenu=false;confirmClearAiChat=true},
                         enabled=messages.isNotEmpty(),
                         modifier=Modifier.fillMaxWidth()
-                    ){Text("Delete entire conversation")}
+                    ){Text(rsAiExtraV163(aiLang,"delete_conversation"))}
                     OutlinedButton(onClick={optionsMenu=false},modifier=Modifier.fillMaxWidth()){Text(rsAiExtraV163(aiLang,"close"))}
                 }
             }
@@ -1071,25 +1071,25 @@ fun RsAiAssistantChatV163(
                 modifier=Modifier.fillMaxWidth()
             ){
                 Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
-                    Text("DELETE AI CONVERSATION",color=c.bright,fontWeight=FontWeight.Black,fontSize=16.sp)
+                    Text(rsAiExtraV163(aiLang,"delete_title"),color=c.bright,fontWeight=FontWeight.Black,fontSize=16.sp)
                     Text(
-                        "Delete all messages in this RS AI conversation on this device?",
+                        rsAiExtraV163(aiLang,"delete_desc"),
                         color=c.text,fontSize=10.sp
                     )
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                         OutlinedButton(
                             onClick={confirmClearAiChat=false},
                             modifier=Modifier.weight(1f)
-                        ){Text("Cancel")}
+                        ){Text(rsAiExtraV163(aiLang,"cancel"))}
                         Button(
                             onClick={
                                 messages=emptyList()
                                 rsSaveAiChatHistoryV174(store,aiHistoryKey,emptyList())
                                 confirmClearAiChat=false
-                                status="Conversation deleted."
+                                status=rsAiExtraV163(aiLang,"conversation_deleted")
                             },
                             modifier=Modifier.weight(1f)
-                        ){Text("Delete all")}
+                        ){Text(rsAiExtraV163(aiLang,"delete_all"))}
                     }
                 }
             }
@@ -1155,10 +1155,10 @@ fun RsAiAssistantChatV163(
                 modifier=Modifier.fillMaxWidth()
             ){
                 Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
-                    Text("RS AI MUSIC",color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp)
+                    Text(rsAiExtraV163(aiLang,"music_title"),color=c.bright,fontWeight=FontWeight.Black,fontSize=15.sp)
                     Text(track.name,color=c.text,fontSize=11.sp,maxLines=2)
                     Text(
-                        "Choose what RS should do with this music.",
+                        rsAiExtraV163(aiLang,"music_choose"),
                         color=c.muted,fontSize=9.sp
                     )
 
@@ -1170,7 +1170,7 @@ fun RsAiAssistantChatV163(
                                     .onFailure{status=it.message?:"Could not play music."}
                             },
                             modifier=Modifier.weight(1f)
-                        ){Text("▶ Play",fontSize=9.sp)}
+                        ){Text("▶ "+rsAiExtraV163(aiLang,"play"),fontSize=9.sp)}
 
                         OutlinedButton(
                             onClick={
@@ -1183,7 +1183,7 @@ fun RsAiAssistantChatV163(
                                     .onFailure{status=it.message?:"Could not save music."}
                             },
                             modifier=Modifier.weight(1f)
-                        ){Text("✓ Done",fontSize=9.sp)}
+                        ){Text("✓ "+rsAiExtraV163(aiLang,"done"),fontSize=9.sp)}
                     }
 
                     if(playlists.isNotEmpty()){
@@ -1191,7 +1191,7 @@ fun RsAiAssistantChatV163(
                             OutlinedButton(
                                 onClick={playlistMenu=true},
                                 modifier=Modifier.fillMaxWidth()
-                            ){Text("Add to existing playlist",fontSize=9.sp)}
+                            ){Text(rsAiExtraV163(aiLang,"add_playlist"),fontSize=9.sp)}
                             DropdownMenu(
                                 expanded=playlistMenu,
                                 onDismissRequest={playlistMenu=false}
@@ -1218,7 +1218,7 @@ fun RsAiAssistantChatV163(
                     OutlinedTextField(
                         value=newPlaylistName,
                         onValueChange={newPlaylistName=it.take(60)},
-                        label={Text("New playlist name")},
+                        label={Text(rsAiExtraV163(aiLang,"new_playlist"))},
                         singleLine=true,
                         modifier=Modifier.fillMaxWidth()
                     )
@@ -1235,7 +1235,7 @@ fun RsAiAssistantChatV163(
                         },
                         enabled=newPlaylistName.isNotBlank(),
                         modifier=Modifier.fillMaxWidth()
-                    ){Text("Create playlist with this music")}
+                    ){Text(rsAiExtraV163(aiLang,"create_playlist"))}
 
                     TextButton(
                         onClick={
@@ -1244,7 +1244,7 @@ fun RsAiAssistantChatV163(
                             newPlaylistName=""
                         },
                         modifier=Modifier.fillMaxWidth()
-                    ){Text("Close")}
+                    ){Text(rsAiExtraV163(aiLang,"close"))}
                 }
             }
         }
