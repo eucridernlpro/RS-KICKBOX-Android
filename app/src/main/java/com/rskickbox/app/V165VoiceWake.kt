@@ -427,6 +427,12 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         return localFresh && cloudFresh
     }
 
+    private fun recoverableLockedIdentityV186():Boolean{
+        val cloudFresh=rsSupabaseClientV60()?.auth?.currentUserOrNull()!=null
+        val role=store.s("session_role","").ifBlank{store.s("background_call_role","")}
+        return cloudFresh && role in setOf("student","trainer")
+    }
+
     private fun loginRequiredText():String=when(language().code){
         "nl"->"Je login is verlopen. Open RS KICKBOXING en log opnieuw in om RS Voice Wake te gebruiken."
         "pt"->"O teu login expirou. Abre o RS KICKBOXING e inicia sessão novamente para usar o RS Voice Wake."
