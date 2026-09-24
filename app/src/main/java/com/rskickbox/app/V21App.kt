@@ -1517,6 +1517,7 @@ private fun ShellV21(
                 .padding(if(route=="voice")4.dp else 9.dp),
             verticalArrangement=Arrangement.spacedBy(7.dp)
         ) {
+            if(route!="voice"){
             RsBrandedHeaderV21(c,store) {
                 Row(
                     Modifier.fillMaxWidth(),
@@ -1563,6 +1564,7 @@ private fun ShellV21(
                     }
                 }
             }
+            }
             if(route!="music" && route!="music_admin" && route!="voice"){
                 RsMiniMusicPlayerV90(c,lang){onRoute(if(role==RsRole.TRAINER)"music_admin" else "music")}
             }
@@ -1601,15 +1603,22 @@ private fun ShellV21(
             }
             Box(
                 Modifier.fillMaxWidth().weight(1f)
-                    .clip(RoundedCornerShape(shellLayout.panelRadius.dp))
+                    .clip(if(route=="voice")RoundedCornerShape(0.dp) else RoundedCornerShape(shellLayout.panelRadius.dp))
             ){
-                RsThemePageFrameV177(c,store)
-                Box(Modifier.fillMaxSize().padding(
-                    horizontal=when(shellLayout.mode){"TECH_COMPACT"->2.dp;"FIGHT_STRIP"->4.dp;else->3.dp},
-                    vertical=2.dp
-                )){content()}
+                if(route!="voice")RsThemePageFrameV177(c,store)
+                else Box(Modifier.fillMaxSize().background(Color.Black))
+                Box(
+                    Modifier.fillMaxSize().padding(
+                        horizontal=if(route=="voice")0.dp else when(shellLayout.mode){
+                            "TECH_COMPACT"->2.dp
+                            "FIGHT_STRIP"->4.dp
+                            else->3.dp
+                        },
+                        vertical=if(route=="voice")0.dp else 2.dp
+                    )
+                ){content()}
             }
-            RsBrandedFooterV21(c,store)
+            if(route!="voice")RsBrandedFooterV21(c,store)
         }
     }
 }
