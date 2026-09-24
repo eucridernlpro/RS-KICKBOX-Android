@@ -1317,6 +1317,36 @@ private fun RsAiAvatarStageV163(
         animationSpec=infiniteRepeatable(tween(if(speaking)620 else 1500,easing=FastOutSlowInEasing),RepeatMode.Reverse),
         label="ai-aura"
     )
+    val stateScale by animateFloatAsState(
+        targetValue=when{
+            speaking->1.035f
+            listening->1.020f
+            thinking->1.012f
+            else->1f
+        },
+        animationSpec=tween(420,easing=FastOutSlowInEasing),
+        label="ai-state-scale"
+    )
+    val stateLift by animateFloatAsState(
+        targetValue=when{
+            speaking->-5f
+            listening->-2f
+            thinking->1f
+            else->0f
+        },
+        animationSpec=tween(520,easing=FastOutSlowInEasing),
+        label="ai-state-lift"
+    )
+    val stageGlow by animateFloatAsState(
+        targetValue=when{
+            speaking->.80f
+            listening->.56f
+            thinking->.48f
+            else->.30f
+        },
+        animationSpec=tween(360,easing=FastOutSlowInEasing),
+        label="ai-stage-glow"
+    )
     var languageMenu by remember{mutableStateOf(false)}
 
     Surface(
@@ -1354,9 +1384,9 @@ private fun RsAiAvatarStageV163(
             )
             Box(
                 Modifier.fillMaxSize().graphicsLayer{
-                    scaleX=if(avatarMotion)breath*1.035f else 1.035f
-                    scaleY=if(avatarMotion)breath*1.035f else 1.035f
-                    translationY=if(avatarMotion)floatY else 0f
+                    scaleX=(if(avatarMotion)breath*1.035f else 1.035f)*stateScale
+                    scaleY=(if(avatarMotion)breath*1.035f else 1.035f)*stateScale
+                    translationY=(if(avatarMotion)floatY else 0f)+stateLift
                     translationX=if(avatarMotion && renderMode=="CINEMATIC_3D")parallaxX else 0f
                     rotationY=if(avatarMotion && renderMode=="CINEMATIC_3D")headTurn else 0f
                     rotationX=if(avatarMotion && renderMode=="CINEMATIC_3D")focusTilt else 0f
@@ -1383,6 +1413,22 @@ private fun RsAiAvatarStageV163(
                             c.gold.copy(alpha=.05f),
                             Color.Black.copy(alpha=.78f)
                         )
+                    )
+                )
+            )
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.radialGradient(
+                        listOf(
+                            when{
+                                speaking->Color(0xFF58C9FF).copy(alpha=stageGlow*.20f)
+                                listening->Color(0xFF7EE8B5).copy(alpha=stageGlow*.16f)
+                                thinking->c.gold.copy(alpha=stageGlow*.15f)
+                                else->Color.Transparent
+                            },
+                            Color.Transparent
+                        ),
+                        radius=900f
                     )
                 )
             )
