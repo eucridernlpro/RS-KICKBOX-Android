@@ -707,9 +707,10 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun requestRouteOpenV182(route:String){
+        val taskRestored=MainActivity.bringTaskToFrontFromVoice()
         openRouteV166(route)
         scope.launch{
-            delay(800)
+            delay(if(taskRestored)450 else 800)
             if(!MainActivity.isForeground){
                 val intent=Intent(this@RsVoiceWakeServiceV165,MainActivity::class.java).apply{
                     action="com.rskickbox.app.OPEN_RS_ROUTE"
