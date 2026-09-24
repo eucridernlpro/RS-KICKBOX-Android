@@ -171,7 +171,7 @@ sealed class RsAiPlatformIntentV171{
 
 private fun rsContainsAnyV171(s:String,vararg phrases:String)=phrases.any{s.contains(it)}
 
-fun rsAiPlatformIntentV171(raw:String):RsAiPlatformIntentV171{
+fun rsAiPlatformIntentV171(raw:String,lang:RsLang?=null):RsAiPlatformIntentV171{
     val s=raw.lowercase(Locale.ROOT).trim()
 
     val languageMap=listOf(
@@ -229,9 +229,34 @@ fun rsAiPlatformIntentV171(raw:String):RsAiPlatformIntentV171{
         Triple("profile","Profile",arrayOf("profile","my profile","profiel"))
     )
 
-    if(rsContainsAnyV171(s,"open ","take me to","go to ","show me ","bring me to","navigate to","leva me","ir para","abre ","ouvrir ","öffne ")){
+    if(rsContainsAnyV171(s,"open ","take me to","go to ","show me ","bring me to","navigate to","leva me","ir para","abre ","ouvrir ","öffne ","apri ","otwórz ","aç ","ga naar ")){
         routes.firstOrNull{(_,_,aliases)->aliases.any{s.contains(it)}}?.let{(route,label,_)->
             return RsAiPlatformIntentV171.OpenRoute(route,label)
+        }
+
+        if(lang!=null){
+            val allRoutes=listOf(
+                "home","trainer","guide","student_guide","voice","session","academy","techniques","home_training",
+                "classes","events","coachchat","community","groups","private_lessons","progress","challenges","badges",
+                "fightcamp","compare","vault","homework","music","finance","promotions","book","profile","settings",
+                "themes","backgrounds","branding","intro_settings","members","access","payments","invoices","analytics",
+                "notifications","checkin","support","release","privacy_admin","landing_admin","content","homework_admin",
+                "session_builder","music_admin","notes","plans_admin","progress_admin","assessments","challenge_admin",
+                "fightcamp_admin","attendance","events_admin","schedule","documents","referrals"
+            )
+            val match=allRoutes.mapNotNull{route->
+                val title=rsRouteTitle(lang,route,route.replace('_',' '))
+                val tokens=(title+" "+route.replace('_',' '))
+                    .lowercase(Locale.ROOT)
+                    .split(Regex("[^\\p{L}\\p{N}]+"))
+                    .filter{
+                        it.length>=3 &&
+                        it !in setOf("the","and","van","voor","del","des","der","die","das","app")
+                    }
+                val score=tokens.count{s.contains(it)}
+                if(score>0)Triple(route,title,score) else null
+            }.maxByOrNull{it.third}
+            if(match!=null)return RsAiPlatformIntentV171.OpenRoute(match.first,match.second)
         }
     }
 
