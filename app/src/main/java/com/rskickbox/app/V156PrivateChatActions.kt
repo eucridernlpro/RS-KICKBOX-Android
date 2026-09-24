@@ -87,7 +87,11 @@ fun RsCloudCoachBubbleV156(
                             if(mine || viewerRole==RsRole.TRAINER){
                                 DropdownMenuItem(text={Text("Edit")},onClick={menu=false;editing=true;draft=message.body})
                             }
-                            if(!message.mediaPath.isNullOrBlank() && !message.mediaKind.isNullOrBlank()){
+                            if(
+                                !message.mediaPath.isNullOrBlank() &&
+                                !message.mediaKind.isNullOrBlank() &&
+                                (viewerRole==RsRole.TRAINER || rsChatPermissionV178(galleryStore,RsChatPermissionKeysV178.GALLERY,true))
+                            ){
                                 DropdownMenuItem(
                                     text={Text("Save to Gallery")},
                                     onClick={
