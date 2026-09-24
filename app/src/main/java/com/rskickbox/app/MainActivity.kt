@@ -3,6 +3,7 @@ package com.rskickbox.app
 import android.content.Intent
 import android.os.Bundle
 import android.app.NotificationManager
+import android.app.ActivityManager
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.biometric.BiometricManager
@@ -24,6 +25,15 @@ class MainActivity : FragmentActivity() {
             val activity=activeActivity?.get()?:return false
             activity.runOnUiThread{activity.moveTaskToBack(true)}
             return true
+        }
+
+        fun bringTaskToFrontFromVoice():Boolean{
+            val activity=activeActivity?.get()?:return false
+            return runCatching{
+                val manager=activity.getSystemService(ActivityManager::class.java)
+                manager.moveTaskToFront(activity.taskId,ActivityManager.MOVE_TASK_WITH_HOME)
+                true
+            }.getOrDefault(false)
         }
     }
 
