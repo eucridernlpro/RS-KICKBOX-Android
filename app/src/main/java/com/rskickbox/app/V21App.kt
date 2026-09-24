@@ -388,7 +388,14 @@ fun RsKickboxV21App(
         }
     }
 
-
+    LaunchedEffect(introDone,role){
+        if(introDone && role!=null && RsSupabaseV60.configured){
+            while(true){
+                rsSyncChatPermissionsV178(store)
+                delay(90_000L)
+            }
+        }
+    }
 
     LaunchedEffect(introDone,role){
         if(introDone && role!=null && RsSupabaseV60.configured){
