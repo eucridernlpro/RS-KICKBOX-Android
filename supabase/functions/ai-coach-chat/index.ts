@@ -16,6 +16,55 @@ function outputText(payload:any):string{
   return parts.join("\n").trim()
 }
 
+
+function likelyWrongLanguage(text:string,code:string):boolean{
+  if(!text || code==="en")return false
+  const t=" "+text.toLowerCase().replace(/\s+/g," ")+" "
+  const english=[" the "," and "," you "," your "," is "," are "," can "," with "," this "," that "," open "," use "," from "," for "]
+  const target:Record<string,string[]>={
+    nl:[" de "," het "," een "," je "," jij "," jouw "," met "," voor "," kan "," openen "," gebruiken "],
+    pt:[" o "," a "," os "," as "," de "," que "," tu "," teu "," tua "," com "," para "," podes "," abrir "," usar "],
+    es:[" el "," la "," los "," las "," que "," tú "," tu "," con "," para "," puedes "," abrir "," usar "],
+    fr:[" le "," la "," les "," que "," tu "," ton "," ta "," avec "," pour "," peux "," ouvrir "," utiliser "],
+    de:[" der "," die "," das "," und "," du "," dein "," mit "," für "," kannst "," öffnen "," verwenden "],
+    it:[" il "," la "," che "," tu "," tuo "," tua "," con "," per "," puoi "," aprire "," usare "],
+    pl:[" i "," ty "," twój "," twoja "," z "," dla "," możesz "," otwórz "," użyć "," używać "],
+    tr:[" ve "," sen "," senin "," ile "," için "," aç "," kullan "," kullanabilirsin "]
+  }
+  const englishScore=english.reduce((n,w)=>n+(t.includes(w)?1:0),0)
+  const targetScore=(target[code]||[]).reduce((n,w)=>n+(t.includes(w)?1:0),0)
+  return text.trim().split(/\s+/).length>=8 && englishScore>=3 && targetScore<=1
+}
+
+async function repairLanguage(answer:string,language:string,code:string):Promise<string>{
+  if(!likelyWrongLanguage(answer,code))return answer
+  try{
+    const response=await fetch("https://api.openai.com/v1/responses",{
+      method:"POST",
+      headers:{
+        "authorization":"Bearer "+OPENAI_API_KEY,
+        "content-type":"application/json"
+      },
+      body:JSON.stringify({
+        model:"gpt-6-luna",
+        instructions:
+          "Rewrite the supplied assistant answer entirely in "+language+". "+
+          "Preserve meaning, numbered steps, RS KICKBOXING product names and concise mobile formatting. "+
+          "Do not explain the translation and do not add new information.",
+        input:answer,
+        max_output_tokens:700,
+        store:false
+      })
+    })
+    if(!response.ok)return answer
+    const raw=await response.text()
+    const payload=JSON.parse(raw)
+    return outputText(payload)||answer
+  }catch{
+    return answer
+  }
+}
+
 Deno.serve(async(req)=>{
   if(req.method!=="POST")return json({error:"Method not allowed"},405)
 
@@ -46,6 +95,7 @@ Deno.serve(async(req)=>{
   const body=await req.json().catch(()=>({}))
   const question=String(body.question||"").trim().slice(0,1800)
   const language=String(body.language||"English").trim().slice(0,80)
+  const languageCode=String(body.language_code||"en").trim().toLowerCase().slice(0,8)
   const references=String(body.references||"").trim().slice(0,3500)
 
   if(!question)return json({error:"Question required"},400)
@@ -117,5 +167,12 @@ Deno.serve(async(req)=>{
   const answer=outputText(payload)
   if(!answer)return json({error:"RS AI Coach returned an empty answer"},502)
 
-  return json({answer,model,plan,daily_limit:dailyLimit})
+  const finalAnswer=await repairLanguage(answer,language,languageCode)
+  return json({
+    answer:finalAnswer,
+    model,
+    plan,
+    daily_limit:dailyLimit,
+    language_repaired:finalAnswer!==answer
+  })
 })
