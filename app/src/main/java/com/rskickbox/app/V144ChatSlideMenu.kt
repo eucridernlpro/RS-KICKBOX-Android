@@ -70,8 +70,10 @@ fun RsChatSlideMenuV144(
         Surface(
             color=Color.Black.copy(alpha=.97f),
             shape=RoundedCornerShape(
+                topStart=0.dp,
                 topEnd=when(layout.mode){"TECH_COMPACT"->14.dp;"FIGHT_STRIP"->12.dp;else->30.dp},
-                bottomEnd=when(layout.mode){"TECH_COMPACT"->14.dp;"FIGHT_STRIP"->12.dp;else->30.dp}
+                bottomEnd=when(layout.mode){"TECH_COMPACT"->14.dp;"FIGHT_STRIP"->12.dp;else->30.dp},
+                bottomStart=0.dp
             ),
             border=BorderStroke(if(layout.strongLines)2.dp else 1.dp,c.gold.copy(alpha=.46f)),
             tonalElevation=20.dp,
