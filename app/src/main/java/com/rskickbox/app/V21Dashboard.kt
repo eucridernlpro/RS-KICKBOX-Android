@@ -43,7 +43,9 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
             Text(if(role==RsRole.TRAINER)rsT(lang,"trainer_dashboard") else rsT(lang,"student_dashboard"),color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
             Text("${lang.name} · ${if(role==RsRole.TRAINER)rsT(lang,"trainer_admin") else rsT(lang,"student")} · ${rsT(lang,"premium_experience")}",color=c.muted)
         }
-        RsDashboardCommandCenterV176(c,store,role,lang,onRoute)
+        if(role==RsRole.STUDENT){
+            RsDashboardCommandCenterV176(c,store,role,lang,onRoute)
+        }
         sections.forEach{section->
             Text(sectionTitleV25(lang,section.title).uppercase(),color=c.bright,fontWeight=FontWeight.Black,fontSize=sectionFontV25(sectionTitleV25(lang,section.title)),letterSpacing=.5.sp,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(horizontal=4.dp))
             section.items.chunked(dashboardColumns).forEach{pair->
