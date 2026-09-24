@@ -60,7 +60,7 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
 }
 
 @Composable
-private fun RsDashboardCommandCenterV176(
+fun RsDashboardCommandCenterV176(
     c:RsPalette,
     store:RsStore,
     role:RsRole,
