@@ -377,6 +377,8 @@ fun RsChatAttachmentPreviewV92(
     val context=LocalContext.current
     val previewStore=remember{RsStore(context)}
     val autoPreview=previewStore.b("chat_auto_media_preview_v162",true)
+    val galleryAllowed=previewStore.s("session_role","")=="trainer" ||
+        rsChatPermissionV178(previewStore,RsChatPermissionKeysV178.GALLERY,true)
     var requested by remember(mediaPath,autoPreview){mutableStateOf(autoPreview)}
     var localUri by remember(mediaPath){mutableStateOf("")}
     var error by remember(mediaPath){mutableStateOf("")}
@@ -890,7 +892,9 @@ fun RsChatComposerV92(
                             }
                         }
                         Text(
-                            "Temporary chat media expires after 7 days unless you save it to RS Chat Gallery.",
+                            "Temporary chat media follows the trainer retention policy ("+
+                                (permissionStore.s(RsChatPermissionKeysV178.RETENTION_DAYS,"7").toIntOrNull()?.coerceIn(1,30)?:7)+
+                                " days).",
                             color=c.muted,
                             fontSize=8.sp,
                             lineHeight=11.sp
