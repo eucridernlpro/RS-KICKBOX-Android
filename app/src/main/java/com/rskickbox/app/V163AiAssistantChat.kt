@@ -464,8 +464,8 @@ fun RsAiAssistantChatV163(
 
     fun send(textOverride:String?=null,fromVoice:Boolean=false){
         val body=(textOverride?:draft).trim()
-        val persistExchange=!fromVoice || rsAiVoiceExchangeWorthSavingV187(body)
         val media=pickedUri
+        val persistExchange=!fromVoice || media!=null || rsAiVoiceExchangeWorthSavingV187(body)
         val kind=pickedKind
         if(body.isBlank()&&media==null)return
         if(busy)return
@@ -479,6 +479,27 @@ fun RsAiAssistantChatV163(
             mediaKind=kind
         )
         if(persistExchange)messages=(messages+userMessage).takeLast(100)
+        fun deliverAssistant(
+            text:String,
+            references:List<RsAiCoachReferenceV164> = emptyList(),
+            mediaUri:String?=null,
+            mediaKind:String?=null
+        ){
+            if(persistExchange){
+                messages=rsPruneAiChatV176(
+                    messages+RsAiChatMessageV163(
+                        id=System.currentTimeMillis()+1,
+                        mine=false,
+                        text=text,
+                        mediaUri=mediaUri,
+                        mediaKind=mediaKind,
+                        references=references
+                    )
+                )
+            }else{
+                voiceSubtitle=text
+            }
+        }
         draft=""
         pickedUri=null
         pickedKind=null
@@ -491,14 +512,10 @@ fun RsAiAssistantChatV163(
         if(guideRequest!=null){
             val guideText=rsAiAppGuideTextV175(guideRequest,selectedLang)
             val guideVisual=rsVisualUriWithBundledFallbackV113(context,store,guideRequest.route)
-            messages=rsPruneAiChatV176(
-                messages+RsAiChatMessageV163(
-                    id=System.currentTimeMillis()+1,
-                    mine=false,
-                    text=guideText,
-                    mediaUri=guideVisual.takeIf{it.isNotBlank()},
-                    mediaKind=guideVisual.takeIf{it.isNotBlank()}?.let{"GUIDE"}
-                )
+            deliverAssistant(
+                text=guideText,
+                mediaUri=guideVisual.takeIf{it.isNotBlank()},
+                mediaKind=guideVisual.takeIf{it.isNotBlank()}?.let{"GUIDE"}
             )
             busy=false
             status=""
@@ -518,11 +535,7 @@ fun RsAiAssistantChatV163(
                     onSuccess={rsAiActionV184(aiLang,"playing",namedTrackRequest.name)},
                     onFailure={rsAiActionV184(aiLang,"play_failed")}
                 )
-            messages=(messages+RsAiChatMessageV163(
-                id=System.currentTimeMillis()+1,
-                mine=false,
-                text=reply
-            )).takeLast(100)
+            deliverAssistant(reply)
             busy=false
             status=""
             if(autoSpeak)speak(reply) else if(voiceConversationActive)resumeListeningSignal++
@@ -666,12 +679,7 @@ fun RsAiAssistantChatV163(
             val refs=if(earlyRefs.isNotEmpty())earlyRefs
             else rsAiReferencePreviewsV164(context,body,reply)
 
-            messages=(messages+RsAiChatMessageV163(
-                id=System.currentTimeMillis()+1,
-                mine=false,
-                text=reply,
-                references=refs
-            )).takeLast(100)
+            deliverAssistant(reply,references=refs)
             status=""
             busy=false
             if(autoSpeak)speak(reply) else if(voiceConversationActive)resumeListeningSignal++
@@ -692,6 +700,14 @@ fun RsAiAssistantChatV163(
         if(spoken.isNotBlank()&&!busy){
             voiceResult=null
             send(spoken,fromVoice=true)
+        }
+    }
+
+    LaunchedEffect(voiceSubtitle){
+        val snapshot=voiceSubtitle
+        if(snapshot.isNotBlank()){
+            kotlinx.coroutines.delay(12_000L)
+            if(voiceSubtitle==snapshot)voiceSubtitle=""
         }
     }
 
@@ -719,11 +735,7 @@ fun RsAiAssistantChatV163(
                 "tr"->"Merhaba, ben "+name+". Bugün senin için ne yapabilirim?"
                 else->"Hi, I’m "+name+". What can I do for you today?"
             }
-            messages=(messages+RsAiChatMessageV163(
-                id=System.currentTimeMillis(),
-                mine=false,
-                text=greeting
-            )).takeLast(100)
+            voiceSubtitle=greeting
             speak(greeting)
         }else if(immersiveGreetingPending && !ttsReady){
             kotlinx.coroutines.delay(700)
@@ -978,6 +990,33 @@ fun RsAiAssistantChatV163(
                 .padding(start=8.dp,end=8.dp,bottom=4.dp),
             verticalArrangement=Arrangement.spacedBy(6.dp)
         ){
+        if(voiceSubtitle.isNotBlank()){
+            Surface(
+                color=Color(0xFF031017).copy(alpha=.72f),
+                shape=RoundedCornerShape(20.dp),
+                border=BorderStroke(
+                    1.dp,
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color(0xFF58C9FF).copy(alpha=.70f),
+                            c.gold.copy(alpha=.54f),
+                            Color(0xFF58C9FF).copy(alpha=.35f)
+                        )
+                    )
+                ),
+                tonalElevation=14.dp,
+                modifier=Modifier.fillMaxWidth()
+            ){
+                Text(
+                    voiceSubtitle,
+                    color=c.text,
+                    fontSize=10.sp,
+                    lineHeight=14.sp,
+                    maxLines=4,
+                    modifier=Modifier.padding(horizontal=12.dp,vertical=9.dp)
+                )
+            }
+        }
         if(status.isNotBlank()){
             Text(status,color=Color(0xFF58C9FF),fontSize=8.sp,modifier=Modifier.padding(horizontal=8.dp))
         }
