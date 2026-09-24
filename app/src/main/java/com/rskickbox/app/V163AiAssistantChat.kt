@@ -1678,7 +1678,7 @@ fun RsAiAssistantChatV163(
                             onClick={
                                 rsSaveMusicTrackV169(store,track)
                                     .onSuccess{
-                                        status="Saved to RS Music."
+                                        status=rsAiVoiceRuntimeTextV190(aiLang,"music_saved")
                                         musicDialog=false
                                         pendingMusic=null
                                     }
