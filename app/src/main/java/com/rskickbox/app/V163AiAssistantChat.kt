@@ -940,7 +940,7 @@ fun RsAiAssistantChatV163(
         Column(
             Modifier.align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(horizontal=8.dp,bottom=4.dp),
+                .padding(start=8.dp,end=8.dp,bottom=4.dp),
             verticalArrangement=Arrangement.spacedBy(6.dp)
         ){
         if(status.isNotBlank()){
