@@ -85,10 +85,15 @@ private fun rsVoiceSystemCommandV182(text:String):String?{
     val s=text.lowercase(Locale.ROOT)
     return when{
         listOf(
-            "minimize app","minimise app","close app","rs close app","rs minimize app",
-            "minimaliseer app","sluit app","minimiza a app","fecha a app","minimiza la app","cierra la app",
-            "réduis l'app","ferme l'app","app minimieren","app schließen","riduci app","chiudi app",
-            "zminimalizuj aplikację","zamknij aplikację","uygulamayı küçült","uygulamayı kapat"
+            "close app","rs close app","close rs","sluit app","sluit rs","fecha a app","fecha rs",
+            "cierra la app","cierra rs","ferme l'app","ferme rs","app schließen","rs schließen",
+            "chiudi app","chiudi rs","zamknij aplikację","zamknij rs","uygulamayı kapat","rs kapat"
+        ).any{s.contains(it)}->"CLOSE"
+        listOf(
+            "minimize app","minimise app","rs minimize app","rs minimise app","put app in background",
+            "minimaliseer app","zet app op achtergrond","minimiza a app","manda a app para segundo plano",
+            "minimiza la app","réduis l'app","app minimieren","riduci app",
+            "zminimalizuj aplikację","uygulamayı küçült"
         ).any{s.contains(it)}->"MINIMIZE"
         listOf(
             "log out","logout","sign out","rs log out","uitloggen","sair da conta","cerrar sesión",
@@ -965,6 +970,28 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         else->"Okay. I’ll move RS to the background and keep listening."
                     }
                 )
+                return
+            }
+            "CLOSE"->{
+                awakeUntil=0L
+                speak(
+                    when(language().code){
+                        "nl"->"Ik sluit het RS-venster en luister daarna weer alleen naar de wekzin."
+                        "pt"->"Vou fechar a janela RS e depois volto a ouvir apenas a frase de ativação."
+                        "es"->"Cerraré la ventana de RS y después volveré a escuchar solo la frase de activación."
+                        "fr"->"Je ferme la fenêtre RS puis je reviens à l’écoute de la phrase d’activation."
+                        "de"->"Ich schließe das RS-Fenster und höre danach wieder nur auf das Aktivierungswort."
+                        "it"->"Chiudo la finestra RS e poi torno ad ascoltare solo la frase di attivazione."
+                        "pl"->"Zamknę okno RS i wrócę do nasłuchiwania wyłącznie hasła aktywacyjnego."
+                        "tr"->"RS penceresini kapatıp yalnızca uyandırma ifadesini dinlemeye döneceğim."
+                        else->"I’ll close the RS window and return to listening only for the wake phrase."
+                    },
+                    thenListen=true
+                )
+                scope.launch{
+                    delay(900)
+                    MainActivity.closeTaskFromVoice()
+                }
                 return
             }
             "LOGOUT"->{
