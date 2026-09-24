@@ -12,6 +12,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -1213,6 +1214,8 @@ private fun ShellV21(
     val scope=rememberCoroutineScope()
     val context=LocalContext.current
     val shellLayout=rsThemeLayoutV175(rsStoredThemeV175(store))
+    var pageSwipeX by remember{mutableFloatStateOf(0f)}
+    var pageSwipeActive by remember{mutableStateOf(false)}
     var lastBackPressMs by remember{mutableLongStateOf(0L)}
     val chatFullScreen=route in setOf(
         "coachchat","groups","voice","media","community","support","notifications","content"
@@ -1370,7 +1373,42 @@ private fun ShellV21(
         }
     ){
         Column(
-            Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(9.dp),
+            Modifier.fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .pointerInput(route,drawerState.isOpen){
+                    detectHorizontalDragGestures(
+                        onDragStart={
+                            pageSwipeX=0f
+                            pageSwipeActive=true
+                        },
+                        onHorizontalDrag={change,amount->
+                            if(pageSwipeActive){
+                                pageSwipeX+=amount
+                                change.consume()
+                            }
+                        },
+                        onDragEnd={
+                            if(pageSwipeActive){
+                                when{
+                                    drawerState.isOpen && pageSwipeX < -85f ->
+                                        scope.launch{drawerState.close()}
+                                    !drawerState.isOpen && pageSwipeX > 85f ->
+                                        scope.launch{drawerState.open()}
+                                    !drawerState.isOpen && pageSwipeX < -110f && route!=home ->
+                                        onRoute(home)
+                                }
+                            }
+                            pageSwipeX=0f
+                            pageSwipeActive=false
+                        },
+                        onDragCancel={
+                            pageSwipeX=0f
+                            pageSwipeActive=false
+                        }
+                    )
+                }
+                .padding(9.dp),
             verticalArrangement=Arrangement.spacedBy(7.dp)
         ) {
             RsBrandedHeaderV21(c,store) {
@@ -1395,12 +1433,6 @@ private fun ShellV21(
                         shape=CircleShape,
                         contentPadding=PaddingValues(0.dp)
                     ){Text("☰",fontSize=13.sp)}
-                    if(route!=home)OutlinedButton(
-                        onClick={onRoute(home)},
-                        modifier=Modifier.size(36.dp),
-                        shape=CircleShape,
-                        contentPadding=PaddingValues(0.dp)
-                    ){Text("‹",fontSize=20.sp)}
                     RsNotificationBellV156(
                         c=c,
                         store=store,
