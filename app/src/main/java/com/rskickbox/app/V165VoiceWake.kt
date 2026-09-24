@@ -316,6 +316,10 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     @Volatile private var serviceSpeaking=false
     private var toneRestoreJob:Job?=null
     private var systemToneMutedByRs=false
+    private var offlineWakeEngineV188:RsOfflineWakeEngineV188?=null
+    private var offlineWakePrepareJobV188:Job?=null
+    private var silentWakePreparingV188=false
+    private var silentWakeSessionFailedV188=false
     private val store by lazy{RsStore(this)}
 
     private fun setWakeStatusV168(status:String){
@@ -365,6 +369,10 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         controllerFuture?.cancel(true)
         controllerFuture=null
         toneRestoreJob?.cancel()
+        offlineWakePrepareJobV188?.cancel()
+        offlineWakePrepareJobV188=null
+        runCatching{offlineWakeEngineV188?.stop()}
+        offlineWakeEngineV188=null
         if(systemToneMutedByRs){
             val audio=getSystemService(AudioManager::class.java)
             runCatching{audio.adjustStreamVolume(AudioManager.STREAM_SYSTEM,AudioManager.ADJUST_UNMUTE,0)}
@@ -678,6 +686,70 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         }
     }
 
+    private fun prepareSilentWakeV188(){
+        if(silentWakePreparingV188 || silentWakeSessionFailedV188)return
+        if(RsOfflineWakeModelV188.installed(this)){
+            store.pb("rs_silent_wake_model_ready_v188",true)
+            startSilentWakeV188()
+            return
+        }
+        silentWakePreparingV188=true
+        setWakeStatusV168("SILENT_WAKE_PREPARING")
+        offlineWakePrepareJobV188?.cancel()
+        offlineWakePrepareJobV188=scope.launch{
+            val result=RsOfflineWakeModelV188.ensure(this@RsVoiceWakeServiceV165){progress->
+                store.ps("rs_silent_wake_download_progress_v188",progress.toString())
+                setWakeStatusV168("SILENT_WAKE_DOWNLOAD_"+progress)
+            }
+            silentWakePreparingV188=false
+            result.onSuccess{
+                store.pb("rs_silent_wake_model_ready_v188",true)
+                store.ps("rs_silent_wake_download_progress_v188","100")
+                silentWakeSessionFailedV188=false
+                startSilentWakeV188()
+            }.onFailure{
+                store.pb("rs_silent_wake_model_ready_v188",false)
+                silentWakeSessionFailedV188=true
+                setWakeStatusV168("SILENT_WAKE_PREPARE_FAILED")
+                // Fall back to Android recognition for this service session only.
+                startListening()
+            }
+        }
+    }
+
+    private fun startSilentWakeV188(){
+        if(serviceSpeaking || System.currentTimeMillis()<=awakeUntil)return
+        if(!RsOfflineWakeModelV188.installed(this)){
+            prepareSilentWakeV188()
+            return
+        }
+        runCatching{recognizer?.cancel()}
+        runCatching{offlineWakeEngineV188?.stop()}
+        offlineWakeEngineV188=RsOfflineWakeEngineV188(
+            context=this,
+            onWake={heard->
+                scope.launch{
+                    if(serviceSpeaking)return@launch
+                    awakeUntil=System.currentTimeMillis()+45_000L
+                    setWakeStatusV168("HEARD_WAKE")
+                    store.pb("ai_immersive_v171",true)
+                    store.pb("ai_start_listening_v168",true)
+                    if(!MainActivity.isForeground)requestRouteOpenV182(defaultDashboardRouteV182())
+                    speak(rsVoiceGreetingV165(language().code),thenListen=true)
+                }
+            },
+            onState={state->setWakeStatusV168(state)}
+        ).also{engine->
+            engine.start().onFailure{
+                silentWakeSessionFailedV188=true
+                setWakeStatusV168("SILENT_WAKE_START_FAILED")
+                runCatching{engine.stop()}
+                offlineWakeEngineV188=null
+                startListening()
+            }
+        }
+    }
+
     private fun startListening(){
         if(serviceSpeaking)return
         if(!trustedSessionActive() && !recoverableLockedIdentityV186()){
@@ -688,6 +760,19 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             ActivityCompat.checkSelfPermission(this,Manifest.permission.RECORD_AUDIO)
             !=PackageManager.PERMISSION_GRANTED
         )return
+
+        if(
+            System.currentTimeMillis()>awakeUntil &&
+            store.b("rs_voice_wake_silent_engine_v188",true) &&
+            !silentWakeSessionFailedV188
+        ){
+            if(RsOfflineWakeModelV188.installed(this))startSilentWakeV188()
+            else prepareSilentWakeV188()
+            return
+        }
+
+        runCatching{offlineWakeEngineV188?.stop()}
+        offlineWakeEngineV188=null
         createRecognizer()
         val lang=language()
         val recognitionLocale=if(wakeRecognitionFallback)Locale.getDefault() else lang.locale
