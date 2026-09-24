@@ -2,6 +2,20 @@
 -- Migration 0064: make chat media expiry honor centralized trainer retention days.
 -- Requires 0063_chat_permissions.sql.
 
+-- Repair media columns first because some installations received only part of 0061/0062.
+alter table if exists public.rs_community_posts
+    add column if not exists media_path text,
+    add column if not exists media_kind text,
+    add column if not exists media_name text;
+
+alter table if exists public.rs_support_tickets
+    add column if not exists media_path text,
+    add column if not exists media_kind text,
+    add column if not exists media_name text,
+    add column if not exists trainer_media_path text,
+    add column if not exists trainer_media_kind text,
+    add column if not exists trainer_media_name text;
+
 create or replace function public.rs_expired_chat_media_paths()
 returns table(media_path text)
 language sql
