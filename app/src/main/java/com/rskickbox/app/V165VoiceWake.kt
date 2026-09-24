@@ -844,16 +844,51 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun requestRouteOpenV182(route:String){
+        val intent=Intent(this,MainActivity::class.java).apply{
+            action="com.rskickbox.app.OPEN_RS_ROUTE"
+            putExtra("route",route)
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            )
+        }
         val taskRestored=MainActivity.bringTaskToFrontFromVoice()
-        openRouteV166(route)
+        var launchAttempted=taskRestored
+
+        if(taskRestored){
+            openRouteV166(route)
+        }else if(Build.VERSION.SDK_INT>=34){
+            val pending=PendingIntent.getActivity(
+                this,
+                1880+route.hashCode(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val options=ActivityOptions.makeBasic().apply{
+                @Suppress("DEPRECATION")
+                setPendingIntentBackgroundActivityStartMode(
+                    if(Build.VERSION.SDK_INT>=36)
+                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
+                    else
+                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                )
+            }
+            launchAttempted=runCatching{
+                pending.send(this,0,intent,null,null,null,options.toBundle())
+                true
+            }.getOrDefault(false)
+        }else{
+            launchAttempted=runCatching{
+                startActivity(intent)
+                true
+            }.getOrDefault(false)
+        }
+
         scope.launch{
-            delay(if(taskRestored)450 else 800)
+            delay(if(taskRestored)450 else 900)
             if(!MainActivity.isForeground){
-                val intent=Intent(this@RsVoiceWakeServiceV165,MainActivity::class.java).apply{
-                    action="com.rskickbox.app.OPEN_RS_ROUTE"
-                    putExtra("route",route)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                }
                 val pending=PendingIntent.getActivity(
                     this@RsVoiceWakeServiceV165,
                     1820+route.hashCode(),
@@ -876,6 +911,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                     "tr"->"RS seni duydu · "+title+" açmak için dokun"
                     else->"RS heard you · tap to open "+title
                 }
+                setWakeStatusV168(if(launchAttempted)"WAKE_HANDOFF_BLOCKED" else "WAKE_HANDOFF_FAILED")
                 getSystemService(NotificationManager::class.java).notify(
                     RS_VOICE_WAKE_ACTION_NOTIFICATION_ID_V182,
                     NotificationCompat.Builder(this@RsVoiceWakeServiceV165,RS_VOICE_WAKE_ACTION_CHANNEL_V182)
@@ -890,6 +926,8 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         .setCategory(NotificationCompat.CATEGORY_REMINDER)
                         .build()
                 )
+            }else{
+                setWakeStatusV168("WAKE_ROUTE_OPENED")
             }
         }
     }
