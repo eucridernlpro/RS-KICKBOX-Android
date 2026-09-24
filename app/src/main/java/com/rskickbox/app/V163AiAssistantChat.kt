@@ -680,6 +680,69 @@ fun RsAiAssistantChatV163(
                     runCatching{musicController?.seekToPreviousMediaItem();musicController?.play()}
                     rsAiActionV184(aiLang,"previous_track")
                 }
+                is RsAiPlatformIntentV171.MinimizeApp->{
+                    scope.launch{
+                        kotlinx.coroutines.delay(450)
+                        MainActivity.moveToBackgroundFromVoice()
+                    }
+                    when(aiLang){
+                        "nl"->"Ik zet RS op de achtergrond en blijf beschikbaar."
+                        "pt"->"Vou colocar a RS em segundo plano e continuo disponível."
+                        "es"->"Pondré RS en segundo plano y seguiré disponible."
+                        "fr"->"Je mets RS en arrière-plan et je reste disponible."
+                        "de"->"Ich lege RS in den Hintergrund und bleibe verfügbar."
+                        "it"->"Metto RS in background e rimango disponibile."
+                        "pl"->"Przenoszę RS do tła i pozostaję dostępny."
+                        "tr"->"RS'i arka plana alıyorum ve hazır kalıyorum."
+                        else->"I’ll move RS to the background and stay available."
+                    }
+                }
+                is RsAiPlatformIntentV171.CloseApp->{
+                    voiceConversationActive=false
+                    runCatching{quietVoice.stop()}
+                    scope.launch{
+                        kotlinx.coroutines.delay(650)
+                        MainActivity.closeTaskFromVoice()
+                    }
+                    when(aiLang){
+                        "nl"->"Ik sluit het RS-venster. Voice Wake kan actief blijven als je dat hebt ingeschakeld."
+                        "pt"->"Vou fechar a janela RS. O Voice Wake pode continuar ativo se estiver ligado."
+                        "es"->"Cerraré la ventana de RS. Voice Wake puede seguir activo si está habilitado."
+                        "fr"->"Je ferme la fenêtre RS. Voice Wake peut rester actif s’il est activé."
+                        "de"->"Ich schließe das RS-Fenster. Voice Wake kann aktiv bleiben, wenn es eingeschaltet ist."
+                        "it"->"Chiudo la finestra RS. Voice Wake può restare attivo se abilitato."
+                        "pl"->"Zamknę okno RS. Voice Wake może pozostać aktywny, jeśli jest włączony."
+                        "tr"->"RS penceresini kapatıyorum. Voice Wake açıksa etkin kalabilir."
+                        else->"I’ll close the RS window. Voice Wake can remain active if enabled."
+                    }
+                }
+                is RsAiPlatformIntentV171.Logout->{
+                    voiceConversationActive=false
+                    runCatching{quietVoice.stop()}
+                    store.ps("session_password_auth_ms","0")
+                    store.ps("session_last_activity_ms","0")
+                    store.ps("session_last_route","")
+                    store.ps("session_role","")
+                    store.ps("background_call_role","")
+                    store.pb("rs_voice_wake_enabled_v165",false)
+                    RsVoiceWakeServiceV165.stop(context)
+                    scope.launch{
+                        runCatching{rsCloudLogoutV63()}
+                        kotlinx.coroutines.delay(500)
+                        MainActivity.recreateFromVoice()
+                    }
+                    when(aiLang){
+                        "nl"->"Je wordt nu uitgelogd."
+                        "pt"->"Vou terminar a tua sessão agora."
+                        "es"->"Voy a cerrar tu sesión ahora."
+                        "fr"->"Je vais te déconnecter maintenant."
+                        "de"->"Du wirst jetzt abgemeldet."
+                        "it"->"Ora effettuo il logout."
+                        "pl"->"Wylogowuję cię teraz."
+                        "tr"->"Şimdi çıkış yapıyorum."
+                        else->"I’m signing you out now."
+                    }
+                }
                 is RsAiPlatformIntentV171.OpenRoute->{
                     val resolvedRoute=if(role==RsRole.TRAINER)when(platformIntent.route){
                         "music"->"music_admin"
