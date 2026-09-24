@@ -189,6 +189,14 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
             }
         }
 
+        if(role==RsRole.TRAINER){
+            RsTrainerCallControlV136(
+                c=c,
+                lang=lang,
+                onRoomCreated={}
+            )
+        }
+
         Surface(
             color=Color.Black.copy(alpha=.66f),
             shape=RoundedCornerShape(24.dp),
