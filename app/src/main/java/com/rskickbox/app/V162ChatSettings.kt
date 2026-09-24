@@ -18,9 +18,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
 @Composable
-fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,onOpenAi:()->Unit){
+fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,onOpenAi:()->Unit){
     var autoMedia by remember{mutableStateOf(store.b("chat_auto_media_preview_v162",true))}
     var autoSpeak by remember{mutableStateOf(store.b("ai_auto_speak_v163",true))}
     var avatarMotion by remember{mutableStateOf(store.b("ai_avatar_motion_v163",true))}
@@ -29,9 +30,37 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,onOpenAi:()->Unit){
     var voiceWake by remember{mutableStateOf(store.b("rs_voice_wake_enabled_v165",false))}
     var voiceWakeStatus by remember{mutableStateOf("")}
     var listenerRevision by remember{mutableIntStateOf(0)}
+    val saveScope=rememberCoroutineScope()
+    var permissionStatus by remember{mutableStateOf("")}
+    var permImages by remember{mutableStateOf(store.b(RsChatPermissionKeysV178.STUDENT_IMAGES,true))}
+    var permVideos by remember{mutableStateOf(store.b(RsChatPermissionKeysV178.STUDENT_VIDEOS,true))}
+    var permAudio by remember{mutableStateOf(store.b(RsChatPermissionKeysV178.STUDENT_AUDIO,true))}
+    var permFiles by remember{mutableStateOf(store.b(RsChatPermissionKeysV178.STUDENT_FILES,true))}
+    var permCalls by remember{mutableStateOf(store.b(RsChatPermissionKeysV178.PRIVATE_CALLS,true))}
+    var permGroupMedia by remember{mutableStateOf(store.b(RsChatPermissionKeysV178.GROUP_MEDIA,true))}
+    var permCommunityMedia by remember{mutableStateOf(store.b(RsChatPermissionKeysV178.COMMUNITY_MEDIA,true))}
+    var permGallery by remember{mutableStateOf(store.b(RsChatPermissionKeysV178.GALLERY,true))}
+    var retentionDays by remember{mutableIntStateOf(store.s(RsChatPermissionKeysV178.RETENTION_DAYS,"7").toIntOrNull()?.coerceIn(1,30)?:7)}
     val listenerStatus=remember(listenerRevision){
         store.s("rs_voice_wake_status_v168","OFF").ifBlank{"OFF"}
     }
+    LaunchedEffect(role){
+        if(role==RsRole.TRAINER && RsSupabaseV60.configured){
+            rsSyncChatPermissionsV178(store).onSuccess{p->
+                permImages=p.studentImagesEnabled
+                permVideos=p.studentVideosEnabled
+                permAudio=p.studentAudioEnabled
+                permFiles=p.studentFilesEnabled
+                permCalls=p.privateCallsEnabled
+                permGroupMedia=p.groupMediaEnabled
+                permCommunityMedia=p.communityMediaEnabled
+                autoMedia=p.autoMediaPreviewEnabled
+                permGallery=p.galleryEnabled
+                retentionDays=p.mediaRetentionDays.coerceIn(1,30)
+            }
+        }
+    }
+
     LaunchedEffect(Unit){
         while(true){
             kotlinx.coroutines.delay(1500)
@@ -92,6 +121,70 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,onOpenAi:()->Unit){
                             store.pb("chat_auto_media_preview_v162",it)
                         }
                     )
+                }
+            }
+        }
+
+        if(role==RsRole.TRAINER){
+            Surface(
+                color=c.panel.copy(alpha=.68f),
+                shape=RoundedCornerShape(24.dp),
+                border=BorderStroke(1.dp,c.gold.copy(alpha=.30f)),
+                modifier=Modifier.fillMaxWidth()
+            ){
+                Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    Text("TRAINER CHAT PERMISSIONS",color=c.bright,fontWeight=FontWeight.Black,fontSize=13.sp)
+                    Text(
+                        "Central controls are synchronized to student devices. Existing group-level students_can_post / students_can_media rules still apply in addition to these global permissions.",
+                        color=c.muted,fontSize=8.sp,lineHeight=12.sp
+                    )
+                    RsChatPermissionToggleV178(c,"Student image upload","Allow students to send photos.",permImages){permImages=it}
+                    RsChatPermissionToggleV178(c,"Student video upload","Allow short training videos.",permVideos){permVideos=it}
+                    RsChatPermissionToggleV178(c,"Student voice / audio","Allow recorded voice messages and audio.",permAudio){permAudio=it}
+                    RsChatPermissionToggleV178(c,"Student file upload","Allow general supported file attachments.",permFiles){permFiles=it}
+                    RsChatPermissionToggleV178(c,"Private audio/video calls","Allow students to start/use private calling controls.",permCalls){permCalls=it}
+                    RsChatPermissionToggleV178(c,"Group media","Global media gate for student group chats.",permGroupMedia){permGroupMedia=it}
+                    RsChatPermissionToggleV178(c,"Community media","Allow student media posts in Community.",permCommunityMedia){permCommunityMedia=it}
+                    RsChatPermissionToggleV178(c,"RS Chat Gallery","Allow the shared chat gallery workflow.",permGallery){permGallery=it}
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+                        Column(Modifier.weight(1f)){
+                            Text("Media retention",color=c.text,fontWeight=FontWeight.Bold,fontSize=10.sp)
+                            Text(retentionDays.toString()+" days",color=c.muted,fontSize=8.sp)
+                        }
+                        OutlinedButton(onClick={retentionDays=(retentionDays-1).coerceAtLeast(1)}){Text("−")}
+                        Spacer(Modifier.width(5.dp))
+                        OutlinedButton(onClick={retentionDays=(retentionDays+1).coerceAtMost(30)}){Text("+")}
+                    }
+                    Button(
+                        onClick={
+                            permissionStatus="Saving chat permissions…"
+                            saveScope.launch{
+                                rsSaveChatPermissionsV178(
+                                    store,
+                                    RsChatPermissionsV178(
+                                        studentImagesEnabled=permImages,
+                                        studentVideosEnabled=permVideos,
+                                        studentAudioEnabled=permAudio,
+                                        studentFilesEnabled=permFiles,
+                                        privateCallsEnabled=permCalls,
+                                        groupMediaEnabled=permGroupMedia,
+                                        communityMediaEnabled=permCommunityMedia,
+                                        autoMediaPreviewEnabled=autoMedia,
+                                        galleryEnabled=permGallery,
+                                        mediaRetentionDays=retentionDays
+                                    )
+                                ).onSuccess{
+                                    permissionStatus="Trainer chat permissions saved."
+                                }.onFailure{
+                                    permissionStatus=it.message?:"Could not save trainer chat permissions."
+                                }
+                            }
+                        },
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text("SAVE CHAT PERMISSIONS",fontSize=9.sp,fontWeight=FontWeight.Black)}
+                    if(permissionStatus.isNotBlank()){
+                        Text(permissionStatus,color=if(permissionStatus.contains("saved",true))Color(0xFF36D27F) else c.muted,fontSize=8.sp)
+                    }
                 }
             }
         }
@@ -283,5 +376,26 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,onOpenAi:()->Unit){
                 )
             }
         }
+    }
+}
+
+
+@Composable
+private fun RsChatPermissionToggleV178(
+    c:RsPalette,
+    title:String,
+    subtitle:String,
+    checked:Boolean,
+    onChange:(Boolean)->Unit
+){
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+    ){
+        Column(Modifier.weight(1f)){
+            Text(title,color=c.text,fontWeight=FontWeight.Bold,fontSize=10.sp)
+            Text(subtitle,color=c.muted,fontSize=8.sp,lineHeight=11.sp)
+        }
+        Switch(checked=checked,onCheckedChange=onChange)
     }
 }
