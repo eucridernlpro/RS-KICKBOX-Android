@@ -616,7 +616,7 @@ fun RsAiAssistantChatV163(
             return
         }
 
-        val platformIntent=if(kind==null)rsAiPlatformIntentV171(body) else RsAiPlatformIntentV171.None
+        val platformIntent=if(kind==null)rsAiPlatformIntentV171(body,selectedLang) else RsAiPlatformIntentV171.None
         if(platformIntent !is RsAiPlatformIntentV171.None){
             var replyLanguageOverride:RsLang?=null
             var replyAvatarOverride:String?=null
@@ -681,11 +681,19 @@ fun RsAiAssistantChatV163(
                     rsAiActionV184(aiLang,"previous_track")
                 }
                 is RsAiPlatformIntentV171.OpenRoute->{
+                    val resolvedRoute=if(role==RsRole.TRAINER)when(platformIntent.route){
+                        "music"->"music_admin"
+                        "homework"->"homework_admin"
+                        "progress"->"progress_admin"
+                        "home"->"trainer"
+                        else->platformIntent.route
+                    }else platformIntent.route
                     scope.launch{
                         kotlinx.coroutines.delay(250)
-                        onNavigate(platformIntent.route)
+                        onNavigate(resolvedRoute)
                     }
-                    rsAiActionV184(aiLang,"opening",platformIntent.label)
+                    val title=rsRouteTitle(selectedLang,resolvedRoute,platformIntent.label)
+                    rsAiActionV184(aiLang,"opening",title)
                 }
                 is RsAiPlatformIntentV171.Help->{
                     rsAiActionV184(aiLang,"help")
