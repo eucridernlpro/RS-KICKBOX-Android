@@ -169,15 +169,46 @@ private fun rsVoiceMusicCommandV165(text:String):RsVoiceMusicCommandV165{
 
 private fun rsVoiceRouteV167(text:String):String?{
     val s=text.lowercase(Locale.ROOT)
-    return when{
-        listOf("open ai","open ai coach","open rs ai","open coach","open assistant","open de ai","open ai coach","abrir ai","abrir treinador ai","abre la ia","abre el entrenador ia","ouvre l'ia","ouvre le coach ia","ki öffnen","apri ai","otwórz ai","yapay zekayı aç").any{s.contains(it)}->"voice"
-        listOf("open support","open hulp","open ondersteuning","abrir suporte","abre soporte","ouvre support","support öffnen","apri supporto","otwórz pomoc","desteği aç").any{s.contains(it)}->"support"
-        listOf("open groups","open groepen","abrir grupos","abre grupos","ouvre groupes","gruppen öffnen","apri gruppi","otwórz grupy","grupları aç").any{s.contains(it)}->"groups"
-        listOf("open private chat","open private chats","private chat","private chats","open direct chat","open direct chats","open coach chat","open privé chat","open prive chat","abrir chat privado","abre chat privado","ouvre chat privé","privaten chat öffnen").any{s.contains(it)}->"coachchat"
-        listOf("open community","open community","abrir comunidade","abre comunidad","ouvre communauté","community öffnen","apri community","otwórz społeczność","topluluğu aç").any{s.contains(it)}->"community"
-        listOf("open notifications","open meldingen","abrir notificações","abre notificaciones","ouvre notifications","benachrichtigungen öffnen","apri notifiche","otwórz powiadomienia","bildirimleri aç").any{s.contains(it)}->"notifications"
-        else->null
-    }
+    val hasNavigationVerb=listOf(
+        "open ","go to ","take me to ","show ","bring me to ","navigate ",
+        "open ","ga naar ","toon ","breng me naar ",
+        "abre ","abrir ","leva-me ","leva me ","vai para ",
+        "abre ","ir a ","llévame ","llevame ","muestra ",
+        "ouvre ","va à ","emmène-moi ","emmene moi ",
+        "öffne ","gehe zu ","bring mich zu ",
+        "apri ","vai a ","portami a ",
+        "otwórz ","idź do ","idz do ","pokaż ",
+        "aç ","git ","götür ","goster ","göster "
+    ).any{s.contains(it)}
+    if(!hasNavigationVerb)return null
+
+    val routes=listOf(
+        "voice" to listOf("rs ai","ai coach","ai trainer","assistant","assistent","assistente","asistente","coach ia","ki trainer","yz antrenör"),
+        "coachchat" to listOf("rs chat","private chat","private chats","direct chat","coach chat","privé chat","chat privado","chat privé"),
+        "groups" to listOf("groups","groepen","grupos","groupes","gruppen","gruppi","grupy","gruplar"),
+        "community" to listOf("community","comunidade","comunidad","communauté","społeczność","topluluk"),
+        "support" to listOf("support","hulp","suporte","soporte","aide","hilfe","supporto","pomoc","destek"),
+        "notifications" to listOf("notifications","meldingen","notificações","notificaciones","benachrichtigungen","notifiche","powiadomienia","bildirimler"),
+        "music" to listOf("rs music","music","muziek","música","musique","musik","musica","muzyka","müzik"),
+        "guide" to listOf("app guide","guide","gids","guia","anleitung","przewodnik","rehber"),
+        "themes" to listOf("themes","theme studio","styles","thema","temas","thèmes","design","motyw","tema"),
+        "backgrounds" to listOf("visual asset","background","backgrounds","achtergrond","fundos","fondos","arrière-plan","hintergrund","sfondo","tło","arka plan"),
+        "members" to listOf("student manager","students","studenten","alunos","alumnos","élèves","schüler","allievi","uczniowie","öğrenciler"),
+        "access" to listOf("access","subscriptions","toegang","abonnement","subscrições","suscripciones","abonnements","zugriff","abos","abbonamenti","subskrypcje","abonelik"),
+        "classes" to listOf("classes","class manager","lessen","aulas","clases","cours","kurse","lezioni","zajęcia","dersler"),
+        "attendance" to listOf("attendance","aanwezigheid","presenças","asistencia","présences","anwesenheit","presenze","obecność","yoklama"),
+        "homework_admin" to listOf("homework manager","huiswerkbeheer","gestor de tarefas","tareas","devoirs","hausaufgaben","compiti","zadania","ödev"),
+        "homework" to listOf("homework","huiswerk","tarefas","tareas","devoirs","hausaufgaben","compiti","zadania","ödev"),
+        "progress_admin" to listOf("progress manager","voortgangsbeheer","gestor de progresso","progreso","progression","fortschritt","progressi","postępy","ilerleme"),
+        "progress" to listOf("progress","voortgang","progresso","progreso","progression","fortschritt","progressi","postępy","ilerleme"),
+        "documents" to listOf("documents","documenten","documentos","documents","dokumente","documenti","dokumenty","belgeler"),
+        "payments" to listOf("payment center","payments","betalingen","pagamentos","pagos","paiements","zahlungen","pagamenti","płatności","ödemeler"),
+        "analytics" to listOf("analytics","analyses","análises","analíticas","analytique","analysen","analisi","analityka","analiz"),
+        "settings" to listOf("settings","instellingen","definições","ajustes","réglages","einstellungen","impostazioni","ustawienia","ayarlar"),
+        "trainer" to listOf("trainer dashboard","trainer panel","trainer dashboard","painel do treinador","panel del entrenador","tableau entraîneur"),
+        "home" to listOf("dashboard","home","start page","startpagina","painel","panel","tableau","ana panel")
+    )
+    return routes.firstOrNull{(_,aliases)->aliases.any{s.contains(it)}}?.first
 }
 
 private fun rsTrackMapV165(store:RsStore):Map<String,String> =
@@ -452,9 +483,14 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         val command=rsStripWakePhraseV165(partial)
                         store.pb("ai_immersive_v171",true)
                         store.pb("ai_start_listening_v168",true)
-                        if(command.isNotBlank())store.ps("ai_pending_spoken_v171",command)
-                        openRouteV166("voice")
-                        if(command.isBlank())speak(rsVoiceGreetingV165(language().code),thenListen=false)
+                        if(command.isBlank()){
+                            speak(rsVoiceGreetingV165(language().code),thenListen=true)
+                        }else{
+                            scope.launch{
+                                delay(80)
+                                handleTranscript(command)
+                            }
+                        }
                     }
                 }
                 override fun onEvent(eventType:Int,params:android.os.Bundle?){}
@@ -635,10 +671,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 commandText=rsStripWakePhraseV165(text)
                 store.pb("ai_immersive_v171",true)
                 store.pb("ai_start_listening_v168",true)
-                if(commandText.isNotBlank())store.ps("ai_pending_spoken_v171",commandText)
-                openRouteV166("voice")
                 recognizer?.cancel()
-                return
+                if(commandText.isBlank()){
+                    speak(rsVoiceGreetingV165(language().code),thenListen=true)
+                    return
+                }
             }else{
                 startListening()
                 return
@@ -649,7 +686,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
         when(rsVoiceSystemCommandV182(commandText)){
             "MINIMIZE"->{
-                openSystemActionV182("com.rskickbox.app.MINIMIZE_RS")
+                MainActivity.moveToBackgroundFromVoice()
                 speak(
                     when(language().code){
                         "nl"->"Oké. Ik zet RS op de achtergrond en blijf luisteren."
@@ -663,8 +700,13 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 return
             }
             "LOGOUT"->{
-                openSystemActionV182("com.rskickbox.app.LOGOUT_RS")
                 awakeUntil=0L
+                store.ps("session_password_auth_ms","0")
+                store.ps("session_last_activity_ms","0")
+                store.ps("session_last_route","")
+                store.ps("session_role","")
+                store.pb("rs_voice_wake_enabled_v165",false)
+                scope.launch{runCatching{rsCloudLogoutV63()}}
                 speak(
                     when(language().code){
                         "nl"->"Je wordt uitgelogd."
@@ -676,6 +718,14 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                     },
                     thenListen=false
                 )
+                scope.launch{
+                    delay(500)
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                    if(MainActivity.isForeground){
+                        openRouteV166("home")
+                    }
+                }
                 return
             }
         }
