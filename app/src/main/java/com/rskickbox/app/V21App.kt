@@ -1318,7 +1318,22 @@ private fun ShellV21(
         drawerContent={
             ModalDrawerSheet(
                 drawerContainerColor=c.bg,
-                drawerContentColor=c.text
+                drawerContentColor=c.text,
+                modifier=Modifier.pointerInput(Unit){
+                    var drawerSwipe=0f
+                    detectHorizontalDragGestures(
+                        onDragStart={drawerSwipe=0f},
+                        onHorizontalDrag={change,amount->
+                            drawerSwipe+=amount
+                            change.consume()
+                        },
+                        onDragEnd={
+                            if(drawerSwipe < -80f)scope.launch{drawerState.close()}
+                            drawerSwipe=0f
+                        },
+                        onDragCancel={drawerSwipe=0f}
+                    )
+                }
             ){
                 Column(
                     Modifier.fillMaxHeight().widthIn(
