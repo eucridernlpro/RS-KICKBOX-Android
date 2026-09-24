@@ -4,6 +4,10 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.net.Uri
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
@@ -697,6 +701,7 @@ fun RsAiAssistantChatV163(
         Modifier.fillMaxSize().padding(horizontal=12.dp,vertical=4.dp),
         verticalArrangement=Arrangement.spacedBy(6.dp)
     ){
+        Box(Modifier.fillMaxWidth().weight(1f)){
         RsAiAvatarStageV163(
             c=c,
             store=store,
@@ -757,10 +762,15 @@ fun RsAiAssistantChatV163(
                 status=languageMessage
             },
             languages=languages,
-            onOptions={optionsMenu=true}
+            onOptions={optionsMenu=true},
+            modifier=Modifier.fillMaxSize(),
+            immersive=true
         )
 
-        Box(Modifier.fillMaxWidth().weight(1f)){
+        Box(
+            Modifier.fillMaxSize()
+                .padding(start=8.dp,end=8.dp,top=82.dp,bottom=90.dp)
+        ){
             LazyColumn(
                 state=aiListState,
                 modifier=Modifier.fillMaxSize(),
@@ -772,7 +782,7 @@ fun RsAiAssistantChatV163(
                         val coachName=if(avatar=="FEMALE")"Sofia" else "Marcus"
                         Surface(
                             color=Color.Black.copy(alpha=.52f),
-                            shape=RoundedCornerShape(18.dp),
+                            shape=RoundedCornerShape(22.dp),
                             border=BorderStroke(1.dp,c.gold.copy(alpha=.16f)),
                             modifier=Modifier.fillMaxWidth()
                         ){
@@ -801,11 +811,11 @@ fun RsAiAssistantChatV163(
                         horizontalArrangement=if(message.mine)Arrangement.End else Arrangement.Start
                     ){
                         Surface(
-                            color=if(message.mine)c.gold.copy(alpha=.16f) else Color(0xFF58C9FF).copy(alpha=.08f),
+                            color=if(message.mine)c.gold.copy(alpha=.13f) else Color(0xFF07131E).copy(alpha=.54f),
                             shape=RoundedCornerShape(18.dp),
                             border=BorderStroke(
                                 1.dp,
-                                if(message.mine)c.gold.copy(alpha=.24f) else Color(0xFF58C9FF).copy(alpha=.22f)
+                                if(message.mine)c.gold.copy(alpha=.48f) else Color(0xFF58C9FF).copy(alpha=.48f)
                             ),
                             modifier=if(message.mine)Modifier.fillMaxWidth(.86f) else Modifier.fillMaxWidth()
                         ){
@@ -893,6 +903,7 @@ fun RsAiAssistantChatV163(
                 }
             }
         }
+        }
 
         if(status.isNotBlank()){
             Text(status,color=Color(0xFF58C9FF),fontSize=8.sp,modifier=Modifier.padding(horizontal=8.dp))
@@ -933,10 +944,20 @@ fun RsAiAssistantChatV163(
         }
 
         Surface(
-            color=Color.Black.copy(alpha=.92f),
-            shape=RoundedCornerShape(28.dp),
-            border=BorderStroke(1.dp,c.gold.copy(alpha=.52f)),
-            tonalElevation=18.dp,
+            color=Color(0xFF02070B).copy(alpha=.78f),
+            shape=RoundedCornerShape(30.dp),
+            border=BorderStroke(
+                1.dp,
+                Brush.horizontalGradient(
+                    listOf(
+                        Color(0xFF58C9FF).copy(alpha=.72f),
+                        c.bright.copy(alpha=.62f),
+                        c.gold.copy(alpha=.70f),
+                        Color(0xFF58C9FF).copy(alpha=.42f)
+                    )
+                )
+            ),
+            tonalElevation=24.dp,
             modifier=Modifier.fillMaxWidth().navigationBarsPadding()
         ){
             Row(
@@ -963,10 +984,10 @@ fun RsAiAssistantChatV163(
                     enabled=!busy,
                     shape=RoundedCornerShape(22.dp),
                     colors=OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor=c.gold.copy(alpha=.48f),
-                        unfocusedBorderColor=c.gold.copy(alpha=.16f),
-                        focusedContainerColor=c.panel.copy(alpha=.46f),
-                        unfocusedContainerColor=c.panel.copy(alpha=.36f)
+                        focusedBorderColor=Color(0xFF58C9FF).copy(alpha=.78f),
+                        unfocusedBorderColor=c.gold.copy(alpha=.30f),
+                        focusedContainerColor=Color(0xFF06131A).copy(alpha=.62f),
+                        unfocusedContainerColor=Color.Black.copy(alpha=.48f)
                     )
                 )
 
@@ -1265,9 +1286,35 @@ private fun RsAiAvatarStageV163(
     onAvatarChange:(String)->Unit,
     onLanguageChange:(RsLang)->Unit,
     languages:List<RsLang>,
-    onOptions:()->Unit
+    onOptions:()->Unit,
+    modifier:Modifier=Modifier.fillMaxWidth().height(330.dp),
+    immersive:Boolean=false
 ){
     val context=LocalContext.current
+    var sensorX by remember{mutableFloatStateOf(0f)}
+    var sensorY by remember{mutableFloatStateOf(0f)}
+    val sensorParallaxEnabled=store.b("ai_sensor_parallax_v180",true)
+    DisposableEffect(sensorParallaxEnabled){
+        if(!sensorParallaxEnabled){
+            sensorX=0f
+            sensorY=0f
+            onDispose{}
+        }else{
+            val manager=context.getSystemService(android.content.Context.SENSOR_SERVICE) as? SensorManager
+            val sensor=manager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            val listener=object:SensorEventListener{
+                override fun onSensorChanged(event:SensorEvent){
+                    if(event.sensor.type==Sensor.TYPE_ACCELEROMETER){
+                        sensorX=(event.values[0]/9.81f).coerceIn(-1f,1f)
+                        sensorY=(event.values[1]/9.81f).coerceIn(-1f,1f)
+                    }
+                }
+                override fun onAccuracyChanged(sensor:Sensor?,accuracy:Int){}
+            }
+            if(sensor!=null)manager.registerListener(listener,sensor,SensorManager.SENSOR_DELAY_GAME)
+            onDispose{runCatching{manager?.unregisterListener(listener)}}
+        }
+    }
     val idleSlot=if(avatar=="FEMALE")"ai_trainer_female" else "ai_trainer_male"
     val speakingSlot=if(avatar=="FEMALE")"ai_trainer_female_speaking" else "ai_trainer_male_speaking"
     val speakingVisual=if(speaking)rsVisualUriWithBundledFallbackV113(context,store,speakingSlot) else ""
@@ -1357,7 +1404,7 @@ private fun RsAiAvatarStageV163(
             if(speaking)Color(0xFF58C9FF).copy(alpha=.72f) else c.gold.copy(alpha=.46f)
         ),
         tonalElevation=18.dp,
-        modifier=Modifier.fillMaxWidth().height(330.dp)
+        modifier=modifier
     ){
         Box(
             Modifier.fillMaxSize().background(
@@ -1386,10 +1433,14 @@ private fun RsAiAvatarStageV163(
                 Modifier.fillMaxSize().graphicsLayer{
                     scaleX=(if(avatarMotion)breath*1.035f else 1.035f)*stateScale
                     scaleY=(if(avatarMotion)breath*1.035f else 1.035f)*stateScale
-                    translationY=(if(avatarMotion)floatY else 0f)+stateLift
-                    translationX=if(avatarMotion && renderMode=="CINEMATIC_3D")parallaxX else 0f
-                    rotationY=if(avatarMotion && renderMode=="CINEMATIC_3D")headTurn else 0f
-                    rotationX=if(avatarMotion && renderMode=="CINEMATIC_3D")focusTilt else 0f
+                    translationY=(if(avatarMotion)floatY else 0f)+stateLift+
+                        (if(immersive && sensorParallaxEnabled) sensorY*10f*density else 0f)
+                    translationX=(if(avatarMotion && renderMode=="CINEMATIC_3D")parallaxX else 0f)+
+                        (if(immersive && sensorParallaxEnabled) -sensorX*13f*density else 0f)
+                    rotationY=(if(avatarMotion && renderMode=="CINEMATIC_3D")headTurn else 0f)+
+                        (if(immersive && sensorParallaxEnabled) sensorX*3.5f else 0f)
+                    rotationX=(if(avatarMotion && renderMode=="CINEMATIC_3D")focusTilt else 0f)+
+                        (if(immersive && sensorParallaxEnabled) -sensorY*2.4f else 0f)
                     cameraDistance=if(renderMode=="CINEMATIC_3D")18f*density else 8f*density
                     shadowElevation=if(renderMode=="CINEMATIC_3D")24f else 0f
                 }
@@ -1518,7 +1569,8 @@ private fun RsAiAvatarStageV163(
             }
 
             Row(
-                Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(11.dp),
+                Modifier.align(Alignment.BottomStart).fillMaxWidth()
+                    .padding(start=11.dp,end=11.dp,top=11.dp,bottom=if(immersive)82.dp else 11.dp),
                 verticalAlignment=Alignment.Bottom
             ){
                 Column(Modifier.weight(1f)){
