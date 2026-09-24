@@ -88,11 +88,49 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
         }
     }
 
+    val settingsLayout=rsThemeLayoutV175(rsStoredThemeV175(store))
     RsScroll(
         c,
         "RS CHAT SETTINGS",
         "Calls · media · privacy · conversation controls"
     ){
+        Surface(
+            color=Color.Black.copy(alpha=.78f),
+            shape=RoundedCornerShape((settingsLayout.panelRadius+4).dp),
+            border=BorderStroke(if(settingsLayout.strongLines)2.dp else 1.dp,c.gold.copy(alpha=.48f)),
+            tonalElevation=18.dp,
+            modifier=Modifier.fillMaxWidth()
+        ){
+            Column(
+                Modifier.fillMaxWidth().padding(14.dp),
+                verticalArrangement=Arrangement.spacedBy(7.dp)
+            ){
+                Text(
+                    if(role==RsRole.TRAINER)"RS CHAT CONTROL CENTER" else "MY RS CHAT CONTROL",
+                    color=c.bright,
+                    fontWeight=FontWeight.Black,
+                    fontSize=16.sp,
+                    letterSpacing=.8.sp
+                )
+                Text(
+                    if(role==RsRole.TRAINER)
+                        "Permissions · calls · media · AI · privacy · retention"
+                    else
+                        "Media · AI assistant · gestures · privacy",
+                    color=c.gold,
+                    fontSize=8.sp,
+                    fontWeight=FontWeight.Black,
+                    letterSpacing=1.05.sp
+                )
+                Box(
+                    Modifier.fillMaxWidth().height(2.dp).background(
+                        androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            listOf(Color.Transparent,c.gold,c.bright,Color.Transparent)
+                        )
+                    )
+                )
+            }
+        }
         Surface(
             color=c.panel.copy(alpha=.66f),
             shape=RoundedCornerShape(24.dp),
