@@ -218,14 +218,28 @@ fun RsAiAssistantChatV163(
         val exact=all.filter{
             target.country.isNotBlank() && it.locale.country.equals(target.country,true)
         }
-        (if(exact.isNotEmpty())exact else all)
+        val localePool=(if(exact.isNotEmpty())exact else all)
             .filterNot{it.features.contains("notInstalled")}
-            .sortedWith(
-                compareBy<android.speech.tts.Voice>{it.isNetworkConnectionRequired}
-                    .thenByDescending{it.quality}
-                    .thenBy{it.name}
-            )
-            .take(16)
+        val maleHints=listOf("male","man","mascul","masc","m1","m2","david","daniel","thomas","george","hombre","homme","mann","uomo","homem","erkek")
+        val femaleHints=listOf("female","woman","femin","fem","f1","f2","samantha","victoria","karen","anna","susan","mujer","femme","frau","donna","mulher","kadın","kadin")
+        val wantsMale=avatar=="MALE"
+        val preferred=localePool.filter{voice->
+            val n=voice.name.lowercase(Locale.ROOT)
+            if(wantsMale)maleHints.any{n.contains(it)} else femaleHints.any{n.contains(it)}
+        }
+        val opposite=localePool.filter{voice->
+            val n=voice.name.lowercase(Locale.ROOT)
+            if(wantsMale)femaleHints.any{n.contains(it)} else maleHints.any{n.contains(it)}
+        }.toSet()
+        val safePool=when{
+            preferred.isNotEmpty()->preferred
+            else->localePool.filterNot{it in opposite}
+        }
+        safePool.sortedWith(
+            compareBy<android.speech.tts.Voice>{it.isNetworkConnectionRequired}
+                .thenByDescending{it.quality}
+                .thenBy{it.name}
+        ).take(16)
     }
     DisposableEffect(Unit){
         var synthesisEncoding=AudioFormat.ENCODING_PCM_16BIT
@@ -360,10 +374,18 @@ fun RsAiAssistantChatV163(
         val profileOverrideKey=
             "ai_voice_override_v181_"+languageProfile.code+"_"+avatarProfile.lowercase(Locale.ROOT)
         val overrideName=store.s(profileOverrideKey,"")
+        val maleHintsOverride=listOf("male","man","mascul","masc","m1","m2","david","daniel","thomas","george","hombre","homme","mann","uomo","homem","erkek")
+        val femaleHintsOverride=listOf("female","woman","femin","fem","f1","f2","samantha","victoria","karen","anna","susan","mujer","femme","frau","donna","mulher","kadın","kadin")
         val overrideVoice=engine.voices?.firstOrNull{
+            val n=it.name.lowercase(Locale.ROOT)
+            val obviousOpposite=if(wantsMale)
+                femaleHintsOverride.any{hint->n.contains(hint)}
+            else
+                maleHintsOverride.any{hint->n.contains(hint)}
             it.name==overrideName &&
             it.locale.language.equals(effective.language,true) &&
-            !it.features.contains("notInstalled")
+            !it.features.contains("notInstalled") &&
+            !obviousOpposite
         }
         if(overrideVoice!=null){
             engine.voice=overrideVoice
@@ -405,6 +427,9 @@ fun RsAiAssistantChatV163(
     }
 
     LaunchedEffect(aiLang,avatar,ttsReady){
+        voiceSubtitle=""
+        activeUtteranceId=""
+        speechAmplitude=0f
         if(ttsReady){
             runCatching{tts?.stop()}
             speaking=false
@@ -430,7 +455,12 @@ fun RsAiAssistantChatV163(
         val utteranceId="rs-ai-"+utteranceLanguage.code+"-"+utteranceAvatar+"-"+System.nanoTime()
         activeUtteranceId=utteranceId
         val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,utteranceId)
-        if(result==TextToSpeech.ERROR && voiceConversationActive)resumeListeningSignal++
+        if(result==TextToSpeech.ERROR){
+            activeUtteranceId=""
+            speaking=false
+            speechAmplitude=0f
+            if(voiceConversationActive)resumeListeningSignal++
+        }
     }
 
     val imagePicker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->
@@ -840,6 +870,7 @@ fun RsAiAssistantChatV163(
         val spoken=voiceResult?.trim().orEmpty()
         if(spoken.isNotBlank()&&!busy){
             voiceResult=null
+            runCatching{quietVoice.stop()}
             send(spoken,fromVoice=true)
         }
     }
