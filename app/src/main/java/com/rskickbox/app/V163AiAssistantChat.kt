@@ -209,6 +209,8 @@ fun RsAiAssistantChatV163(
     var ttsReady by remember{mutableStateOf(false)}
     var activeUtteranceId by remember{mutableStateOf("")}
     var speechAmplitude by remember{mutableFloatStateOf(0f)}
+    var cloudVoicePlayer by remember{mutableStateOf<android.media.MediaPlayer?>(null)}
+    var cloudVoiceRequestId by remember{mutableLongStateOf(0L)}
     val voiceOverrideKey=remember(aiLang,avatar){
         "ai_voice_override_v181_"+aiLang+"_"+avatar.lowercase(Locale.ROOT)
     }
@@ -331,7 +333,14 @@ fun RsAiAssistantChatV163(
             }
         })
         tts=engine
-        onDispose{runCatching{engine.stop()};runCatching{engine.shutdown()}}
+        onDispose{
+            runCatching{engine.stop()}
+            runCatching{engine.shutdown()}
+            cloudVoiceRequestId++
+            runCatching{cloudVoicePlayer?.stop()}
+            runCatching{cloudVoicePlayer?.release()}
+            cloudVoicePlayer=null
+        }
     }
     fun applyVoiceProfile(
         languageProfile:RsLang=selectedLang,
@@ -431,6 +440,10 @@ fun RsAiAssistantChatV163(
         voiceSubtitle=""
         activeUtteranceId=""
         speechAmplitude=0f
+        cloudVoiceRequestId++
+        runCatching{cloudVoicePlayer?.stop()}
+        runCatching{cloudVoicePlayer?.release()}
+        cloudVoicePlayer=null
         if(ttsReady){
             runCatching{tts?.stop()}
             speaking=false
@@ -444,23 +457,89 @@ fun RsAiAssistantChatV163(
         avatarOverride:String?=null
     ){
         if(text.isBlank())return
-        if(!ttsReady){
-            if(voiceConversationActive)resumeListeningSignal++
-            return
-        }
-        runCatching{tts?.stop()}
-        speaking=false
         val utteranceLanguage=languageOverride?:selectedLang
         val utteranceAvatar=avatarOverride?:avatar
-        applyVoiceProfile(utteranceLanguage,utteranceAvatar)
-        val utteranceId="rs-ai-"+utteranceLanguage.code+"-"+utteranceAvatar+"-"+System.nanoTime()
-        activeUtteranceId=utteranceId
-        val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,utteranceId)
-        if(result==TextToSpeech.ERROR){
-            activeUtteranceId=""
+
+        fun speakDeviceFallback(){
+            if(!ttsReady){
+                activeUtteranceId=""
+                speaking=false
+                speechAmplitude=0f
+                if(voiceConversationActive)resumeListeningSignal++
+                return
+            }
+            runCatching{tts?.stop()}
             speaking=false
-            speechAmplitude=0f
-            if(voiceConversationActive)resumeListeningSignal++
+            applyVoiceProfile(utteranceLanguage,utteranceAvatar)
+            val utteranceId="rs-ai-"+utteranceLanguage.code+"-"+utteranceAvatar+"-"+System.nanoTime()
+            activeUtteranceId=utteranceId
+            val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,utteranceId)
+            if(result==TextToSpeech.ERROR){
+                activeUtteranceId=""
+                speaking=false
+                speechAmplitude=0f
+                if(voiceConversationActive)resumeListeningSignal++
+            }
+        }
+
+        cloudVoiceRequestId++
+        val requestId=cloudVoiceRequestId
+        runCatching{cloudVoicePlayer?.stop()}
+        runCatching{cloudVoicePlayer?.release()}
+        cloudVoicePlayer=null
+        runCatching{tts?.stop()}
+        activeUtteranceId=""
+        speaking=false
+        speechAmplitude=0f
+
+        if(rsUsePremiumCloudVoiceV192(store,role) && RsSupabaseV60.configured){
+            scope.launch{
+                val clip=rsCloudVoiceClipV192(
+                    context=context,
+                    text=text,
+                    lang=utteranceLanguage,
+                    avatar=utteranceAvatar
+                )
+                if(requestId!=cloudVoiceRequestId)return@launch
+                clip.onSuccess{voiceClip->
+                    val player=rsCreateCloudVoicePlayerV192(
+                        context=context,
+                        localUri=voiceClip.localUri,
+                        onStarted={
+                            if(requestId==cloudVoiceRequestId){
+                                speaking=true
+                                speechAmplitude=.34f
+                                status=""
+                            }
+                        },
+                        onCompleted={
+                            if(requestId==cloudVoiceRequestId){
+                                cloudVoicePlayer=null
+                                speaking=false
+                                speechAmplitude=0f
+                                if(voiceConversationActive)resumeListeningSignal++
+                            }
+                        },
+                        onError={
+                            if(requestId==cloudVoiceRequestId){
+                                cloudVoicePlayer=null
+                                speaking=false
+                                speechAmplitude=0f
+                                speakDeviceFallback()
+                            }
+                        }
+                    )
+                    if(player!=null && requestId==cloudVoiceRequestId){
+                        cloudVoicePlayer=player
+                    }else if(player==null && requestId==cloudVoiceRequestId){
+                        speakDeviceFallback()
+                    }
+                }.onFailure{
+                    if(requestId==cloudVoiceRequestId)speakDeviceFallback()
+                }
+            }
+        }else{
+            speakDeviceFallback()
         }
     }
 
