@@ -148,6 +148,7 @@ fun RsAiAssistantChatV163(
     var trainerReferences by remember{mutableStateOf(false)}
     var autoSpeak by remember{mutableStateOf(store.b("ai_auto_speak_v163",true))}
     var avatarMotionEnabled by remember{mutableStateOf(store.b("ai_avatar_motion_v163",true))}
+    var sensorParallaxEnabled by remember{mutableStateOf(store.b("ai_sensor_parallax_v180",true))}
     var avatarRenderMode by remember{mutableStateOf(store.s("ai_avatar_render_mode_v176","CINEMATIC_3D"))}
     var status by remember{mutableStateOf("")}
     var aiMessageMenuId by remember{mutableStateOf<Long?>(null)}
@@ -764,7 +765,8 @@ fun RsAiAssistantChatV163(
             languages=languages,
             onOptions={optionsMenu=true},
             modifier=Modifier.fillMaxSize(),
-            immersive=true
+            immersive=true,
+            sensorParallaxEnabled=sensorParallaxEnabled
         )
 
         Box(
@@ -1052,6 +1054,16 @@ fun RsAiAssistantChatV163(
                             store.pb("ai_avatar_motion_v163",it)
                         })
                     }
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                        Column(Modifier.weight(1f)){
+                            Text(rsAiExtraV163(aiLang,"motion_depth"),color=c.text,fontSize=10.sp)
+                            Text(rsAiExtraV163(aiLang,"motion_depth_sub"),color=c.muted,fontSize=8.sp)
+                        }
+                        Switch(sensorParallaxEnabled,{
+                            sensorParallaxEnabled=it
+                            store.pb("ai_sensor_parallax_v180",it)
+                        })
+                    }
                     Text(rsAiExtraV163(aiLang,"render"),color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black)
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
                         FilterChip(
@@ -1295,12 +1307,12 @@ private fun RsAiAvatarStageV163(
     languages:List<RsLang>,
     onOptions:()->Unit,
     modifier:Modifier=Modifier.fillMaxWidth().height(330.dp),
-    immersive:Boolean=false
+    immersive:Boolean=false,
+    sensorParallaxEnabled:Boolean=true
 ){
     val context=LocalContext.current
     var sensorX by remember{mutableFloatStateOf(0f)}
     var sensorY by remember{mutableFloatStateOf(0f)}
-    val sensorParallaxEnabled=store.b("ai_sensor_parallax_v180",true)
     DisposableEffect(sensorParallaxEnabled){
         if(!sensorParallaxEnabled){
             sensorX=0f
