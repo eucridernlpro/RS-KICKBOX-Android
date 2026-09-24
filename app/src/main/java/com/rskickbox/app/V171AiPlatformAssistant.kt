@@ -165,6 +165,9 @@ sealed class RsAiPlatformIntentV171{
     data object StopMusic:RsAiPlatformIntentV171()
     data object NextMusic:RsAiPlatformIntentV171()
     data object PreviousMusic:RsAiPlatformIntentV171()
+    data object MinimizeApp:RsAiPlatformIntentV171()
+    data object CloseApp:RsAiPlatformIntentV171()
+    data object Logout:RsAiPlatformIntentV171()
     data object Help:RsAiPlatformIntentV171()
     data object None:RsAiPlatformIntentV171()
 }
@@ -190,6 +193,24 @@ fun rsAiPlatformIntentV171(raw:String,lang:RsLang?=null):RsAiPlatformIntentV171{
             return RsAiPlatformIntentV171.ChangeLanguage(code,label)
         }
     }
+
+    if(rsContainsAnyV171(
+        s,
+        "minimize app","minimise app","put app in background","rs minimize","rs minimise",
+        "minimaliseer app","zet app op achtergrond","minimiza a app","manda a app para segundo plano",
+        "minimiza la app","réduis l'app","app minimieren","riduci app","zminimalizuj aplikację","uygulamayı küçült"
+    ))return RsAiPlatformIntentV171.MinimizeApp
+    if(rsContainsAnyV171(
+        s,
+        "close app","close rs","rs close app","sluit app","sluit rs","fecha a app","fecha rs",
+        "cierra la app","cierra rs","ferme l'app","ferme rs","app schließen","rs schließen",
+        "chiudi app","chiudi rs","zamknij aplikację","zamknij rs","uygulamayı kapat","rs kapat"
+    ))return RsAiPlatformIntentV171.CloseApp
+    if(rsContainsAnyV171(
+        s,
+        "log out","logout","sign out","rs log out","uitloggen","sair da conta","terminar sessão",
+        "cerrar sesión","déconnexion","abmelden","esci dall'account","wyloguj","çıkış yap"
+    ))return RsAiPlatformIntentV171.Logout
 
     if(rsContainsAnyV171(s,"marcus","male trainer","man trainer","male voice","homem","hombre","homme","mann")){
         return RsAiPlatformIntentV171.ChangeAvatar("MALE","Marcus")
