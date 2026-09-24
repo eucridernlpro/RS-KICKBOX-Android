@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.vosk.LibVosk
+import org.vosk.LogLevel
 import org.vosk.Model
 import org.vosk.Recognizer
 import java.io.BufferedInputStream
@@ -142,7 +143,7 @@ class RsOfflineWakeEngineV188(
                 PackageManager.PERMISSION_GRANTED
         ) { "Microphone permission required." }
 
-        LibVosk.setLogLevel(-1)
+        LibVosk.setLogLevel(LogLevel.WARNINGS)
         val localModel = Model(RsOfflineWakeModelV188.path(context))
         val grammar = """["wake up rs","rs wake up","hey rs","ok rs","rs hey","rs ok","[unk]"]"""
         val localRecognizer = Recognizer(localModel, RS_WAKE_SAMPLE_RATE_V188.toFloat(), grammar)
