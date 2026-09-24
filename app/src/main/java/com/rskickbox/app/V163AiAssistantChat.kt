@@ -8,6 +8,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.media.AudioFormat
 import android.net.Uri
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
@@ -206,6 +207,7 @@ fun RsAiAssistantChatV163(
     var tts by remember{mutableStateOf<TextToSpeech?>(null)}
     var ttsReady by remember{mutableStateOf(false)}
     var activeUtteranceId by remember{mutableStateOf("")}
+    var speechAmplitude by remember{mutableFloatStateOf(0f)}
     val voiceOverrideKey=remember(aiLang,avatar){
         "ai_voice_override_v181_"+aiLang+"_"+avatar.lowercase(Locale.ROOT)
     }
@@ -226,8 +228,68 @@ fun RsAiAssistantChatV163(
             .take(16)
     }
     DisposableEffect(Unit){
+        var synthesisEncoding=AudioFormat.ENCODING_PCM_16BIT
         val engine=TextToSpeech(context){state->ttsReady=state==TextToSpeech.SUCCESS}
         engine.setOnUtteranceProgressListener(object:UtteranceProgressListener(){
+            override fun onBeginSynthesis(
+                utteranceId:String?,
+                sampleRateInHz:Int,
+                audioFormat:Int,
+                channelCount:Int
+            ){
+                if(utteranceId!=null && utteranceId==activeUtteranceId){
+                    synthesisEncoding=audioFormat
+                }
+            }
+
+            override fun onAudioAvailable(utteranceId:String?,audio:ByteArray?){
+                if(
+                    utteranceId==null || utteranceId!=activeUtteranceId ||
+                    audio==null || audio.isEmpty()
+                )return
+                val level=when(synthesisEncoding){
+                    AudioFormat.ENCODING_PCM_8BIT->{
+                        var sum=0.0
+                        var count=0
+                        var i=0
+                        while(i<audio.size){
+                            sum+=kotlin.math.abs((audio[i].toInt() and 0xFF)-128)/128.0
+                            count++;i+=2
+                        }
+                        if(count==0)0f else (sum/count).toFloat()
+                    }
+                    AudioFormat.ENCODING_PCM_FLOAT->{
+                        val buffer=java.nio.ByteBuffer.wrap(audio)
+                            .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                            .asFloatBuffer()
+                        var sum=0.0
+                        var count=0
+                        while(buffer.hasRemaining()){
+                            sum+=kotlin.math.abs(buffer.get().toDouble())
+                            count++
+                        }
+                        if(count==0)0f else (sum/count).toFloat()
+                    }
+                    else->{
+                        var sum=0.0
+                        var count=0
+                        var i=0
+                        while(i+1<audio.size){
+                            val lo=audio[i].toInt() and 0xFF
+                            val hi=audio[i+1].toInt()
+                            var sample=(hi shl 8) or lo
+                            if(sample>32767)sample-=65536
+                            sum+=kotlin.math.abs(sample.toDouble())/32768.0
+                            count++;i+=2
+                        }
+                        if(count==0)0f else (sum/count).toFloat()
+                    }
+                }
+                val boosted=(level*4.2f).coerceIn(0f,1f)
+                scope.launch{
+                    speechAmplitude=(speechAmplitude*.35f+boosted*.65f).coerceIn(0f,1f)
+                }
+            }
             override fun onStart(utteranceId:String?){
                 if(utteranceId!=null && utteranceId==activeUtteranceId)scope.launch{speaking=true}
             }
@@ -235,6 +297,7 @@ fun RsAiAssistantChatV163(
                 if(utteranceId!=null && utteranceId==activeUtteranceId){
                     scope.launch{
                         speaking=false
+                        speechAmplitude=0f
                         activeUtteranceId=""
                         if(voiceConversationActive)resumeListeningSignal++
                     }
@@ -245,6 +308,7 @@ fun RsAiAssistantChatV163(
                 if(utteranceId!=null && utteranceId==activeUtteranceId){
                     scope.launch{
                         speaking=false
+                        speechAmplitude=0f
                         activeUtteranceId=""
                         if(voiceConversationActive)resumeListeningSignal++
                     }
@@ -782,6 +846,7 @@ fun RsAiAssistantChatV163(
             store=store,
             avatar=avatar,
             speaking=speaking,
+            speechAmplitude=speechAmplitude,
             listening=voiceConversationActive && !speaking && !busy,
             thinking=busy && !speaking,
             avatarMotion=avatarMotionEnabled,
@@ -1476,6 +1541,7 @@ private fun RsAiAvatarStageV163(
     store:RsStore,
     avatar:String,
     speaking:Boolean,
+    speechAmplitude:Float,
     listening:Boolean,
     thinking:Boolean,
     avatarMotion:Boolean,
@@ -1644,6 +1710,7 @@ private fun RsAiAvatarStageV163(
             RsAiReal3DModelV183(
                 avatar=avatar,
                 speaking=speaking,
+                speechAmplitude=speechAmplitude,
                 listening=listening,
                 thinking=thinking,
                 sensorX=if(immersive && sensorParallaxEnabled)sensorX else 0f,
