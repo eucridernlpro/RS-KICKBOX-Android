@@ -123,7 +123,9 @@ private fun rsRecentChatMediaV163(context:Context):List<RsRecentChatMediaV163>{
 }
 
 fun rsCleanupChatMediaCacheV163(context:Context){
-    val cutoff=System.currentTimeMillis()-7L*24L*60L*60L*1000L
+    val store=RsStore(context)
+    val retentionDays=store.s(RsChatPermissionKeysV178.RETENTION_DAYS,"7").toIntOrNull()?.coerceIn(1,30)?:7
+    val cutoff=System.currentTimeMillis()-retentionDays.toLong()*24L*60L*60L*1000L
     listOf("rs_chat_media","rs_voice_messages","rs_ai_chat_media").forEach{dirName->
         val dir=File(context.cacheDir,dirName)
         dir.listFiles()?.forEach{file->
@@ -175,6 +177,8 @@ fun rsSaveChatMediaToGalleryV163(
 @Composable
 fun RsChatMediaGalleryV163(c:RsPalette,store:RsStore,lang:RsLang){
     val context=androidx.compose.ui.platform.LocalContext.current
+    val galleryAllowed=rsChatPermissionV178(store,RsChatPermissionKeysV178.GALLERY,true)
+    val retentionDays=store.s(RsChatPermissionKeysV178.RETENTION_DAYS,"7").toIntOrNull()?.coerceIn(1,30)?:7
     var revision by remember{mutableIntStateOf(0)}
     var status by remember{mutableStateOf("")}
     val items=remember(revision){rsLoadChatGalleryV163(store)}
@@ -189,12 +193,12 @@ fun RsChatMediaGalleryV163(c:RsPalette,store:RsStore,lang:RsLang){
     ){
         Text("RS CHAT GALLERY",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp)
         Text(
-            "Saved photos, videos and audio stay here. Unsaved chat cache is automatically cleaned after 7 days.",
+            "Saved photos, videos and audio stay here. Unsaved chat cache is automatically cleaned after "+retentionDays+" day"+if(retentionDays==1)"" else "s"+".",
             color=c.muted,fontSize=9.sp,lineHeight=13.sp
         )
         if(status.isNotBlank())Text(status,color=c.muted,fontSize=9.sp)
 
-        Text("RECENT · AUTO-DELETE AFTER 7 DAYS",color=c.gold,fontWeight=FontWeight.Black,fontSize=9.sp,letterSpacing=.7.sp)
+        Text("RECENT · AUTO-DELETE AFTER "+retentionDays+" DAY"+if(retentionDays==1)"" else "S",color=c.gold,fontWeight=FontWeight.Black,fontSize=9.sp,letterSpacing=.7.sp)
         if(recent.isEmpty()){
             Text("No temporary chat media on this device.",color=c.muted,fontSize=9.sp)
         }else{
@@ -211,14 +215,16 @@ fun RsChatMediaGalleryV163(c:RsPalette,store:RsStore,lang:RsLang){
                         Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
                             val ageDays=((System.currentTimeMillis()-item.modifiedAt)/(24L*60L*60L*1000L)).coerceAtLeast(0L)
                             Text(
-                                "Expires in "+(7L-ageDays).coerceAtLeast(0L)+" day(s)",
+                                "Expires in "+(retentionDays.toLong()-ageDays).coerceAtLeast(0L)+" day(s)",
                                 color=c.muted,fontSize=8.sp,modifier=Modifier.weight(1f)
                             )
-                            TextButton(onClick={
-                                rsSaveChatMediaToGalleryV163(context,store,item.uri,item.kind,item.name)
-                                    .onSuccess{status="Saved to RS Chat Gallery.";revision++}
-                                    .onFailure{status=it.message?:"Could not save media."}
-                            }){Text("☆ Save",fontSize=9.sp)}
+                            if(galleryAllowed){
+                                TextButton(onClick={
+                                    rsSaveChatMediaToGalleryV163(context,store,item.uri,item.kind,item.name)
+                                        .onSuccess{status="Saved to RS Chat Gallery.";revision++}
+                                        .onFailure{status=it.message?:"Could not save media."}
+                                }){Text("☆ Save",fontSize=9.sp)}
+                            }
                         }
                     }
                 }
