@@ -432,40 +432,13 @@ fun RsFloatingGlassChatHubV125(
                         verticalAlignment=Alignment.CenterVertically,
                         horizontalArrangement=Arrangement.spacedBy(7.dp)
                     ){
-                        Image(
-                            painter=painterResource(R.drawable.rs_launcher_royal_v129),
-                            contentDescription="RS",
-                            modifier=Modifier.size(if(compactHeader)32.dp else 39.dp)
+                        RsPremiumBrandLockupV179(
+                            c=c,
+                            store=store,
+                            modifier=Modifier.weight(1f),
+                            compact=compactHeader,
+                            subtitle="RS CHAT · PRIVATE · GROUPS · COMMUNITY · SUPPORT · AI"
                         )
-                        Column(Modifier.weight(1f)){
-                            Row(
-                                verticalAlignment=Alignment.CenterVertically,
-                                horizontalArrangement=Arrangement.spacedBy(4.dp)
-                            ){
-                                Text(
-                                    "RS",
-                                    color=c.bright,
-                                    fontWeight=FontWeight.Black,
-                                    fontSize=if(compactHeader)12.sp else 15.sp,
-                                    maxLines=1
-                                )
-                                Text(
-                                    "KICKBOXING",
-                                    color=c.gold,
-                                    fontWeight=FontWeight.Black,
-                                    fontSize=if(compactHeader)10.sp else 14.sp,
-                                    letterSpacing=if(compactHeader).3.sp else .7.sp,
-                                    maxLines=1,
-                                    softWrap=false
-                                )
-                            }
-                            Text(
-                                "RS CHAT · Private · Groups · Community · Support · AI",
-                                color=c.muted,
-                                fontSize=if(compactHeader)6.sp else 7.sp,
-                                maxLines=1
-                            )
-                        }
                         RsNotificationBellV156(
                             c=c,
                             store=store,
