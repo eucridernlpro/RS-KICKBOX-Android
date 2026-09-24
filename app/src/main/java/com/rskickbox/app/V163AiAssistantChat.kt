@@ -903,8 +903,13 @@ fun RsAiAssistantChatV163(
                 }
             }
         }
-        }
 
+        Column(
+            Modifier.align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal=8.dp,bottom=4.dp),
+            verticalArrangement=Arrangement.spacedBy(6.dp)
+        ){
         if(status.isNotBlank()){
             Text(status,color=Color(0xFF58C9FF),fontSize=8.sp,modifier=Modifier.padding(horizontal=8.dp))
         }
@@ -1015,6 +1020,8 @@ fun RsAiAssistantChatV163(
                     colors=ButtonDefaults.buttonColors(containerColor=c.bright,contentColor=Color.Black)
                 ){Text(if(busy)"…" else "➤",fontWeight=FontWeight.Black)}
             }
+        }
+        }
         }
     }
 
