@@ -258,3 +258,179 @@ fun rsAiActionV184(code:String,key:String,value:String=""):String{
     val pack=when(code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return v(pack[key]?:en[key]?:key)
 }
+
+
+fun rsAiVoiceRuntimeTextV190(code:String,key:String,arg:String=""):String{
+    val text=when(code){
+        "nl"->when(key){
+            "prepare_image_failed"->"Afbeelding kon niet worden voorbereid."
+            "prepare_video_failed"->"Video kon niet worden voorbereid."
+            "music_saved"->"Opgeslagen in RS Music"
+            "music_save_failed"->"Muziek kon niet worden opgeslagen."
+            "music_open_failed"->"Muziekbestand kon niet worden geopend."
+            "media_save_failed"->"Media kon niet worden opgeslagen."
+            "playing"->"Afspelen"
+            "play_failed"->"Muziek kon niet worden afgespeeld."
+            "playlist_added"->"Toegevoegd aan"
+            "playlist_created"->"Playlist aangemaakt"
+            "playlist_update_failed"->"Playlist kon niet worden bijgewerkt."
+            "playlist_create_failed"->"Playlist kon niet worden aangemaakt."
+            "speech_unavailable"->"Spraakherkenning is niet beschikbaar op dit apparaat."
+            "mic_required"->"Microfoontoegang is vereist."
+            "voice_start_failed"->"Spraakinvoer kon niet worden gestart."
+            else->key
+        }
+        "pt"->when(key){
+            "prepare_image_failed"->"Não foi possível preparar a imagem."
+            "prepare_video_failed"->"Não foi possível preparar o vídeo."
+            "music_saved"->"Guardado no RS Music"
+            "music_save_failed"->"Não foi possível guardar a música."
+            "music_open_failed"->"Não foi possível abrir o ficheiro de música."
+            "media_save_failed"->"Não foi possível guardar o conteúdo multimédia."
+            "playing"->"A reproduzir"
+            "play_failed"->"Não foi possível reproduzir a música."
+            "playlist_added"->"Adicionado a"
+            "playlist_created"->"Playlist criada"
+            "playlist_update_failed"->"Não foi possível atualizar a playlist."
+            "playlist_create_failed"->"Não foi possível criar a playlist."
+            "speech_unavailable"->"O reconhecimento de voz não está disponível neste dispositivo."
+            "mic_required"->"É necessária permissão do microfone."
+            "voice_start_failed"->"Não foi possível iniciar a entrada de voz."
+            else->key
+        }
+        "es"->when(key){
+            "prepare_image_failed"->"No se pudo preparar la imagen."
+            "prepare_video_failed"->"No se pudo preparar el vídeo."
+            "music_saved"->"Guardado en RS Music"
+            "music_save_failed"->"No se pudo guardar la música."
+            "music_open_failed"->"No se pudo abrir el archivo de música."
+            "media_save_failed"->"No se pudo guardar el contenido multimedia."
+            "playing"->"Reproduciendo"
+            "play_failed"->"No se pudo reproducir la música."
+            "playlist_added"->"Añadido a"
+            "playlist_created"->"Playlist creada"
+            "playlist_update_failed"->"No se pudo actualizar la playlist."
+            "playlist_create_failed"->"No se pudo crear la playlist."
+            "speech_unavailable"->"El reconocimiento de voz no está disponible en este dispositivo."
+            "mic_required"->"Se requiere permiso del micrófono."
+            "voice_start_failed"->"No se pudo iniciar la entrada de voz."
+            else->key
+        }
+        "fr"->when(key){
+            "prepare_image_failed"->"Impossible de préparer l’image."
+            "prepare_video_failed"->"Impossible de préparer la vidéo."
+            "music_saved"->"Enregistré dans RS Music"
+            "music_save_failed"->"Impossible d’enregistrer la musique."
+            "music_open_failed"->"Impossible d’ouvrir le fichier musical."
+            "media_save_failed"->"Impossible d’enregistrer le média."
+            "playing"->"Lecture de"
+            "play_failed"->"Impossible de lire la musique."
+            "playlist_added"->"Ajouté à"
+            "playlist_created"->"Playlist créée"
+            "playlist_update_failed"->"Impossible de mettre à jour la playlist."
+            "playlist_create_failed"->"Impossible de créer la playlist."
+            "speech_unavailable"->"La reconnaissance vocale n’est pas disponible sur cet appareil."
+            "mic_required"->"L’autorisation du microphone est nécessaire."
+            "voice_start_failed"->"Impossible de démarrer l’entrée vocale."
+            else->key
+        }
+        "de"->when(key){
+            "prepare_image_failed"->"Das Bild konnte nicht vorbereitet werden."
+            "prepare_video_failed"->"Das Video konnte nicht vorbereitet werden."
+            "music_saved"->"In RS Music gespeichert"
+            "music_save_failed"->"Musik konnte nicht gespeichert werden."
+            "music_open_failed"->"Musikdatei konnte nicht geöffnet werden."
+            "media_save_failed"->"Medium konnte nicht gespeichert werden."
+            "playing"->"Wiedergabe"
+            "play_failed"->"Musik konnte nicht abgespielt werden."
+            "playlist_added"->"Hinzugefügt zu"
+            "playlist_created"->"Playlist erstellt"
+            "playlist_update_failed"->"Playlist konnte nicht aktualisiert werden."
+            "playlist_create_failed"->"Playlist konnte nicht erstellt werden."
+            "speech_unavailable"->"Spracherkennung ist auf diesem Gerät nicht verfügbar."
+            "mic_required"->"Mikrofonberechtigung ist erforderlich."
+            "voice_start_failed"->"Spracheingabe konnte nicht gestartet werden."
+            else->key
+        }
+        "it"->when(key){
+            "prepare_image_failed"->"Impossibile preparare l’immagine."
+            "prepare_video_failed"->"Impossibile preparare il video."
+            "music_saved"->"Salvato in RS Music"
+            "music_save_failed"->"Impossibile salvare la musica."
+            "music_open_failed"->"Impossibile aprire il file musicale."
+            "media_save_failed"->"Impossibile salvare il contenuto multimediale."
+            "playing"->"Riproduzione"
+            "play_failed"->"Impossibile riprodurre la musica."
+            "playlist_added"->"Aggiunto a"
+            "playlist_created"->"Playlist creata"
+            "playlist_update_failed"->"Impossibile aggiornare la playlist."
+            "playlist_create_failed"->"Impossibile creare la playlist."
+            "speech_unavailable"->"Il riconoscimento vocale non è disponibile su questo dispositivo."
+            "mic_required"->"È necessaria l’autorizzazione del microfono."
+            "voice_start_failed"->"Impossibile avviare l’input vocale."
+            else->key
+        }
+        "pl"->when(key){
+            "prepare_image_failed"->"Nie udało się przygotować obrazu."
+            "prepare_video_failed"->"Nie udało się przygotować wideo."
+            "music_saved"->"Zapisano w RS Music"
+            "music_save_failed"->"Nie udało się zapisać muzyki."
+            "music_open_failed"->"Nie udało się otworzyć pliku muzycznego."
+            "media_save_failed"->"Nie udało się zapisać multimediów."
+            "playing"->"Odtwarzanie"
+            "play_failed"->"Nie udało się odtworzyć muzyki."
+            "playlist_added"->"Dodano do"
+            "playlist_created"->"Utworzono playlistę"
+            "playlist_update_failed"->"Nie udało się zaktualizować playlisty."
+            "playlist_create_failed"->"Nie udało się utworzyć playlisty."
+            "speech_unavailable"->"Rozpoznawanie mowy nie jest dostępne na tym urządzeniu."
+            "mic_required"->"Wymagane jest uprawnienie do mikrofonu."
+            "voice_start_failed"->"Nie udało się uruchomić wprowadzania głosowego."
+            else->key
+        }
+        "tr"->when(key){
+            "prepare_image_failed"->"Görsel hazırlanamadı."
+            "prepare_video_failed"->"Video hazırlanamadı."
+            "music_saved"->"RS Music’e kaydedildi"
+            "music_save_failed"->"Müzik kaydedilemedi."
+            "music_open_failed"->"Müzik dosyası açılamadı."
+            "media_save_failed"->"Medya kaydedilemedi."
+            "playing"->"Çalıyor"
+            "play_failed"->"Müzik çalınamadı."
+            "playlist_added"->"Şuraya eklendi"
+            "playlist_created"->"Çalma listesi oluşturuldu"
+            "playlist_update_failed"->"Çalma listesi güncellenemedi."
+            "playlist_create_failed"->"Çalma listesi oluşturulamadı."
+            "speech_unavailable"->"Bu cihazda konuşma tanıma kullanılamıyor."
+            "mic_required"->"Mikrofon izni gerekiyor."
+            "voice_start_failed"->"Ses girişi başlatılamadı."
+            else->key
+        }
+        else->when(key){
+            "prepare_image_failed"->"Could not prepare image."
+            "prepare_video_failed"->"Could not prepare video."
+            "music_saved"->"Saved to RS Music"
+            "music_save_failed"->"Could not save music."
+            "music_open_failed"->"Could not open music file."
+            "media_save_failed"->"Could not save media."
+            "playing"->"Playing"
+            "play_failed"->"Could not play music."
+            "playlist_added"->"Added to"
+            "playlist_created"->"Playlist created"
+            "playlist_update_failed"->"Could not update playlist."
+            "playlist_create_failed"->"Could not create playlist."
+            "speech_unavailable"->"Speech recognition is not available on this device."
+            "mic_required"->"Microphone permission required."
+            "voice_start_failed"->"Voice input could not start."
+            else->key
+        }
+    }
+    return if(arg.isBlank())text else text+" "+arg
+}
+
+fun rsAiVoiceStatusV190(code:String,raw:String):String = when(raw.trim()){
+    "Speech recognition is not available on this device."->rsAiVoiceRuntimeTextV190(code,"speech_unavailable")
+    "Microphone permission required."->rsAiVoiceRuntimeTextV190(code,"mic_required")
+    "Voice input could not start."->rsAiVoiceRuntimeTextV190(code,"voice_start_failed")
+    else->raw
+}
