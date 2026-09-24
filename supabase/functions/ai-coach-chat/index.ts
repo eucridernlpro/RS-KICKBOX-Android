@@ -86,17 +86,35 @@ Deno.serve(async(req)=>{
 
   const plan=String(profile.plan||"BASIC").toUpperCase()
   const staff=["trainer","admin"].includes(profile.role)
-  const model=staff ? MODEL_ELITE :
-    plan==="ELITE" ? MODEL_ELITE :
-    plan==="PRO" ? MODEL_PRO :
-    MODEL_BASIC
-  const dailyLimit=staff ? 300 : plan==="ELITE" ? 220 : plan==="PRO" ? 120 : 50
 
   const body=await req.json().catch(()=>({}))
   const question=String(body.question||"").trim().slice(0,1800)
   const language=String(body.language||"English").trim().slice(0,80)
   const languageCode=String(body.language_code||"en").trim().toLowerCase().slice(0,8)
   const references=String(body.references||"").trim().slice(0,3500)
+
+  const complexityText=(question+" "+references.slice(0,900)).toLowerCase()
+  const complexSignals=[
+    "analy","technique","combination","training plan","fight camp","compare","strategy",
+    "footwork","defense","defence","timing","conditioning","sparring","coach reference",
+    "techniek","combinatie","trainingsplan","analyse",
+    "técnica","combinação","plano de treino","análise",
+    "técnica","combinación","plan de entrenamiento","análisis",
+    "technique","combinaison","plan d'entraînement","analyse",
+    "technik","kombination","trainingsplan","analyse",
+    "tecnica","combinazione","piano di allenamento","analisi",
+    "technika","kombinacja","plan treningowy","analiza",
+    "teknik","kombinasyon","antrenman planı","analiz"
+  ]
+  const complexRequest=
+    question.length>=260 ||
+    complexSignals.some(signal=>complexityText.includes(signal))
+
+  const model=
+    plan==="BASIC" && !staff ? MODEL_BASIC :
+    (plan==="ELITE" || staff) && complexRequest ? MODEL_ELITE :
+    MODEL_PRO
+  const dailyLimit=staff ? 260 : plan==="ELITE" ? 180 : plan==="PRO" ? 110 : 45
 
   if(!question)return json({error:"Question required"},400)
 
@@ -173,6 +191,7 @@ Deno.serve(async(req)=>{
     model,
     plan,
     daily_limit:dailyLimit,
-    language_repaired:finalAnswer!==answer
+    language_repaired:finalAnswer!==answer,
+    complex_request:complexRequest
   })
 })
