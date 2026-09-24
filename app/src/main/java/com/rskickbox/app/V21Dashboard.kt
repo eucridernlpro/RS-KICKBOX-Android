@@ -441,3 +441,87 @@ private fun trainerV21()=listOf(
         DashV21("settings","App Settings","Privacy · maintenance","settings")
     ))
 )
+
+
+@Composable
+fun RsOwnerCommandCenterPageV179(
+    c:RsPalette,
+    store:RsStore,
+    lang:RsLang,
+    onRoute:(String)->Unit
+){
+    val layout=rsThemeLayoutV175(rsStoredThemeV175(store))
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=4.dp,vertical=3.dp),
+        verticalArrangement=Arrangement.spacedBy(12.dp)
+    ){
+        Surface(
+            color=Color.Black.copy(alpha=.78f),
+            shape=RoundedCornerShape((layout.panelRadius+4).dp),
+            border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.52f)),
+            tonalElevation=18.dp,
+            modifier=Modifier.fillMaxWidth()
+        ){
+            Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
+                Text(
+                    "OWNER COMMAND CENTER",
+                    color=c.bright,
+                    fontWeight=FontWeight.Black,
+                    fontSize=20.sp,
+                    letterSpacing=.9.sp
+                )
+                Text(
+                    "Live club control · communication · coaching · access · operations",
+                    color=c.muted,
+                    fontSize=9.sp
+                )
+                Box(
+                    Modifier.fillMaxWidth().height(2.dp).background(
+                        Brush.horizontalGradient(listOf(Color.Transparent,c.gold,c.bright,Color.Transparent))
+                    )
+                )
+            }
+        }
+
+        RsDashboardCommandCenterV176(c,store,RsRole.TRAINER,lang,onRoute)
+
+        Text(
+            "ROYAL QUICK CONTROL",
+            color=c.gold,
+            fontWeight=FontWeight.Black,
+            fontSize=9.sp,
+            letterSpacing=1.25.sp
+        )
+        listOf(
+            Triple("STUDENTS","Profiles · access · subscriptions","members"),
+            Triple("TRAINING","Classes · attendance · homework","classes"),
+            Triple("COMMUNICATION","RS Chat · groups · support","coachchat"),
+            Triple("BUSINESS","Payments · invoices · analytics","payments"),
+            Triple("EXPERIENCE","Themes · branding · visual assets","themes"),
+            Triple("RELEASE","Privacy · legal · app settings","release")
+        ).chunked(2).forEach{rowItems->
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                rowItems.forEach{(title,subtitle,target)->
+                    Surface(
+                        color=c.panel.copy(alpha=.72f),
+                        shape=RoundedCornerShape(layout.tileRadius.dp),
+                        border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.26f)),
+                        tonalElevation=10.dp,
+                        modifier=Modifier.weight(1f).clickable{onRoute(target)}
+                    ){
+                        Column(
+                            Modifier.padding(12.dp),
+                            verticalArrangement=Arrangement.spacedBy(4.dp)
+                        ){
+                            Text(title,color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                            Text(subtitle,color=c.muted,fontSize=8.sp,lineHeight=11.sp)
+                            Text("OPEN  ›",color=c.gold,fontSize=7.sp,fontWeight=FontWeight.Black)
+                        }
+                    }
+                }
+                if(rowItems.size==1)Spacer(Modifier.weight(1f))
+            }
+        }
+        Spacer(Modifier.height(24.dp))
+    }
+}
