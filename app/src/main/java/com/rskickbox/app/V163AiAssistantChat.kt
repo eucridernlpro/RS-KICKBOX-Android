@@ -215,24 +215,45 @@ fun RsAiAssistantChatV163(
 
         fun voiceScore(v:android.speech.tts.Voice):Int{
             val name=v.name.lowercase(Locale.ROOT)
-            var score=v.quality*10
-            val maleHints=listOf("male","man","mascul","m1","m2","david","daniel","thomas","george")
-            val femaleHints=listOf("female","woman","femin","f1","f2","samantha","victoria","karen","anna","susan")
+            var score=v.quality*4-v.latency
+            val maleHints=listOf(
+                "male","man","mascul","masc","m1","m2","david","daniel","thomas","george",
+                "hombre","homme","mann","uomo","homem","erkek"
+            )
+            val femaleHints=listOf(
+                "female","woman","femin","fem","f1","f2","samantha","victoria","karen","anna","susan",
+                "mujer","femme","frau","donna","mulher","kadın","kadin"
+            )
+            val maleMatch=maleHints.any{name.contains(it)}
+            val femaleMatch=femaleHints.any{name.contains(it)}
             if(wantsMale){
-                if(maleHints.any{name.contains(it)})score+=120
-                if(femaleHints.any{name.contains(it)})score-=120
+                if(maleMatch)score+=700
+                if(femaleMatch)score-=700
             }else{
-                if(femaleHints.any{name.contains(it)})score+=120
-                if(maleHints.any{name.contains(it)})score-=120
+                if(femaleMatch)score+=700
+                if(maleMatch)score-=700
             }
-            if(v.isNetworkConnectionRequired)score+=25
-            if(!v.features.contains("notInstalled"))score+=10
+            if(v.locale==effective)score+=90
+            if(v.isNetworkConnectionRequired)score-=90 else score+=170
+            if(v.features.contains("notInstalled"))score-=1000
             return score
         }
 
-        val matching=engine.voices
+        val candidates=engine.voices
             ?.filter{it.locale.language.equals(effective.language,true)}
-            ?.maxByOrNull{voiceScore(it)}
+            .orEmpty()
+        val offlineBest=candidates
+            .filterNot{it.isNetworkConnectionRequired}
+            .maxByOrNull{voiceScore(it)}
+        val networkBest=candidates
+            .filter{it.isNetworkConnectionRequired}
+            .maxByOrNull{voiceScore(it)}
+        val matching=when{
+            offlineBest==null->networkBest
+            networkBest==null->offlineBest
+            voiceScore(networkBest)>voiceScore(offlineBest)+260->networkBest
+            else->offlineBest
+        }
         if(matching!=null)engine.voice=matching
     }
 
@@ -659,14 +680,26 @@ fun RsAiAssistantChatV163(
             language=selectedLang,
             onAvatarChange={next->
                 runCatching{tts?.stop()}
+                runCatching{quietVoice.stop()}
                 speaking=false
                 voiceConversationActive=false
                 avatar=next
                 store.ps("ai_avatar_gender_v161",next)
-                status=if(next=="MALE")"Marcus voice selected." else "Sofia voice selected."
+                status=when(aiLang){
+                    "nl"->if(next=="MALE")"Marcus-stem geselecteerd." else "Sofia-stem geselecteerd."
+                    "pt"->if(next=="MALE")"Voz do Marcus selecionada." else "Voz da Sofia selecionada."
+                    "es"->if(next=="MALE")"Voz de Marcus seleccionada." else "Voz de Sofia seleccionada."
+                    "fr"->if(next=="MALE")"Voix de Marcus sélectionnée." else "Voix de Sofia sélectionnée."
+                    "de"->if(next=="MALE")"Marcus-Stimme ausgewählt." else "Sofia-Stimme ausgewählt."
+                    "it"->if(next=="MALE")"Voce di Marcus selezionata." else "Voce di Sofia selezionata."
+                    "pl"->if(next=="MALE")"Wybrano głos Marcusa." else "Wybrano głos Sofii."
+                    "tr"->if(next=="MALE")"Marcus sesi seçildi." else "Sofia sesi seçildi."
+                    else->if(next=="MALE")"Marcus voice selected." else "Sofia voice selected."
+                }
             },
             onLanguageChange={nextLang->
                 runCatching{tts?.stop()}
+                runCatching{quietVoice.stop()}
                 speaking=false
                 voiceConversationActive=false
                 aiLang=nextLang.code
