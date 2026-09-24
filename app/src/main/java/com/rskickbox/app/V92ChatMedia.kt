@@ -533,6 +533,25 @@ fun RsChatComposerV92(
 ){
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
+    val permissionStore=remember{RsStore(context)}
+    val studentSession=permissionStore.s("session_role","")=="student"
+    val scopeMediaAllowed=!studentSession || when(scopeType){
+        "group"->rsChatPermissionV178(permissionStore,RsChatPermissionKeysV178.GROUP_MEDIA,true)
+        "community"->rsChatPermissionV178(permissionStore,RsChatPermissionKeysV178.COMMUNITY_MEDIA,true)
+        else->true
+    }
+    val imageAllowed=scopeMediaAllowed && (!studentSession || rsChatPermissionV178(permissionStore,RsChatPermissionKeysV178.STUDENT_IMAGES,true))
+    val videoAllowed=scopeMediaAllowed && (!studentSession || rsChatPermissionV178(permissionStore,RsChatPermissionKeysV178.STUDENT_VIDEOS,true))
+    val audioAllowed=scopeMediaAllowed && (!studentSession || rsChatPermissionV178(permissionStore,RsChatPermissionKeysV178.STUDENT_AUDIO,true))
+    val fileAllowed=scopeMediaAllowed && (!studentSession || rsChatPermissionV178(permissionStore,RsChatPermissionKeysV178.STUDENT_FILES,true))
+    val anyMediaAllowed=imageAllowed||videoAllowed||audioAllowed||fileAllowed
+    fun mediaKindAllowed(kind:String)=when(kind){
+        "IMAGE"->imageAllowed
+        "VIDEO"->videoAllowed
+        "AUDIO"->audioAllowed
+        "FILE"->fileAllowed
+        else->true
+    }
     var draft by remember(scopeId){mutableStateOf("")}
     var picked by remember(scopeId){mutableStateOf<Uri?>(null)}
     var pickedKind by remember(scopeId){mutableStateOf("")}
@@ -622,6 +641,10 @@ fun RsChatComposerV92(
     }
 
     fun sendMessage(){
+        if(picked!=null && !mediaKindAllowed(pickedKind)){
+            onStatus("This attachment type is disabled by your trainer.")
+            return
+        }
         if(draft.trim().isBlank()&&picked==null){
             onStatus(rsChatMediaT(lang,"message_or_media"))
             return
@@ -731,7 +754,7 @@ fun RsChatComposerV92(
                 Box{
                     OutlinedButton(
                         onClick={attachmentMenu=true},
-                        enabled=enabled&&!busy&&!recording,
+                        enabled=enabled&&!busy&&!recording&&anyMediaAllowed,
                         modifier=Modifier.size(46.dp),
                         shape=CircleShape,
                         border=BorderStroke(1.dp,c.gold.copy(alpha=.72f)),
@@ -761,7 +784,7 @@ fun RsChatComposerV92(
                         else if(ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED)startVoice()
                         else micPermission.launch(Manifest.permission.RECORD_AUDIO)
                     },
-                    enabled=enabled&&!busy,
+                    enabled=enabled&&!busy&&audioAllowed,
                     modifier=Modifier.size(44.dp),
                     shape=CircleShape,
                     border=BorderStroke(1.dp,if(recording)c.bright else c.gold.copy(alpha=.54f)),
@@ -823,6 +846,7 @@ fun RsChatComposerV92(
                                         attachmentMenu=false
                                         imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                                     },
+                                    enabled=imageAllowed,
                                     modifier=Modifier.weight(1f).height(54.dp),
                                     shape=RoundedCornerShape(16.dp),
                                     border=BorderStroke(1.dp,c.gold.copy(alpha=.38f))
@@ -832,6 +856,7 @@ fun RsChatComposerV92(
                                         attachmentMenu=false
                                         videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
                                     },
+                                    enabled=videoAllowed,
                                     modifier=Modifier.weight(1f).height(54.dp),
                                     shape=RoundedCornerShape(16.dp),
                                     border=BorderStroke(1.dp,c.gold.copy(alpha=.38f))
@@ -847,6 +872,7 @@ fun RsChatComposerV92(
                                         if(ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED)startVoice()
                                         else micPermission.launch(Manifest.permission.RECORD_AUDIO)
                                     },
+                                    enabled=audioAllowed,
                                     modifier=Modifier.weight(1f).height(54.dp),
                                     shape=RoundedCornerShape(16.dp),
                                     border=BorderStroke(1.dp,c.gold.copy(alpha=.38f))
@@ -856,6 +882,7 @@ fun RsChatComposerV92(
                                         attachmentMenu=false
                                         filePicker.launch(arrayOf("*/*"))
                                     },
+                                    enabled=fileAllowed,
                                     modifier=Modifier.weight(1f).height(54.dp),
                                     shape=RoundedCornerShape(16.dp),
                                     border=BorderStroke(1.dp,c.gold.copy(alpha=.38f))
