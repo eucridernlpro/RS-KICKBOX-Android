@@ -1557,8 +1557,7 @@ private fun RsAiAvatarStageV163(
                 )
             )
         ){
-            // Rear depth layer: gives the assistant a cinematic 3D stage even
-            // when the trainer uses a normal portrait asset.
+            // Real-time 3D room layer. The old portrait/GIF avatar path has been removed.
             Box(
                 Modifier.fillMaxSize().padding(horizontal=18.dp,vertical=14.dp)
                     .clip(RoundedCornerShape((themeLayout.panelRadius+8).dp))
@@ -1605,8 +1604,7 @@ private fun RsAiAvatarStageV163(
                     )
                 )
             )
-            if(true){
-                Box(
+            Box(
                     Modifier.fillMaxSize().background(
                         Brush.linearGradient(
                             listOf(
@@ -1628,11 +1626,9 @@ private fun RsAiAvatarStageV163(
                             )
                         )
                 )
-            }
 
             // Speaking pulse / holographic depth rings.
-            if(true){
-                Surface(
+            Surface(
                     color=if(speaking)Color(0xFF58C9FF).copy(alpha=aura*.30f) else c.gold.copy(alpha=aura*.18f),
                     shape=CircleShape,
                     border=BorderStroke(1.dp,if(speaking)Color(0xFF58C9FF).copy(alpha=.46f) else c.bright.copy(alpha=.30f)),
@@ -1642,7 +1638,6 @@ private fun RsAiAvatarStageV163(
                         .height(42.dp)
                         .graphicsLayer{scaleX=1f+aura*.08f;scaleY=.44f}
                 ){}
-            }
 
             Row(
                 Modifier.align(Alignment.TopStart).fillMaxWidth().padding(9.dp),
@@ -1669,15 +1664,15 @@ private fun RsAiAvatarStageV163(
                     enabled=false,
                     label={Text(
                         when(language.code){
-                            "nl"->if(true)"3D VIRTUELE ASSISTENT" else "AI-ASSISTENT"
-                            "pt"->if(true)"ASSISTENTE VIRTUAL 3D" else "ASSISTENTE IA"
-                            "es"->if(true)"ASISTENTE VIRTUAL 3D" else "ASISTENTE IA"
-                            "fr"->if(true)"ASSISTANT VIRTUEL 3D" else "ASSISTANT IA"
-                            "de"->if(true)"3D VIRTUELLER ASSISTENT" else "KI-ASSISTENT"
-                            "it"->if(true)"ASSISTENTE VIRTUALE 3D" else "ASSISTENTE IA"
-                            "pl"->if(true)"WIRTUALNY ASYSTENT 3D" else "ASYSTENT AI"
-                            "tr"->if(true)"3D SANAL ASİSTAN" else "YZ ASİSTANI"
-                            else->if(true)"3D VIRTUAL ASSISTANT" else "AI ASSISTANT"
+                            "nl"->"ECHTE 3D ASSISTENT · FOUNDATION"
+                            "pt"->"ASSISTENTE 3D REAL · FUNDAÇÃO"
+                            "es"->"ASISTENTE 3D REAL · BASE"
+                            "fr"->"ASSISTANT 3D RÉEL · BASE"
+                            "de"->"ECHTER 3D-ASSISTENT · BASIS"
+                            "it"->"ASSISTENTE 3D REALE · BASE"
+                            "pl"->"PRAWDZIWY ASYSTENT 3D · BAZA"
+                            "tr"->"GERÇEK 3D ASİSTAN · TEMEL"
+                            else->"REAL 3D ASSISTANT · FOUNDATION"
                         },
                         fontSize=7.sp,
                         fontWeight=FontWeight.Black
@@ -1720,7 +1715,7 @@ private fun RsAiAvatarStageV163(
                         "it"->if(true)"3D CINEMATICO BETA" else "ASSISTENTE IA"
                         "pl"->if(true)"KINOWE 3D BETA" else "ASYSTENT AI"
                         "tr"->if(true)"SİNEMATİK 3D BETA" else "YZ ASİSTANI"
-                        else->if(true)"CINEMATIC 3D BETA" else "AI ASSISTANT"
+                        else->if(true)"REAL 3D FOUNDATION" else "AI ASSISTANT"
                     }
                     Text(
                         assistantState+" · "+stageMode,
