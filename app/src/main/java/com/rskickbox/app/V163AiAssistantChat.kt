@@ -237,13 +237,16 @@ fun RsAiAssistantChatV163(
         tts=engine
         onDispose{runCatching{engine.stop()};runCatching{engine.shutdown()}}
     }
-    fun applySelectedVoice(){
+    fun applyVoiceProfile(
+        languageProfile:RsLang=selectedLang,
+        avatarProfile:String=avatar
+    ){
         val engine=tts?:return
-        val requested=selectedLang.locale
+        val requested=languageProfile.locale
         val available=runCatching{engine.isLanguageAvailable(requested)}.getOrDefault(TextToSpeech.LANG_NOT_SUPPORTED)
         val effective=if(available>=TextToSpeech.LANG_AVAILABLE)requested else Locale.ENGLISH
         engine.language=effective
-        val wantsMale=avatar=="MALE"
+        val wantsMale=avatarProfile=="MALE"
         engine.setSpeechRate(if(wantsMale).92f else .95f)
         engine.setPitch(if(wantsMale).88f else 1.06f)
 
@@ -273,7 +276,9 @@ fun RsAiAssistantChatV163(
             return score
         }
 
-        val overrideName=store.s(voiceOverrideKey,"")
+        val profileOverrideKey=
+            "ai_voice_override_v181_"+languageProfile.code+"_"+avatarProfile.lowercase(Locale.ROOT)
+        val overrideName=store.s(profileOverrideKey,"")
         val overrideVoice=engine.voices?.firstOrNull{
             it.name==overrideName &&
             it.locale.language.equals(effective.language,true) &&
@@ -322,11 +327,15 @@ fun RsAiAssistantChatV163(
         if(ttsReady){
             runCatching{tts?.stop()}
             speaking=false
-            applySelectedVoice()
+            applyVoiceProfile()
         }
     }
 
-    fun speak(text:String){
+    fun speak(
+        text:String,
+        languageOverride:RsLang?=null,
+        avatarOverride:String?=null
+    ){
         if(text.isBlank())return
         if(!ttsReady){
             if(voiceConversationActive)resumeListeningSignal++
@@ -334,8 +343,10 @@ fun RsAiAssistantChatV163(
         }
         runCatching{tts?.stop()}
         speaking=false
-        applySelectedVoice()
-        val utteranceId="rs-ai-"+aiLang+"-"+avatar+"-"+System.nanoTime()
+        val utteranceLanguage=languageOverride?:selectedLang
+        val utteranceAvatar=avatarOverride?:avatar
+        applyVoiceProfile(utteranceLanguage,utteranceAvatar)
+        val utteranceId="rs-ai-"+utteranceLanguage.code+"-"+utteranceAvatar+"-"+System.nanoTime()
         activeUtteranceId=utteranceId
         val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,utteranceId)
         if(result==TextToSpeech.ERROR && voiceConversationActive)resumeListeningSignal++
@@ -508,6 +519,7 @@ fun RsAiAssistantChatV163(
                     if(target!=null){
                         aiLang=target.code
                         store.ps("ai_voice_language_v161",target.code)
+                        store.ps("ai_reply_voice_lang_override_v182",target.code)
                         when(target.code){
                             "nl"->"Natuurlijk. Ik spreek nu Nederlands."
                             "pt"->"Claro. Agora vou falar em português."
@@ -1121,7 +1133,7 @@ fun RsAiAssistantChatV163(
                                         store.ps(voiceOverrideKey,"")
                                         runCatching{tts?.stop()}
                                         speaking=false
-                                        applySelectedVoice()
+                                        applyVoiceProfile()
                                         status=rsAiExtraV163(aiLang,"voice_selected")
                                     }
                                 )
@@ -1143,7 +1155,7 @@ fun RsAiAssistantChatV163(
                                             store.ps(voiceOverrideKey,voice.name)
                                             runCatching{tts?.stop()}
                                             speaking=false
-                                            applySelectedVoice()
+                                            applyVoiceProfile()
                                             status=rsAiExtraV163(aiLang,"voice_selected")
                                         }
                                     )
