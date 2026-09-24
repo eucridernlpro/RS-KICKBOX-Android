@@ -20,7 +20,7 @@ val rsReleaseSigningReady = listOf(
 
 android {
     namespace = "com.rskickbox.app"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.rskickbox.app"
