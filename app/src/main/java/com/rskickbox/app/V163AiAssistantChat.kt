@@ -493,7 +493,17 @@ fun RsAiAssistantChatV163(
             context=context,
             onResult={spoken->voiceResult=spoken.take(1800)},
             onStatus={value->status=value},
-            onIdle={resumeListeningSignal++}
+            onIdle={resumeListeningSignal++},
+            onLanguageDetected={detectedCode->
+                if(
+                    detectedCode!=aiLang &&
+                    languages.any{it.code==detectedCode}
+                ){
+                    aiLang=detectedCode
+                    store.ps("ai_voice_language_v161",detectedCode)
+                    store.ps("lang_last_spoken_v182",detectedCode)
+                }
+            }
         )
     }
     DisposableEffect(quietVoice){
