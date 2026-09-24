@@ -79,6 +79,70 @@ private fun rsAiGuideSpecialStepsV175(route:String,role:RsRole):List<String>?=wh
     else->null
 }
 
+private fun rsAiLocalizedGenericStepsV179(title:String,lang:RsLang):List<String> = when(lang.code){
+    "nl"->listOf(
+        "Open $title via het dashboard of het zijmenu.",
+        "Bekijk de beschikbare knoppen, instellingen en informatie op de pagina.",
+        "Kies de actie die past bij wat je wilt doen.",
+        "Controleer het resultaat of de status voordat je de pagina verlaat."
+    )
+    "pt"->listOf(
+        "Abre $title no painel principal ou no menu lateral.",
+        "Revê os controlos, definições e informações disponíveis nesta página.",
+        "Escolhe a ação que corresponde ao que pretendes fazer.",
+        "Confirma o resultado ou o estado antes de sair da página."
+    )
+    "es"->listOf(
+        "Abre $title desde el panel principal o el menú lateral.",
+        "Revisa los controles, ajustes y la información disponibles en esta página.",
+        "Elige la acción que corresponda a lo que quieres hacer.",
+        "Comprueba el resultado o el estado antes de salir de la página."
+    )
+    "fr"->listOf(
+        "Ouvre $title depuis le tableau de bord ou le menu latéral.",
+        "Consulte les commandes, réglages et informations disponibles sur cette page.",
+        "Choisis l’action correspondant à ce que tu veux faire.",
+        "Vérifie le résultat ou l’état avant de quitter la page."
+    )
+    "de"->listOf(
+        "Öffne $title über das Dashboard oder das Seitenmenü.",
+        "Prüfe die verfügbaren Steuerelemente, Einstellungen und Informationen auf dieser Seite.",
+        "Wähle die Aktion aus, die zu deinem Ziel passt.",
+        "Prüfe das Ergebnis oder den Status, bevor du die Seite verlässt."
+    )
+    "it"->listOf(
+        "Apri $title dalla dashboard o dal menu laterale.",
+        "Controlla i comandi, le impostazioni e le informazioni disponibili in questa pagina.",
+        "Scegli l’azione che corrisponde a ciò che vuoi fare.",
+        "Controlla il risultato o lo stato prima di lasciare la pagina."
+    )
+    "pl"->listOf(
+        "Otwórz $title z pulpitu lub menu bocznego.",
+        "Sprawdź dostępne elementy sterujące, ustawienia i informacje na tej stronie.",
+        "Wybierz działanie odpowiadające temu, co chcesz zrobić.",
+        "Sprawdź wynik lub stan przed opuszczeniem strony."
+    )
+    "tr"->listOf(
+        "$title sayfasını ana panelden veya yan menüden aç.",
+        "Bu sayfadaki kullanılabilir kontrolleri, ayarları ve bilgileri incele.",
+        "Yapmak istediğin işleme uygun seçeneği seç.",
+        "Sayfadan ayrılmadan önce sonucu veya durumu kontrol et."
+    )
+    else->listOf(
+        "Open $title from the dashboard or side menu.",
+        "Review the available controls, settings and information on this page.",
+        "Choose the action that matches what you want to do.",
+        "Check the result or status before leaving the page."
+    )
+}
+
+private fun rsAiLocalizedGuideStepsV179(route:String,role:RsRole,lang:RsLang,title:String):List<String>{
+    if(lang.code=="en"){
+        return rsAiGuideSpecialStepsV175(route,role)?:rsAiLocalizedGenericStepsV179(title,lang)
+    }
+    return rsAiLocalizedGenericStepsV179(title,lang)
+}
+
 fun rsAiAppGuideMatchV175(question:String,lang:RsLang,role:RsRole):RsAiAppGuideResultV175?{
     val q=question.trim().lowercase()
     if(q.isBlank())return null
@@ -102,25 +166,27 @@ fun rsAiAppGuideMatchV175(question:String,lang:RsLang,role:RsRole):RsAiAppGuideR
 
     val title=rsRouteTitle(lang,route,route.replace('_',' ').replaceFirstChar{it.uppercase()})
     val hint=rsRouteHint(lang,route,title)
-    val steps=rsAiGuideSpecialStepsV175(route,role)?:listOf(
-        "Open $title from the dashboard or side menu.",
-        "Review the available controls and information on the page.",
-        "Choose the action that matches what you want to do.",
-        "Check the result/status before leaving the page."
-    )
+    val steps=rsAiLocalizedGuideStepsV179(route,role,lang,title)
     val purpose=when(lang.code){
         "nl"->"$title helpt je met: $hint."
         "pt"->"$title ajuda-te com: $hint."
         "es"->"$title te ayuda con: $hint."
         "fr"->"$title t'aide avec : $hint."
         "de"->"$title hilft dir bei: $hint."
+        "it"->"$title ti aiuta con: $hint."
+        "pl"->"$title pomaga w: $hint."
+        "tr"->"$title şu konularda yardımcı olur: $hint."
         else->"$title is used for: $hint."
     }
     val tip=when(lang.code){
         "nl"->"Je kunt ook zeggen: ‘open $title’ en RS AI brengt je naar die pagina."
         "pt"->"Também podes dizer: ‘open $title’ e a IA RS abre essa página."
         "es"->"También puedes decir: ‘open $title’ y RS AI abrirá esa página."
-        "fr"->"Tu peux aussi dire : ‘open $title’ et RS AI ouvrira cette page."
+        "fr"->"Tu peux aussi dire : ‘ouvre $title’ et RS AI ouvrira cette page."
+        "de"->"Du kannst auch sagen: „Öffne $title“, und RS AI öffnet diese Seite."
+        "it"->"Puoi anche dire: «apri $title» e RS AI aprirà questa pagina."
+        "pl"->"Możesz też powiedzieć: „otwórz $title”, a RS AI otworzy tę stronę."
+        "tr"->"“$title sayfasını aç” diyebilirsin; RS AI seni doğrudan bu sayfaya götürür."
         else->"You can also say “open $title” and RS AI can take you directly to that page."
     }
     return RsAiAppGuideResultV175(route,title,purpose,steps,tip)
@@ -133,6 +199,10 @@ fun rsAiAppGuideTextV175(result:RsAiAppGuideResultV175,lang:RsLang):String{
         "pt"->result.title+"\n\nObjetivo: "+result.purpose+"\n\nComo usar:\n"+steps+"\n\nDica: "+result.tip
         "es"->result.title+"\n\nObjetivo: "+result.purpose+"\n\nCómo usarlo:\n"+steps+"\n\nConsejo: "+result.tip
         "fr"->result.title+"\n\nUtilité : "+result.purpose+"\n\nComment l'utiliser :\n"+steps+"\n\nConseil : "+result.tip
+        "de"->result.title+"\n\nZweck: "+result.purpose+"\n\nSo verwendest du es:\n"+steps+"\n\nTipp: "+result.tip
+        "it"->result.title+"\n\nObiettivo: "+result.purpose+"\n\nCome usarlo:\n"+steps+"\n\nSuggerimento: "+result.tip
+        "pl"->result.title+"\n\nCel: "+result.purpose+"\n\nJak używać:\n"+steps+"\n\nWskazówka: "+result.tip
+        "tr"->result.title+"\n\nAmaç: "+result.purpose+"\n\nNasıl kullanılır:\n"+steps+"\n\nİpucu: "+result.tip
         else->result.title+"\n\nPurpose: "+result.purpose+"\n\nHow to use it:\n"+steps+"\n\nTip: "+result.tip
     }
 }
@@ -151,12 +221,7 @@ fun rsAiAppGuideForRouteV177(route:String,lang:RsLang,role:RsRole):RsAiAppGuideR
     if(route.isBlank() || route !in rsAiAppRoutesV175)return null
     val title=rsRouteTitle(lang,route,route.replace('_',' ').replaceFirstChar{it.uppercase()})
     val hint=rsRouteHint(lang,route,title)
-    val steps=rsAiGuideSpecialStepsV175(route,role)?:listOf(
-        "Open $title from the dashboard or side menu.",
-        "Review the available controls and information on the page.",
-        "Choose the action that matches what you want to do.",
-        "Check the result/status before leaving the page."
-    )
+    val steps=rsAiLocalizedGuideStepsV179(route,role,lang,title)
     val purpose=when(lang.code){
         "nl"->"$title helpt je met: $hint."
         "pt"->"$title ajuda-te com: $hint."
@@ -170,6 +235,10 @@ fun rsAiAppGuideForRouteV177(route:String,lang:RsLang,role:RsRole):RsAiAppGuideR
         "pt"->"Podes perguntar à IA RS o que podes fazer nesta página ou dizer a ação que queres executar."
         "es"->"Puedes preguntar a RS AI qué puedes hacer en esta página o decir la acción que quieres realizar."
         "fr"->"Tu peux demander à RS AI ce que tu peux faire sur cette page ou lui dire l’action que tu veux effectuer."
+        "de"->"Du kannst RS AI fragen, was du auf dieser Seite tun kannst, oder die gewünschte Aktion nennen."
+        "it"->"Puoi chiedere a RS AI cosa puoi fare in questa pagina o indicare l’azione che vuoi eseguire."
+        "pl"->"Możesz zapytać RS AI, co można zrobić na tej stronie, albo podać działanie, które chcesz wykonać."
+        "tr"->"RS AI’a bu sayfada neler yapabileceğini sorabilir veya yapmak istediğin işlemi söyleyebilirsin."
         else->"Ask RS AI what you can do on this page, or tell it the action you want to perform."
     }
     return RsAiAppGuideResultV175(route,title,purpose,steps,tip)
