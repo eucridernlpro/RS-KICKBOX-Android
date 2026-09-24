@@ -1256,11 +1256,6 @@ private fun ShellV21(
     }
 
     val rawDrawerItems=if(role==RsRole.TRAINER) listOf(
-        "owner_command" to "Owner Command Center",
-        "trainer" to "Trainer Dashboard",
-        "guide" to "App Guide",
-        "coachchat" to "RS Chat",
-        "music_admin" to "RS Music Manager",
         "members" to "Student Manager",
         "access" to "Access & Subscriptions",
         "plans_admin" to "Membership Plans",
@@ -1271,7 +1266,6 @@ private fun ShellV21(
         "backgrounds" to "Visual Asset Studio",
         "branding" to "Branding & Site Settings",
         "payments" to "Payment Center",
-        "homework_admin" to "Homework Manager",
         "notes" to "Coach Notes",
         "assessments" to "Assessments",
         "progress_admin" to "Progress Manager",
@@ -1280,7 +1274,6 @@ private fun ShellV21(
         "analytics" to "Analytics",
         "notifications" to "Notifications",
         "documents" to "Documents Manager",
-        "support" to "Support Inbox",
         "community" to "Community Moderation",
         "landing_admin" to "Promotion Manager",
         "book" to "Book Manager",
@@ -1384,60 +1377,92 @@ private fun ShellV21(
                     }
                     Column(
                         Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                        verticalArrangement=Arrangement.spacedBy(3.dp)
+                        verticalArrangement=Arrangement.spacedBy(8.dp)
                     ){
-                        drawerItems.forEach{(target,fallback)->
-                            val title=rsRouteTitle(lang,target,fallback)
-                            NavigationDrawerItem(
-                                label={
-                                    Text(
-                                        title,
-                                        maxLines=1,
-                                        overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                        fontWeight=if(route==target)FontWeight.Black else FontWeight.SemiBold,
-                                        fontSize=12.sp
-                                    )
-                                },
-                                icon={
-                                    Surface(
-                                        color=if(route==target)c.gold.copy(alpha=.20f) else Color.Black.copy(alpha=.30f),
-                                        shape=RoundedCornerShape(9.dp),
-                                        border=BorderStroke(1.dp,c.gold.copy(alpha=if(route==target).46f else .16f)),
-                                        modifier=Modifier.size(28.dp)
-                                    ){
-                                        Box(contentAlignment=Alignment.Center){
-                                            Text(
-                                                when(target){
-                                                    "owner_command"->"♛"
-                                                    "guide","student_guide"->"?"
-                                                    "coachchat"->"◆"
-                                                    "music","music_admin"->"♫"
-                                                    "themes","backgrounds","branding"->"◇"
-                                                    "settings"->"⚙"
-                                                    else->"RS"
-                                                },
-                                                color=if(route==target)c.bright else c.gold,
-                                                fontSize=if(target=="owner_command")13.sp else 8.sp,
-                                                fontWeight=FontWeight.Black
-                                            )
-                                        }
-                                    }
-                                },
-                                badge={Text("›",color=c.gold,fontSize=16.sp,fontWeight=FontWeight.Black)},
-                                selected=route==target,
-                                onClick={
+                        if(role==RsRole.TRAINER){
+                            RsDashboardCommandCenterV176(
+                                c=c,
+                                store=store,
+                                role=role,
+                                lang=lang,
+                                onRoute={target->
                                     onRoute(target)
                                     scope.launch{drawerState.close()}
-                                },
-                                modifier=Modifier.fillMaxWidth().heightIn(min=46.dp),
-                                shape=RoundedCornerShape(shellLayout.buttonRadius.dp),
-                                colors=NavigationDrawerItemDefaults.colors(
-                                    selectedContainerColor=c.gold.copy(alpha=.18f),
-                                    selectedTextColor=c.bright,
-                                    unselectedContainerColor=Color.Black.copy(alpha=.18f),
-                                    unselectedTextColor=c.text
-                                )
+                                }
                             )
+                            Text(
+                                "MANAGEMENT",
+                                color=c.gold,
+                                fontSize=8.sp,
+                                fontWeight=FontWeight.Black,
+                                letterSpacing=1.3.sp,
+                                modifier=Modifier.padding(start=4.dp,top=4.dp)
+                            )
+                        }
+                        drawerItems.forEach{(target,fallback)->
+                            val title=rsRouteTitle(lang,target,fallback)
+                            Surface(
+                                color=if(route==target)c.gold.copy(alpha=.12f) else Color.Black.copy(alpha=.30f),
+                                shape=RoundedCornerShape(shellLayout.buttonRadius.dp),
+                                border=BorderStroke(
+                                    if(route==target && shellLayout.strongLines)2.dp else 1.dp,
+                                    if(route==target)c.bright.copy(alpha=.58f) else c.gold.copy(alpha=.22f)
+                                ),
+                                modifier=Modifier.fillMaxWidth()
+                            ){
+                                Box{
+                                    NavigationDrawerItem(
+                                        label={
+                                            Text(
+                                                title,
+                                                maxLines=1,
+                                                overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                                fontWeight=if(route==target)FontWeight.Black else FontWeight.SemiBold,
+                                                fontSize=12.sp
+                                            )
+                                        },
+                                        icon={
+                                            Surface(
+                                                color=Color.Black.copy(alpha=.24f),
+                                                shape=RoundedCornerShape(10.dp),
+                                                border=BorderStroke(1.dp,c.gold.copy(alpha=.38f)),
+                                                modifier=Modifier.size(34.dp)
+                                            ){
+                                                Box(contentAlignment=Alignment.Center){
+                                                    Image(
+                                                        painter=painterResource(R.drawable.rs_launcher_royal_v129),
+                                                        contentDescription="RS",
+                                                        modifier=Modifier.fillMaxSize().padding(2.dp)
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        badge={Text("›",color=if(route==target)c.bright else c.gold,fontSize=18.sp,fontWeight=FontWeight.Black)},
+                                        selected=route==target,
+                                        onClick={
+                                            onRoute(target)
+                                            scope.launch{drawerState.close()}
+                                        },
+                                        modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),
+                                        shape=RoundedCornerShape(shellLayout.buttonRadius.dp),
+                                        colors=NavigationDrawerItemDefaults.colors(
+                                            selectedContainerColor=Color.Transparent,
+                                            selectedTextColor=c.bright,
+                                            unselectedContainerColor=Color.Transparent,
+                                            unselectedTextColor=c.text
+                                        )
+                                    )
+                                    Box(
+                                        Modifier.fillMaxWidth(.42f).height(1.dp)
+                                            .align(Alignment.BottomStart)
+                                            .background(
+                                                Brush.horizontalGradient(
+                                                    listOf(c.gold.copy(alpha=.72f),c.bright.copy(alpha=.42f),Color.Transparent)
+                                                )
+                                            )
+                                    )
+                                }
+                            }
                         }
                     }
                     OutlinedButton(
