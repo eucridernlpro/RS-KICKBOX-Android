@@ -341,7 +341,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             val pm=getSystemService(PowerManager::class.java)
             wakeLock=pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"rskickbox:voicewake").apply{
                 setReferenceCounted(false)
-                acquire(60*60*1000L)
+                acquire()
             }
         }
 
