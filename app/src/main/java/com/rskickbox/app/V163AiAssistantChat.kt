@@ -618,11 +618,7 @@ fun RsAiAssistantChatV163(
                 }
                 RsAiPlatformIntentV171.None->""
             }
-            messages=(messages+RsAiChatMessageV163(
-                id=System.currentTimeMillis()+1,
-                mine=false,
-                text=reply
-            )).takeLast(100)
+            deliverAssistant(reply)
             busy=false
             status=""
             if(autoSpeak && reply.isNotBlank()){
