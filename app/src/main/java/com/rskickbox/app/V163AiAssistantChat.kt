@@ -1797,7 +1797,7 @@ private fun RsAiAvatarStageV163(
                         )
                     )
             )
-            RsAiReal3DModelV183(
+            RsAiProductionAvatarV191(
                 avatar=avatar,
                 speaking=speaking,
                 speechAmplitude=speechAmplitude,
