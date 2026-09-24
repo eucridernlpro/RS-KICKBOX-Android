@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -1739,36 +1740,6 @@ private fun RsAiAvatarStageV163(
     }
     val themeLayout=rsThemeLayoutV175(rsStoredThemeV175(store))
     val transition=rememberInfiniteTransition(label="ai-stage")
-    val breath by transition.animateFloat(
-        initialValue=.992f,
-        targetValue=1.012f,
-        animationSpec=infiniteRepeatable(tween(2100,easing=FastOutSlowInEasing),RepeatMode.Reverse),
-        label="ai-breath"
-    )
-    val floatY by transition.animateFloat(
-        initialValue=-2f,
-        targetValue=3f,
-        animationSpec=infiniteRepeatable(tween(2500,easing=FastOutSlowInEasing),RepeatMode.Reverse),
-        label="ai-float"
-    )
-    val parallaxX by transition.animateFloat(
-        initialValue=-5f,
-        targetValue=5f,
-        animationSpec=infiniteRepeatable(tween(4200,easing=FastOutSlowInEasing),RepeatMode.Reverse),
-        label="ai-parallax"
-    )
-    val headTurn by transition.animateFloat(
-        initialValue=-1.8f,
-        targetValue=1.8f,
-        animationSpec=infiniteRepeatable(tween(5200,easing=FastOutSlowInEasing),RepeatMode.Reverse),
-        label="ai-head-turn"
-    )
-    val focusTilt by transition.animateFloat(
-        initialValue=-.8f,
-        targetValue=.8f,
-        animationSpec=infiniteRepeatable(tween(3900,easing=FastOutSlowInEasing),RepeatMode.Reverse),
-        label="ai-focus-tilt"
-    )
     val lightSweep by transition.animateFloat(
         initialValue=.10f,
         targetValue=.32f,
@@ -1781,26 +1752,6 @@ private fun RsAiAvatarStageV163(
         animationSpec=infiniteRepeatable(tween(if(speaking)620 else 1500,easing=FastOutSlowInEasing),RepeatMode.Reverse),
         label="ai-aura"
     )
-    val stateScale by animateFloatAsState(
-        targetValue=when{
-            speaking->1.035f
-            listening->1.020f
-            thinking->1.012f
-            else->1f
-        },
-        animationSpec=tween(420,easing=FastOutSlowInEasing),
-        label="ai-state-scale"
-    )
-    val stateLift by animateFloatAsState(
-        targetValue=when{
-            speaking->-5f
-            listening->-2f
-            thinking->1f
-            else->0f
-        },
-        animationSpec=tween(520,easing=FastOutSlowInEasing),
-        label="ai-state-lift"
-    )
     val stageGlow by animateFloatAsState(
         targetValue=when{
             speaking->.80f
@@ -1812,6 +1763,7 @@ private fun RsAiAvatarStageV163(
         label="ai-stage-glow"
     )
     var languageMenu by remember{mutableStateOf(false)}
+    val compactStage=LocalConfiguration.current.screenWidthDp<380
 
     Surface(
         color=Color.Black,
@@ -1849,6 +1801,7 @@ private fun RsAiAvatarStageV163(
                 avatar=avatar,
                 speaking=speaking,
                 speechAmplitude=speechAmplitude,
+                motionEnabled=avatarMotion,
                 listening=listening,
                 thinking=thinking,
                 sensorX=if(immersive && sensorParallaxEnabled)sensorX else 0f,
@@ -1943,15 +1896,15 @@ private fun RsAiAvatarStageV163(
                     enabled=false,
                     label={Text(
                         when(language.code){
-                            "nl"->"ECHTE 3D ASSISTENT · FOUNDATION"
-                            "pt"->"ASSISTENTE 3D REAL · FUNDAÇÃO"
-                            "es"->"ASISTENTE 3D REAL · BASE"
-                            "fr"->"ASSISTANT 3D RÉEL · BASE"
-                            "de"->"ECHTER 3D-ASSISTENT · BASIS"
-                            "it"->"ASSISTENTE 3D REALE · BASE"
-                            "pl"->"PRAWDZIWY ASYSTENT 3D · BAZA"
-                            "tr"->"GERÇEK 3D ASİSTAN · TEMEL"
-                            else->"REAL 3D ASSISTANT · FOUNDATION"
+                            "nl"->if(compactStage)"REALTIME 3D" else "REALTIME 3D ASSISTENT"
+                            "pt"->if(compactStage)"3D EM TEMPO REAL" else "ASSISTENTE 3D EM TEMPO REAL"
+                            "es"->if(compactStage)"3D EN TIEMPO REAL" else "ASISTENTE 3D EN TIEMPO REAL"
+                            "fr"->if(compactStage)"3D TEMPS RÉEL" else "ASSISTANT 3D TEMPS RÉEL"
+                            "de"->if(compactStage)"ECHTZEIT 3D" else "ECHTZEIT-3D-ASSISTENT"
+                            "it"->if(compactStage)"3D IN TEMPO REALE" else "ASSISTENTE 3D IN TEMPO REALE"
+                            "pl"->if(compactStage)"3D NA ŻYWO" else "ASYSTENT 3D W CZASIE RZECZYWISTYM"
+                            "tr"->if(compactStage)"GERÇEK ZAMANLI 3D" else "GERÇEK ZAMANLI 3D ASİSTAN"
+                            else->if(compactStage)"REALTIME 3D" else "REALTIME 3D ASSISTANT"
                         },
                         fontSize=7.sp,
                         fontWeight=FontWeight.Black
@@ -1986,15 +1939,15 @@ private fun RsAiAvatarStageV163(
                         else->when{speaking->"SPEAKING";thinking->"THINKING";listening->"LISTENING";else->"READY"}
                     }
                     val stageMode=when(language.code){
-                        "nl"->if(true)"CINEMATISCHE 3D BETA" else "AI-ASSISTENT"
-                        "pt"->if(true)"3D CINEMÁTICO BETA" else "ASSISTENTE IA"
-                        "es"->if(true)"3D CINEMÁTICO BETA" else "ASISTENTE IA"
-                        "fr"->if(true)"3D CINÉMATIQUE BÊTA" else "ASSISTANT IA"
-                        "de"->if(true)"KINEMATISCHE 3D-BETA" else "KI-ASSISTENT"
-                        "it"->if(true)"3D CINEMATICO BETA" else "ASSISTENTE IA"
-                        "pl"->if(true)"KINOWE 3D BETA" else "ASYSTENT AI"
-                        "tr"->if(true)"SİNEMATİK 3D BETA" else "YZ ASİSTANI"
-                        else->if(true)"REAL 3D FOUNDATION" else "AI ASSISTANT"
+                        "nl"->"REALTIME 3D"
+                        "pt"->"3D EM TEMPO REAL"
+                        "es"->"3D EN TIEMPO REAL"
+                        "fr"->"3D TEMPS RÉEL"
+                        "de"->"ECHTZEIT 3D"
+                        "it"->"3D IN TEMPO REALE"
+                        "pl"->"3D NA ŻYWO"
+                        "tr"->"GERÇEK ZAMANLI 3D"
+                        else->"REALTIME 3D"
                     }
                     Text(
                         assistantState+" · "+stageMode,
