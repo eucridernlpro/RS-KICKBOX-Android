@@ -477,7 +477,7 @@ fun RsAiAssistantChatV163(
                     pickedUri=Uri.parse(local)
                     pickedKind="IMAGE"
                     status=""
-                }else status="Could not prepare image."
+                }else status=rsAiVoiceRuntimeTextV190(aiLang,"prepare_image_failed")
             }
         }
     }
@@ -495,7 +495,7 @@ fun RsAiAssistantChatV163(
                     pickedUri=Uri.parse(local)
                     pickedKind="VIDEO"
                     status=""
-                }else status="Could not prepare video."
+                }else status=rsAiVoiceRuntimeTextV190(aiLang,"prepare_video_failed")
             }
         }
     }
@@ -511,18 +511,18 @@ fun RsAiAssistantChatV163(
                         .onSuccess{
                             pendingMusic=track
                             musicDialog=true
-                            status="Saved to RS Music · "+track.name
+                            status=rsAiVoiceRuntimeTextV190(aiLang,"music_saved",track.name)
                         }
-                        .onFailure{status=it.message?:"Could not save music."}
+                        .onFailure{status=it.message?:rsAiVoiceRuntimeTextV190(aiLang,"music_save_failed")}
                 }
-                .onFailure{status=it.message?:"Could not open music file."}
+                .onFailure{status=it.message?:rsAiVoiceRuntimeTextV190(aiLang,"music_open_failed")}
         }
     }
     val quietVoice=remember(context,aiLang){
         RsQuietVoiceControllerV171(
             context=context,
             onResult={spoken->voiceResult=spoken.take(1800)},
-            onStatus={value->status=value},
+            onStatus={value->status=rsAiVoiceStatusV190(aiLang,value)},
             onIdle={resumeListeningSignal++},
             onLanguageDetected={detectedCode->
                 if(
@@ -1103,7 +1103,7 @@ fun RsAiAssistantChatV163(
                                                             message.mediaKind,
                                                             if(message.mediaKind=="VIDEO")"AI video" else "AI image"
                                                         ).onSuccess{status=rsAiExtraV163(aiLang,"saved")}
-                                                         .onFailure{status=it.message?:"Could not save media."}
+                                                         .onFailure{status=it.message?:rsAiVoiceRuntimeTextV190(aiLang,"media_save_failed")}
                                                     }
                                                 )
                                             }
@@ -1562,8 +1562,8 @@ fun RsAiAssistantChatV163(
                         Button(
                             onClick={
                                 rsPlayMusicTrackV169(musicController,track)
-                                    .onSuccess{status="Playing "+track.name}
-                                    .onFailure{status=it.message?:"Could not play music."}
+                                    .onSuccess{status=rsAiVoiceRuntimeTextV190(aiLang,"playing",track.name)}
+                                    .onFailure{status=it.message?:rsAiVoiceRuntimeTextV190(aiLang,"play_failed")}
                             },
                             modifier=Modifier.weight(1f)
                         ){Text("▶ "+rsAiExtraV163(aiLang,"play"),fontSize=9.sp)}
@@ -1576,7 +1576,7 @@ fun RsAiAssistantChatV163(
                                         musicDialog=false
                                         pendingMusic=null
                                     }
-                                    .onFailure{status=it.message?:"Could not save music."}
+                                    .onFailure{status=it.message?:rsAiVoiceRuntimeTextV190(aiLang,"music_save_failed")}
                             },
                             modifier=Modifier.weight(1f)
                         ){Text("✓ "+rsAiExtraV163(aiLang,"done"),fontSize=9.sp)}
@@ -1599,11 +1599,11 @@ fun RsAiAssistantChatV163(
                                             playlistMenu=false
                                             rsAddMusicTrackToPlaylistV169(store,name,track)
                                                 .onSuccess{
-                                                    status="Added to "+name+"."
+                                                    status=rsAiVoiceRuntimeTextV190(aiLang,"playlist_added",name)
                                                     musicDialog=false
                                                     pendingMusic=null
                                                 }
-                                                .onFailure{status=it.message?:"Could not update playlist."}
+                                                .onFailure{status=it.message?:rsAiVoiceRuntimeTextV190(aiLang,"playlist_update_failed")}
                                         }
                                     )
                                 }
@@ -1622,12 +1622,12 @@ fun RsAiAssistantChatV163(
                         onClick={
                             rsAddMusicTrackToPlaylistV169(store,newPlaylistName,track)
                                 .onSuccess{
-                                    status="Playlist "+newPlaylistName.trim()+" created."
+                                    status=rsAiVoiceRuntimeTextV190(aiLang,"playlist_created",newPlaylistName.trim())
                                     musicDialog=false
                                     pendingMusic=null
                                     newPlaylistName=""
                                 }
-                                .onFailure{status=it.message?:"Could not create playlist."}
+                                .onFailure{status=it.message?:rsAiVoiceRuntimeTextV190(aiLang,"playlist_create_failed")}
                         },
                         enabled=newPlaylistName.isNotBlank(),
                         modifier=Modifier.fillMaxWidth()
