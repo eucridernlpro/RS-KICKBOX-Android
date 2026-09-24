@@ -454,6 +454,62 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
             }
         }
 
+        if(role==RsRole.TRAINER){
+            val diagLang=store.s("ai_voice_language_v161",lang.code)
+            val diagAvatar=store.s("ai_avatar_gender_v161","FEMALE")
+            val diagVoiceKey="ai_voice_override_v181_"+diagLang+"_"+diagAvatar.lowercase()
+            val diagVoice=store.s(diagVoiceKey,"")
+            val wakeStatus=store.s("rs_voice_wake_status_v168","UNKNOWN")
+            val wakeMs=store.s("rs_voice_wake_status_ms_v168","0").toLongOrNull()?:0L
+            val wakeAge=if(wakeMs>0L)((System.currentTimeMillis()-wakeMs)/1000L).coerceAtLeast(0L) else -1L
+            val sofiaRigged=remember{
+                runCatching{context.assets.open("models/rs_ai_sofia.glb").use{};true}.getOrDefault(false)
+            }
+            val marcusRigged=remember{
+                runCatching{context.assets.open("models/rs_ai_marcus.glb").use{};true}.getOrDefault(false)
+            }
+            Surface(
+                color=Color.Black.copy(alpha=.70f),
+                shape=RoundedCornerShape(22.dp),
+                border=BorderStroke(1.dp,c.gold.copy(alpha=.32f)),
+                modifier=Modifier.fillMaxWidth()
+            ){
+                Column(
+                    Modifier.fillMaxWidth().padding(13.dp),
+                    verticalArrangement=Arrangement.spacedBy(6.dp)
+                ){
+                    Text("AI ENGINE DIAGNOSTICS",color=c.bright,fontWeight=FontWeight.Black,fontSize=12.sp)
+                    Text(
+                        "Device-local voice, wake and 3D status for trainer QC. No password or API key is displayed.",
+                        color=c.muted,fontSize=8.sp,lineHeight=11.sp
+                    )
+                    HorizontalDivider(color=c.gold.copy(alpha=.14f))
+                    RsAiDiagLineV191(c,"Assistant",if(diagAvatar=="MALE")"Marcus" else "Sofia")
+                    RsAiDiagLineV191(c,"AI language",diagLang.uppercase())
+                    RsAiDiagLineV191(c,"Voice profile",if(diagVoice.isBlank())"AUTO" else diagVoice.take(30))
+                    RsAiDiagLineV191(
+                        c,
+                        "Silent wake",
+                        when{
+                            !store.b("rs_voice_wake_silent_engine_v188",true)->"OFF"
+                            RsOfflineWakeModelV188.installed(context)->"READY · "+RsOfflineWakeModelV188.version(context)
+                            else->"PREPARING / FALLBACK"
+                        }
+                    )
+                    RsAiDiagLineV191(c,"Wake state",wakeStatus+(if(wakeAge>=0)" · "+wakeAge+"s" else ""))
+                    RsAiDiagLineV191(c,"Sofia rigged GLB",if(sofiaRigged)"READY" else "PROCEDURAL FALLBACK")
+                    RsAiDiagLineV191(c,"Marcus rigged GLB",if(marcusRigged)"READY" else "PROCEDURAL FALLBACK")
+                    OutlinedButton(
+                        onClick={
+                            listenerRevision++
+                            voiceWakeStatus="Diagnostics refreshed."
+                        },
+                        modifier=Modifier.fillMaxWidth()
+                    ){Text("REFRESH AI DIAGNOSTICS",fontSize=8.sp)}
+                }
+            }
+        }
+
         RsCallRingtoneSettingsV138(c,store,lang)
 
         Surface(
@@ -491,5 +547,26 @@ private fun RsChatPermissionToggleV178(
             Text(subtitle,color=c.muted,fontSize=8.sp,lineHeight=11.sp)
         }
         Switch(checked=checked,onCheckedChange=onChange)
+    }
+}
+
+
+@Composable
+private fun RsAiDiagLineV191(c:RsPalette,label:String,value:String){
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement=Arrangement.SpaceBetween,
+        verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+    ){
+        Text(label,color=c.muted,fontSize=8.sp)
+        Spacer(Modifier.width(8.dp))
+        Text(
+            value,
+            color=c.text,
+            fontSize=8.sp,
+            fontWeight=FontWeight.Bold,
+            maxLines=1,
+            modifier=Modifier.weight(1f,false)
+        )
     }
 }
