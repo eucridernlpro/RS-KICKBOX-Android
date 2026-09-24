@@ -182,21 +182,30 @@ fun RsAiAssistantChatV163(
 
     var tts by remember{mutableStateOf<TextToSpeech?>(null)}
     var ttsReady by remember{mutableStateOf(false)}
+    var activeUtteranceId by remember{mutableStateOf("")}
     DisposableEffect(Unit){
         val engine=TextToSpeech(context){state->ttsReady=state==TextToSpeech.SUCCESS}
         engine.setOnUtteranceProgressListener(object:UtteranceProgressListener(){
-            override fun onStart(utteranceId:String?){scope.launch{speaking=true}}
+            override fun onStart(utteranceId:String?){
+                if(utteranceId!=null && utteranceId==activeUtteranceId)scope.launch{speaking=true}
+            }
             override fun onDone(utteranceId:String?){
-                scope.launch{
-                    speaking=false
-                    if(voiceConversationActive)resumeListeningSignal++
+                if(utteranceId!=null && utteranceId==activeUtteranceId){
+                    scope.launch{
+                        speaking=false
+                        activeUtteranceId=""
+                        if(voiceConversationActive)resumeListeningSignal++
+                    }
                 }
             }
             @Deprecated("Deprecated in Java")
             override fun onError(utteranceId:String?){
-                scope.launch{
-                    speaking=false
-                    if(voiceConversationActive)resumeListeningSignal++
+                if(utteranceId!=null && utteranceId==activeUtteranceId){
+                    scope.launch{
+                        speaking=false
+                        activeUtteranceId=""
+                        if(voiceConversationActive)resumeListeningSignal++
+                    }
                 }
             }
         })
@@ -239,13 +248,29 @@ fun RsAiAssistantChatV163(
             return score
         }
 
-        val candidates=engine.voices
+        val languageCandidates=engine.voices
             ?.filter{it.locale.language.equals(effective.language,true)}
             .orEmpty()
-        val offlineBest=candidates
+        val exactLocaleCandidates=languageCandidates.filter{
+            it.locale.country.equals(effective.country,true) &&
+            effective.country.isNotBlank()
+        }
+        val candidates=if(exactLocaleCandidates.isNotEmpty())exactLocaleCandidates else languageCandidates
+        val hintedCandidates=candidates.filter{candidate->
+            val n=candidate.name.lowercase(Locale.ROOT)
+            if(wantsMale){
+                listOf("male","mascul","masc","man","hombre","homme","mann","uomo","homem","erkek")
+                    .any{n.contains(it)}
+            }else{
+                listOf("female","femin","fem","woman","mujer","femme","frau","donna","mulher","kadin","kadın")
+                    .any{n.contains(it)}
+            }
+        }
+        val pool=if(hintedCandidates.isNotEmpty())hintedCandidates else candidates
+        val offlineBest=pool
             .filterNot{it.isNetworkConnectionRequired}
             .maxByOrNull{voiceScore(it)}
-        val networkBest=candidates
+        val networkBest=pool
             .filter{it.isNetworkConnectionRequired}
             .maxByOrNull{voiceScore(it)}
         val matching=when{
@@ -271,8 +296,12 @@ fun RsAiAssistantChatV163(
             if(voiceConversationActive)resumeListeningSignal++
             return
         }
+        runCatching{tts?.stop()}
+        speaking=false
         applySelectedVoice()
-        val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,"rs-ai-chat")
+        val utteranceId="rs-ai-"+aiLang+"-"+avatar+"-"+System.nanoTime()
+        activeUtteranceId=utteranceId
+        val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,utteranceId)
         if(result==TextToSpeech.ERROR && voiceConversationActive)resumeListeningSignal++
     }
 
@@ -331,7 +360,7 @@ fun RsAiAssistantChatV163(
                 .onFailure{status=it.message?:"Could not open music file."}
         }
     }
-    val quietVoice=remember(context){
+    val quietVoice=remember(context,aiLang){
         RsQuietVoiceControllerV171(
             context=context,
             onResult={spoken->voiceResult=spoken.take(1800)},
@@ -665,7 +694,7 @@ fun RsAiAssistantChatV163(
         )
     ){
     Column(
-        Modifier.fillMaxSize().padding(horizontal=6.dp),
+        Modifier.fillMaxSize().padding(horizontal=12.dp,vertical=4.dp),
         verticalArrangement=Arrangement.spacedBy(6.dp)
     ){
         RsAiAvatarStageV163(
@@ -680,6 +709,7 @@ fun RsAiAssistantChatV163(
             language=selectedLang,
             onAvatarChange={next->
                 runCatching{tts?.stop()}
+                activeUtteranceId=""
                 runCatching{quietVoice.stop()}
                 speaking=false
                 voiceConversationActive=false
@@ -699,6 +729,7 @@ fun RsAiAssistantChatV163(
             },
             onLanguageChange={nextLang->
                 runCatching{tts?.stop()}
+                activeUtteranceId=""
                 runCatching{quietVoice.stop()}
                 speaking=false
                 voiceConversationActive=false
@@ -751,6 +782,10 @@ fun RsAiAssistantChatV163(
                                     "pt"->"Fala com "+coachName+" como falarias com o teu treinador real."
                                     "es"->"Habla con "+coachName+" como con tu entrenador real."
                                     "fr"->"Parle à "+coachName+" comme à ton vrai coach."
+                                    "de"->"Sprich mit "+coachName+" wie mit deinem echten Trainer."
+                                    "it"->"Parla con "+coachName+" come faresti con il tuo vero allenatore."
+                                    "pl"->"Rozmawiaj z "+coachName+" jak ze swoim prawdziwym trenerem."
+                                    "tr"->coachName+" ile gerçek antrenörünle konuşur gibi konuş."
                                     else->"Talk to "+coachName+" like you would to a real coach."
                                 },
                                 color=c.muted,
@@ -772,7 +807,7 @@ fun RsAiAssistantChatV163(
                                 1.dp,
                                 if(message.mine)c.gold.copy(alpha=.24f) else Color(0xFF58C9FF).copy(alpha=.22f)
                             ),
-                            modifier=Modifier.fillMaxWidth(.88f)
+                            modifier=if(message.mine)Modifier.fillMaxWidth(.86f) else Modifier.fillMaxWidth()
                         ){
                             Column(Modifier.padding(9.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
                                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
