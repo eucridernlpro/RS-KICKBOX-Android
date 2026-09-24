@@ -600,6 +600,7 @@ fun RsKickboxV21App(
                             }) {
                                 when(route) {
                                     "home", "trainer" -> RsPremiumDashboardV21(c, store, active, lang) { route=it }
+                                    "owner_command" -> RsOwnerCommandCenterPageV179(c,store,lang){route=it}
                                     "themes" -> RsThemeStudio(c, theme) { selected ->
                                         val now=System.currentTimeMillis()
                                         theme=selected
@@ -1255,6 +1256,7 @@ private fun ShellV21(
     }
 
     val rawDrawerItems=if(role==RsRole.TRAINER) listOf(
+        "owner_command" to "Owner Command Center",
         "trainer" to "Trainer Dashboard",
         "guide" to "App Guide",
         "coachchat" to "RS Chat",
@@ -1353,13 +1355,32 @@ private fun ShellV21(
                     ).statusBarsPadding().navigationBarsPadding().padding(12.dp),
                     verticalArrangement=Arrangement.spacedBy(6.dp)
                 ){
-                    RsPanel(c){
-                        RsLettersLogoV111(c,store,Modifier.fillMaxWidth())
-                        Text(
-                            if(role==RsRole.TRAINER)rsT(lang,"trainer_admin") else rsT(lang,"student"),
-                            color=c.muted,
-                            fontSize=11.sp
-                        )
+                    Surface(
+                        color=Color.Black.copy(alpha=.72f),
+                        shape=RoundedCornerShape(shellLayout.panelRadius.dp),
+                        border=BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
+                        tonalElevation=12.dp,
+                        modifier=Modifier.fillMaxWidth()
+                    ){
+                        Column(
+                            Modifier.fillMaxWidth().padding(12.dp),
+                            verticalArrangement=Arrangement.spacedBy(6.dp)
+                        ){
+                            RsPremiumBrandLockupV179(
+                                c=c,
+                                store=store,
+                                modifier=Modifier.fillMaxWidth(),
+                                compact=false,
+                                subtitle=if(role==RsRole.TRAINER)"TRAINER / ADMIN" else "STUDENT"
+                            )
+                            Text(
+                                if(role==RsRole.TRAINER)"ROYAL CONTROL NAVIGATION" else "MY RS NAVIGATION",
+                                color=c.gold.copy(alpha=.86f),
+                                fontSize=7.sp,
+                                fontWeight=FontWeight.Black,
+                                letterSpacing=1.2.sp
+                            )
+                        }
                     }
                     Column(
                         Modifier.weight(1f).verticalScroll(rememberScrollState()),
@@ -1440,34 +1461,15 @@ private fun ShellV21(
                     horizontalArrangement=Arrangement.spacedBy(if(compactHeader)4.dp else 7.dp),
                     verticalAlignment=Alignment.CenterVertically
                 ){
-                    RsThemeHeaderMarkV176(
+                    RsPremiumBrandLockupV179(
                         c=c,
                         store=store,
-                        modifier=Modifier.size(if(compactHeader)32.dp else 40.dp)
+                        modifier=Modifier.weight(1f),
+                        compact=compactHeader,
+                        subtitle=if(route==home)null else rsRouteTitle(
+                            lang,route,route.replace('_',' ').replaceFirstChar{it.uppercase()}
+                        )
                     )
-                    Row(
-                        modifier=Modifier.weight(1f).widthIn(min=104.dp),
-                        verticalAlignment=Alignment.CenterVertically,
-                        horizontalArrangement=Arrangement.spacedBy(if(compactHeader)3.dp else 5.dp)
-                    ){
-                        Text(
-                            "RS",
-                            color=c.bright,
-                            fontWeight=FontWeight.Black,
-                            fontSize=if(compactHeader)12.sp else 14.sp,
-                            maxLines=1
-                        )
-                        Text(
-                            "KICKBOXING",
-                            color=c.gold,
-                            fontWeight=FontWeight.Black,
-                            fontSize=if(compactHeader)10.sp else 13.sp,
-                            letterSpacing=if(compactHeader).4.sp else .8.sp,
-                            maxLines=1,
-                            softWrap=false,
-                            modifier=Modifier.weight(1f)
-                        )
-                    }
                     OutlinedButton(
                         onClick={scope.launch{drawerState.open()}},
                         modifier=Modifier.size(if(compactHeader)32.dp else 36.dp),
