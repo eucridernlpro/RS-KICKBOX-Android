@@ -9,6 +9,7 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import io.github.jan.supabase.auth.handleDeeplinks
+import io.github.jan.supabase.auth.auth
 import java.lang.ref.WeakReference
 
 class MainActivity : FragmentActivity() {
