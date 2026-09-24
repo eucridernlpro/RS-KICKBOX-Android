@@ -427,7 +427,10 @@ fun RsFloatingGlassChatHubV125(
                             store=store,
                             modifier=Modifier.weight(1f),
                             compact=compactHeader,
-                            subtitle="RS CHAT · PRIVATE · GROUPS · COMMUNITY · SUPPORT · AI"
+                            subtitle=if(compactHeader)
+                                "RS CHAT · PRIVATE · GROUPS · AI"
+                            else
+                                "RS CHAT · PRIVATE · GROUPS · COMMUNITY · SUPPORT · AI"
                         )
                         RsNotificationBellV156(
                             c=c,
