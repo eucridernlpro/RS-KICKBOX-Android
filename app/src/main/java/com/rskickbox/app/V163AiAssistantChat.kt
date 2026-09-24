@@ -497,8 +497,8 @@ fun RsAiAssistantChatV163(
         if(namedTrackRequest!=null){
             val reply=rsPlayMusicTrackV169(musicController,namedTrackRequest)
                 .fold(
-                    onSuccess={"Playing "+namedTrackRequest.name+"."},
-                    onFailure={it.message?:"I couldn't start that track."}
+                    onSuccess={rsAiActionV184(aiLang,"playing",namedTrackRequest.name)},
+                    onFailure={rsAiActionV184(aiLang,"play_failed")}
                 )
             messages=(messages+RsAiChatMessageV163(
                 id=System.currentTimeMillis()+1,
@@ -513,13 +513,15 @@ fun RsAiAssistantChatV163(
 
         val platformIntent=if(kind==null)rsAiPlatformIntentV171(body) else RsAiPlatformIntentV171.None
         if(platformIntent !is RsAiPlatformIntentV171.None){
+            var replyLanguageOverride:RsLang?=null
+            var replyAvatarOverride:String?=null
             val reply=when(platformIntent){
                 is RsAiPlatformIntentV171.ChangeLanguage->{
                     val target=languages.firstOrNull{it.code==platformIntent.code}
                     if(target!=null){
                         aiLang=target.code
                         store.ps("ai_voice_language_v161",target.code)
-                        store.ps("ai_reply_voice_lang_override_v182",target.code)
+                        replyLanguageOverride=target
                         when(target.code){
                             "nl"->"Natuurlijk. Ik spreek nu Nederlands."
                             "pt"->"Claro. Agora vou falar em português."
@@ -531,56 +533,57 @@ fun RsAiAssistantChatV163(
                             "tr"->"Elbette. Artık Türkçe konuşacağım."
                             else->"Of course. I’ll speak English now."
                         }
-                    }else "I couldn’t switch to that language."
+                    }else rsAiActionV184(aiLang,"switch_failed")
                 }
                 is RsAiPlatformIntentV171.ChangeAvatar->{
                     avatar=platformIntent.avatar
                     store.ps("ai_avatar_gender_v161",platformIntent.avatar)
-                    if(platformIntent.avatar=="MALE")"Marcus is active now. I’m ready."
-                    else "Sofia is active now. I’m ready."
+                    replyAvatarOverride=platformIntent.avatar
+                    if(platformIntent.avatar=="MALE")rsAiActionV184(aiLang,"marcus_active")
+                    else rsAiActionV184(aiLang,"sofia_active")
                 }
                 is RsAiPlatformIntentV171.UploadMusic->{
                     musicPicker.launch(arrayOf("audio/*"))
-                    "I’m opening your music files. Choose the track you want and I’ll handle the rest."
+                    rsAiActionV184(aiLang,"music_picker")
                 }
                 is RsAiPlatformIntentV171.PlayMusic->{
                     val named=rsFindMusicTrackV171(store,body)
                     if(named!=null){
                         rsPlayMusicTrackV169(musicController,named)
-                        "Playing "+named.name+"."
+                        rsAiActionV184(aiLang,"playing",named.name)
                     }else{
                         val first=rsAllMusicTracksV171(store).firstOrNull()
                         if(first!=null){
                             rsPlayMusicTrackV169(musicController,first)
-                            "Playing "+first.name+"."
-                        }else "Your RS Music library is empty. Say “upload music” and I’ll open your music files."
+                            rsAiActionV184(aiLang,"playing",first.name)
+                        }else rsAiActionV184(aiLang,"library_empty")
                     }
                 }
                 is RsAiPlatformIntentV171.PauseMusic->{
                     runCatching{musicController?.pause()}
-                    "Music paused."
+                    rsAiActionV184(aiLang,"music_paused")
                 }
                 is RsAiPlatformIntentV171.StopMusic->{
                     runCatching{musicController?.stop()}
-                    "Music stopped."
+                    rsAiActionV184(aiLang,"music_stopped")
                 }
                 is RsAiPlatformIntentV171.NextMusic->{
                     runCatching{musicController?.seekToNextMediaItem();musicController?.play()}
-                    "Playing the next track."
+                    rsAiActionV184(aiLang,"next_track")
                 }
                 is RsAiPlatformIntentV171.PreviousMusic->{
                     runCatching{musicController?.seekToPreviousMediaItem();musicController?.play()}
-                    "Going back to the previous track."
+                    rsAiActionV184(aiLang,"previous_track")
                 }
                 is RsAiPlatformIntentV171.OpenRoute->{
                     scope.launch{
                         kotlinx.coroutines.delay(250)
                         onNavigate(platformIntent.route)
                     }
-                    "Opening "+platformIntent.label+"."
+                    rsAiActionV184(aiLang,"opening",platformIntent.label)
                 }
                 is RsAiPlatformIntentV171.Help->{
-                    "I can navigate through RS KICKBOXING, open pages, control or upload music, switch Sofia or Marcus, change my spoken language, help with settings and app features, and coach your kickboxing training. Tell me naturally what you want me to do."
+                    rsAiActionV184(aiLang,"help")
                 }
                 RsAiPlatformIntentV171.None->""
             }
@@ -591,7 +594,9 @@ fun RsAiAssistantChatV163(
             )).takeLast(100)
             busy=false
             status=""
-            if(autoSpeak && reply.isNotBlank())speak(reply) else if(voiceConversationActive)resumeListeningSignal++
+            if(autoSpeak && reply.isNotBlank()){
+                speak(reply,replyLanguageOverride,replyAvatarOverride)
+            }else if(voiceConversationActive)resumeListeningSignal++
             return
         }
 
