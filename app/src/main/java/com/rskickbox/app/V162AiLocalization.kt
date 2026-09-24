@@ -212,3 +212,49 @@ fun rsAiExtraV163(code:String,key:String):String{
     val pack=when(code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
     return pack[key]?:en[key]?:key
 }
+
+
+fun rsAiActionV184(code:String,key:String,value:String=""):String{
+    fun v(template:String)=template.replace("{value}",value)
+    val en=mapOf(
+        "playing" to "Playing {value}.",
+        "play_failed" to "I couldn't start that track.",
+        "library_empty" to "Your RS Music library is empty. Say “upload music” and I’ll open your music files.",
+        "music_paused" to "Music paused.",
+        "music_stopped" to "Music stopped.",
+        "next_track" to "Playing the next track.",
+        "previous_track" to "Going back to the previous track.",
+        "opening" to "Opening {value}.",
+        "marcus_active" to "Marcus is active now. I’m ready.",
+        "sofia_active" to "Sofia is active now. I’m ready.",
+        "music_picker" to "I’m opening your music files. Choose the track you want and I’ll handle the rest.",
+        "help" to "I can navigate RS KICKBOXING, control music, open pages, switch Sofia or Marcus, change language, help with app features and settings, and coach your kickboxing training. Tell me naturally what you want me to do.",
+        "switch_failed" to "I couldn’t switch to that language."
+    )
+    val nl=en+mapOf(
+        "playing" to "Ik speel {value}.","play_failed" to "Ik kon dat nummer niet starten.","library_empty" to "Je RS Music-bibliotheek is leeg. Zeg ‘muziek uploaden’ en ik open je muziekbestanden.","music_paused" to "Muziek gepauzeerd.","music_stopped" to "Muziek gestopt.","next_track" to "Ik speel het volgende nummer.","previous_track" to "Ik ga terug naar het vorige nummer.","opening" to "Ik open {value}.","marcus_active" to "Marcus is nu actief. Ik ben klaar.","sofia_active" to "Sofia is nu actief. Ik ben klaar.","music_picker" to "Ik open je muziekbestanden. Kies het nummer en ik regel de rest.","help" to "Ik kan door RS KICKBOXING navigeren, muziek bedienen, pagina’s openen, Sofia of Marcus kiezen, van taal wisselen, appfuncties en instellingen bedienen en je kickbokstraining coachen. Zeg gewoon wat je wilt doen.","switch_failed" to "Ik kon niet naar die taal wisselen."
+    )
+    val pt=en+mapOf(
+        "playing" to "A reproduzir {value}.","play_failed" to "Não consegui iniciar essa música.","library_empty" to "A tua biblioteca RS Music está vazia. Diz ‘carregar música’ e eu abro os teus ficheiros.","music_paused" to "Música em pausa.","music_stopped" to "Música parada.","next_track" to "A reproduzir a próxima música.","previous_track" to "Vou voltar à música anterior.","opening" to "Vou abrir {value}.","marcus_active" to "O Marcus está ativo. Estou pronto.","sofia_active" to "A Sofia está ativa. Estou pronta.","music_picker" to "Vou abrir os teus ficheiros de música. Escolhe a música e eu trato do resto.","help" to "Posso navegar por todo o RS KICKBOXING, controlar música, abrir páginas, alternar entre Sofia e Marcus, mudar o idioma, controlar funcionalidades e definições da app e ajudar no treino de kickboxing. Diz naturalmente o que queres fazer.","switch_failed" to "Não consegui mudar para esse idioma."
+    )
+    val es=en+mapOf(
+        "playing" to "Reproduciendo {value}.","play_failed" to "No pude iniciar esa canción.","library_empty" to "Tu biblioteca RS Music está vacía. Di ‘subir música’ y abriré tus archivos.","music_paused" to "Música en pausa.","music_stopped" to "Música detenida.","next_track" to "Reproduciendo la siguiente canción.","previous_track" to "Volviendo a la canción anterior.","opening" to "Abriendo {value}.","marcus_active" to "Marcus está activo. Estoy listo.","sofia_active" to "Sofia está activa. Estoy lista.","music_picker" to "Abriré tus archivos de música. Elige la canción y yo me encargo del resto.","help" to "Puedo navegar por RS KICKBOXING, controlar música, abrir páginas, cambiar entre Sofia y Marcus, cambiar el idioma, controlar funciones y ajustes y ayudarte con tu entrenamiento. Dime de forma natural qué quieres hacer.","switch_failed" to "No pude cambiar a ese idioma."
+    )
+    val fr=en+mapOf(
+        "playing" to "Lecture de {value}.","play_failed" to "Je n’ai pas pu lancer ce morceau.","library_empty" to "Ta bibliothèque RS Music est vide. Dis ‘importe de la musique’ et j’ouvre tes fichiers.","music_paused" to "Musique en pause.","music_stopped" to "Musique arrêtée.","next_track" to "Lecture du morceau suivant.","previous_track" to "Retour au morceau précédent.","opening" to "J’ouvre {value}.","marcus_active" to "Marcus est maintenant actif. Je suis prêt.","sofia_active" to "Sofia est maintenant active. Je suis prête.","music_picker" to "J’ouvre tes fichiers musicaux. Choisis le morceau et je m’occupe du reste.","help" to "Je peux naviguer dans RS KICKBOXING, contrôler la musique, ouvrir des pages, changer Sofia ou Marcus, changer de langue, gérer des fonctions et réglages et t’aider avec ton entraînement. Dis-moi naturellement ce que tu veux faire.","switch_failed" to "Je n’ai pas pu changer vers cette langue."
+    )
+    val de=en+mapOf(
+        "playing" to "{value} wird abgespielt.","play_failed" to "Ich konnte diesen Titel nicht starten.","library_empty" to "Deine RS Music-Bibliothek ist leer. Sag ‘Musik hochladen’, dann öffne ich deine Dateien.","music_paused" to "Musik pausiert.","music_stopped" to "Musik gestoppt.","next_track" to "Der nächste Titel wird abgespielt.","previous_track" to "Zurück zum vorherigen Titel.","opening" to "Ich öffne {value}.","marcus_active" to "Marcus ist jetzt aktiv. Ich bin bereit.","sofia_active" to "Sofia ist jetzt aktiv. Ich bin bereit.","music_picker" to "Ich öffne deine Musikdateien. Wähle einen Titel, den Rest erledige ich.","help" to "Ich kann durch RS KICKBOXING navigieren, Musik steuern, Seiten öffnen, Sofia oder Marcus wechseln, die Sprache ändern, Funktionen und Einstellungen bedienen und dein Kickboxtraining unterstützen. Sag einfach, was du tun möchtest.","switch_failed" to "Ich konnte nicht zu dieser Sprache wechseln."
+    )
+    val it=en+mapOf(
+        "playing" to "Riproduco {value}.","play_failed" to "Non sono riuscito ad avviare quel brano.","library_empty" to "La libreria RS Music è vuota. Di ‘carica musica’ e aprirò i tuoi file.","music_paused" to "Musica in pausa.","music_stopped" to "Musica fermata.","next_track" to "Riproduco il brano successivo.","previous_track" to "Torno al brano precedente.","opening" to "Apro {value}.","marcus_active" to "Marcus è attivo. Sono pronto.","sofia_active" to "Sofia è attiva. Sono pronta.","music_picker" to "Apro i tuoi file musicali. Scegli il brano e mi occupo del resto.","help" to "Posso navigare in RS KICKBOXING, controllare la musica, aprire pagine, cambiare Sofia o Marcus, cambiare lingua, gestire funzioni e impostazioni e aiutarti con l’allenamento. Dimmi naturalmente cosa vuoi fare.","switch_failed" to "Non sono riuscito a cambiare lingua."
+    )
+    val pl=en+mapOf(
+        "playing" to "Odtwarzam {value}.","play_failed" to "Nie udało mi się uruchomić tego utworu.","library_empty" to "Biblioteka RS Music jest pusta. Powiedz ‘dodaj muzykę’, a otworzę twoje pliki.","music_paused" to "Muzyka wstrzymana.","music_stopped" to "Muzyka zatrzymana.","next_track" to "Odtwarzam następny utwór.","previous_track" to "Wracam do poprzedniego utworu.","opening" to "Otwieram {value}.","marcus_active" to "Marcus jest teraz aktywny. Jestem gotowy.","sofia_active" to "Sofia jest teraz aktywna. Jestem gotowa.","music_picker" to "Otwieram twoje pliki muzyczne. Wybierz utwór, a zajmę się resztą.","help" to "Mogę poruszać się po RS KICKBOXING, sterować muzyką, otwierać strony, zmieniać Sofię i Marcusa, zmieniać język, obsługiwać funkcje i ustawienia oraz pomagać w treningu. Powiedz naturalnie, co chcesz zrobić.","switch_failed" to "Nie udało mi się przełączyć na ten język."
+    )
+    val tr=en+mapOf(
+        "playing" to "{value} çalıyor.","play_failed" to "Bu parçayı başlatamadım.","library_empty" to "RS Music kütüphanen boş. ‘Müzik yükle’ de, dosyalarını açayım.","music_paused" to "Müzik duraklatıldı.","music_stopped" to "Müzik durduruldu.","next_track" to "Sonraki parça çalıyor.","previous_track" to "Önceki parçaya dönüyorum.","opening" to "{value} açılıyor.","marcus_active" to "Marcus artık aktif. Hazırım.","sofia_active" to "Sofia artık aktif. Hazırım.","music_picker" to "Müzik dosyalarını açıyorum. Parçayı seç, gerisini ben hallederim.","help" to "RS KICKBOXING içinde gezinebilir, müziği kontrol edebilir, sayfaları açabilir, Sofia ve Marcus arasında geçiş yapabilir, dili değiştirebilir, özellikleri ve ayarları yönetebilir ve antrenmana yardımcı olabilirim. Ne yapmak istediğini doğal şekilde söyle.","switch_failed" to "Bu dile geçemedim."
+    )
+    val pack=when(code){"nl"->nl;"pt"->pt;"es"->es;"fr"->fr;"de"->de;"it"->it;"pl"->pl;"tr"->tr;else->en}
+    return v(pack[key]?:en[key]?:key)
+}
