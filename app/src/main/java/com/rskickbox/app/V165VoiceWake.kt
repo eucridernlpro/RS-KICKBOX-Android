@@ -386,17 +386,73 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         val available=runCatching{engine.isLanguageAvailable(requested)}.getOrDefault(TextToSpeech.LANG_NOT_SUPPORTED)
         val effective=if(available>=TextToSpeech.LANG_AVAILABLE)requested else Locale.ENGLISH
         engine.language=effective
-        val voice=engine.voices
-            ?.filter{it.locale.language.equals(effective.language,true)}
-            ?.sortedWith(compareByDescending<android.speech.tts.Voice>{!it.isNetworkConnectionRequired}.thenByDescending{it.quality})
-            ?.firstOrNull()
-        if(voice!=null)engine.voice=voice
+
+        val avatar=store.s("ai_avatar_gender_v161","FEMALE")
+        val wantsMale=avatar=="MALE"
+        engine.setSpeechRate(if(wantsMale).92f else .96f)
+        engine.setPitch(if(wantsMale).86f else 1.07f)
+
+        val overrideKey="ai_voice_override_v181_"+language().code+"_"+avatar.lowercase(Locale.ROOT)
+        val overrideName=store.s(overrideKey,"")
+        val overrideVoice=engine.voices?.firstOrNull{
+            it.name==overrideName &&
+            it.locale.language.equals(effective.language,true) &&
+            !it.features.contains("notInstalled")
+        }
+        if(overrideVoice!=null){
+            engine.voice=overrideVoice
+            return
+        }
+
+        val all=engine.voices
+            ?.filter{
+                it.locale.language.equals(effective.language,true) &&
+                !it.features.contains("notInstalled")
+            }
+            .orEmpty()
+        val exact=all.filter{
+            effective.country.isNotBlank() &&
+            it.locale.country.equals(effective.country,true)
+        }
+        val candidates=if(exact.isNotEmpty())exact else all
+
+        val maleHints=listOf(
+            "male","mascul","masc","man","m1","m2","david","daniel","thomas","george",
+            "hombre","homme","mann","uomo","homem","erkek"
+        )
+        val femaleHints=listOf(
+            "female","femin","fem","woman","f1","f2","samantha","victoria","karen","anna","susan",
+            "mujer","femme","frau","donna","mulher","kadin","kadın"
+        )
+        fun score(v:android.speech.tts.Voice):Int{
+            val n=v.name.lowercase(Locale.ROOT)
+            val male=maleHints.any{n.contains(it)}
+            val female=femaleHints.any{n.contains(it)}
+            var result=v.quality*4-v.latency
+            if(wantsMale){
+                if(male)result+=800
+                if(female)result-=900
+            }else{
+                if(female)result+=800
+                if(male)result-=900
+            }
+            if(v.locale==effective)result+=120
+            if(v.isNetworkConnectionRequired)result-=80 else result+=150
+            return result
+        }
+        val hinted=candidates.filter{v->
+            val n=v.name.lowercase(Locale.ROOT)
+            if(wantsMale)maleHints.any{n.contains(it)} else femaleHints.any{n.contains(it)}
+        }
+        val pool=if(hinted.isNotEmpty())hinted else candidates
+        pool.maxByOrNull{score(it)}?.let{engine.voice=it}
     }
 
     private fun speak(text:String,thenListen:Boolean=true){
         setWakeStatusV168("SPEAKING")
         recognizer?.cancel()
         applyLanguage()
+        runCatching{tts?.stop()}
         tts?.setOnUtteranceProgressListener(object:android.speech.tts.UtteranceProgressListener(){
             override fun onStart(utteranceId:String?){}
             override fun onDone(utteranceId:String?){
@@ -413,7 +469,14 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 }
             }
         })
-        tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,"rs-voice-wake")
+        val utteranceId="rs-voice-wake-"+language().code+"-"+store.s("ai_avatar_gender_v161","FEMALE")+"-"+System.nanoTime()
+        val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,utteranceId)
+        if(result==TextToSpeech.ERROR && thenListen){
+            scope.launch{
+                delay(350)
+                startListening()
+            }
+        }
     }
 
     private fun createRecognizer(){
