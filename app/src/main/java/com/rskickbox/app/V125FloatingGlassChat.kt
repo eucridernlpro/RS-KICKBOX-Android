@@ -605,11 +605,6 @@ fun RsFloatingGlassChatHubV125(
                                     )
                                 )
                             }
-                            RsTrainerCallControlV136(
-                                c=c,
-                                lang=lang,
-                                onRoomCreated={}
-                            )
                             if(presenceError){
                                 RsFloatingGlassPanelV125(c){
                                     Text("Presence will become available after the latest Supabase chat migration is installed.",color=c.muted,fontSize=10.sp)
