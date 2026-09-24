@@ -679,6 +679,7 @@ fun RsFloatingGlassChatHubV125(
         }
         RsChatSlideMenuV144(
             c=c,
+            store=store,
             role=role,
             onlineCount=contacts.count{it.online},
             visible=slideMenuOpen,
