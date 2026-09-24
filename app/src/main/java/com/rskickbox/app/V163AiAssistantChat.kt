@@ -145,6 +145,7 @@ fun RsAiAssistantChatV163(
     var speaking by remember{mutableStateOf(false)}
     var attachMenu by remember{mutableStateOf(false)}
     var optionsMenu by remember{mutableStateOf(false)}
+    var voiceProfileMenu by remember{mutableStateOf(false)}
     var trainerReferences by remember{mutableStateOf(false)}
     var autoSpeak by remember{mutableStateOf(store.b("ai_auto_speak_v163",true))}
     var avatarMotionEnabled by remember{mutableStateOf(store.b("ai_avatar_motion_v163",true))}
@@ -188,6 +189,25 @@ fun RsAiAssistantChatV163(
     var tts by remember{mutableStateOf<TextToSpeech?>(null)}
     var ttsReady by remember{mutableStateOf(false)}
     var activeUtteranceId by remember{mutableStateOf("")}
+    val voiceOverrideKey=remember(aiLang,avatar){
+        "ai_voice_override_v181_"+aiLang+"_"+avatar.lowercase(Locale.ROOT)
+    }
+    val voiceOverrideName=store.s(voiceOverrideKey,"")
+    val selectableVoices=remember(ttsReady,aiLang,avatar,tts){
+        val target=selectedLang.locale
+        val all=tts?.voices?.filter{it.locale.language.equals(target.language,true)}.orEmpty()
+        val exact=all.filter{
+            target.country.isNotBlank() && it.locale.country.equals(target.country,true)
+        }
+        (if(exact.isNotEmpty())exact else all)
+            .filterNot{it.features.contains("notInstalled")}
+            .sortedWith(
+                compareBy<android.speech.tts.Voice>{it.isNetworkConnectionRequired}
+                    .thenByDescending{it.quality}
+                    .thenBy{it.name}
+            )
+            .take(16)
+    }
     DisposableEffect(Unit){
         val engine=TextToSpeech(context){state->ttsReady=state==TextToSpeech.SUCCESS}
         engine.setOnUtteranceProgressListener(object:UtteranceProgressListener(){
@@ -251,6 +271,17 @@ fun RsAiAssistantChatV163(
             if(v.isNetworkConnectionRequired)score-=90 else score+=170
             if(v.features.contains("notInstalled"))score-=1000
             return score
+        }
+
+        val overrideName=store.s(voiceOverrideKey,"")
+        val overrideVoice=engine.voices?.firstOrNull{
+            it.name==overrideName &&
+            it.locale.language.equals(effective.language,true) &&
+            !it.features.contains("notInstalled")
+        }
+        if(overrideVoice!=null){
+            engine.voice=overrideVoice
+            return
         }
 
         val languageCandidates=engine.voices
@@ -1063,6 +1094,80 @@ fun RsAiAssistantChatV163(
                             sensorParallaxEnabled=it
                             store.pb("ai_sensor_parallax_v180",it)
                         })
+                    }
+                    Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(5.dp)){
+                        Text(rsAiExtraV163(aiLang,"voice_profile"),color=c.text,fontSize=10.sp)
+                        Text(rsAiExtraV163(aiLang,"voice_profile_sub"),color=c.muted,fontSize=8.sp)
+                        Box{
+                            OutlinedButton(
+                                onClick={voiceProfileMenu=true},
+                                modifier=Modifier.fillMaxWidth()
+                            ){
+                                Text(
+                                    if(voiceOverrideName.isBlank())rsAiExtraV163(aiLang,"voice_auto")
+                                    else voiceOverrideName.take(42),
+                                    maxLines=1,
+                                    fontSize=8.sp
+                                )
+                            }
+                            DropdownMenu(
+                                expanded=voiceProfileMenu,
+                                onDismissRequest={voiceProfileMenu=false}
+                            ){
+                                DropdownMenuItem(
+                                    text={Text(rsAiExtraV163(aiLang,"voice_auto"),fontSize=9.sp)},
+                                    onClick={
+                                        voiceProfileMenu=false
+                                        store.ps(voiceOverrideKey,"")
+                                        runCatching{tts?.stop()}
+                                        speaking=false
+                                        applySelectedVoice()
+                                        status=rsAiExtraV163(aiLang,"voice_selected")
+                                    }
+                                )
+                                selectableVoices.forEach{voice->
+                                    DropdownMenuItem(
+                                        text={
+                                            Column{
+                                                Text(voice.name,fontSize=8.sp,maxLines=1)
+                                                Text(
+                                                    voice.locale.toLanguageTag()+
+                                                        if(voice.isNetworkConnectionRequired)" · network" else " · local",
+                                                    fontSize=7.sp,
+                                                    color=c.muted
+                                                )
+                                            }
+                                        },
+                                        onClick={
+                                            voiceProfileMenu=false
+                                            store.ps(voiceOverrideKey,voice.name)
+                                            runCatching{tts?.stop()}
+                                            speaking=false
+                                            applySelectedVoice()
+                                            status=rsAiExtraV163(aiLang,"voice_selected")
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        OutlinedButton(
+                            onClick={
+                                val sample=when(aiLang){
+                                    "nl"->"Dit is mijn geselecteerde Nederlandse stem."
+                                    "pt"->"Esta é a minha voz portuguesa selecionada."
+                                    "es"->"Esta es mi voz seleccionada."
+                                    "fr"->"Voici ma voix sélectionnée."
+                                    "de"->"Das ist meine ausgewählte Stimme."
+                                    "it"->"Questa è la mia voce selezionata."
+                                    "pl"->"To jest mój wybrany głos."
+                                    "tr"->"Bu benim seçili sesim."
+                                    else->"This is my selected voice."
+                                }
+                                speak(sample)
+                            },
+                            enabled=ttsReady,
+                            modifier=Modifier.fillMaxWidth()
+                        ){Text(rsAiExtraV163(aiLang,"test_voice"),fontSize=8.sp)}
                     }
                     Text(rsAiExtraV163(aiLang,"render"),color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black)
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
