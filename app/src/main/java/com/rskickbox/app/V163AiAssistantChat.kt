@@ -1448,7 +1448,21 @@ private fun RsAiAvatarStageV163(
                 AssistChip(
                     onClick={},
                     enabled=false,
-                    label={Text(if(renderMode=="CINEMATIC_3D")"3D VIRTUAL ASSISTANT" else "AI ASSISTANT",fontSize=7.sp,fontWeight=FontWeight.Black)}
+                    label={Text(
+                        when(language.code){
+                            "nl"->if(renderMode=="CINEMATIC_3D")"3D VIRTUELE ASSISTENT" else "AI-ASSISTENT"
+                            "pt"->if(renderMode=="CINEMATIC_3D")"ASSISTENTE VIRTUAL 3D" else "ASSISTENTE IA"
+                            "es"->if(renderMode=="CINEMATIC_3D")"ASISTENTE VIRTUAL 3D" else "ASISTENTE IA"
+                            "fr"->if(renderMode=="CINEMATIC_3D")"ASSISTANT VIRTUEL 3D" else "ASSISTANT IA"
+                            "de"->if(renderMode=="CINEMATIC_3D")"3D VIRTUELLER ASSISTENT" else "KI-ASSISTENT"
+                            "it"->if(renderMode=="CINEMATIC_3D")"ASSISTENTE VIRTUALE 3D" else "ASSISTENTE IA"
+                            "pl"->if(renderMode=="CINEMATIC_3D")"WIRTUALNY ASYSTENT 3D" else "ASYSTENT AI"
+                            "tr"->if(renderMode=="CINEMATIC_3D")"3D SANAL ASİSTAN" else "YZ ASİSTANI"
+                            else->if(renderMode=="CINEMATIC_3D")"3D VIRTUAL ASSISTANT" else "AI ASSISTANT"
+                        },
+                        fontSize=7.sp,
+                        fontWeight=FontWeight.Black
+                    )}
                 )
                 Spacer(Modifier.weight(1f))
                 AssistChip(
@@ -1466,14 +1480,30 @@ private fun RsAiAvatarStageV163(
                         if(avatar=="FEMALE")"SOFIA" else "MARCUS",
                         color=Color.White,fontWeight=FontWeight.Black,fontSize=21.sp,letterSpacing=1.sp
                     )
-                    val assistantState=when{
-                        speaking->"SPEAKING"
-                        thinking->"THINKING"
-                        listening->"LISTENING"
-                        else->"READY"
+                    val assistantState=when(language.code){
+                        "nl"->when{speaking->"SPREKEN";thinking->"DENKEN";listening->"LUISTEREN";else->"KLAAR"}
+                        "pt"->when{speaking->"A FALAR";thinking->"A PENSAR";listening->"A OUVIR";else->"PRONTO"}
+                        "es"->when{speaking->"HABLANDO";thinking->"PENSANDO";listening->"ESCUCHANDO";else->"LISTO"}
+                        "fr"->when{speaking->"PARLE";thinking->"RÉFLÉCHIT";listening->"ÉCOUTE";else->"PRÊT"}
+                        "de"->when{speaking->"SPRICHT";thinking->"DENKT";listening->"HÖRT ZU";else->"BEREIT"}
+                        "it"->when{speaking->"PARLA";thinking->"PENSA";listening->"ASCOLTA";else->"PRONTO"}
+                        "pl"->when{speaking->"MÓWI";thinking->"MYŚLI";listening->"SŁUCHA";else->"GOTOWY"}
+                        "tr"->when{speaking->"KONUŞUYOR";thinking->"DÜŞÜNÜYOR";listening->"DİNLİYOR";else->"HAZIR"}
+                        else->when{speaking->"SPEAKING";thinking->"THINKING";listening->"LISTENING";else->"READY"}
+                    }
+                    val stageMode=when(language.code){
+                        "nl"->if(renderMode=="CINEMATIC_3D")"CINEMATISCHE 3D BETA" else "AI-ASSISTENT"
+                        "pt"->if(renderMode=="CINEMATIC_3D")"3D CINEMÁTICO BETA" else "ASSISTENTE IA"
+                        "es"->if(renderMode=="CINEMATIC_3D")"3D CINEMÁTICO BETA" else "ASISTENTE IA"
+                        "fr"->if(renderMode=="CINEMATIC_3D")"3D CINÉMATIQUE BÊTA" else "ASSISTANT IA"
+                        "de"->if(renderMode=="CINEMATIC_3D")"KINEMATISCHE 3D-BETA" else "KI-ASSISTENT"
+                        "it"->if(renderMode=="CINEMATIC_3D")"3D CINEMATICO BETA" else "ASSISTENTE IA"
+                        "pl"->if(renderMode=="CINEMATIC_3D")"KINOWE 3D BETA" else "ASYSTENT AI"
+                        "tr"->if(renderMode=="CINEMATIC_3D")"SİNEMATİK 3D BETA" else "YZ ASİSTANI"
+                        else->if(renderMode=="CINEMATIC_3D")"CINEMATIC 3D BETA" else "AI ASSISTANT"
                     }
                     Text(
-                        assistantState+" · "+if(renderMode=="CINEMATIC_3D")"REALISTIC 3D BETA" else "AI ASSISTANT",
+                        assistantState+" · "+stageMode,
                         color=when{
                             speaking->Color(0xFF58C9FF)
                             thinking->c.gold
