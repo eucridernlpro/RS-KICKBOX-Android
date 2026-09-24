@@ -309,6 +309,8 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private var controller:MediaController?=null
     private var wakeRecognitionFallback=false
     @Volatile private var serviceSpeaking=false
+    private var toneRestoreJob:Job?=null
+    private var systemToneMutedByRs=false
     private val store by lazy{RsStore(this)}
 
     private fun setWakeStatusV168(status:String){
@@ -357,6 +359,12 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         controller=null
         controllerFuture?.cancel(true)
         controllerFuture=null
+        toneRestoreJob?.cancel()
+        if(systemToneMutedByRs){
+            val audio=getSystemService(AudioManager::class.java)
+            runCatching{audio.adjustStreamVolume(AudioManager.STREAM_SYSTEM,AudioManager.ADJUST_UNMUTE,0)}
+            systemToneMutedByRs=false
+        }
         if(wakeLock?.isHeld==true)wakeLock?.release()
         wakeLock=null
         scope.cancel()
@@ -370,6 +378,24 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private fun language():RsLang{
         val code=store.s("ai_voice_language_v161",store.s("lang","en"))
         return rsLangs.firstOrNull{it.code==code}?:rsLangs.first()
+    }
+
+    private fun suppressRecognizerToneV185(){
+        if(!store.b("rs_voice_wake_silent_tones_v185",true))return
+        val audio=getSystemService(AudioManager::class.java)
+        val alreadyMuted=runCatching{audio.isStreamMute(AudioManager.STREAM_SYSTEM)}.getOrDefault(false)
+        if(!alreadyMuted && !systemToneMutedByRs){
+            runCatching{audio.adjustStreamVolume(AudioManager.STREAM_SYSTEM,AudioManager.ADJUST_MUTE,0)}
+            systemToneMutedByRs=true
+        }
+        toneRestoreJob?.cancel()
+        toneRestoreJob=scope.launch{
+            delay(850)
+            if(systemToneMutedByRs){
+                runCatching{audio.adjustStreamVolume(AudioManager.STREAM_SYSTEM,AudioManager.ADJUST_UNMUTE,0)}
+                systemToneMutedByRs=false
+            }
+        }
     }
 
     private fun defaultDashboardRouteV182():String=
@@ -504,6 +530,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private fun speak(text:String,thenListen:Boolean=true){
         serviceSpeaking=true
         setWakeStatusV168("SPEAKING")
+        suppressRecognizerToneV185()
         recognizer?.cancel()
         applyLanguage()
         runCatching{tts?.stop()}
@@ -653,6 +680,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,8000L)
         }
         setWakeStatusV168("READY")
+        suppressRecognizerToneV185()
         runCatching{recognizer?.startListening(intent)}
             .onFailure{
                 setWakeStatusV168("START_FAILED")
