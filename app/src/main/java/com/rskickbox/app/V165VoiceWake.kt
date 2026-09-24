@@ -314,6 +314,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private var controller:MediaController?=null
     private var wakeRecognitionFallback=false
     @Volatile private var serviceSpeaking=false
+    @Volatile private var serviceUtteranceId=""
     private var toneRestoreJob:Job?=null
     private var systemToneMutedByRs=false
     private var offlineWakeEngineV188:RsOfflineWakeEngineV188?=null
@@ -493,9 +494,15 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         val overrideKey="ai_voice_override_v181_"+language().code+"_"+avatar.lowercase(Locale.ROOT)
         val overrideName=store.s(overrideKey,"")
         val overrideVoice=engine.voices?.firstOrNull{
+            val n=it.name.lowercase(Locale.ROOT)
+            val opposite=if(wantsMale)
+                listOf("female","woman","femin","fem","f1","f2","samantha","victoria","karen","anna","susan","mujer","femme","frau","donna","mulher","kadin","kadın").any{hint->n.contains(hint)}
+            else
+                listOf("male","man","mascul","masc","m1","m2","david","daniel","thomas","george","hombre","homme","mann","uomo","homem","erkek").any{hint->n.contains(hint)}
             it.name==overrideName &&
             it.locale.language.equals(effective.language,true) &&
-            !it.features.contains("notInstalled")
+            !it.features.contains("notInstalled") &&
+            !opposite
         }
         if(overrideVoice!=null){
             engine.voice=overrideVoice
@@ -547,37 +554,46 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun speak(text:String,thenListen:Boolean=true){
+        if(text.isBlank())return
         serviceSpeaking=true
         setWakeStatusV168("SPEAKING")
         suppressRecognizerToneV185()
         recognizer?.cancel()
-        applyLanguage()
+        runCatching{offlineWakeEngineV188?.stop()}
+        offlineWakeEngineV188=null
         runCatching{tts?.stop()}
+        applyLanguage()
+        val utteranceId="rs-voice-wake-"+language().code+"-"+store.s("ai_avatar_gender_v161","FEMALE")+"-"+System.nanoTime()
+        serviceUtteranceId=utteranceId
         tts?.setOnUtteranceProgressListener(object:android.speech.tts.UtteranceProgressListener(){
-            override fun onStart(utteranceId:String?){}
-            override fun onDone(utteranceId:String?){
+            override fun onStart(id:String?){}
+            override fun onDone(id:String?){
+                if(id!=serviceUtteranceId)return
+                serviceUtteranceId=""
                 serviceSpeaking=false
                 if(thenListen)scope.launch{
-                    delay(320)
+                    delay(650)
                     startListening()
                 }
             }
             @Deprecated("Deprecated in Java")
-            override fun onError(utteranceId:String?){
+            override fun onError(id:String?){
+                if(id!=serviceUtteranceId)return
+                serviceUtteranceId=""
                 serviceSpeaking=false
                 if(thenListen)scope.launch{
-                    delay(320)
+                    delay(650)
                     startListening()
                 }
             }
         })
-        val utteranceId="rs-voice-wake-"+language().code+"-"+store.s("ai_avatar_gender_v161","FEMALE")+"-"+System.nanoTime()
         val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,utteranceId)
         if(result==TextToSpeech.ERROR){
+            serviceUtteranceId=""
             serviceSpeaking=false
             if(thenListen){
                 scope.launch{
-                    delay(350)
+                    delay(700)
                     startListening()
                 }
             }
