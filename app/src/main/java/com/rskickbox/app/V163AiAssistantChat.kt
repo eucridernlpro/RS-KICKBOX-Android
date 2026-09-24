@@ -1021,8 +1021,10 @@ fun RsAiAssistantChatV163(
         )
 
         Box(
-            Modifier.fillMaxSize()
-                .padding(start=8.dp,end=8.dp,top=82.dp,bottom=90.dp)
+            Modifier.fillMaxWidth()
+                .fillMaxHeight(.44f)
+                .align(Alignment.TopCenter)
+                .padding(start=10.dp,end=10.dp,top=72.dp)
         ){
             LazyColumn(
                 state=aiListState,
@@ -1070,12 +1072,21 @@ fun RsAiAssistantChatV163(
                                 1.dp,
                                 if(message.mine)c.gold.copy(alpha=.48f) else Color(0xFF58C9FF).copy(alpha=.48f)
                             ),
-                            modifier=if(message.mine)Modifier.fillMaxWidth(.86f) else Modifier.fillMaxWidth()
+                            modifier=if(message.mine)Modifier.fillMaxWidth(.72f) else Modifier.fillMaxWidth(.80f)
                         ){
                             Column(Modifier.padding(9.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
                                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                                     Text(
-                                        if(message.mine)"YOU" else if(avatar=="FEMALE")"SOFIA" else "MARCUS",
+                                        if(message.mine)when(aiLang){
+                                            "nl"->"JIJ"
+                                            "pt","es"->"TU"
+                                            "fr"->"TOI"
+                                            "de"->"DU"
+                                            "it"->"TU"
+                                            "pl"->"TY"
+                                            "tr"->"SEN"
+                                            else->"YOU"
+                                        } else if(avatar=="FEMALE")"SOFIA" else "MARCUS",
                                         color=if(message.mine)c.gold else Color(0xFF58C9FF),
                                         fontSize=7.sp,
                                         fontWeight=FontWeight.Black,
@@ -1142,7 +1153,22 @@ fun RsAiAssistantChatV163(
                                         modifier=Modifier.fillMaxWidth()
                                     ){
                                         Column(Modifier.padding(7.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
-                                            Text("TRAINER REFERENCE · "+ref.item.title,color=c.gold,fontWeight=FontWeight.Black,fontSize=8.sp)
+                                            Text(
+                                                when(aiLang){
+                                                    "nl"->"TRAINERREFERENTIE · "
+                                                    "pt"->"REFERÊNCIA DO TREINADOR · "
+                                                    "es"->"REFERENCIA DEL ENTRENADOR · "
+                                                    "fr"->"RÉFÉRENCE ENTRAÎNEUR · "
+                                                    "de"->"TRAINER-REFERENZ · "
+                                                    "it"->"RIFERIMENTO ALLENATORE · "
+                                                    "pl"->"REFERENCJA TRENERA · "
+                                                    "tr"->"ANTRENÖR REFERANSI · "
+                                                    else->"TRAINER REFERENCE · "
+                                                }+ref.item.title,
+                                                color=c.gold,
+                                                fontWeight=FontWeight.Black,
+                                                fontSize=8.sp
+                                            )
                                             if(ref.item.kind=="VIDEO")RsMiniLocalVideoV163(ref.localUri,Modifier.fillMaxWidth().height(105.dp))
                                             else RsUriPreviewV21(ref.localUri,Modifier.fillMaxWidth().height(105.dp),"CENTER")
                                             if(ref.item.description.isNotBlank())Text(ref.item.description,color=c.text,fontSize=9.sp,lineHeight=13.sp)
