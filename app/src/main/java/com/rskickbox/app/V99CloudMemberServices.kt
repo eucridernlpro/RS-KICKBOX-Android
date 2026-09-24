@@ -26,6 +26,9 @@ data class RsCloudSupportTicketV99(
     val subject:String,
     val message:String,
     @SerialName("trainer_reply") val trainerReply:String,
+    @SerialName("media_path") val mediaPath:String?=null,
+    @SerialName("media_kind") val mediaKind:String?=null,
+    @SerialName("media_name") val mediaName:String?=null,
     val status:String,
     @SerialName("created_at") val createdAt:String
 ){
