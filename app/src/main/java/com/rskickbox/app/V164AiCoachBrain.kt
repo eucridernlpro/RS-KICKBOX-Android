@@ -169,8 +169,14 @@ suspend fun rsOnlineAiCoachV164(
     val response=client.functions.invoke(
         function="ai-coach-chat",
         body=buildJsonObject{
-            put("question",question.take(1800))
+            put(
+                "question",
+                ("Reply only in "+lang.name+". Do not switch language unless the user explicitly asks to change it. "+
+                    "User message: "+question).take(1800)
+            )
             put("language",lang.name)
+            put("language_code",lang.code)
+            put("strict_language",true)
             put("references",referenceSummary.take(3500))
         }
     )
