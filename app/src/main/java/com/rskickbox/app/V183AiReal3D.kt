@@ -24,6 +24,7 @@ fun RsAiReal3DModelV183(
     avatar:String,
     speaking:Boolean,
     speechAmplitude:Float,
+    motionEnabled:Boolean,
     listening:Boolean,
     thinking:Boolean,
     sensorX:Float,
@@ -44,6 +45,7 @@ fun RsAiReal3DModelV183(
                 avatar=avatar,
                 speaking=speaking,
                 speechAmplitude=speechAmplitude,
+                motionEnabled=motionEnabled,
                 listening=listening,
                 thinking=thinking,
                 sensorX=sensorX,
@@ -68,6 +70,7 @@ private class RsAi3DViewV183(context:Context):GLSurfaceView(context){
         avatar:String,
         speaking:Boolean,
         speechAmplitude:Float,
+        motionEnabled:Boolean,
         listening:Boolean,
         thinking:Boolean,
         sensorX:Float,
@@ -76,6 +79,7 @@ private class RsAi3DViewV183(context:Context):GLSurfaceView(context){
         rsRenderer.avatar=avatar
         rsRenderer.speaking=speaking
         rsRenderer.speechAmplitude=speechAmplitude.coerceIn(0f,1f)
+        rsRenderer.motionEnabled=motionEnabled
         rsRenderer.listening=listening
         rsRenderer.thinking=thinking
         rsRenderer.sensorX=sensorX
@@ -93,6 +97,7 @@ private class RsAi3DRendererV183:GLSurfaceView.Renderer{
     @Volatile var avatar:String="FEMALE"
     @Volatile var speaking:Boolean=false
     @Volatile var speechAmplitude:Float=0f
+    @Volatile var motionEnabled:Boolean=true
     @Volatile var listening:Boolean=false
     @Volatile var thinking:Boolean=false
     @Volatile var sensorX:Float=0f
@@ -148,13 +153,14 @@ private class RsAi3DRendererV183:GLSurfaceView.Renderer{
         GLES20.glUseProgram(program)
 
         val t=SystemClock.uptimeMillis()/1000f
-        val breath=sin(t*1.55f)*.018f
+        val motionT=if(motionEnabled)t else 0f
+        val breath=if(motionEnabled)sin(t*1.55f)*.018f else 0f
         val talk=if(speaking){
             val fallback=.18f+(sin(t*11f)*.5f+.5f)*.22f
             maxOf(fallback,speechAmplitude).coerceIn(0f,1f)
         }else 0f
-        val idleYaw=sin(t*.42f)*1.8f
-        val eyeFocus=sin(t*.67f)*.014f
+        val idleYaw=if(motionEnabled)sin(t*.42f)*1.8f else 0f
+        val eyeFocus=if(motionEnabled)sin(t*.67f)*.014f else 0f
         val blinkWindow=t%4.8f
         val blink=when{
             blinkWindow<.10f->(blinkWindow/.10f).coerceIn(0f,1f)
@@ -204,8 +210,8 @@ private class RsAi3DRendererV183:GLSurfaceView.Renderer{
         val head=FloatArray(16)
         copy(root,head)
         Matrix.translateM(head,0,0f,1.04f,0f)
-        Matrix.rotateM(head,0,sin(t*.58f)*1.8f,0f,1f,0f)
-        Matrix.rotateM(head,0,sin(t*.37f)*.9f,1f,0f,0f)
+        Matrix.rotateM(head,0,if(motionEnabled)sin(t*.58f)*1.8f else 0f,0f,1f,0f)
+        Matrix.rotateM(head,0,if(motionEnabled)sin(t*.37f)*.9f else 0f,1f,0f,0f)
         drawMesh(sphere,head,if(female).275f else .29f,if(female).34f else .35f,.275f,skin)
 
         // Hair, ears, brows, eyes, nose and speech-reactive mouth.
@@ -242,12 +248,12 @@ private class RsAi3DRendererV183:GLSurfaceView.Renderer{
 
         // Shoulders and arms.
         val shoulderY=.58f
-        arm(root,-1f,shoulderY,female,suit,gold,t)
-        arm(root,1f,shoulderY,female,suit,gold,t)
+        arm(root,-1f,shoulderY,female,suit,gold,motionT)
+        arm(root,1f,shoulderY,female,suit,gold,motionT)
 
         // Legs.
-        leg(root,-1f,female,suit,gold,t)
-        leg(root,1f,female,suit,gold,t)
+        leg(root,-1f,female,suit,gold,motionT)
+        leg(root,1f,female,suit,gold,motionT)
 
         // Chest mark / live core.
         part(sphere,root,0f,.43f,.235f,.07f,.07f,.035f,neon)
