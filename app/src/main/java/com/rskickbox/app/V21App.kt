@@ -1214,6 +1214,7 @@ private fun ShellV21(
     val scope=rememberCoroutineScope()
     val context=LocalContext.current
     val shellLayout=rsThemeLayoutV175(rsStoredThemeV175(store))
+    val compactHeader=LocalConfiguration.current.screenWidthDp<380
     var pageSwipeX by remember{mutableFloatStateOf(0f)}
     var pageSwipeActive by remember{mutableStateOf(false)}
     var lastBackPressMs by remember{mutableLongStateOf(0L)}
@@ -1429,22 +1430,40 @@ private fun ShellV21(
             RsBrandedHeaderV21(c,store) {
                 Row(
                     Modifier.fillMaxWidth(),
-                    horizontalArrangement=Arrangement.spacedBy(7.dp),
+                    horizontalArrangement=Arrangement.spacedBy(if(compactHeader)4.dp else 7.dp),
                     verticalAlignment=Alignment.CenterVertically
                 ){
                     RsThemeHeaderMarkV176(
                         c=c,
                         store=store,
-                        modifier=Modifier.size(40.dp)
+                        modifier=Modifier.size(if(compactHeader)32.dp else 40.dp)
                     )
-                    RsLettersLogoV111(
-                        c=c,
-                        store=store,
-                        modifier=Modifier.weight(1f)
-                    )
+                    Row(
+                        modifier=Modifier.weight(1f).widthIn(min=104.dp),
+                        verticalAlignment=Alignment.CenterVertically,
+                        horizontalArrangement=Arrangement.spacedBy(if(compactHeader)3.dp else 5.dp)
+                    ){
+                        Text(
+                            "RS",
+                            color=c.bright,
+                            fontWeight=FontWeight.Black,
+                            fontSize=if(compactHeader)12.sp else 14.sp,
+                            maxLines=1
+                        )
+                        Text(
+                            "KICKBOXING",
+                            color=c.gold,
+                            fontWeight=FontWeight.Black,
+                            fontSize=if(compactHeader)10.sp else 13.sp,
+                            letterSpacing=if(compactHeader).4.sp else .8.sp,
+                            maxLines=1,
+                            softWrap=false,
+                            modifier=Modifier.weight(1f)
+                        )
+                    }
                     OutlinedButton(
                         onClick={scope.launch{drawerState.open()}},
-                        modifier=Modifier.size(36.dp),
+                        modifier=Modifier.size(if(compactHeader)32.dp else 36.dp),
                         shape=CircleShape,
                         contentPadding=PaddingValues(0.dp)
                     ){Text("☰",fontSize=13.sp)}
@@ -1464,7 +1483,7 @@ private fun ShellV21(
                             store.pb("ai_immersive_v171",true)
                             onRoute("voice")
                         },
-                        modifier=Modifier.size(38.dp),
+                        modifier=Modifier.size(if(compactHeader)33.dp else 38.dp),
                         shape=CircleShape,
                         border=BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.58f)),
                         contentPadding=PaddingValues(0.dp)
