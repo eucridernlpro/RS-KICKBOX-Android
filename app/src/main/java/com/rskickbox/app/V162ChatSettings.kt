@@ -487,6 +487,17 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                     RsAiDiagLineV191(c,"Assistant",if(diagAvatar=="MALE")"Marcus" else "Sofia")
                     RsAiDiagLineV191(c,"AI language",diagLang.uppercase())
                     RsAiDiagLineV191(c,"Voice profile",if(diagVoice.isBlank())"AUTO" else diagVoice.take(30))
+                    val diagPlan=store.s("session_plan",if(role==RsRole.TRAINER)"ELITE" else "BASIC").uppercase()
+                    RsAiDiagLineV191(c,"Membership AI tier",if(role==RsRole.TRAINER)"TRAINER · ELITE ENGINE" else diagPlan)
+                    RsAiDiagLineV191(
+                        c,
+                        "Premium cloud voice",
+                        when{
+                            !RsSupabaseV60.configured->"BACKEND OFFLINE · DEVICE TTS"
+                            rsUsePremiumCloudVoiceV192(store,role)->"ENABLED · DEVICE TTS FALLBACK"
+                            else->"BASIC · DEVICE TTS"
+                        }
+                    )
                     RsAiDiagLineV191(
                         c,
                         "Silent wake",
