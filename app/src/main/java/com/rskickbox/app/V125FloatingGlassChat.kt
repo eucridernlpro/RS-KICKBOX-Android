@@ -498,15 +498,27 @@ fun RsFloatingGlassChatHubV125(
                         ){Text("☰",color=c.bright,fontSize=12.sp,fontWeight=FontWeight.Black)}
 
                         if(tab==RsChatHubTabV125.PRIVATE){
-                            RsDirectCallControlsV133(
-                                c=c,
-                                lang=lang,
-                                role=role,
-                                peerId=privateStudentId.orEmpty(),
-                                peerName=selectedContact?.displayName.orEmpty(),
-                                peerEmail=selectedContact?.email.orEmpty(),
-                                compact=true
-                            )
+                            val privateCallsAllowed=
+                                role==RsRole.TRAINER ||
+                                rsChatPermissionV178(store,RsChatPermissionKeysV178.PRIVATE_CALLS,true)
+                            if(privateCallsAllowed){
+                                RsDirectCallControlsV133(
+                                    c=c,
+                                    lang=lang,
+                                    role=role,
+                                    peerId=privateStudentId.orEmpty(),
+                                    peerName=selectedContact?.displayName.orEmpty(),
+                                    peerEmail=selectedContact?.email.orEmpty(),
+                                    compact=true
+                                )
+                            }else{
+                                Text(
+                                    "CALLS OFF",
+                                    color=c.muted,
+                                    fontSize=7.sp,
+                                    fontWeight=FontWeight.Black
+                                )
+                            }
                         }
 
                         Spacer(Modifier.weight(1f))
