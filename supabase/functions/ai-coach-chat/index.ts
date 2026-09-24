@@ -1,7 +1,9 @@
 import { json, userClient } from "../_shared/rs.ts"
 
 const OPENAI_API_KEY=Deno.env.get("OPENAI_API_KEY") || ""
-const MODEL=Deno.env.get("RS_TECHNIQUE_AI_MODEL") || "gpt-5.6-luna"
+const MODEL_BASIC=Deno.env.get("RS_AI_MODEL_BASIC") || "gpt-5.6-luna"
+const MODEL_PRO=Deno.env.get("RS_AI_MODEL_PRO") || "gpt-5.6-terra"
+const MODEL_ELITE=Deno.env.get("RS_AI_MODEL_ELITE") || "gpt-5.6-sol"
 
 function outputText(payload:any):string{
   const out=Array.isArray(payload?.output)?payload.output:[]
@@ -23,7 +25,7 @@ Deno.serve(async(req)=>{
 
   const {data:profile,error:profileError}=await client
     .from("rs_profiles")
-    .select("role,active")
+    .select("role,active,plan")
     .eq("id",user.id)
     .single()
 
@@ -32,6 +34,14 @@ Deno.serve(async(req)=>{
   }
 
   if(!OPENAI_API_KEY)return json({error:"RS AI Coach is not configured yet"},503)
+
+  const plan=String(profile.plan||"BASIC").toUpperCase()
+  const staff=["trainer","admin"].includes(profile.role)
+  const model=staff ? MODEL_ELITE :
+    plan==="ELITE" ? MODEL_ELITE :
+    plan==="PRO" ? MODEL_PRO :
+    MODEL_BASIC
+  const dailyLimit=staff ? 300 : plan==="ELITE" ? 220 : plan==="PRO" ? 120 : 50
 
   const body=await req.json().catch(()=>({}))
   const question=String(body.question||"").trim().slice(0,1800)
@@ -42,7 +52,7 @@ Deno.serve(async(req)=>{
 
   const {error:quotaError}=await client.rpc("rs_consume_ai_quota",{
     p_feature:"ai_coach_chat",
-    p_limit:80
+    p_limit:dailyLimit
   })
   if(quotaError){
     const m=String(quotaError.message||"")
@@ -81,7 +91,7 @@ Deno.serve(async(req)=>{
         "content-type":"application/json"
       },
       body:JSON.stringify({
-        model:MODEL,
+        model,
         instructions,
         input:userText,
         max_output_tokens:700,
@@ -107,5 +117,5 @@ Deno.serve(async(req)=>{
   const answer=outputText(payload)
   if(!answer)return json({error:"RS AI Coach returned an empty answer"},502)
 
-  return json({answer,model:MODEL})
+  return json({answer,model,plan,daily_limit:dailyLimit})
 })
