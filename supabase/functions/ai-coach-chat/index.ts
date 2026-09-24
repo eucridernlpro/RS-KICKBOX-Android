@@ -1,9 +1,9 @@
 import { json, userClient } from "../_shared/rs.ts"
 
 const OPENAI_API_KEY=Deno.env.get("OPENAI_API_KEY") || ""
-const MODEL_BASIC=Deno.env.get("RS_AI_MODEL_BASIC") || "gpt-5.6-luna"
-const MODEL_PRO=Deno.env.get("RS_AI_MODEL_PRO") || "gpt-5.6-terra"
-const MODEL_ELITE=Deno.env.get("RS_AI_MODEL_ELITE") || "gpt-5.6-sol"
+const MODEL_BASIC=Deno.env.get("RS_AI_MODEL_BASIC") || "gpt-6-luna"
+const MODEL_PRO=Deno.env.get("RS_AI_MODEL_PRO") || "gpt-6-sol"
+const MODEL_ELITE=Deno.env.get("RS_AI_MODEL_ELITE") || "gpt-6-astra"
 
 function outputText(payload:any):string{
   const out=Array.isArray(payload?.output)?payload.output:[]
