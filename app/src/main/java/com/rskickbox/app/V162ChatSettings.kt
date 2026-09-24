@@ -11,6 +11,8 @@ import androidx.core.content.ContextCompat
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -90,10 +92,11 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
     }
 
     val settingsLayout=rsThemeLayoutV175(rsStoredThemeV175(store))
-    RsScroll(
-        c,
-        "RS CHAT SETTINGS",
-        "Calls · media · privacy · conversation controls"
+    Column(
+        Modifier.fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal=1.dp),
+        verticalArrangement=Arrangement.spacedBy(10.dp)
     ){
         Surface(
             color=Color.Black.copy(alpha=.78f),
