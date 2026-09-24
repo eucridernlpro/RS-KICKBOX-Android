@@ -161,6 +161,7 @@ fun rsT(lang:RsLang,key:String):String{
 private val routeTitlesV25=mapOf(
     "home" to listOf("RS Live Dashboard","RS Live Dashboard","Painel RS Live","Panel RS Live","Tableau RS Live","RS Live Dashboard","Dashboard RS Live","Panel RS Live","RS Live Paneli"),
     "trainer" to listOf("Trainer Dashboard","Trainer Dashboard","Painel do Treinador","Panel del Entrenador","Tableau Entraîneur","Trainer-Dashboard","Dashboard Allenatore","Panel Trenera","Antrenör Paneli"),
+    "owner_command" to listOf("Owner Command Center","Owner Command Center","Centro de Comando do Proprietário","Centro de Mando del Propietario","Centre de Commandement Propriétaire","Owner-Kommandozentrale","Centro Comando Proprietario","Centrum Dowodzenia Właściciela","Sahip Komuta Merkezi"),
     "guide" to listOf("App Guide","App Gids","Guia da App","Guía de la App","Guide de l’App","App-Anleitung","Guida App","Przewodnik po aplikacji","Uygulama Rehberi"),
     "student_guide" to listOf("Student App Guide","App Gids Leerling","Guia da App do Aluno","Guía App del Alumno","Guide App Élève","Schüler-App-Anleitung","Guida App Allievo","Przewodnik Aplikacji Ucznia","Öğrenci Uygulama Rehberi"),
     "voice" to listOf("AI Technique Coach","AI Techniekcoach","Coach Técnico IA","Coach Técnico IA","Coach Technique IA","KI-Technikcoach","Coach Tecnico IA","Trener Techniki AI","AI Teknik Koçu"),
@@ -227,6 +228,7 @@ private val routeTitlesV25=mapOf(
 )
 
 private val routeHintsV25=mapOf(
+    "owner_command" to listOf("Live club control · coaching · business","Live clubbeheer · coaching · bedrijf","Controlo do clube · coaching · negócio","Control del club · coaching · negocio","Contrôle du club · coaching · business","Clubsteuerung · Coaching · Business","Controllo club · coaching · business","Kontrola klubu · coaching · biznes","Kulüp kontrolü · koçluk · işletme"),
     "voice" to listOf("Ask · listen · improve","Vraag · luister · verbeter","Pergunta · ouve · melhora","Pregunta · escucha · mejora","Demande · écoute · progresse","Fragen · hören · verbessern","Chiedi · ascolta · migliora","Pytaj · słuchaj · poprawiaj","Sor · dinle · geliş"),
     "session" to listOf("Rounds · timer · cues","Rondes · timer · cues","Rondas · tempo · sinais","Rounds · tiempo · señales","Rounds · chrono · repères","Runden · Timer · Signale","Round · timer · segnali","Rundy · czas · komendy","Raund · süre · komutlar"),
     "academy" to listOf("Structured premium lessons","Premium lessen","Lições premium estruturadas","Lecciones premium","Cours premium structurés","Strukturierte Premium-Lektionen","Lezioni premium strutturate","Lekcje premium","Yapılandırılmış premium dersler"),
