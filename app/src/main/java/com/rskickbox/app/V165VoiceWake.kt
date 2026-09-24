@@ -213,6 +213,42 @@ private fun rsVoiceRouteV167(text:String):String?{
     return routes.firstOrNull{(_,aliases)->aliases.any{s.contains(it)}}?.first
 }
 
+private fun rsVoiceDynamicRouteV184(text:String,lang:RsLang):String?{
+    val s=text.lowercase(Locale.ROOT)
+    val hasNavigationVerb=listOf(
+        "open ","go to ","take me to ","show ","bring me to ","navigate ",
+        "ga naar ","toon ","breng me naar ",
+        "abre ","abrir ","leva-me ","leva me ","vai para ",
+        "ir a ","llévame ","llevame ","muestra ",
+        "ouvre ","va à ","emmène-moi ","emmene moi ",
+        "öffne ","gehe zu ","bring mich zu ",
+        "apri ","vai a ","portami a ",
+        "otwórz ","idź do ","idz do ","pokaż ",
+        "aç ","git ","götür ","goster ","göster "
+    ).any{s.contains(it)}
+    if(!hasNavigationVerb)return null
+
+    val routes=listOf(
+        "home","trainer","guide","student_guide","voice","session","academy","techniques","home_training",
+        "classes","events","coachchat","community","groups","private_lessons","progress","challenges","badges",
+        "fightcamp","compare","vault","homework","music","finance","promotions","book","profile","settings",
+        "themes","backgrounds","branding","intro_settings","members","access","payments","invoices","analytics",
+        "notifications","checkin","support","release","privacy_admin","landing_admin","content","homework_admin",
+        "session_builder","music_admin","notes","plans_admin","progress_admin","assessments","challenge_admin",
+        "fightcamp_admin","attendance","events_admin","schedule","documents","referrals"
+    )
+    return routes.mapNotNull{route->
+        val title=rsRouteTitle(lang,route,route.replace('_',' '))
+            .lowercase(Locale.ROOT)
+            .replace("&"," ")
+            .replace("·"," ")
+        val tokens=title.split(Regex("[^\\p{L}\\p{N}]+"))
+            .filter{it.length>=3 && it !in setOf("the","and","van","voor","del","des","der","die","das")}
+        val score=tokens.count{s.contains(it)}
+        if(score>0)Triple(route,score,tokens.sumOf{it.length}) else null
+    }.maxWithOrNull(compareBy<Triple<String,Int,Int>>{it.second}.thenBy{it.third})?.first
+}
+
 private fun rsTrackMapV165(store:RsStore):Map<String,String> =
     store.s("local_music_tracks","")
         .split("§")
@@ -873,6 +909,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         }
 
         val requestedRoute=rsVoiceRouteV167(commandText)
+            ?:rsVoiceDynamicRouteV184(commandText,language())
         if(requestedRoute!=null){
             val resolvedRoute=roleAwareRouteV182(requestedRoute)
             requestRouteOpenV182(resolvedRoute)
@@ -1062,8 +1099,18 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             RsVoiceMusicCommandV165.UNKNOWN->{
                 scope.launch{
                     val lang=language()
+                    val role=if(store.s("session_role","")=="trainer")RsRole.TRAINER else RsRole.STUDENT
+                    val currentRoute=store.s("session_last_route",defaultDashboardRouteV182())
+                    val currentTitle=rsRouteTitle(
+                        lang,currentRoute,currentRoute.replace('_',' ').replaceFirstChar{it.uppercase()}
+                    )
+                    val contextSummary=(
+                        "CURRENT RS ROLE: "+role.name+
+                        "\nCURRENT RS PAGE: "+currentRoute+" | "+currentTitle+
+                        "\n\nRS APP FEATURES:\n"+rsAiAppKnowledgeSummaryV175(lang,role).take(3000)
+                    )
                     val local=rsAiLocalCoachAnswerV164(lang.code,commandText)
-                    val answer=rsOnlineAiCoachV164(commandText,lang,"")
+                    val answer=rsOnlineAiCoachV164(commandText,lang,contextSummary)
                         .getOrElse{local}
                     speak(answer)
                 }
