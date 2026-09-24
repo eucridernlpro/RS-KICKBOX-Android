@@ -1227,7 +1227,7 @@ private fun ShellV21(
     var pageSwipeActive by remember{mutableStateOf(false)}
     var lastBackPressMs by remember{mutableLongStateOf(0L)}
     val chatFullScreen=route in setOf(
-        "coachchat","groups","voice","media","community","support","notifications","content"
+        "coachchat","groups","media","community","support","notifications","content"
     )
 
     BackHandler {
@@ -1512,7 +1512,7 @@ private fun ShellV21(
                         }
                     )
                 }
-                .padding(9.dp),
+                .padding(if(route=="voice")4.dp else 9.dp),
             verticalArrangement=Arrangement.spacedBy(7.dp)
         ) {
             RsBrandedHeaderV21(c,store) {
@@ -1561,7 +1561,7 @@ private fun ShellV21(
                     }
                 }
             }
-            if(route!="music" && route!="music_admin"){
+            if(route!="music" && route!="music_admin" && route!="voice"){
                 RsMiniMusicPlayerV90(c,lang){onRoute(if(role==RsRole.TRAINER)"music_admin" else "music")}
             }
             if(route!=home && route !in setOf("voice","coachchat","groups","community","support","notifications","content")){
