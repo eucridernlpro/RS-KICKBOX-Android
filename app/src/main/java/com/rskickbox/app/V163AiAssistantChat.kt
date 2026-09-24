@@ -1451,7 +1451,7 @@ private fun RsAiAvatarStageV163(
                 }
                 override fun onAccuracyChanged(sensor:Sensor?,accuracy:Int){}
             }
-            if(sensor!=null)manager.registerListener(listener,sensor,SensorManager.SENSOR_DELAY_GAME)
+            if(sensor!=null)manager?.registerListener(listener,sensor,SensorManager.SENSOR_DELAY_GAME)
             onDispose{
                 runCatching{manager?.unregisterListener(listener)}
                 sensorX=0f
