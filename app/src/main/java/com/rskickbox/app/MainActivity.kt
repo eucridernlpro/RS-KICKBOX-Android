@@ -27,6 +27,18 @@ class MainActivity : FragmentActivity() {
             return true
         }
 
+        fun closeTaskFromVoice():Boolean{
+            val activity=activeActivity?.get()?:return false
+            activity.runOnUiThread{activity.finishAndRemoveTask()}
+            return true
+        }
+
+        fun recreateFromVoice():Boolean{
+            val activity=activeActivity?.get()?:return false
+            activity.runOnUiThread{activity.recreate()}
+            return true
+        }
+
         fun bringTaskToFrontFromVoice():Boolean{
             val activity=activeActivity?.get()?:return false
             return runCatching{
@@ -136,12 +148,10 @@ class MainActivity : FragmentActivity() {
 
                 override fun onAuthenticationError(errorCode:Int,errString:CharSequence){
                     super.onAuthenticationError(errorCode,errString)
-                    if(appRendered){
-                        setIntent(sourceIntent)
-                        recreate()
-                    }else{
-                        renderApp(sourceIntent,savedInstanceState)
-                    }
+                    // Never bypass a protected wake request when biometric/device
+                    // credential authentication is cancelled or fails.
+                    appRendered=false
+                    finish()
                 }
             }
         )
