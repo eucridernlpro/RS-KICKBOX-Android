@@ -298,16 +298,6 @@ fun RsFloatingGlassChatHubV125(
                     onNavigate(target)
                 }
             )
-            OutlinedButton(
-                onClick={
-                    store.pb("ai_immersive_v171",false)
-                    aiImmersive=false
-                    tab=RsChatHubTabV125.ALL
-                },
-                modifier=Modifier.align(Alignment.TopStart).padding(start=10.dp,top=64.dp).size(36.dp),
-                shape=CircleShape,
-                contentPadding=PaddingValues(0.dp)
-            ){Text("‹",fontSize=20.sp)}
         }
         return
     }
