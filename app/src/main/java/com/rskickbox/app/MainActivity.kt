@@ -126,12 +126,22 @@ class MainActivity : FragmentActivity() {
                         store.ps("session_password_auth_ms",now.toString())
                         store.ps("session_last_activity_ms",now.toString())
                     }
-                    renderApp(sourceIntent,savedInstanceState)
+                    if(appRendered){
+                        setIntent(sourceIntent)
+                        recreate()
+                    }else{
+                        renderApp(sourceIntent,savedInstanceState)
+                    }
                 }
 
                 override fun onAuthenticationError(errorCode:Int,errString:CharSequence){
                     super.onAuthenticationError(errorCode,errString)
-                    renderApp(sourceIntent,savedInstanceState)
+                    if(appRendered){
+                        setIntent(sourceIntent)
+                        recreate()
+                    }else{
+                        renderApp(sourceIntent,savedInstanceState)
+                    }
                 }
             }
         )
