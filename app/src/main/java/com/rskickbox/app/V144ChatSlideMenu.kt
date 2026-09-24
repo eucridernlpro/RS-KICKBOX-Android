@@ -27,6 +27,7 @@ import androidx.compose.ui.zIndex
 @Composable
 fun RsChatSlideMenuV144(
     c:RsPalette,
+    store:RsStore,
     role:RsRole,
     onlineCount:Int,
     visible:Boolean,
@@ -45,6 +46,13 @@ fun RsChatSlideMenuV144(
     onClearChat:()->Unit,
     canClearChat:Boolean
 ){
+    val layout=rsThemeLayoutV175(rsStoredThemeV175(store))
+    val drawerWidth=when(layout.mode){
+        "TECH_COMPACT"->286.dp
+        "FIGHT_STRIP"->300.dp
+        "HOLO_CARDS"->326.dp
+        else->316.dp
+    }
     if(visible){
         Box(
             Modifier.fillMaxSize()
@@ -57,12 +65,15 @@ fun RsChatSlideMenuV144(
         visible=visible,
         enter=slideInHorizontally(initialOffsetX={-it})+fadeIn(),
         exit=slideOutHorizontally(targetOffsetX={-it})+fadeOut(),
-        modifier=Modifier.fillMaxHeight().widthIn(max=310.dp).zIndex(9f)
+        modifier=Modifier.fillMaxHeight().widthIn(max=drawerWidth).zIndex(9f)
     ){
         Surface(
             color=Color.Black.copy(alpha=.97f),
-            shape=RoundedCornerShape(topEnd=30.dp,bottomEnd=30.dp),
-            border=BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
+            shape=RoundedCornerShape(
+                topEnd=when(layout.mode){"TECH_COMPACT"->14.dp;"FIGHT_STRIP"->12.dp;else->30.dp},
+                bottomEnd=when(layout.mode){"TECH_COMPACT"->14.dp;"FIGHT_STRIP"->12.dp;else->30.dp}
+            ),
+            border=BorderStroke(if(layout.strongLines)2.dp else 1.dp,c.gold.copy(alpha=.46f)),
             tonalElevation=20.dp,
             modifier=Modifier.fillMaxHeight().fillMaxWidth()
         ){
@@ -89,12 +100,26 @@ fun RsChatSlideMenuV144(
                     },
                 verticalArrangement=Arrangement.spacedBy(9.dp)
             ){
-                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-                    Column(Modifier.weight(1f)){
-                        Text("♛  RS CHAT",color=c.bright,fontWeight=FontWeight.Black,fontSize=18.sp,letterSpacing=1.sp)
-                        Text("ROYAL COMMUNICATION",color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black,letterSpacing=1.3.sp)
+                Surface(
+                    color=c.panel.copy(alpha=layout.glassAlpha.coerceIn(.58f,.92f)),
+                    shape=RoundedCornerShape(layout.panelRadius.dp),
+                    border=BorderStroke(1.dp,c.gold.copy(alpha=.34f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Row(
+                        Modifier.fillMaxWidth().padding(10.dp),
+                        verticalAlignment=Alignment.CenterVertically,
+                        horizontalArrangement=Arrangement.spacedBy(8.dp)
+                    ){
+                        RsPremiumBrandLockupV179(
+                            c=c,
+                            store=store,
+                            modifier=Modifier.weight(1f),
+                            compact=true,
+                            subtitle="RS CHAT · ROYAL COMMUNICATION"
+                        )
+                        TextButton(onClick=onClose){Text("×",color=c.bright,fontSize=24.sp)}
                     }
-                    TextButton(onClick=onClose){Text("×",color=c.bright,fontSize=24.sp)}
                 }
 
                 Surface(
@@ -162,7 +187,13 @@ private fun RsChatSlideItemV144(
     val accent=if(ai)Color(0xFF58C9FF) else c.gold
     Surface(
         color=if(selected)accent.copy(alpha=.14f) else Color.Black.copy(alpha=.38f),
-        shape=RoundedCornerShape(20.dp),
+        shape=RoundedCornerShape(
+            when{
+                ai->24.dp
+                selected->22.dp
+                else->18.dp
+            }
+        ),
         border=BorderStroke(1.dp,accent.copy(alpha=if(selected).56f else .18f)),
         modifier=Modifier.fillMaxWidth().clickable(onClick=onClick)
     ){
