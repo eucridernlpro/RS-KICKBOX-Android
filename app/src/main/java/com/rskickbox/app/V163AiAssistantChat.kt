@@ -1459,11 +1459,6 @@ private fun RsAiAvatarStageV163(
             }
         }
     }
-    val idleSlot=if(avatar=="FEMALE")"ai_trainer_female" else "ai_trainer_male"
-    val speakingSlot=if(avatar=="FEMALE")"ai_trainer_female_speaking" else "ai_trainer_male_speaking"
-    val speakingVisual=if(speaking)rsVisualUriWithBundledFallbackV113(context,store,speakingSlot) else ""
-    val visual=if(speakingVisual.isNotBlank())speakingVisual
-        else rsVisualUriWithBundledFallbackV113(context,store,idleSlot)
     val themeLayout=rsThemeLayoutV175(rsStoredThemeV175(store))
     val transition=rememberInfiniteTransition(label="ai-stage")
     val breath by transition.animateFloat(
@@ -1573,32 +1568,15 @@ private fun RsAiAvatarStageV163(
                         )
                     )
             )
-            Box(
-                Modifier.fillMaxSize().graphicsLayer{
-                    scaleX=(if(avatarMotion)breath*1.035f else 1.035f)*stateScale
-                    scaleY=(if(avatarMotion)breath*1.035f else 1.035f)*stateScale
-                    translationY=(if(avatarMotion)floatY else 0f)+stateLift+
-                        (if(immersive && sensorParallaxEnabled) sensorY*10f*density else 0f)
-                    translationX=(if(avatarMotion && renderMode=="CINEMATIC_3D")parallaxX else 0f)+
-                        (if(immersive && sensorParallaxEnabled) -sensorX*13f*density else 0f)
-                    rotationY=(if(avatarMotion && renderMode=="CINEMATIC_3D")headTurn else 0f)+
-                        (if(immersive && sensorParallaxEnabled) sensorX*3.5f else 0f)
-                    rotationX=(if(avatarMotion && renderMode=="CINEMATIC_3D")focusTilt else 0f)+
-                        (if(immersive && sensorParallaxEnabled) -sensorY*2.4f else 0f)
-                    cameraDistance=if(renderMode=="CINEMATIC_3D")18f*density else 8f*density
-                    shadowElevation=if(renderMode=="CINEMATIC_3D")24f else 0f
-                }
-            ){
-                if(visual.isNotBlank()){
-                    RsUriPreviewV21(visual,Modifier.fillMaxSize(),"CENTER")
-                }else{
-                    Box(
-                        Modifier.fillMaxSize().background(
-                            Brush.verticalGradient(listOf(Color(0xFF10131A),Color.Black))
-                        )
-                    )
-                }
-            }
+            RsAiReal3DModelV183(
+                avatar=avatar,
+                speaking=speaking,
+                listening=listening,
+                thinking=thinking,
+                sensorX=if(immersive && sensorParallaxEnabled)sensorX else 0f,
+                sensorY=if(immersive && sensorParallaxEnabled)sensorY else 0f,
+                modifier=Modifier.fillMaxSize()
+            )
             Box(
                 Modifier.fillMaxSize().background(
                     Brush.verticalGradient(
@@ -1627,7 +1605,7 @@ private fun RsAiAvatarStageV163(
                     )
                 )
             )
-            if(renderMode=="CINEMATIC_3D"){
+            if(true){
                 Box(
                     Modifier.fillMaxSize().background(
                         Brush.linearGradient(
@@ -1653,7 +1631,7 @@ private fun RsAiAvatarStageV163(
             }
 
             // Speaking pulse / holographic depth rings.
-            if(renderMode=="CINEMATIC_3D"){
+            if(true){
                 Surface(
                     color=if(speaking)Color(0xFF58C9FF).copy(alpha=aura*.30f) else c.gold.copy(alpha=aura*.18f),
                     shape=CircleShape,
@@ -1691,15 +1669,15 @@ private fun RsAiAvatarStageV163(
                     enabled=false,
                     label={Text(
                         when(language.code){
-                            "nl"->if(renderMode=="CINEMATIC_3D")"3D VIRTUELE ASSISTENT" else "AI-ASSISTENT"
-                            "pt"->if(renderMode=="CINEMATIC_3D")"ASSISTENTE VIRTUAL 3D" else "ASSISTENTE IA"
-                            "es"->if(renderMode=="CINEMATIC_3D")"ASISTENTE VIRTUAL 3D" else "ASISTENTE IA"
-                            "fr"->if(renderMode=="CINEMATIC_3D")"ASSISTANT VIRTUEL 3D" else "ASSISTANT IA"
-                            "de"->if(renderMode=="CINEMATIC_3D")"3D VIRTUELLER ASSISTENT" else "KI-ASSISTENT"
-                            "it"->if(renderMode=="CINEMATIC_3D")"ASSISTENTE VIRTUALE 3D" else "ASSISTENTE IA"
-                            "pl"->if(renderMode=="CINEMATIC_3D")"WIRTUALNY ASYSTENT 3D" else "ASYSTENT AI"
-                            "tr"->if(renderMode=="CINEMATIC_3D")"3D SANAL ASİSTAN" else "YZ ASİSTANI"
-                            else->if(renderMode=="CINEMATIC_3D")"3D VIRTUAL ASSISTANT" else "AI ASSISTANT"
+                            "nl"->if(true)"3D VIRTUELE ASSISTENT" else "AI-ASSISTENT"
+                            "pt"->if(true)"ASSISTENTE VIRTUAL 3D" else "ASSISTENTE IA"
+                            "es"->if(true)"ASISTENTE VIRTUAL 3D" else "ASISTENTE IA"
+                            "fr"->if(true)"ASSISTANT VIRTUEL 3D" else "ASSISTANT IA"
+                            "de"->if(true)"3D VIRTUELLER ASSISTENT" else "KI-ASSISTENT"
+                            "it"->if(true)"ASSISTENTE VIRTUALE 3D" else "ASSISTENTE IA"
+                            "pl"->if(true)"WIRTUALNY ASYSTENT 3D" else "ASYSTENT AI"
+                            "tr"->if(true)"3D SANAL ASİSTAN" else "YZ ASİSTANI"
+                            else->if(true)"3D VIRTUAL ASSISTANT" else "AI ASSISTANT"
                         },
                         fontSize=7.sp,
                         fontWeight=FontWeight.Black
@@ -1734,15 +1712,15 @@ private fun RsAiAvatarStageV163(
                         else->when{speaking->"SPEAKING";thinking->"THINKING";listening->"LISTENING";else->"READY"}
                     }
                     val stageMode=when(language.code){
-                        "nl"->if(renderMode=="CINEMATIC_3D")"CINEMATISCHE 3D BETA" else "AI-ASSISTENT"
-                        "pt"->if(renderMode=="CINEMATIC_3D")"3D CINEMÁTICO BETA" else "ASSISTENTE IA"
-                        "es"->if(renderMode=="CINEMATIC_3D")"3D CINEMÁTICO BETA" else "ASISTENTE IA"
-                        "fr"->if(renderMode=="CINEMATIC_3D")"3D CINÉMATIQUE BÊTA" else "ASSISTANT IA"
-                        "de"->if(renderMode=="CINEMATIC_3D")"KINEMATISCHE 3D-BETA" else "KI-ASSISTENT"
-                        "it"->if(renderMode=="CINEMATIC_3D")"3D CINEMATICO BETA" else "ASSISTENTE IA"
-                        "pl"->if(renderMode=="CINEMATIC_3D")"KINOWE 3D BETA" else "ASYSTENT AI"
-                        "tr"->if(renderMode=="CINEMATIC_3D")"SİNEMATİK 3D BETA" else "YZ ASİSTANI"
-                        else->if(renderMode=="CINEMATIC_3D")"CINEMATIC 3D BETA" else "AI ASSISTANT"
+                        "nl"->if(true)"CINEMATISCHE 3D BETA" else "AI-ASSISTENT"
+                        "pt"->if(true)"3D CINEMÁTICO BETA" else "ASSISTENTE IA"
+                        "es"->if(true)"3D CINEMÁTICO BETA" else "ASISTENTE IA"
+                        "fr"->if(true)"3D CINÉMATIQUE BÊTA" else "ASSISTANT IA"
+                        "de"->if(true)"KINEMATISCHE 3D-BETA" else "KI-ASSISTENT"
+                        "it"->if(true)"3D CINEMATICO BETA" else "ASSISTENTE IA"
+                        "pl"->if(true)"KINOWE 3D BETA" else "ASYSTENT AI"
+                        "tr"->if(true)"SİNEMATİK 3D BETA" else "YZ ASİSTANI"
+                        else->if(true)"CINEMATIC 3D BETA" else "AI ASSISTANT"
                     }
                     Text(
                         assistantState+" · "+stageMode,
