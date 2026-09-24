@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -255,6 +256,7 @@ fun RsFloatingGlassChatHubV125(
         mutableStateOf(store.b("ai_immersive_v171",false) || initialRoute=="voice")
     }
     val context=LocalContext.current
+    val compactHeader=LocalConfiguration.current.screenWidthDp<380
     val activeTheme=rsStoredThemeV175(store)
     val themeLayout=rsThemeLayoutV175(activeTheme)
     val swipeMenuEnabled=store.b("chat_swipe_menu_v163",true)
@@ -433,21 +435,34 @@ fun RsFloatingGlassChatHubV125(
                         Image(
                             painter=painterResource(R.drawable.rs_launcher_royal_v129),
                             contentDescription="RS",
-                            modifier=Modifier.size(39.dp)
+                            modifier=Modifier.size(if(compactHeader)32.dp else 39.dp)
                         )
                         Column(Modifier.weight(1f)){
+                            Row(
+                                verticalAlignment=Alignment.CenterVertically,
+                                horizontalArrangement=Arrangement.spacedBy(4.dp)
+                            ){
+                                Text(
+                                    "RS",
+                                    color=c.bright,
+                                    fontWeight=FontWeight.Black,
+                                    fontSize=if(compactHeader)12.sp else 15.sp,
+                                    maxLines=1
+                                )
+                                Text(
+                                    "KICKBOXING",
+                                    color=c.gold,
+                                    fontWeight=FontWeight.Black,
+                                    fontSize=if(compactHeader)10.sp else 14.sp,
+                                    letterSpacing=if(compactHeader).3.sp else .7.sp,
+                                    maxLines=1,
+                                    softWrap=false
+                                )
+                            }
                             Text(
-                                "RS CHAT",
-                                color=c.bright,
-                                fontWeight=FontWeight.Black,
-                                fontSize=17.sp,
-                                letterSpacing=.8.sp,
-                                maxLines=1
-                            )
-                            Text(
-                                "Private · Groups · Community · Support · AI",
+                                "RS CHAT · Private · Groups · Community · Support · AI",
                                 color=c.muted,
-                                fontSize=7.sp,
+                                fontSize=if(compactHeader)6.sp else 7.sp,
                                 maxLines=1
                             )
                         }
@@ -482,13 +497,6 @@ fun RsFloatingGlassChatHubV125(
                         verticalAlignment=Alignment.CenterVertically,
                         horizontalArrangement=Arrangement.spacedBy(6.dp)
                     ){
-                        OutlinedButton(
-                            onClick={handleChatBack()},
-                            modifier=Modifier.size(32.dp),
-                            shape=RoundedCornerShape(themeLayout.buttonRadius.dp),
-                            border=BorderStroke(1.dp,c.gold.copy(alpha=.34f)),
-                            contentPadding=PaddingValues(0.dp)
-                        ){Text("‹",color=c.bright,fontSize=19.sp)}
                         OutlinedButton(
                             onClick={slideMenuOpen=true},
                             modifier=Modifier.size(32.dp),
@@ -684,10 +692,15 @@ fun RsFloatingGlassChatHubV125(
                 RsChatHubTabV125.GROUPS->RsGroupsV50(c,store,lang,role)
                 RsChatHubTabV125.COMMUNITY->RsCommunityChatV163(c,store,lang,role)
                 RsChatHubTabV125.SUPPORT->RsSupportChatV163(c,store,lang,role)
-                RsChatHubTabV125.GALLERY->RsChatGalleryV163(c,lang)
+                RsChatHubTabV125.GALLERY->if(
+                    role==RsRole.TRAINER ||
+                    rsChatPermissionV178(store,RsChatPermissionKeysV178.GALLERY,true)
+                ) RsChatGalleryV163(c,lang) else RsFloatingGlassPanelV125(c){
+                    Text("RS Chat Gallery is disabled by your trainer.",color=c.muted,fontSize=10.sp)
+                }
                 RsChatHubTabV125.NOTIFICATIONS->RsChatNotificationsV156(c,lang)
                 RsChatHubTabV125.AI->RsAiRoyalChatV163(c,store,lang,role,onNavigate)
-                RsChatHubTabV125.SETTINGS->RsChatSettingsV162(c,store,lang){
+                RsChatHubTabV125.SETTINGS->RsChatSettingsV162(c,store,lang,role){
                     store.pb("ai_start_listening_v168",true)
                     store.pb("ai_immersive_v171",true)
                     aiImmersive=true
@@ -708,7 +721,11 @@ fun RsFloatingGlassChatHubV125(
             onGroups={tab=RsChatHubTabV125.GROUPS;slideMenuOpen=false},
             onCommunity={tab=RsChatHubTabV125.COMMUNITY;slideMenuOpen=false},
             onSupport={tab=RsChatHubTabV125.SUPPORT;slideMenuOpen=false},
-            onGallery={tab=RsChatHubTabV125.GALLERY;slideMenuOpen=false},
+            onGallery={
+                if(role==RsRole.TRAINER || rsChatPermissionV178(store,RsChatPermissionKeysV178.GALLERY,true))
+                    tab=RsChatHubTabV125.GALLERY
+                slideMenuOpen=false
+            },
             onNotifications={tab=RsChatHubTabV125.NOTIFICATIONS;slideMenuOpen=false},
             onAi={tab=RsChatHubTabV125.AI;slideMenuOpen=false},
             onSettings={tab=RsChatHubTabV125.SETTINGS;slideMenuOpen=false},
