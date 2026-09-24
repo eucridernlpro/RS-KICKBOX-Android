@@ -150,7 +150,7 @@ fun RsAiAssistantChatV163(
     var autoSpeak by remember{mutableStateOf(store.b("ai_auto_speak_v163",true))}
     var avatarMotionEnabled by remember{mutableStateOf(store.b("ai_avatar_motion_v163",true))}
     var sensorParallaxEnabled by remember{mutableStateOf(store.b("ai_sensor_parallax_v180",true))}
-    var avatarRenderMode by remember{mutableStateOf(store.s("ai_avatar_render_mode_v176","CINEMATIC_3D"))}
+    var avatarRenderMode by remember{mutableStateOf("REAL_3D")}
     var status by remember{mutableStateOf("")}
     var aiMessageMenuId by remember{mutableStateOf<Long?>(null)}
     val musicController=rememberRsMusicControllerV90()
@@ -1187,26 +1187,30 @@ fun RsAiAssistantChatV163(
                         ){Text(rsAiExtraV163(aiLang,"test_voice"),fontSize=8.sp)}
                     }
                     Text(rsAiExtraV163(aiLang,"render"),color=c.gold,fontSize=8.sp,fontWeight=FontWeight.Black)
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                        FilterChip(
-                            selected=avatarRenderMode=="CINEMATIC_3D",
-                            onClick={
-                                avatarRenderMode="CINEMATIC_3D"
-                                store.ps("ai_avatar_render_mode_v176","CINEMATIC_3D")
-                            },
-                            label={Text(rsAiExtraV163(aiLang,"realistic_3d"),fontSize=8.sp)},
-                            modifier=Modifier.weight(1f)
-                        )
-                        FilterChip(
-                            selected=avatarRenderMode=="CLEAN",
-                            onClick={
-                                avatarRenderMode="CLEAN"
-                                store.ps("ai_avatar_render_mode_v176","CLEAN")
-                            },
-                            label={Text(rsAiExtraV163(aiLang,"clean"),fontSize=8.sp)},
-                            modifier=Modifier.weight(1f)
-                        )
-                    }
+                    FilterChip(
+                        selected=true,
+                        onClick={
+                            avatarRenderMode="REAL_3D"
+                            store.ps("ai_avatar_render_mode_v176","REAL_3D")
+                        },
+                        label={
+                            Text(
+                                when(aiLang){
+                                    "nl"->"Real-time 3D foundation"
+                                    "pt"->"Fundação 3D em tempo real"
+                                    "es"->"Base 3D en tiempo real"
+                                    "fr"->"Base 3D en temps réel"
+                                    "de"->"Echtzeit-3D-Basis"
+                                    "it"->"Base 3D in tempo reale"
+                                    "pl"->"Baza 3D w czasie rzeczywistym"
+                                    "tr"->"Gerçek zamanlı 3D temel"
+                                    else->"Real-time 3D foundation"
+                                },
+                                fontSize=8.sp
+                            )
+                        },
+                        modifier=Modifier.fillMaxWidth()
+                    )
                     if(role==RsRole.TRAINER){
                         OutlinedButton(
                             onClick={optionsMenu=false;trainerReferences=true},
