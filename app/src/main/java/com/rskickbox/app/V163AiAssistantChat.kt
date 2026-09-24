@@ -209,20 +209,39 @@ fun RsAiAssistantChatV163(
         val available=runCatching{engine.isLanguageAvailable(requested)}.getOrDefault(TextToSpeech.LANG_NOT_SUPPORTED)
         val effective=if(available>=TextToSpeech.LANG_AVAILABLE)requested else Locale.ENGLISH
         engine.language=effective
-        engine.setSpeechRate(.94f)
-        engine.setPitch(if(avatar=="MALE").96f else 1.02f)
+        val wantsMale=avatar=="MALE"
+        engine.setSpeechRate(if(wantsMale).92f else .95f)
+        engine.setPitch(if(wantsMale).88f else 1.06f)
+
+        fun voiceScore(v:android.speech.tts.Voice):Int{
+            val name=v.name.lowercase(Locale.ROOT)
+            var score=v.quality*10
+            val maleHints=listOf("male","man","mascul","m1","m2","david","daniel","thomas","george")
+            val femaleHints=listOf("female","woman","femin","f1","f2","samantha","victoria","karen","anna","susan")
+            if(wantsMale){
+                if(maleHints.any{name.contains(it)})score+=120
+                if(femaleHints.any{name.contains(it)})score-=120
+            }else{
+                if(femaleHints.any{name.contains(it)})score+=120
+                if(maleHints.any{name.contains(it)})score-=120
+            }
+            if(v.isNetworkConnectionRequired)score+=25
+            if(!v.features.contains("notInstalled"))score+=10
+            return score
+        }
+
         val matching=engine.voices
             ?.filter{it.locale.language.equals(effective.language,true)}
-            ?.sortedWith(
-                compareByDescending<android.speech.tts.Voice>{!it.isNetworkConnectionRequired}
-                    .thenByDescending{it.quality}
-            )
-            ?.firstOrNull()
+            ?.maxByOrNull{voiceScore(it)}
         if(matching!=null)engine.voice=matching
     }
 
-    LaunchedEffect(aiLang,ttsReady){
-        if(ttsReady)applySelectedVoice()
+    LaunchedEffect(aiLang,avatar,ttsReady){
+        if(ttsReady){
+            runCatching{tts?.stop()}
+            speaking=false
+            applySelectedVoice()
+        }
     }
 
     fun speak(text:String){
@@ -638,13 +657,40 @@ fun RsAiAssistantChatV163(
             avatarMotion=avatarMotionEnabled,
             renderMode=avatarRenderMode,
             language=selectedLang,
-            onAvatarChange={
-                avatar=it
-                store.ps("ai_avatar_gender_v161",it)
+            onAvatarChange={next->
+                runCatching{tts?.stop()}
+                speaking=false
+                voiceConversationActive=false
+                avatar=next
+                store.ps("ai_avatar_gender_v161",next)
+                status=if(next=="MALE")"Marcus voice selected." else "Sofia voice selected."
             },
-            onLanguageChange={
-                aiLang=it.code
-                store.ps("ai_voice_language_v161",it.code)
+            onLanguageChange={nextLang->
+                runCatching{tts?.stop()}
+                speaking=false
+                voiceConversationActive=false
+                aiLang=nextLang.code
+                store.ps("ai_voice_language_v161",nextLang.code)
+                val coachName=if(avatar=="FEMALE")"Sofia" else "Marcus"
+                val languageMessage=when(nextLang.code){
+                    "nl"->coachName+" spreekt en schrijft nu Nederlands."
+                    "pt"->coachName+" agora fala e escreve em português."
+                    "es"->coachName+" ahora habla y escribe en español."
+                    "fr"->coachName+" parle et écrit maintenant en français."
+                    "de"->coachName+" spricht und schreibt jetzt Deutsch."
+                    "it"->coachName+" ora parla e scrive in italiano."
+                    "pl"->coachName+" mówi i pisze teraz po polsku."
+                    "tr"->coachName+" artık Türkçe konuşuyor ve yazıyor."
+                    else->coachName+" now speaks and writes in English."
+                }
+                messages=rsPruneAiChatV176(
+                    messages+RsAiChatMessageV163(
+                        id=System.currentTimeMillis(),
+                        mine=false,
+                        text=languageMessage
+                    )
+                )
+                status=languageMessage
             },
             languages=languages,
             onOptions={optionsMenu=true}
