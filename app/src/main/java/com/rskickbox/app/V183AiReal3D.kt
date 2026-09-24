@@ -146,7 +146,14 @@ private class RsAi3DRendererV183:GLSurfaceView.Renderer{
         val breath=sin(t*1.55f)*.018f
         val talk=if(speaking)(sin(t*12f)*.5f+.5f) else 0f
         val idleYaw=sin(t*.42f)*1.8f
-        val eyeFocus=sin(t*.67f)*.016f
+        val eyeFocus=sin(t*.67f)*.014f
+        val blinkWindow=t%4.8f
+        val blink=when{
+            blinkWindow<.10f->(blinkWindow/.10f).coerceIn(0f,1f)
+            blinkWindow<.22f->(1f-(blinkWindow-.10f)/.12f).coerceIn(0f,1f)
+            else->0f
+        }
+        val eyeOpen=(1f-blink*.88f).coerceAtLeast(.10f)
         val roomYaw=(-sensorX*10f).coerceIn(-9f,9f)
         val roomPitch=(sensorY*6f).coerceIn(-5f,5f)
 
@@ -181,6 +188,9 @@ private class RsAi3DRendererV183:GLSurfaceView.Renderer{
         part(cube,root,0f,.34f,0f,if(female).43f else .50f,.66f+breath,if(female).22f else .26f,suit)
         part(cube,root,0f,-.23f,0f,if(female).39f else .44f,.30f,.23f,suit)
         part(cylinder,root,0f,.75f,0f,.105f,.16f,.105f,skin)
+        part(cylinder,root,0f,.70f,.005f,.135f,.055f,.135f,gold)
+        part(sphere,root,-(if(female).36f else .43f),.57f,0f,.16f,.15f,.16f,suit)
+        part(sphere,root,(if(female).36f else .43f),.57f,0f,.16f,.15f,.16f,suit)
 
         // Head and face.
         val head=FloatArray(16)
@@ -190,11 +200,37 @@ private class RsAi3DRendererV183:GLSurfaceView.Renderer{
         Matrix.rotateM(head,0,sin(t*.37f)*.9f,1f,0f,0f)
         drawMesh(sphere,head,if(female).275f else .29f,if(female).34f else .35f,.275f,skin)
 
-        // Hair shell, eyes and a speech-reactive jaw/mouth.
-        part(sphere,head,0f,.105f,-.045f,if(female).283f else .297f,.23f,.285f,floatArrayOf(.025f,.018f,.015f,1f))
-        part(sphere,head,-.09f,.035f,.245f+eyeFocus,.026f,.018f,.015f,neon)
-        part(sphere,head,.09f,.035f,.245f-eyeFocus,.026f,.018f,.015f,neon)
-        part(cube,head,0f,-.105f,.263f,.09f,.018f+talk*.022f,.012f,floatArrayOf(.08f,.015f,.018f,1f))
+        // Hair, ears, brows, eyes, nose and speech-reactive mouth.
+        val hair=if(female)floatArrayOf(.035f,.018f,.020f,1f) else floatArrayOf(.025f,.020f,.018f,1f)
+        val sclera=floatArrayOf(.86f,.88f,.90f,1f)
+        val pupil=floatArrayOf(.012f,.018f,.024f,1f)
+        val lip=if(female)floatArrayOf(.36f,.055f,.075f,1f) else floatArrayOf(.18f,.045f,.040f,1f)
+        part(sphere,head,0f,.205f,-.075f,if(female).278f else .295f,.17f,.275f,hair)
+        if(female){
+            part(sphere,head,-.245f,.05f,-.12f,.085f,.28f,.095f,hair)
+            part(sphere,head,.245f,.05f,-.12f,.085f,.28f,.095f,hair)
+        }
+        part(sphere,head,-.278f,0f,0f,.040f,.070f,.036f,skin)
+        part(sphere,head,.278f,0f,0f,.040f,.070f,.036f,skin)
+
+        part(cube,head,-.092f,.105f,.252f,.070f,.010f,.010f,hair)
+        part(cube,head,.092f,.105f,.252f,.070f,.010f,.010f,hair)
+
+        part(sphere,head,-.092f,.030f,.248f,.059f,.030f*eyeOpen,.020f,sclera)
+        part(sphere,head,.092f,.030f,.248f,.059f,.030f*eyeOpen,.020f,sclera)
+        part(sphere,head,-.092f+eyeFocus,.030f,.270f,.022f,.022f*eyeOpen,.012f,neon)
+        part(sphere,head,.092f+eyeFocus,.030f,.270f,.022f,.022f*eyeOpen,.012f,neon)
+        part(sphere,head,-.092f+eyeFocus,.030f,.279f,.010f,.010f*eyeOpen,.008f,pupil)
+        part(sphere,head,.092f+eyeFocus,.030f,.279f,.010f,.010f*eyeOpen,.008f,pupil)
+
+        part(sphere,head,0f,-.025f,.282f,.042f,.078f,.050f,skin)
+        part(sphere,head,0f,-.073f,.296f,.050f,.030f,.025f,skin)
+
+        part(cube,head,0f,-.135f,.277f,.092f,.010f,.012f,lip)
+        part(cube,head,0f,-.157f-talk*.012f,.278f,.082f,.010f+talk*.016f,.012f,lip)
+        if(speaking){
+            part(cube,head,0f,-.147f,.272f,.060f,.008f+talk*.020f,.010f,floatArrayOf(.035f,.006f,.008f,1f))
+        }
 
         // Shoulders and arms.
         val shoulderY=.58f
