@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Build
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -14,7 +15,8 @@ class RsQuietVoiceControllerV171(
     private val context:Context,
     private val onResult:(String)->Unit,
     private val onStatus:(String)->Unit,
-    private val onIdle:()->Unit={}
+    private val onIdle:()->Unit={},
+    private val onLanguageDetected:(String)->Unit={}
 ){
     private var recognizer:SpeechRecognizer?=null
     private var running=false
@@ -37,6 +39,16 @@ class RsQuietVoiceControllerV171(
                 override fun onRmsChanged(rmsdB:Float){}
                 override fun onBufferReceived(buffer:ByteArray?){}
                 override fun onEndOfSpeech(){onStatus("")}
+                override fun onLanguageDetection(results:Bundle){
+                    if(Build.VERSION.SDK_INT<34)return
+                    val confidence=results.getInt("language_detection_confidence_level",0)
+                    if(confidence<2)return
+                    val tag=results.getString("detected_language").orEmpty()
+                    val code=Locale.forLanguageTag(tag).language.lowercase(Locale.ROOT)
+                    if(code in setOf("en","nl","pt","es","fr","de","it","pl","tr")){
+                        onLanguageDetected(code)
+                    }
+                }
                 override fun onError(error:Int){
                     running=false
                     when(error){
@@ -101,6 +113,21 @@ class RsQuietVoiceControllerV171(
             putExtra(RecognizerIntent.EXTRA_LANGUAGE,recognitionLocale.toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3)
+            if(Build.VERSION.SDK_INT>=34){
+                val allowed=arrayListOf(
+                    "en-US","nl-NL","pt-PT","es-ES","fr-FR","de-DE","it-IT","pl-PL","tr-TR"
+                )
+                putExtra("android.speech.extra.ENABLE_LANGUAGE_DETECTION",true)
+                putStringArrayListExtra(
+                    "android.speech.extra.LANGUAGE_DETECTION_ALLOWED_LANGUAGES",
+                    allowed
+                )
+                putExtra("android.speech.extra.ENABLE_LANGUAGE_SWITCH","balanced")
+                putStringArrayListExtra(
+                    "android.speech.extra.LANGUAGE_SWITCH_ALLOWED_LANGUAGES",
+                    allowed
+                )
+            }
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,500L)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,1800L)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,1200L)
