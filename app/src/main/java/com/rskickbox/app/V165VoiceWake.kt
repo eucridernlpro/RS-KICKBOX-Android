@@ -750,8 +750,37 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                     setWakeStatusV168("HEARD_WAKE")
                     store.pb("ai_immersive_v171",true)
                     store.pb("ai_start_listening_v168",true)
-                    if(!MainActivity.isForeground)requestRouteOpenV182(defaultDashboardRouteV182())
-                    speak(rsVoiceGreetingV165(language().code),thenListen=true)
+
+                    val command=rsStripWakePhraseV165(heard)
+                    val requested=if(command.isBlank())null
+                    else rsVoiceRouteV167(command)?:rsVoiceDynamicRouteV184(command,language())
+
+                    if(requested!=null){
+                        val resolved=roleAwareRouteV182(requested)
+                        requestRouteOpenV182(resolved)
+                        val title=rsRouteTitle(
+                            language(),
+                            resolved,
+                            resolved.replace('_',' ').replaceFirstChar{it.uppercase()}
+                        )
+                        speak(
+                            when(language().code){
+                                "nl"->"Ik open "+title+"."
+                                "pt"->"Vou abrir "+title+"."
+                                "es"->"Voy a abrir "+title+"."
+                                "fr"->"J’ouvre "+title+"."
+                                "de"->"Ich öffne "+title+"."
+                                "it"->"Apro "+title+"."
+                                "pl"->"Otwieram "+title+"."
+                                "tr"->title+" açılıyor."
+                                else->"Opening "+title+"."
+                            },
+                            thenListen=true
+                        )
+                    }else{
+                        if(!MainActivity.isForeground)requestRouteOpenV182(defaultDashboardRouteV182())
+                        speak(rsVoiceGreetingV165(language().code),thenListen=true)
+                    }
                 }
             },
             onState={state->setWakeStatusV168(state)}
