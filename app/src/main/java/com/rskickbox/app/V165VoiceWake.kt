@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioManager
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
@@ -315,6 +316,8 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private var wakeRecognitionFallback=false
     @Volatile private var serviceSpeaking=false
     @Volatile private var serviceUtteranceId=""
+    private var serviceCloudVoicePlayer:MediaPlayer?=null
+    private var serviceVoiceRequestId:Long=0L
     private var toneRestoreJob:Job?=null
     private var systemToneMutedByRs=false
     private var offlineWakeEngineV188:RsOfflineWakeEngineV188?=null
@@ -363,6 +366,10 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     override fun onDestroy(){
         recognizer?.destroy()
         recognizer=null
+        serviceVoiceRequestId++
+        runCatching{serviceCloudVoicePlayer?.stop()}
+        runCatching{serviceCloudVoicePlayer?.release()}
+        serviceCloudVoicePlayer=null
         runCatching{tts?.stop()}
         runCatching{tts?.shutdown()}
         controller?.release()
@@ -562,41 +569,87 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         runCatching{offlineWakeEngineV188?.stop()}
         offlineWakeEngineV188=null
         runCatching{tts?.stop()}
-        applyLanguage()
-        val utteranceId="rs-voice-wake-"+language().code+"-"+store.s("ai_avatar_gender_v161","FEMALE")+"-"+System.nanoTime()
-        serviceUtteranceId=utteranceId
-        tts?.setOnUtteranceProgressListener(object:android.speech.tts.UtteranceProgressListener(){
-            override fun onStart(id:String?){}
-            override fun onDone(id:String?){
-                if(id!=serviceUtteranceId)return
-                serviceUtteranceId=""
-                serviceSpeaking=false
-                if(thenListen)scope.launch{
-                    delay(650)
-                    startListening()
-                }
-            }
-            @Deprecated("Deprecated in Java")
-            override fun onError(id:String?){
-                if(id!=serviceUtteranceId)return
-                serviceUtteranceId=""
-                serviceSpeaking=false
-                if(thenListen)scope.launch{
-                    delay(650)
-                    startListening()
-                }
-            }
-        })
-        val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,utteranceId)
-        if(result==TextToSpeech.ERROR){
-            serviceUtteranceId=""
+        serviceUtteranceId=""
+        serviceVoiceRequestId++
+        val requestId=serviceVoiceRequestId
+        runCatching{serviceCloudVoicePlayer?.stop()}
+        runCatching{serviceCloudVoicePlayer?.release()}
+        serviceCloudVoicePlayer=null
+
+        fun finishSpeech(){
+            if(requestId!=serviceVoiceRequestId)return
             serviceSpeaking=false
-            if(thenListen){
-                scope.launch{
-                    delay(700)
-                    startListening()
+            if(thenListen)scope.launch{
+                delay(650)
+                startListening()
+            }
+        }
+
+        fun speakDeviceFallback(){
+            if(requestId!=serviceVoiceRequestId)return
+            applyLanguage()
+            val utteranceId="rs-voice-wake-"+language().code+"-"+store.s("ai_avatar_gender_v161","FEMALE")+"-"+System.nanoTime()
+            serviceUtteranceId=utteranceId
+            tts?.setOnUtteranceProgressListener(object:android.speech.tts.UtteranceProgressListener(){
+                override fun onStart(id:String?){}
+                override fun onDone(id:String?){
+                    if(id!=serviceUtteranceId || requestId!=serviceVoiceRequestId)return
+                    serviceUtteranceId=""
+                    finishSpeech()
+                }
+                @Deprecated("Deprecated in Java")
+                override fun onError(id:String?){
+                    if(id!=serviceUtteranceId || requestId!=serviceVoiceRequestId)return
+                    serviceUtteranceId=""
+                    finishSpeech()
+                }
+            })
+            val result=tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,utteranceId)
+            if(result==TextToSpeech.ERROR){
+                serviceUtteranceId=""
+                finishSpeech()
+            }
+        }
+
+        val role=if(store.s("session_role","")=="trainer")RsRole.TRAINER else RsRole.STUDENT
+        if(rsUsePremiumCloudVoiceV192(store,role) && RsSupabaseV60.configured){
+            scope.launch{
+                val clip=rsCloudVoiceClipV192(
+                    context=this@RsVoiceWakeServiceV165,
+                    text=text,
+                    lang=language(),
+                    avatar=store.s("ai_avatar_gender_v161","FEMALE")
+                )
+                if(requestId!=serviceVoiceRequestId)return@launch
+                clip.onSuccess{voiceClip->
+                    val player=rsCreateCloudVoicePlayerV192(
+                        context=this@RsVoiceWakeServiceV165,
+                        localUri=voiceClip.localUri,
+                        onStarted={setWakeStatusV168("SPEAKING_PREMIUM")},
+                        onCompleted={
+                            if(requestId==serviceVoiceRequestId){
+                                serviceCloudVoicePlayer=null
+                                finishSpeech()
+                            }
+                        },
+                        onError={
+                            if(requestId==serviceVoiceRequestId){
+                                serviceCloudVoicePlayer=null
+                                speakDeviceFallback()
+                            }
+                        }
+                    )
+                    if(player!=null && requestId==serviceVoiceRequestId){
+                        serviceCloudVoicePlayer=player
+                    }else if(player==null && requestId==serviceVoiceRequestId){
+                        speakDeviceFallback()
+                    }
+                }.onFailure{
+                    if(requestId==serviceVoiceRequestId)speakDeviceFallback()
                 }
             }
+        }else{
+            speakDeviceFallback()
         }
     }
 
