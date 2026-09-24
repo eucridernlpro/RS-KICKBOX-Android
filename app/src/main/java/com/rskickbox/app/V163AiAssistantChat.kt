@@ -53,6 +53,22 @@ private data class RsAiChatMessageV163(
     val references:List<RsAiCoachReferenceV164> = emptyList()
 )
 
+private fun rsAiVoiceExchangeWorthSavingV187(text:String):Boolean{
+    val q=text.lowercase(Locale.ROOT)
+    return listOf(
+        "technique","combination","combo","training","workout","drill","kick","punch","guard","stance","footwork",
+        "how do i use","explain this page","app guide","feature","instructions","step by step",
+        "techniek","combinatie","training","oefening","trap","stoot","dekking","hoe gebruik","leg uit","functie",
+        "técnica","combinação","treino","exercício","chute","soco","como usar","explica","funcionalidade",
+        "técnica","combinación","entrenamiento","ejercicio","patada","golpe","cómo usar","explica","función",
+        "technique","combinaison","entraînement","exercice","coup","comment utiliser","explique","fonction",
+        "technik","kombination","training","übung","tritt","schlag","wie benutze","erkläre","funktion",
+        "tecnica","combinazione","allenamento","esercizio","calcio","pugno","come usare","spiega","funzione",
+        "technika","kombinacja","trening","ćwiczenie","kopnięcie","cios","jak używać","wyjaśnij","funkcja",
+        "teknik","kombinasyon","antrenman","alıştırma","tekme","yumruk","nasıl kullan","açıkla","özellik"
+    ).any{q.contains(it)}
+}
+
 private fun rsLoadAiChatHistoryV174(store:RsStore,key:String):List<RsAiChatMessageV163>{
     val raw=store.s(key,"")
     if(raw.isBlank())return emptyList()
@@ -160,6 +176,7 @@ fun RsAiAssistantChatV163(
     var playlistMenu by remember{mutableStateOf(false)}
     var voiceConversationActive by remember{mutableStateOf(false)}
     var voiceResult by remember{mutableStateOf<String?>(null)}
+    var voiceSubtitle by remember{mutableStateOf("")}
     var resumeListeningSignal by remember{mutableIntStateOf(0)}
     var immersiveGreetingPending by remember{
         mutableStateOf(store.b("ai_start_listening_v168",false))
@@ -445,8 +462,9 @@ fun RsAiAssistantChatV163(
         }
     }
 
-    fun send(textOverride:String?=null){
+    fun send(textOverride:String?=null,fromVoice:Boolean=false){
         val body=(textOverride?:draft).trim()
+        val persistExchange=!fromVoice || rsAiVoiceExchangeWorthSavingV187(body)
         val media=pickedUri
         val kind=pickedKind
         if(body.isBlank()&&media==null)return
@@ -460,7 +478,7 @@ fun RsAiAssistantChatV163(
             mediaUri=media?.toString(),
             mediaKind=kind
         )
-        messages=(messages+userMessage).takeLast(100)
+        if(persistExchange)messages=(messages+userMessage).takeLast(100)
         draft=""
         pickedUri=null
         pickedKind=null
@@ -673,7 +691,7 @@ fun RsAiAssistantChatV163(
         val spoken=voiceResult?.trim().orEmpty()
         if(spoken.isNotBlank()&&!busy){
             voiceResult=null
-            send(spoken)
+            send(spoken,fromVoice=true)
         }
     }
 
