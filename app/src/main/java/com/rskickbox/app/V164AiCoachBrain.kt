@@ -85,7 +85,24 @@ fun rsAiLocalCoachAnswerV164(code:String,question:String):String{
         "pt"->"$move — $why\n\nTécnica: $steps\n\nAtenção: $mistakes\n\nExercício: $drill"
         "es"->"$move — $why\n\nTécnica: $steps\n\nAtención: $mistakes\n\nEjercicio: $drill"
         "fr"->"$move — $why\n\nTechnique : $steps\n\nAttention : $mistakes\n\nExercice : $drill"
+        "de"->"$move — $why\n\nTechnik: $steps\n\nAchte auf: $mistakes\n\nÜbung: $drill"
+        "it"->"$move — $why\n\nTecnica: $steps\n\nAttenzione: $mistakes\n\nEsercizio: $drill"
+        "pl"->"$move — $why\n\nTechnika: $steps\n\nUważaj na: $mistakes\n\nĆwiczenie: $drill"
+        "tr"->"$move — $why\n\nTeknik: $steps\n\nDikkat: $mistakes\n\nDrill: $drill"
         else->"$move — $why\n\nTechnique: $steps\n\nWatch for: $mistakes\n\nDrill: $drill"
+    }
+
+    if(code!="en" && code!="nl" && rsAiTrainingIntentV164(q)){
+        return when(code){
+            "pt"->"Posso trabalhar esta técnica contigo sem mudar de idioma. Para “$q”, foca-te primeiro na postura, guarda, equilíbrio, rotação e recuperação. Faz repetições lentas e limpas, depois aumenta a velocidade. Se enviares um vídeo, consigo dar feedback visual mais específico."
+            "es"->"Puedo trabajar esta técnica contigo sin cambiar de idioma. Para “$q”, céntrate primero en postura, guardia, equilibrio, rotación y recuperación. Haz repeticiones lentas y limpias y después aumenta la velocidad. Si subes un vídeo, puedo darte observaciones visuales más concretas."
+            "fr"->"Je peux travailler cette technique avec toi sans changer de langue. Pour « $q », concentre-toi d’abord sur la posture, la garde, l’équilibre, la rotation et le retour en position. Fais des répétitions lentes et propres avant d’augmenter la vitesse. Avec une vidéo, je peux donner un retour visuel plus précis."
+            "de"->"Ich kann diese Technik mit dir durcharbeiten, ohne die Sprache zu wechseln. Bei „$q“ konzentrierst du dich zuerst auf Haltung, Deckung, Gleichgewicht, Rotation und saubere Rückkehr. Übe langsam und kontrolliert und steigere danach das Tempo. Mit einem Video kann ich genaueres sichtbares Feedback geben."
+            "it"->"Posso lavorare su questa tecnica con te senza cambiare lingua. Per “$q”, concentrati prima su postura, guardia, equilibrio, rotazione e ritorno in posizione. Esegui ripetizioni lente e pulite, poi aumenta la velocità. Se carichi un video posso darti un feedback visivo più preciso."
+            "pl"->"Mogę przeanalizować tę technikę bez zmiany języka. Przy „$q” skup się najpierw na pozycji, gardzie, równowadze, rotacji i poprawnym powrocie. Wykonuj najpierw wolne, czyste powtórzenia, a później zwiększ tempo. Po przesłaniu filmu mogę dać dokładniejszą ocenę wizualną."
+            "tr"->"Bu tekniği dili değiştirmeden seninle çalışabilirim. “$q” için önce duruş, gard, denge, rotasyon ve düzgün geri dönüşe odaklan. Önce yavaş ve temiz tekrarlar yap, sonra hızı artır. Video yüklersen daha ayrıntılı görsel geri bildirim verebilirim."
+            else->""
+        }
     }
 
     return when{
