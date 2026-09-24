@@ -1616,7 +1616,35 @@ private fun ShellV21(
                         },
                         vertical=if(route=="voice")0.dp else 2.dp
                     )
-                ){content()}
+                ){
+                    content()
+                    if(route=="voice"){
+                        OutlinedButton(
+                            onClick={scope.launch{drawerState.open()}},
+                            modifier=Modifier.align(Alignment.CenterStart)
+                                .padding(start=4.dp)
+                                .size(width=30.dp,height=66.dp),
+                            shape=RoundedCornerShape(16.dp),
+                            border=BorderStroke(
+                                1.dp,
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color(0xFF58C9FF).copy(alpha=.74f),
+                                        c.gold.copy(alpha=.66f),
+                                        Color(0xFF58C9FF).copy(alpha=.42f)
+                                    )
+                                )
+                            ),
+                            colors=ButtonDefaults.outlinedButtonColors(
+                                containerColor=Color.Black.copy(alpha=.52f),
+                                contentColor=c.bright
+                            ),
+                            contentPadding=PaddingValues(0.dp)
+                        ){
+                            Text("☰",fontSize=12.sp,fontWeight=FontWeight.Black)
+                        }
+                    }
+                }
             }
             if(route!="voice")RsBrandedFooterV21(c,store)
         }
