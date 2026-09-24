@@ -333,6 +333,20 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         return rsLangs.firstOrNull{it.code==code}?:rsLangs.first()
     }
 
+    private fun defaultDashboardRouteV182():String=
+        if(store.s("session_role","")=="trainer")"trainer" else "home"
+
+    private fun roleAwareRouteV182(route:String):String{
+        val trainer=store.s("session_role","")=="trainer"
+        return if(!trainer)route else when(route){
+            "music"->"music_admin"
+            "guide"->"guide"
+            "homework"->"homework_admin"
+            "progress"->"progress_admin"
+            else->route
+        }
+    }
+
     private fun trustedSessionActive():Boolean{
         val authMs=store.s("session_password_auth_ms","0").toLongOrNull()?:0L
         val age=System.currentTimeMillis()-authMs
@@ -547,6 +561,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         store.pb("ai_immersive_v171",true)
                         store.pb("ai_start_listening_v168",true)
                         if(command.isBlank()){
+                            if(!MainActivity.isForeground)openRouteV166(defaultDashboardRouteV182())
                             speak(rsVoiceGreetingV165(language().code),thenListen=true)
                         }else{
                             scope.launch{
@@ -736,6 +751,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 store.pb("ai_start_listening_v168",true)
                 recognizer?.cancel()
                 if(commandText.isBlank()){
+                    if(!MainActivity.isForeground)openRouteV166(defaultDashboardRouteV182())
                     speak(rsVoiceGreetingV165(language().code),thenListen=true)
                     return
                 }
@@ -795,7 +811,8 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
         val requestedRoute=rsVoiceRouteV167(commandText)
         if(requestedRoute!=null){
-            openRouteV166(requestedRoute)
+            val resolvedRoute=roleAwareRouteV182(requestedRoute)
+            openRouteV166(resolvedRoute)
             speak(
                 when(language().code){
                     "nl"->"Ik open "+when(requestedRoute){"voice"->"de AI Coach";"support"->"Support";"groups"->"Groepen";"community"->"Community";else->"Meldingen"}+"."
