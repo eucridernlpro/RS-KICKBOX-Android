@@ -1425,18 +1425,38 @@ private fun RsAiAvatarStageV163(
             onDispose{}
         }else{
             val manager=context.getSystemService(android.content.Context.SENSOR_SERVICE) as? SensorManager
-            val sensor=manager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            val rotationSensor=manager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+            val fallbackSensor=manager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            val sensor=rotationSensor?:fallbackSensor
+            val rotationMatrix=FloatArray(9)
+            val orientation=FloatArray(3)
+            val smoothing=.16f
             val listener=object:SensorEventListener{
                 override fun onSensorChanged(event:SensorEvent){
-                    if(event.sensor.type==Sensor.TYPE_ACCELEROMETER){
-                        sensorX=(event.values[0]/9.81f).coerceIn(-1f,1f)
-                        sensorY=(event.values[1]/9.81f).coerceIn(-1f,1f)
+                    val rawX:Float
+                    val rawY:Float
+                    if(event.sensor.type==Sensor.TYPE_ROTATION_VECTOR){
+                        SensorManager.getRotationMatrixFromVector(rotationMatrix,event.values)
+                        SensorManager.getOrientation(rotationMatrix,orientation)
+                        val pitch=orientation[1]
+                        val roll=orientation[2]
+                        rawX=(roll/(Math.PI.toFloat()/5f)).coerceIn(-1f,1f)
+                        rawY=(pitch/(Math.PI.toFloat()/6f)).coerceIn(-1f,1f)
+                    }else{
+                        rawX=(event.values[0]/9.81f).coerceIn(-1f,1f)
+                        rawY=(event.values[1]/9.81f).coerceIn(-1f,1f)
                     }
+                    sensorX+=(rawX-sensorX)*smoothing
+                    sensorY+=(rawY-sensorY)*smoothing
                 }
                 override fun onAccuracyChanged(sensor:Sensor?,accuracy:Int){}
             }
             if(sensor!=null)manager.registerListener(listener,sensor,SensorManager.SENSOR_DELAY_GAME)
-            onDispose{runCatching{manager?.unregisterListener(listener)}}
+            onDispose{
+                runCatching{manager?.unregisterListener(listener)}
+                sensorX=0f
+                sensorY=0f
+            }
         }
     }
     val idleSlot=if(avatar=="FEMALE")"ai_trainer_female" else "ai_trainer_male"
