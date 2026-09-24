@@ -66,7 +66,7 @@ private fun rsStripWakePhraseV165(text:String):String{
 private fun rsDetectSpokenLanguageV182(text:String,fallback:String):String{
     val s=text.lowercase(Locale.ROOT)
     val scored=listOf(
-        "nl" to listOf("wat ","waar ","hoe ","open ","muziek","instellingen","training","groep","leerling","sluit","minimaliseer","uitloggen"),
+        "nl" to listOf("wat ","waar ","hoe ","muziek","instellingen","training","groep","leerling","sluit","minimaliseer","uitloggen","ga naar"),
         "pt" to listOf("o que","como ","abre ","abrir ","música","definições","treino","grupo","aluno","fecha","minimiza","sair","acorda"),
         "es" to listOf("qué ","como ","abre ","abrir ","música","ajustes","entrenamiento","grupo","alumno","cierra","minimiza","salir","despierta"),
         "fr" to listOf("quoi ","comment ","ouvre ","musique","réglages","entraînement","groupe","élève","ferme","réduis","déconnexion","réveille"),
@@ -824,12 +824,22 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         if(requestedRoute!=null){
             val resolvedRoute=roleAwareRouteV182(requestedRoute)
             openRouteV166(resolvedRoute)
+            val title=rsRouteTitle(
+                language(),
+                resolvedRoute,
+                resolvedRoute.replace('_',' ').replaceFirstChar{it.uppercase()}
+            )
             speak(
                 when(language().code){
-                    "nl"->"Ik open "+when(requestedRoute){"voice"->"de AI Coach";"support"->"Support";"groups"->"Groepen";"community"->"Community";else->"Meldingen"}+"."
-                    "pt"->"Vou abrir "+when(requestedRoute){"voice"->"o Treinador IA";"support"->"o Suporte";"groups"->"os Grupos";"community"->"a Comunidade";else->"as Notificações"}+"."
-                    "es"->"Voy a abrir "+when(requestedRoute){"voice"->"el Entrenador IA";"support"->"Soporte";"groups"->"Grupos";"community"->"Comunidad";else->"Notificaciones"}+"."
-                    else->"Opening "+when(requestedRoute){"voice"->"AI Coach";"support"->"Support";"groups"->"Groups";"community"->"Community";else->"Notifications"}+"."
+                    "nl"->"Ik open "+title+"."
+                    "pt"->"Vou abrir "+title+"."
+                    "es"->"Voy a abrir "+title+"."
+                    "fr"->"J’ouvre "+title+"."
+                    "de"->"Ich öffne "+title+"."
+                    "it"->"Apro "+title+"."
+                    "pl"->"Otwieram "+title+"."
+                    "tr"->title+" açılıyor."
+                    else->"Opening "+title+"."
                 }
             )
             return
