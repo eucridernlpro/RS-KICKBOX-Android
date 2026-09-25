@@ -1279,18 +1279,20 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 return
             }
             "CLOSE"->{
-                awakeUntil=0L
+                awakeUntil=System.currentTimeMillis()+45_000L
+                store.pb("ai_immersive_v171",false)
+                store.pb("ai_start_listening_v168",false)
                 speak(
                     when(language().code){
-                        "nl"->"Ik sluit het RS-venster en luister daarna weer alleen naar de wekzin."
-                        "pt"->"Vou fechar a janela RS e depois volto a ouvir apenas a frase de ativação."
-                        "es"->"Cerraré la ventana de RS y después volveré a escuchar solo la frase de activación."
-                        "fr"->"Je ferme la fenêtre RS puis je reviens à l’écoute de la phrase d’activation."
-                        "de"->"Ich schließe das RS-Fenster und höre danach wieder nur auf das Aktivierungswort."
-                        "it"->"Chiudo la finestra RS e poi torno ad ascoltare solo la frase di attivazione."
-                        "pl"->"Zamknę okno RS i wrócę do nasłuchiwania wyłącznie hasła aktywacyjnego."
-                        "tr"->"RS penceresini kapatıp yalnızca uyandırma ifadesini dinlemeye döneceğim."
-                        else->"I’ll close the RS window and return to listening only for the wake phrase."
+                        "nl"->"Ik sluit het RS-venster en blijf nog even actief luisteren op de achtergrond."
+                        "pt"->"Vou fechar a janela RS e continuar a ouvir ativamente em segundo plano por alguns instantes."
+                        "es"->"Cerraré la ventana de RS y seguiré escuchando activamente en segundo plano durante un momento."
+                        "fr"->"Je ferme la fenêtre RS et je continue à écouter activement en arrière-plan pendant un moment."
+                        "de"->"Ich schließe das RS-Fenster und höre im Hintergrund noch eine Weile aktiv weiter."
+                        "it"->"Chiudo la finestra RS e continuo ad ascoltare attivamente in background per un po’."
+                        "pl"->"Zamknę okno RS i przez chwilę będę aktywnie słuchać w tle."
+                        "tr"->"RS penceresini kapatıyorum ve bir süre arka planda aktif olarak dinlemeye devam edeceğim."
+                        else->"I’ll close the RS window and keep actively listening in the background for a while."
                     },
                     thenListen=true
                 )
@@ -1922,6 +1924,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             val message=intent.getStringExtra("message").orEmpty().trim()
             if(message.isNotBlank()){
                 pendingHandoffSpeechV194=message
+                awakeUntil=System.currentTimeMillis()+45_000L
                 store.pb("rs_voice_wake_enabled_v165",true)
                 scope.launch{
                     delay(180)
