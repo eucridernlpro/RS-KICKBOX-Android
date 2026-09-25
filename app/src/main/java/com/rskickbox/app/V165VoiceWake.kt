@@ -1401,6 +1401,132 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 )
                 return
             }
+            is RsAiPlatformIntentV171.DirectCall->{
+                scope.launch{
+                    val contacts=rsChatContactsV125().getOrElse{emptyList()}
+                    val person=rsAiBestContactV194(contacts,assistantIntent.person)
+                    if(person==null){
+                        speak(
+                            when(language().code){
+                                "nl"->"Ik kon "+assistantIntent.person+" niet vinden in je RS-contacten."
+                                "pt"->"Não encontrei "+assistantIntent.person+" nos teus contactos RS."
+                                "es"->"No encontré a "+assistantIntent.person+" en tus contactos RS."
+                                "fr"->"Je n’ai pas trouvé "+assistantIntent.person+" dans tes contacts RS."
+                                "de"->"Ich konnte "+assistantIntent.person+" in deinen RS-Kontakten nicht finden."
+                                else->"I couldn’t find "+assistantIntent.person+" in your RS contacts."
+                            }
+                        )
+                        return@launch
+                    }
+
+                    val needsMic=ActivityCompat.checkSelfPermission(this@RsVoiceWakeServiceV165,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED
+                    val needsCamera=assistantIntent.type=="VIDEO" &&
+                        ActivityCompat.checkSelfPermission(this@RsVoiceWakeServiceV165,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED
+                    if(needsMic||needsCamera){
+                        store.ps("chat_open_peer_id_v156",person.userId)
+                        requestRouteOpenV182("coachchat")
+                        speak(
+                            when(language().code){
+                                "nl"->"Ik heb "+person.displayName+" gevonden. Open RS Chat om de benodigde toestemming één keer te geven."
+                                "pt"->"Encontrei "+person.displayName+". Abre o RS Chat para dar a permissão necessária uma vez."
+                                "es"->"Encontré a "+person.displayName+". Abre RS Chat para dar el permiso necesario una vez."
+                                "fr"->"J’ai trouvé "+person.displayName+". Ouvre RS Chat pour accorder l’autorisation nécessaire une fois."
+                                else->"I found "+person.displayName+". Open RS Chat once to grant the required permission."
+                            }
+                        )
+                        return@launch
+                    }
+
+                    rsStartDirectCallV131(person.userId,assistantIntent.type)
+                        .onSuccess{
+                            store.ps("chat_open_peer_id_v156",person.userId)
+                            requestRouteOpenV182("coachchat")
+                            speak(
+                                when(language().code){
+                                    "nl"->if(assistantIntent.type=="VIDEO")"Ik start een videogesprek met "+person.displayName+"." else "Ik bel "+person.displayName+"."
+                                    "pt"->if(assistantIntent.type=="VIDEO")"Vou iniciar uma videochamada com "+person.displayName+"." else "Vou ligar para "+person.displayName+"."
+                                    "es"->if(assistantIntent.type=="VIDEO")"Voy a iniciar una videollamada con "+person.displayName+"." else "Voy a llamar a "+person.displayName+"."
+                                    "fr"->if(assistantIntent.type=="VIDEO")"Je lance un appel vidéo avec "+person.displayName+"." else "J’appelle "+person.displayName+"."
+                                    "de"->if(assistantIntent.type=="VIDEO")"Ich starte einen Videoanruf mit "+person.displayName+"." else "Ich rufe "+person.displayName+" an."
+                                    else->if(assistantIntent.type=="VIDEO")"Starting a video call with "+person.displayName+"." else "Calling "+person.displayName+"."
+                                }
+                            )
+                        }
+                        .onFailure{
+                            speak(it.message?:"The call could not be started.")
+                        }
+                }
+                return
+            }
+            is RsAiPlatformIntentV171.GroupVideoCall->{
+                scope.launch{
+                    if(store.s("session_role","")!="trainer"){
+                        speak(
+                            when(language().code){
+                                "nl"->"Groepsvideo wordt momenteel door de trainer gehost."
+                                "pt"->"A videochamada de grupo é atualmente alojada pelo treinador."
+                                "es"->"La videollamada grupal actualmente la organiza el entrenador."
+                                "fr"->"La vidéo de groupe est actuellement hébergée par l’entraîneur."
+                                else->"Group video rooms are currently hosted by the trainer."
+                            }
+                        )
+                        return@launch
+                    }
+
+                    val contacts=rsChatContactsV125().getOrElse{emptyList()}
+                    val (people,missing)=rsAiResolveContactsV194(contacts,assistantIntent.people)
+                    if(missing.isNotEmpty()){
+                        speak(
+                            when(language().code){
+                                "nl"->"Ik kon deze RS-contacten niet vinden: "+missing.joinToString(", ")+"."
+                                "pt"->"Não encontrei estes contactos RS: "+missing.joinToString(", ")+"."
+                                "es"->"No encontré estos contactos RS: "+missing.joinToString(", ")+"."
+                                "fr"->"Je n’ai pas trouvé ces contacts RS : "+missing.joinToString(", ")+"."
+                                else->"I couldn’t find these RS contacts: "+missing.joinToString(", ")+"."
+                            }
+                        )
+                        return@launch
+                    }
+                    if(people.size<2){
+                        speak("I need at least two other RS contacts for a group video call.")
+                        return@launch
+                    }
+
+                    val needsMic=ActivityCompat.checkSelfPermission(this@RsVoiceWakeServiceV165,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED
+                    val needsCamera=ActivityCompat.checkSelfPermission(this@RsVoiceWakeServiceV165,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED
+                    if(needsMic||needsCamera){
+                        requestRouteOpenV182("coachchat")
+                        speak(
+                            when(language().code){
+                                "nl"->"Ik heb de deelnemers gevonden. Open RS Chat om microfoon- en cameratoegang één keer toe te staan."
+                                "pt"->"Encontrei os participantes. Abre o RS Chat para autorizar o microfone e a câmara uma vez."
+                                "es"->"Encontré a los participantes. Abre RS Chat para autorizar micrófono y cámara una vez."
+                                else->"I found the participants. Open RS Chat once to grant microphone and camera permission."
+                            }
+                        )
+                        return@launch
+                    }
+
+                    val title="RS Group Video · "+people.joinToString(" · "){it.displayName}
+                    rsCreateVideoRoomV136(title,people.map{it.userId})
+                        .onSuccess{
+                            requestRouteOpenV182("coachchat")
+                            speak(
+                                when(language().code){
+                                    "nl"->"Ik start de groepsvideo met "+people.joinToString(", "){it.displayName}+"."
+                                    "pt"->"Vou iniciar a videochamada de grupo com "+people.joinToString(", "){it.displayName}+"."
+                                    "es"->"Voy a iniciar la videollamada grupal con "+people.joinToString(", "){it.displayName}+"."
+                                    "fr"->"Je lance la vidéo de groupe avec "+people.joinToString(", "){it.displayName}+"."
+                                    else->"Starting the group video with "+people.joinToString(", "){it.displayName}+"."
+                                }
+                            )
+                        }
+                        .onFailure{
+                            speak(it.message?:"The group video could not be started.")
+                        }
+                }
+                return
+            }
             is RsAiPlatformIntentV171.CommandGuide->{
                 requestRouteOpenV182(if(store.s("session_role","")=="trainer")"guide" else "student_guide")
                 speak(
