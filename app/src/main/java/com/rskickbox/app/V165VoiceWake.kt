@@ -333,6 +333,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private var offlineWakePrepareJobV188:Job?=null
     private var silentWakePreparingV188=false
     private var silentWakeSessionFailedV188=false
+    @Volatile private var pausedForForegroundAiV197=false
     private val store by lazy{RsStore(this)}
 
     private fun readCurrentPageV196(continueReading:Boolean=false){
@@ -1031,6 +1032,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun startListening(){
+        if(pausedForForegroundAiV197)return
         if(serviceSpeaking)return
         if(!trustedSessionActive() && !recoverableLockedIdentityV186()){
             requireFreshLoginOrStop()
@@ -2125,6 +2127,32 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int{
+        if(intent?.action=="PAUSE_FOR_FOREGROUND_AI"){
+            pausedForForegroundAiV197=true
+            serviceVoiceRequestId++
+            runCatching{serviceCloudVoicePlayer?.stop()}
+            runCatching{serviceCloudVoicePlayer?.release()}
+            serviceCloudVoicePlayer=null
+            runCatching{tts?.stop()}
+            serviceSpeaking=false
+            serviceUtteranceId=""
+            runCatching{recognizer?.cancel()}
+            runCatching{recognizer?.destroy()}
+            recognizer=null
+            runCatching{offlineWakeEngineV188?.stop()}
+            offlineWakeEngineV188=null
+            setWakeStatusV168("PAUSED_FOR_FOREGROUND_AI")
+            return START_STICKY
+        }
+        if(intent?.action=="RESUME_AFTER_FOREGROUND_AI"){
+            pausedForForegroundAiV197=false
+            setWakeStatusV168("RESUMING_AFTER_FOREGROUND_AI")
+            scope.launch{
+                delay(350)
+                if(!pausedForForegroundAiV197 && !serviceSpeaking)startListening()
+            }
+            return START_STICKY
+        }
         if(intent?.action=="STOP"){
             store.pb("rs_voice_wake_enabled_v165",false)
             stopForeground(STOP_FOREGROUND_REMOVE)
@@ -2178,6 +2206,18 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             val intent=Intent(context,RsVoiceWakeServiceV165::class.java).apply{
                 action="SPEAK_HANDOFF"
                 putExtra("message",message.take(1200))
+            }
+            ContextCompat.startForegroundService(context,intent)
+        }
+        fun pauseForForegroundAi(context:Context){
+            val intent=Intent(context,RsVoiceWakeServiceV165::class.java).apply{
+                action="PAUSE_FOR_FOREGROUND_AI"
+            }
+            ContextCompat.startForegroundService(context,intent)
+        }
+        fun resumeAfterForegroundAi(context:Context){
+            val intent=Intent(context,RsVoiceWakeServiceV165::class.java).apply{
+                action="RESUME_AFTER_FOREGROUND_AI"
             }
             ContextCompat.startForegroundService(context,intent)
         }
