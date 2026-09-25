@@ -1667,16 +1667,13 @@ private fun ShellV21(
                     )
                     OutlinedButton(
                         onClick={
-                            // Foreground AI must own the microphone exclusively.
-                            // Pause background Voice Wake before opening the direct
-                            // recognizer; resume it when the AI page is disposed.
-                            if(store.b("rs_voice_wake_enabled_v165",false)){
-                                store.pb("rs_voice_wake_resume_after_ai_v195",true)
-                                runCatching{RsVoiceWakeServiceV165.pauseForForegroundAi(context)}
-                            }
+                            // The top mic always uses the single foreground Voice Wake
+                            // recognizer. Do not create a second SpeechRecognizer here.
                             store.pb("ai_start_listening_v168",false)
-                            store.pb("ai_direct_listen_v195",true)
+                            store.pb("ai_direct_listen_v195",false)
+                            store.pb("rs_voice_wake_resume_after_ai_v195",false)
                             store.pb("ai_immersive_v171",true)
+                            runCatching{RsVoiceWakeServiceV165.directListenOnce(context)}
                             onRoute("voice")
                         },
                         modifier=Modifier.size(if(compactHeader)33.dp else 38.dp),
