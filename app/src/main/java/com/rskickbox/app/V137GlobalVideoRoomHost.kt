@@ -51,7 +51,7 @@ fun RsGlobalVideoRoomHostV137(
                     val joined=list.firstOrNull{it.roomStatus=="OPEN"&&it.myStatus=="JOINED"}
                     activeRoom=joined
                     inviteRoom=if(joined==null)list.firstOrNull{
-                        it.roomStatus=="OPEN"&&it.myRole=="STUDENT"&&it.myStatus=="INVITED"
+                        it.roomStatus=="OPEN"&&it.myRole!="HOST"&&it.myStatus=="INVITED"
                     }else null
                 }
                 .onFailure{status=rsVideoRoomFriendlyErrorV151(it.message.orEmpty())}
