@@ -725,7 +725,7 @@ fun RsAiAssistantChatV163(
                     onSuccess={rsAiActionV184(aiLang,"playing",namedTrackRequest.name)},
                     onFailure={rsAiActionV184(aiLang,"play_failed")}
                 )
-            deliverAssistant(reply,mediaUri=replyMediaUri,mediaKind=replyMediaKind)
+            deliverAssistant(reply)
             busy=false
             status=""
             if(autoSpeak)speak(reply) else if(voiceConversationActive)resumeListeningSignal++
@@ -913,22 +913,23 @@ fun RsAiAssistantChatV163(
                         }
                     }else{
                         val currentIndex=options.indexOfFirst{it.name==current}
-                        val next=options[(currentIndex+1).mod(options.size)]
+                        val nextIndex=if(currentIndex<0)0 else (currentIndex+1)%options.size
+                        val next=options[nextIndex]
                         store.ps(voiceOverrideKey,next.name)
                         runCatching{tts?.stop()}
                         activeUtteranceId=""
                         speaking=false
                         applyVoiceProfile(selectedLang,avatar)
                         when(aiLang){
-                            "nl"->"Ik heb een andere "+if(avatar=="FEMALE")"vrouwelijke" else "mannelijke"+" stem gekozen in dezelfde taal."
-                            "pt"->"Escolhi outra voz "+if(avatar=="FEMALE")"feminina" else "masculina"+" no mesmo idioma."
-                            "es"->"He elegido otra voz "+if(avatar=="FEMALE")"femenina" else "masculina"+" en el mismo idioma."
-                            "fr"->"J’ai choisi une autre voix "+if(avatar=="FEMALE")"féminine" else "masculine"+" dans la même langue."
-                            "de"->"Ich habe eine andere "+if(avatar=="FEMALE")"weibliche" else "männliche"+" Stimme in derselben Sprache gewählt."
-                            "it"->"Ho scelto un’altra voce "+if(avatar=="FEMALE")"femminile" else "maschile"+" nella stessa lingua."
-                            "pl"->"Wybrałam/em inny głos tej samej płci w tym samym języku."
-                            "tr"->"Aynı dilde aynı cinsiyetten başka bir ses seçtim."
-                            else->"I selected another "+if(avatar=="FEMALE")"female" else "male"+" voice in the same language."
+                            "nl"->if(avatar=="FEMALE")"Ik heb een andere vrouwelijke stem gekozen in dezelfde taal." else "Ik heb een andere mannelijke stem gekozen in dezelfde taal."
+                            "pt"->if(avatar=="FEMALE")"Escolhi outra voz feminina no mesmo idioma." else "Escolhi outra voz masculina no mesmo idioma."
+                            "es"->if(avatar=="FEMALE")"He elegido otra voz femenina en el mismo idioma." else "He elegido otra voz masculina en el mismo idioma."
+                            "fr"->if(avatar=="FEMALE")"J’ai choisi une autre voix féminine dans la même langue." else "J’ai choisi une autre voix masculine dans la même langue."
+                            "de"->if(avatar=="FEMALE")"Ich habe eine andere weibliche Stimme in derselben Sprache gewählt." else "Ich habe eine andere männliche Stimme in derselben Sprache gewählt."
+                            "it"->if(avatar=="FEMALE")"Ho scelto un’altra voce femminile nella stessa lingua." else "Ho scelto un’altra voce maschile nella stessa lingua."
+                            "pl"->"Wybrano inny głos tej samej płci w tym samym języku."
+                            "tr"->"Aynı dilde aynı cinsiyetten başka bir ses seçildi."
+                            else->if(avatar=="FEMALE")"I selected another female voice in the same language." else "I selected another male voice in the same language."
                         }
                     }
                 }
@@ -948,7 +949,7 @@ fun RsAiAssistantChatV163(
                 }
                 RsAiPlatformIntentV171.None->""
             }
-            deliverAssistant(reply)
+            deliverAssistant(reply,mediaUri=replyMediaUri,mediaKind=replyMediaKind)
             busy=false
             status=""
             if(autoSpeak && reply.isNotBlank()){
