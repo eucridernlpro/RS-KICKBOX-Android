@@ -887,6 +887,8 @@ fun RsAiAssistantChatV163(
                         else->"I’ll close the RS window and keep listening in the background for your next command."
                     }
                     handledSpeechExternally=true
+                    store.pb("ai_immersive_v171",false)
+                    store.pb("ai_start_listening_v168",false)
                     RsVoiceWakeServiceV165.handoffSpeechAndListen(context,handoff)
                     scope.launch{
                         kotlinx.coroutines.delay(520)
