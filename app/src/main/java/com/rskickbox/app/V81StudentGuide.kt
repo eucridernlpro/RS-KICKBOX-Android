@@ -59,6 +59,12 @@ private fun rsStudentGuideItemsV81()=listOf(
         listOf("Open AI Technique Coach","Choose trainer voice/persona","Upload a video up to 20 seconds","Choose the technique","Analyze","Listen/read feedback","Study a matching trainer-approved example when available","Save to history"),
         "Use a clear full-body angle with enough space around you. Visual examples come from media approved by your trainer."
     ),
+    RsStudentGuideItemV81("COACHING","RS AI Voice Commands","voice",
+        "Control RS KICKBOXING by speaking naturally to Sofia or Marcus and turn supported spoken commands into real app navigation or actions.",
+        "Say “Open music”, “Open homework”, “Go to dashboard”, “Open settings”, “Change to Sofia”, “Change to Marcus”, “Another voice”, “Minimize app”, “Open app”, “Close app”, “Close AI”, or “Show commands”.",
+        listOf("Open RS AI","Keep Sofia or Marcus selected","Say a supported command naturally","RS AI performs the navigation/action","Say Show commands any time to see examples","Swipe right to left to leave the AI page","Voice-style changes keep the selected gender and language"),
+        "If Android blocks automatic opening while RS is fully closed, tap the silent RS heard you notification to complete the handoff. Sofia stays female and Marcus stays male unless you explicitly switch persona."
+    ),
     RsStudentGuideItemV81("TRAINING","Technique Library","techniques",
         "Study kickboxing techniques, key coaching points and drills before practicing.",
         "Open the jab lesson before pad training and review stance, path and recovery.",
