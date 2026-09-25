@@ -265,6 +265,31 @@ fun RsFloatingGlassChatHubV125(
     val activeTheme=rsStoredThemeV175(store)
     val themeLayout=rsThemeLayoutV175(activeTheme)
     val swipeMenuEnabled=store.b("chat_swipe_menu_v163",true)
+    val allChatVoiceListState=androidx.compose.foundation.lazy.rememberLazyListState()
+    val privateSelectVoiceListState=androidx.compose.foundation.lazy.rememberLazyListState()
+
+    LaunchedEffect(tab,role,privateStudentId,slideMenuOpen){
+        if(slideMenuOpen)return@LaunchedEffect
+        RsVoicePageBusV196.commands.collect{command->
+            val state=when{
+                tab==RsChatHubTabV125.ALL->allChatVoiceListState
+                tab==RsChatHubTabV125.PRIVATE && role==RsRole.TRAINER && privateStudentId.isNullOrBlank()->
+                    privateSelectVoiceListState
+                else->null
+            }?:return@collect
+            val total=state.layoutInfo.totalItemsCount
+            if(total<=0)return@collect
+            val current=state.firstVisibleItemIndex
+            when(command){
+                RsVoicePageCommandV196.SCROLL_DOWN->
+                    state.animateScrollToItem((current+3).coerceAtMost(total-1))
+                RsVoicePageCommandV196.SCROLL_UP->
+                    state.animateScrollToItem((current-3).coerceAtLeast(0))
+                RsVoicePageCommandV196.TOP->state.animateScrollToItem(0)
+                RsVoicePageCommandV196.BOTTOM->state.animateScrollToItem(total-1)
+            }
+        }
+    }
 
     fun handleChatBack(){
         when{
@@ -582,6 +607,7 @@ fun RsFloatingGlassChatHubV125(
                                 }
                             }
                             androidx.compose.foundation.lazy.LazyColumn(
+                                state=allChatVoiceListState,
                                 modifier=Modifier.fillMaxSize(),
                                 verticalArrangement=Arrangement.spacedBy(7.dp),
                                 contentPadding=PaddingValues(bottom=12.dp)
@@ -603,6 +629,7 @@ fun RsFloatingGlassChatHubV125(
                             }
                         }else{
                             androidx.compose.foundation.lazy.LazyColumn(
+                                state=allChatVoiceListState,
                                 modifier=Modifier.fillMaxSize(),
                                 verticalArrangement=Arrangement.spacedBy(9.dp),
                                 contentPadding=PaddingValues(bottom=12.dp)
@@ -663,6 +690,7 @@ fun RsFloatingGlassChatHubV125(
                                 Text("Choose who you want to message or call before opening the private thread.",color=c.muted,fontSize=9.sp)
                             }
                             androidx.compose.foundation.lazy.LazyColumn(
+                                state=privateSelectVoiceListState,
                                 modifier=Modifier.fillMaxSize(),
                                 verticalArrangement=Arrangement.spacedBy(7.dp),
                                 contentPadding=PaddingValues(bottom=12.dp)
