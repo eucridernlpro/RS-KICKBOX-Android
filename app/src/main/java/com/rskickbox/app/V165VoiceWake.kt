@@ -2160,6 +2160,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             return START_NOT_STICKY
         }
         if(intent?.action=="SPEAK_HANDOFF"){
+            pausedForForegroundAiV197=false
             val message=intent.getStringExtra("message").orEmpty().trim()
             if(message.isNotBlank()){
                 pendingHandoffSpeechV194=message
