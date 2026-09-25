@@ -1,11 +1,20 @@
 package com.rskickbox.app
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import io.github.sceneview.SceneView
@@ -30,6 +39,7 @@ fun RsAiProductionAvatarV191(
     avatar:String,
     speaking:Boolean,
     speechAmplitude:Float,
+    speechText:String="",
     motionEnabled:Boolean,
     listening:Boolean,
     thinking:Boolean,
@@ -38,11 +48,8 @@ fun RsAiProductionAvatarV191(
     modifier:Modifier=Modifier
 ){
     val context=LocalContext.current
-    val assetPath=if(avatar=="FEMALE"){
-        "models/rs_ai_sofia.glb"
-    }else{
-        "models/rs_ai_marcus.glb"
-    }
+    val identity=remember(avatar){rsAiIdentityV193(avatar)}
+    val assetPath=identity.modelAsset
     val hasRiggedAsset=remember(assetPath){
         runCatching{
             context.assets.open(assetPath).use{}
@@ -52,12 +59,12 @@ fun RsAiProductionAvatarV191(
 
     if(!hasRiggedAsset){
         val visualSlot=if(avatar=="FEMALE")"ai_trainer_female" else "ai_trainer_male"
-        val visual=remember(visualSlot){
-            rsVisualUriWithBundledFallbackV113(context,store,visualSlot)
+        val customVisual=remember(visualSlot){
+            store.s("visual_v21_"+visualSlot,"").takeIf{it.isNotBlank()}
         }
-        if(visual.isNotBlank()){
+        if(!customVisual.isNullOrBlank()){
             RsUriPreviewV21(
-                visual,
+                customVisual,
                 modifier
                     .clip(RoundedCornerShape(28.dp))
                     .graphicsLayer{
@@ -70,16 +77,31 @@ fun RsAiProductionAvatarV191(
                 store.s("visual_v21_pos_"+visualSlot,"CENTER")
             )
         }else{
-            RsAiReal3DModelV183(
-                avatar=avatar,
-                speaking=speaking,
-                speechAmplitude=speechAmplitude,
-                motionEnabled=motionEnabled,
-                listening=listening,
-                thinking=thinking,
-                sensorX=sensorX,
-                sensorY=sensorY,
+            val transition=rememberInfiniteTransition(label="rs-digital-human")
+            val breath by transition.animateFloat(
+                initialValue=0f,
+                targetValue=1f,
+                animationSpec=infiniteRepeatable(
+                    animation=tween(if(speaking)260 else 1900,easing=FastOutSlowInEasing),
+                    repeatMode=RepeatMode.Reverse
+                ),
+                label="rs-digital-human-breath"
+            )
+            val drawable=if(avatar=="FEMALE")R.drawable.rs_ai_sofia_default else R.drawable.rs_ai_marcus_default
+            Image(
+                painter=painterResource(drawable),
+                contentDescription=identity.displayName,
+                contentScale=ContentScale.Crop,
                 modifier=modifier
+                    .clip(RoundedCornerShape(28.dp))
+                    .graphicsLayer{
+                        val depth=if(motionEnabled)1f else 0f
+                        translationX=(-sensorX*18f*depth).coerceIn(-20f,20f)
+                        translationY=(sensorY*9f*depth).coerceIn(-10f,10f)
+                        val speechDrive=if(speaking)(speechAmplitude.coerceIn(.08f,1f)*.010f + breath*.006f) else breath*.003f
+                        scaleX=1.04f+speechDrive
+                        scaleY=1.04f+speechDrive
+                    }
             )
         }
         return
@@ -105,10 +127,17 @@ fun RsAiProductionAvatarV191(
         isOpaque=false
     ){
         rememberModelInstance(modelLoader,assetPath)?.let{instance->
+            val state=rsAiAvatarStateV193(
+                speaking=speaking,
+                listening=listening,
+                thinking=thinking
+            )
             ModelNode(
                 modelInstance=instance,
                 scaleToUnits=1.72f,
-                autoAnimate=motionEnabled
+                autoAnimate=motionEnabled,
+                animationName=if(motionEnabled)rsAiAnimationNameV193(identity,state) else null,
+                animationLoop=true
             )
         }
     }
