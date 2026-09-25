@@ -26,8 +26,8 @@ android {
         applicationId = "com.rskickbox.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 181
-        versionName = "0.180.0"
+        versionCode = 182
+        versionName = "0.181.0"
         buildConfigField("String", "SUPABASE_URL", "\""+rsSupabaseUrl.replace("\\","\\\\").replace("\"","\\\"")+"\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\""+rsSupabasePublishableKey.replace("\\","\\\\").replace("\"","\\\"")+"\"")
     }
@@ -106,4 +106,4 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
 
-// RS v0.178 top-mic crash repair: foreground mic ownership, direct listen handoff, safe Voice Wake resume
+// RS v0.181 mic hardening + persistent fingerprint login: cold-start wake pause, crash-safe recognizer, remembered biometric entry
