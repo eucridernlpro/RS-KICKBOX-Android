@@ -510,7 +510,11 @@ fun RsAiAssistantChatV163(
                     context=context,
                     text=text,
                     lang=utteranceLanguage,
-                    avatar=utteranceAvatar
+                    avatar=utteranceAvatar,
+                    voiceStyle=store.s(
+                        "ai_cloud_voice_style_v193_"+utteranceLanguage.code+"_"+utteranceAvatar.lowercase(Locale.ROOT),
+                        "natural"
+                    )
                 )
                 if(requestId!=cloudVoiceRequestId)return@launch
                 clip.onSuccess{voiceClip->
@@ -904,39 +908,55 @@ fun RsAiAssistantChatV163(
                     rsAiActionV184(aiLang,"opening",title)
                 }
                 is RsAiPlatformIntentV171.ChangeVoiceStyle->{
-                    val current=store.s(voiceOverrideKey,"")
-                    val options=selectableVoices
-                    if(options.isEmpty()){
+                    if(rsUsePremiumCloudVoiceV192(store,role) && RsSupabaseV60.configured){
+                        val key="ai_cloud_voice_style_v193_"+aiLang+"_"+avatar.lowercase(Locale.ROOT)
+                        val styles=listOf("natural","calm","energetic","soft","direct","deep")
+                        val current=store.s(key,"natural")
+                        val next=styles[(styles.indexOf(current).takeIf{it>=0}?:0).let{(it+1)%styles.size}]
+                        store.ps(key,next)
                         when(aiLang){
-                            "nl"->"Er is op dit toestel geen andere veilige stem van hetzelfde geslacht beschikbaar."
-                            "pt"->"Não existe outra voz segura do mesmo género disponível neste dispositivo."
-                            "es"->"No hay otra voz segura del mismo género disponible en este dispositivo."
-                            "fr"->"Aucune autre voix sûre du même genre n’est disponible sur cet appareil."
-                            "de"->"Auf diesem Gerät ist keine andere sichere Stimme desselben Geschlechts verfügbar."
-                            "it"->"Non è disponibile un’altra voce sicura dello stesso genere su questo dispositivo."
-                            "pl"->"Na tym urządzeniu nie ma innego bezpiecznego głosu tej samej płci."
-                            "tr"->"Bu cihazda aynı cinsiyette başka güvenli bir ses yok."
-                            else->"No other safe same-gender voice is available on this device."
+                            "nl"->"Ik houd "+if(avatar=="FEMALE")"Sofia vrouwelijk" else "Marcus mannelijk"+" en verander alleen de stemstijl naar "+next+"."
+                            "pt"->"Mantenho "+if(avatar=="FEMALE")"a Sofia com voz feminina" else "o Marcus com voz masculina"+" e mudo apenas o estilo para "+next+"."
+                            "es"->"Mantengo "+if(avatar=="FEMALE")"a Sofia con voz femenina" else "a Marcus con voz masculina"+" y cambio solo el estilo a "+next+"."
+                            "fr"->"Je garde "+if(avatar=="FEMALE")"Sofia avec une voix féminine" else "Marcus avec une voix masculine"+" et je change seulement le style vers "+next+"."
+                            "de"->"Ich behalte "+if(avatar=="FEMALE")"Sofia mit weiblicher Stimme" else "Marcus mit männlicher Stimme"+" und ändere nur den Stil zu "+next+"."
+                            else->"I’ll keep "+if(avatar=="FEMALE")"Sofia female" else "Marcus male"+" and change only the voice style to "+next+"."
                         }
                     }else{
-                        val currentIndex=options.indexOfFirst{it.name==current}
-                        val nextIndex=if(currentIndex<0)0 else (currentIndex+1)%options.size
-                        val next=options[nextIndex]
-                        store.ps(voiceOverrideKey,next.name)
-                        runCatching{tts?.stop()}
-                        activeUtteranceId=""
-                        speaking=false
-                        applyVoiceProfile(selectedLang,avatar)
-                        when(aiLang){
-                            "nl"->if(avatar=="FEMALE")"Ik heb een andere vrouwelijke stem gekozen in dezelfde taal." else "Ik heb een andere mannelijke stem gekozen in dezelfde taal."
-                            "pt"->if(avatar=="FEMALE")"Escolhi outra voz feminina no mesmo idioma." else "Escolhi outra voz masculina no mesmo idioma."
-                            "es"->if(avatar=="FEMALE")"He elegido otra voz femenina en el mismo idioma." else "He elegido otra voz masculina en el mismo idioma."
-                            "fr"->if(avatar=="FEMALE")"J’ai choisi une autre voix féminine dans la même langue." else "J’ai choisi une autre voix masculine dans la même langue."
-                            "de"->if(avatar=="FEMALE")"Ich habe eine andere weibliche Stimme in derselben Sprache gewählt." else "Ich habe eine andere männliche Stimme in derselben Sprache gewählt."
-                            "it"->if(avatar=="FEMALE")"Ho scelto un’altra voce femminile nella stessa lingua." else "Ho scelto un’altra voce maschile nella stessa lingua."
-                            "pl"->"Wybrano inny głos tej samej płci w tym samym języku."
-                            "tr"->"Aynı dilde aynı cinsiyetten başka bir ses seçildi."
-                            else->if(avatar=="FEMALE")"I selected another female voice in the same language." else "I selected another male voice in the same language."
+                        val current=store.s(voiceOverrideKey,"")
+                        val options=selectableVoices
+                        if(options.isEmpty()){
+                            when(aiLang){
+                                "nl"->"Er is op dit toestel geen andere veilige stem van hetzelfde geslacht beschikbaar."
+                                "pt"->"Não existe outra voz segura do mesmo género disponível neste dispositivo."
+                                "es"->"No hay otra voz segura del mismo género disponible en este dispositivo."
+                                "fr"->"Aucune autre voix sûre du même genre n’est disponible sur cet appareil."
+                                "de"->"Auf diesem Gerät ist keine andere sichere Stimme desselben Geschlechts verfügbar."
+                                "it"->"Non è disponibile un’altra voce sicura dello stesso genere su questo dispositivo."
+                                "pl"->"Na tym urządzeniu nie ma innego bezpiecznego głosu tej samej płci."
+                                "tr"->"Bu cihazda aynı cinsiyette başka güvenli bir ses yok."
+                                else->"No other safe same-gender voice is available on this device."
+                            }
+                        }else{
+                            val currentIndex=options.indexOfFirst{it.name==current}
+                            val nextIndex=if(currentIndex<0)0 else (currentIndex+1)%options.size
+                            val next=options[nextIndex]
+                            store.ps(voiceOverrideKey,next.name)
+                            runCatching{tts?.stop()}
+                            activeUtteranceId=""
+                            speaking=false
+                            applyVoiceProfile(selectedLang,avatar)
+                            when(aiLang){
+                                "nl"->if(avatar=="FEMALE")"Ik heb een andere vrouwelijke stem gekozen in dezelfde taal." else "Ik heb een andere mannelijke stem gekozen in dezelfde taal."
+                                "pt"->if(avatar=="FEMALE")"Escolhi outra voz feminina no mesmo idioma." else "Escolhi outra voz masculina no mesmo idioma."
+                                "es"->if(avatar=="FEMALE")"He elegido otra voz femenina en el mismo idioma." else "He elegido otra voz masculina en el mismo idioma."
+                                "fr"->if(avatar=="FEMALE")"J’ai choisi une autre voix féminine dans la même langue." else "J’ai choisi une autre voix masculine dans la même langue."
+                                "de"->if(avatar=="FEMALE")"Ich habe eine andere weibliche Stimme in derselben Sprache gewählt." else "Ich habe eine andere männliche Stimme in derselben Sprache gewählt."
+                                "it"->if(avatar=="FEMALE")"Ho scelto un’altra voce femminile nella stessa lingua." else "Ho scelto un’altra voce maschile nella stessa lingua."
+                                "pl"->"Wybrano inny głos tej samej płci w tym samym języku."
+                                "tr"->"Aynı dilde aynı cinsiyetten başka bir ses seçildi."
+                                else->if(avatar=="FEMALE")"I selected another female voice in the same language." else "I selected another male voice in the same language."
+                            }
                         }
                     }
                 }
