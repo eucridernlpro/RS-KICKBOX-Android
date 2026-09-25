@@ -9,7 +9,7 @@ data class RsAiAppGuideResultV175(
 )
 
 private val rsAiAppRoutesV175=listOf(
-    "student_guide","guide","coachchat","music","music_admin","session","academy","techniques","home_training",
+    "student_guide","guide","voice","coachchat","music","music_admin","session","academy","techniques","home_training",
     "classes","events","checkin","homework","private_lessons","notifications","promotions","documents","support",
     "referrals","progress","challenges","badges","fightcamp","compare","vault","finance","book","profile","settings",
     "themes","backgrounds","branding","intro_settings","landing_admin","content","homework_admin","session_builder",
@@ -33,8 +33,17 @@ private fun rsAiGuideSpecialStepsV175(route:String,role:RsRole):List<String>?=wh
     "student_guide","guide"->listOf(
         "Open App Guide from the first dashboard position.",
         "Choose the feature/category you want to learn.",
+        "Open the RS AI Voice Commands section for spoken navigation examples.",
         "Read its purpose, example, steps and usage tip.",
         "You can also ask RS AI about any app feature and it will explain the feature and show a visual example when available."
+    )
+    "voice"->listOf(
+        "Open RS AI Voice Commands in App Guide.",
+        "Say commands naturally, for example: Open music, Open homework, Go to dashboard, Open settings, Change to Sofia, Change to Marcus, Another voice, Minimize app, Close app, Close AI, or Show commands.",
+        "RS AI turns supported commands directly into navigation or app actions instead of only replying with text.",
+        "Swipe right to left on the AI page to leave AI and return to the correct dashboard.",
+        "When Sofia is selected, voice-style changes stay female; when Marcus is selected, voice-style changes stay male. The selected language is preserved.",
+        "If Android blocks automatic foreground launch while the app task is closed, use the silent RS heard you notification to hand off into the requested page."
     )
     "themes"->listOf(
         "Open Visual Theme Studio.",
