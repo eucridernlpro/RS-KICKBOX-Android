@@ -487,6 +487,11 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                     RsAiDiagLineV191(c,"Assistant",if(diagAvatar=="MALE")"Marcus" else "Sofia")
                     RsAiDiagLineV191(c,"AI language",diagLang.uppercase())
                     RsAiDiagLineV191(c,"Voice profile",if(diagVoice.isBlank())"AUTO" else diagVoice.take(30))
+                    val cloudStyle=store.s(
+                        "ai_cloud_voice_style_v193_"+diagLang+"_"+diagAvatar.lowercase(),
+                        "natural"
+                    )
+                    RsAiDiagLineV191(c,"Cloud voice style",cloudStyle.uppercase())
                     val diagPlan=store.s("session_plan",if(role==RsRole.TRAINER)"ELITE" else "BASIC").uppercase()
                     RsAiDiagLineV191(c,"Membership AI tier",if(role==RsRole.TRAINER)"TRAINER · ELITE ENGINE" else diagPlan)
                     RsAiDiagLineV191(
@@ -517,10 +522,11 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                     RsAiDiagLineV191(
                         c,
                         "Avatar render backend",
-                        if(sofiaRigged || marcusRigged)"RIGGED GLB + PROCEDURAL FALLBACK" else "REAL-TIME PROCEDURAL 3D"
+                        if(sofiaRigged || marcusRigged)"SCENEVIEW RIGGED GLB" else "LOCKED CINEMATIC DIGITAL HUMAN"
                     )
-                    RsAiDiagLineV191(c,"Sofia rigged GLB",if(sofiaRigged)"READY" else "PROCEDURAL FALLBACK")
-                    RsAiDiagLineV191(c,"Marcus rigged GLB",if(marcusRigged)"READY" else "PROCEDURAL FALLBACK")
+                    RsAiDiagLineV191(c,"Lip-sync runtime","VISEME ENGINE READY · FACIAL MORPHS AWAIT GLB")
+                    RsAiDiagLineV191(c,"Sofia identity",if(sofiaRigged)"RIGGED GLB READY" else "LOCKED RS CINEMATIC FALLBACK")
+                    RsAiDiagLineV191(c,"Marcus identity",if(marcusRigged)"RIGGED GLB READY" else "LOCKED RS CINEMATIC FALLBACK")
                     OutlinedButton(
                         onClick={
                             listenerRevision++
