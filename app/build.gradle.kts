@@ -26,8 +26,8 @@ android {
         applicationId = "com.rskickbox.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 178
-        versionName = "0.177.0"
+        versionCode = 179
+        versionName = "0.178.0"
         buildConfigField("String", "SUPABASE_URL", "\""+rsSupabaseUrl.replace("\\","\\\\").replace("\"","\\\"")+"\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\""+rsSupabasePublishableKey.replace("\\","\\\\").replace("\"","\\\"")+"\"")
     }
@@ -106,4 +106,4 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
 
-// RS v0.177 digital-human preview: locked Sofia/Marcus identities, viseme runtime, persona-safe multilingual voice styles
+// RS v0.178 top-mic crash repair: foreground mic ownership, direct listen handoff, safe Voice Wake resume
