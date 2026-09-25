@@ -232,8 +232,10 @@ fun rsAiPlatformIntentV171(raw:String,lang:RsLang?=null):RsAiPlatformIntentV171{
     ))return RsAiPlatformIntentV171.ChangeVoiceStyle
 
     val groupVideoRegex=listOf(
-        Regex("(?i)(?:group video|video group|group call|video call with)\\s+(?:me[, ]*(?:and|,)?\\s*)?(.+)"),
-        Regex("(?i)(?:vídeo em grupo|video em grupo|chamada de grupo|videochamada com)\\s+(?:eu[, ]*(?:e|,)?\\s*)?(.+)")
+        Regex("(?i)(?:group video|video group|group call)(?:\\s+with)?\\s+(?:me[, ]*(?:and|,)?\\s*)?(.+)"),
+        Regex("(?i)(?:video call with)\\s+(?:me[, ]*(?:and|,)?\\s*)?(.+)"),
+        Regex("(?i)(?:vídeo em grupo|video em grupo|chamada de grupo)(?:\\s+com)?\\s+(?:eu[, ]*(?:e|,)?\\s*)?(.+)"),
+        Regex("(?i)(?:videochamada com)\\s+(?:eu[, ]*(?:e|,)?\\s*)?(.+)")
     )
     groupVideoRegex.firstNotNullOfOrNull{rx->rx.find(raw)?.groupValues?.getOrNull(1)}?.let{tail->
         val people=tail
