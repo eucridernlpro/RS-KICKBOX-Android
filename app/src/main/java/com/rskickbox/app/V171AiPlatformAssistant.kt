@@ -170,6 +170,8 @@ sealed class RsAiPlatformIntentV171{
     data object CloseApp:RsAiPlatformIntentV171()
     data object Logout:RsAiPlatformIntentV171()
     data object ChangeVoiceStyle:RsAiPlatformIntentV171()
+    data class DirectCall(val person:String,val type:String):RsAiPlatformIntentV171()
+    data class GroupVideoCall(val people:List<String>):RsAiPlatformIntentV171()
     data object CommandGuide:RsAiPlatformIntentV171()
     data object Help:RsAiPlatformIntentV171()
     data object None:RsAiPlatformIntentV171()
@@ -228,6 +230,28 @@ fun rsAiPlatformIntentV171(raw:String,lang:RsLang?=null):RsAiPlatformIntentV171{
         "otra voz","otra voz femenina","otra voz masculina","autre voix","autre style de voix",
         "andere stimme","altra voce","inny głos","başka ses"
     ))return RsAiPlatformIntentV171.ChangeVoiceStyle
+
+    val groupVideoRegex=listOf(
+        Regex("(?i)(?:group video|video group|group call|video call with)\\s+(?:me[, ]*(?:and|,)?\\s*)?(.+)"),
+        Regex("(?i)(?:vídeo em grupo|video em grupo|chamada de grupo|videochamada com)\\s+(?:eu[, ]*(?:e|,)?\\s*)?(.+)")
+    )
+    groupVideoRegex.firstNotNullOfOrNull{rx->rx.find(raw)?.groupValues?.getOrNull(1)}?.let{tail->
+        val people=tail
+            .replace(Regex("(?i)\\b(me|myself|eu|mim)\\b")," ")
+            .split(Regex("(?i)\\s*(?:,|\\band\\b|\\be\\b|\\by\\b|\\bet\\b|\\bund\\b|\\be\\b)\\s*"))
+            .map{it.trim().trim('.',',','!','?')}
+            .filter{it.length>=2}
+            .distinctBy{it.lowercase(Locale.ROOT)}
+        if(people.size>=2)return RsAiPlatformIntentV171.GroupVideoCall(people)
+    }
+
+    val directVideo=Regex("(?i)(?:video call|videochat|make a video with|start video with|video with|videochamada com|video llamada con|appel vidéo avec|videoanruf mit)\\s+(.+)")
+        .find(raw)?.groupValues?.getOrNull(1)?.trim()?.trim('.',',','!','?')
+    if(!directVideo.isNullOrBlank())return RsAiPlatformIntentV171.DirectCall(directVideo,"VIDEO")
+
+    val directAudio=Regex("(?i)(?:call|phone|ring|ligar para|liga para|chamar|llama a|appelle|ruf)\\s+(.+)")
+        .find(raw)?.groupValues?.getOrNull(1)?.trim()?.trim('.',',','!','?')
+    if(!directAudio.isNullOrBlank())return RsAiPlatformIntentV171.DirectCall(directAudio,"AUDIO")
 
     if(rsContainsAnyV171(
         s,
