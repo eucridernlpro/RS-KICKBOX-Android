@@ -658,7 +658,11 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                     context=this@RsVoiceWakeServiceV165,
                     text=text,
                     lang=speechLanguage,
-                    avatar=speechAvatar
+                    avatar=speechAvatar,
+                    voiceStyle=store.s(
+                        "ai_cloud_voice_style_v193_"+speechLanguage.code+"_"+speechAvatar.lowercase(Locale.ROOT),
+                        "natural"
+                    )
                 )
                 if(
                     requestId!=serviceVoiceRequestId ||
@@ -1315,6 +1319,92 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 }
                 return
             }
+        }
+
+        when(val assistantIntent=rsAiPlatformIntentV171(commandText,language())){
+            is RsAiPlatformIntentV171.ChangeAvatar->{
+                serviceVoiceRequestId++
+                runCatching{serviceCloudVoicePlayer?.stop()}
+                runCatching{serviceCloudVoicePlayer?.release()}
+                serviceCloudVoicePlayer=null
+                runCatching{tts?.stop()}
+                serviceSpeaking=false
+                store.ps("ai_avatar_gender_v161",assistantIntent.avatar)
+                applyLanguage()
+                speak(
+                    if(assistantIntent.avatar=="MALE")rsAiActionV184(language().code,"marcus_active")
+                    else rsAiActionV184(language().code,"sofia_active")
+                )
+                return
+            }
+            is RsAiPlatformIntentV171.ChangeVoiceStyle->{
+                val avatar=store.s("ai_avatar_gender_v161","FEMALE")
+                val key="ai_cloud_voice_style_v193_"+language().code+"_"+avatar.lowercase(Locale.ROOT)
+                val styles=listOf("natural","calm","energetic","soft","direct","deep")
+                val current=store.s(key,"natural")
+                val index=styles.indexOf(current).takeIf{it>=0}?:0
+                val next=styles[(index+1)%styles.size]
+                store.ps(key,next)
+                speak(
+                    when(language().code){
+                        "nl"->"Stemstijl gewijzigd naar "+next+". "+if(avatar=="MALE")"Marcus blijft mannelijk." else "Sofia blijft vrouwelijk."
+                        "pt"->"Estilo de voz alterado para "+next+". "+if(avatar=="MALE")"O Marcus continua com voz masculina." else "A Sofia continua com voz feminina."
+                        "es"->"Estilo de voz cambiado a "+next+". "+if(avatar=="MALE")"Marcus sigue con voz masculina." else "Sofia sigue con voz femenina."
+                        "fr"->"Style de voix changé vers "+next+". "+if(avatar=="MALE")"Marcus reste masculin." else "Sofia reste féminine."
+                        "de"->"Stimmstil auf "+next+" geändert. "+if(avatar=="MALE")"Marcus bleibt männlich." else "Sofia bleibt weiblich."
+                        else->"Voice style changed to "+next+". "+if(avatar=="MALE")"Marcus stays male." else "Sofia stays female."
+                    }
+                )
+                return
+            }
+            is RsAiPlatformIntentV171.ChangeLanguage->{
+                store.ps("ai_voice_language_v161",assistantIntent.code)
+                store.ps("lang_last_spoken_v182",assistantIntent.code)
+                applyLanguage()
+                speak(
+                    when(assistantIntent.code){
+                        "nl"->"Natuurlijk. Ik spreek nu Nederlands."
+                        "pt"->"Claro. Agora vou falar em português."
+                        "es"->"Claro. Ahora hablaré en español."
+                        "fr"->"Bien sûr. Je parle maintenant français."
+                        "de"->"Natürlich. Ich spreche jetzt Deutsch."
+                        "it"->"Certo. Ora parlerò in italiano."
+                        "pl"->"Oczywiście. Teraz będę mówić po polsku."
+                        "tr"->"Elbette. Artık Türkçe konuşacağım."
+                        else->"Of course. I’ll speak English now."
+                    }
+                )
+                return
+            }
+            is RsAiPlatformIntentV171.CloseAi->{
+                requestRouteOpenV182(defaultDashboardRouteV182())
+                speak(
+                    when(language().code){
+                        "nl"->"Ik sluit AI en ga terug naar het dashboard."
+                        "pt"->"Vou fechar a IA e voltar ao painel."
+                        "es"->"Cerraré la IA y volveré al panel."
+                        "fr"->"Je ferme l’IA et je retourne au tableau de bord."
+                        "de"->"Ich schließe die KI und gehe zum Dashboard zurück."
+                        else->"Closing AI and returning to the dashboard."
+                    }
+                )
+                return
+            }
+            is RsAiPlatformIntentV171.CommandGuide->{
+                requestRouteOpenV182(if(store.s("session_role","")=="trainer")"guide" else "student_guide")
+                speak(
+                    when(language().code){
+                        "nl"->"Ik open de AI-spraakcommando’s in de App Gids."
+                        "pt"->"Vou abrir os comandos de voz da IA no Guia da App."
+                        "es"->"Abriré los comandos de voz de IA en la Guía de la App."
+                        "fr"->"J’ouvre les commandes vocales IA dans le Guide de l’App."
+                        "de"->"Ich öffne die KI-Sprachbefehle in der App-Anleitung."
+                        else->"Opening AI voice commands in the App Guide."
+                    }
+                )
+                return
+            }
+            else->{}
         }
 
         val requestedRoute=rsVoiceRouteV167(commandText)
