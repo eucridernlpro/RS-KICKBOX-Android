@@ -38,7 +38,26 @@ fun RsPremiumDashboardV21(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang,onRo
     val theme=rsStoredThemeV175(store)
     val layout=rsThemeLayoutV175(theme)
     val dashboardColumns=if(compactPhone)1 else layout.dashboardColumns.coerceIn(1,2)
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(15.dp)){
+    val dashboardScrollState=rememberScrollState()
+    LaunchedEffect(dashboardScrollState){
+        RsVoicePageBusV196.commands.collect{command->
+            when(command){
+                RsVoicePageCommandV196.SCROLL_DOWN->{
+                    val step=(dashboardScrollState.viewportSize*.72f).toInt().coerceAtLeast(260)
+                    dashboardScrollState.animateScrollTo(
+                        (dashboardScrollState.value+step).coerceAtMost(dashboardScrollState.maxValue)
+                    )
+                }
+                RsVoicePageCommandV196.SCROLL_UP->{
+                    val step=(dashboardScrollState.viewportSize*.72f).toInt().coerceAtLeast(260)
+                    dashboardScrollState.animateScrollTo((dashboardScrollState.value-step).coerceAtLeast(0))
+                }
+                RsVoicePageCommandV196.TOP->dashboardScrollState.animateScrollTo(0)
+                RsVoicePageCommandV196.BOTTOM->dashboardScrollState.animateScrollTo(dashboardScrollState.maxValue)
+            }
+        }
+    }
+    Column(Modifier.fillMaxSize().verticalScroll(dashboardScrollState),verticalArrangement=Arrangement.spacedBy(15.dp)){
         RsPanel(c){
             Text(if(role==RsRole.TRAINER)rsT(lang,"trainer_dashboard") else rsT(lang,"student_dashboard"),color=c.bright,fontWeight=FontWeight.Black,fontSize=22.sp)
             Text("${lang.name} · ${if(role==RsRole.TRAINER)rsT(lang,"trainer_admin") else rsT(lang,"student")} · ${rsT(lang,"premium_experience")}",color=c.muted)
