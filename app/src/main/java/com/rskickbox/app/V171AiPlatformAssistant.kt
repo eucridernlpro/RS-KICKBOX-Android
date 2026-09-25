@@ -204,6 +204,7 @@ sealed class RsAiPlatformIntentV171{
     data object NextMusic:RsAiPlatformIntentV171()
     data object PreviousMusic:RsAiPlatformIntentV171()
     data object MinimizeApp:RsAiPlatformIntentV171()
+    data object StopListening:RsAiPlatformIntentV171()
     data object CloseAi:RsAiPlatformIntentV171()
     data object CloseApp:RsAiPlatformIntentV171()
     data object Logout:RsAiPlatformIntentV171()
@@ -236,6 +237,19 @@ fun rsAiPlatformIntentV171(raw:String,lang:RsLang?=null):RsAiPlatformIntentV171{
             return RsAiPlatformIntentV171.ChangeLanguage(code,label)
         }
     }
+
+    if(rsContainsAnyV171(
+        s,
+        "stop listening","stop listening to me","stop voice listening","turn listening off","disable listening",
+        "stop met luisteren","luister niet meer","zet luisteren uit",
+        "para de ouvir","parar de ouvir","desliga a escuta",
+        "deja de escuchar","detén la escucha","desactiva la escucha",
+        "arrête d'écouter","arrête de m'écouter","désactive l'écoute",
+        "hör auf zuzuhören","zuhören ausschalten",
+        "smetti di ascoltare","disattiva ascolto",
+        "przestań słuchać","wyłącz nasłuchiwanie",
+        "dinlemeyi durdur","dinlemeyi kapat"
+    ))return RsAiPlatformIntentV171.StopListening
 
     if(rsContainsAnyV171(
         s,
