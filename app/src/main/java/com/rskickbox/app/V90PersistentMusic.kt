@@ -369,6 +369,14 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
             store.s("music_favorites_v201","").split("§").filter{it.isNotBlank()}.toSet()
         )
     }
+    LaunchedEffect(Unit){
+        when(store.s("music_open_library_v201","")){
+            "IMPORT"->{libraryOpen=true;libraryTab="LIBRARY"}
+            "PLAYLISTS"->{libraryOpen=true;libraryTab="PLAYLISTS"}
+            "FAVORITES"->{libraryOpen=true;libraryTab="FAVORITES"}
+        }
+        store.ps("music_open_library_v201","")
+    }
 
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()){uris->
         if(uris.isNotEmpty()){
