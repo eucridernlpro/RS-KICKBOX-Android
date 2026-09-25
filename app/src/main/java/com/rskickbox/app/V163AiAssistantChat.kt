@@ -645,7 +645,7 @@ fun RsAiAssistantChatV163(
                 store.b("rs_voice_wake_enabled_v165",false)
             ){
                 store.pb("rs_voice_wake_resume_after_ai_v195",false)
-                runCatching{RsVoiceWakeServiceV165.start(context)}
+                runCatching{RsVoiceWakeServiceV165.resumeAfterForegroundAi(context)}
             }
         }
     }
@@ -670,7 +670,18 @@ fun RsAiAssistantChatV163(
             ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)
             ==PackageManager.PERMISSION_GRANTED
         ){
-            quietVoice.start(selectedLang.locale)
+            val wakeEnabled=store.b("rs_voice_wake_enabled_v165",false)
+            val wakeAlreadyPaused=store.b("rs_voice_wake_resume_after_ai_v195",false)
+            if(wakeEnabled && !wakeAlreadyPaused){
+                store.pb("rs_voice_wake_resume_after_ai_v195",true)
+                runCatching{RsVoiceWakeServiceV165.pauseForForegroundAi(context)}
+                scope.launch{
+                    kotlinx.coroutines.delay(380)
+                    if(voiceConversationActive)quietVoice.start(selectedLang.locale)
+                }
+            }else{
+                quietVoice.start(selectedLang.locale)
+            }
         }else{
             microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
@@ -680,9 +691,9 @@ fun RsAiAssistantChatV163(
         if(directListenPending){
             store.pb("ai_direct_listen_v195",false)
             directListenPending=false
-            // Give the background wake service time to release AudioRecord and
-            // SpeechRecognizer resources before foreground recognition starts.
-            kotlinx.coroutines.delay(650)
+            // The wake service stays alive but its recognizer is paused, avoiding
+            // Android AudioRecord/SpeechRecognizer destruction races.
+            kotlinx.coroutines.delay(420)
             startVoice()
         }
     }
@@ -836,21 +847,29 @@ fun RsAiAssistantChatV163(
                     rsAiActionV184(aiLang,"previous_track")
                 }
                 is RsAiPlatformIntentV171.MinimizeApp->{
+                    voiceConversationActive=false
+                    runCatching{quietVoice.stop()}
+                    val handoff=when(aiLang){
+                        "nl"->"Ik zet RS op de achtergrond. Ik blijf spreken en luisteren naar je volgende opdracht."
+                        "pt"->"Vou colocar a RS em segundo plano. Continuo a falar e a ouvir o teu próximo comando."
+                        "es"->"Pondré RS en segundo plano. Seguiré hablando y escuchando tu siguiente comando."
+                        "fr"->"Je mets RS en arrière-plan. Je continue à parler et à écouter ta prochaine commande."
+                        "de"->"Ich lege RS in den Hintergrund. Ich spreche weiter und höre auf deinen nächsten Befehl."
+                        "it"->"Metto RS in background. Continuerò a parlare e ad ascoltare il prossimo comando."
+                        "pl"->"Przenoszę RS do tła. Nadal będę mówić i słuchać kolejnego polecenia."
+                        "tr"->"RS'i arka plana alıyorum. Konuşmaya ve sonraki komutunu dinlemeye devam edeceğim."
+                        else->"I’ll move RS to the background and keep speaking and listening for your next command."
+                    }
+                    handledSpeechExternally=true
+                    store.pb("rs_voice_wake_resume_after_ai_v195",false)
+                    store.pb("ai_direct_listen_v195",false)
+                    store.pb("ai_start_listening_v168",false)
+                    RsVoiceWakeServiceV165.handoffSpeechAndListen(context,handoff)
                     scope.launch{
-                        kotlinx.coroutines.delay(450)
+                        kotlinx.coroutines.delay(520)
                         MainActivity.moveToBackgroundFromVoice()
                     }
-                    when(aiLang){
-                        "nl"->"Ik zet RS op de achtergrond en blijf beschikbaar."
-                        "pt"->"Vou colocar a RS em segundo plano e continuo disponível."
-                        "es"->"Pondré RS en segundo plano y seguiré disponible."
-                        "fr"->"Je mets RS en arrière-plan et je reste disponible."
-                        "de"->"Ich lege RS in den Hintergrund und bleibe verfügbar."
-                        "it"->"Metto RS in background e rimango disponibile."
-                        "pl"->"Przenoszę RS do tła i pozostaję dostępny."
-                        "tr"->"RS'i arka plana alıyorum ve hazır kalıyorum."
-                        else->"I’ll move RS to the background and stay available."
-                    }
+                    handoff
                 }
                 is RsAiPlatformIntentV171.CloseAi->{
                     voiceConversationActive=false
