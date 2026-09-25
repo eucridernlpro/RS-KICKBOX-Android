@@ -468,7 +468,11 @@ fun RsKickboxV21App(
                     context,
                     android.Manifest.permission.RECORD_AUDIO
                 )==android.content.pm.PackageManager.PERMISSION_GRANTED
-                if(store.b("rs_voice_handsfree_foreground_v199",true) && micGranted){
+                if(
+                    store.b("rs_ai_listening_enabled_v200",true) &&
+                    store.b("rs_voice_handsfree_foreground_v199",true) &&
+                    micGranted
+                ){
                     store.pb("rs_voice_wake_paused_for_ai_v197",false)
                     runCatching{RsVoiceWakeServiceV165.start(context)}
                 }
@@ -1692,8 +1696,16 @@ private fun ShellV21(
                             store.pb("ai_direct_listen_v195",false)
                             store.pb("rs_voice_wake_resume_after_ai_v195",false)
                             store.pb("ai_immersive_v171",true)
-                            runCatching{RsVoiceWakeServiceV165.directListenOnce(context)}
-                            onRoute("voice")
+                            if(store.b("rs_ai_listening_enabled_v200",true)){
+                                runCatching{RsVoiceWakeServiceV165.directListenOnce(context)}
+                                onRoute("voice")
+                            }else{
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "AI listening is off. Turn it on manually in RS Chat → Settings.",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                            }
                         },
                         modifier=Modifier.size(if(compactHeader)33.dp else 38.dp),
                         shape=CircleShape,
