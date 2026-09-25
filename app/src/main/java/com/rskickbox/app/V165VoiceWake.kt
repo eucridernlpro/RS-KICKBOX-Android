@@ -86,6 +86,12 @@ private fun rsVoiceSystemCommandV182(text:String):String?{
     val s=text.lowercase(Locale.ROOT)
     return when{
         listOf(
+            "open app","open rs","bring rs back","show rs","open rs kickboxing",
+            "open de app","open rs opnieuw","abrir app","abrir rs","abre la app","abre rs",
+            "ouvre l'app","ouvre rs","app öffnen","rs öffnen","apri app","apri rs",
+            "otwórz aplikację","otwórz rs","uygulamayı aç","rs aç"
+        ).any{s.contains(it)}->"OPEN"
+        listOf(
             "close app","rs close app","close rs","sluit app","sluit rs","fecha a app","fecha rs",
             "cierra la app","cierra rs","ferme l'app","ferme rs","app schließen","rs schließen",
             "chiudi app","chiudi rs","zamknij aplikację","zamknij rs","uygulamayı kapat","rs kapat"
@@ -979,31 +985,34 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
         if(taskRestored){
             openRouteV166(route)
-        }else if(Build.VERSION.SDK_INT>=34){
-            val pending=PendingIntent.getActivity(
-                this,
-                1880+route.hashCode(),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            val options=ActivityOptions.makeBasic().apply{
-                @Suppress("DEPRECATION")
-                setPendingIntentBackgroundActivityStartMode(
-                    if(Build.VERSION.SDK_INT>=36)
-                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
-                    else
-                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                )
-            }
-            launchAttempted=runCatching{
-                pending.send(this,0,intent,null,null,null,options.toBundle())
-                true
-            }.getOrDefault(false)
         }else{
+            // A foreground microphone service is allowed to request a normal
+            // app handoff on some Android/device combinations. Try this first.
             launchAttempted=runCatching{
                 startActivity(intent)
                 true
             }.getOrDefault(false)
+            if(!launchAttempted && Build.VERSION.SDK_INT>=34){
+                val pending=PendingIntent.getActivity(
+                    this,
+                    1880+route.hashCode(),
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                val options=ActivityOptions.makeBasic().apply{
+                    @Suppress("DEPRECATION")
+                    setPendingIntentBackgroundActivityStartMode(
+                        if(Build.VERSION.SDK_INT>=36)
+                            ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
+                        else
+                            ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                    )
+                }
+                launchAttempted=runCatching{
+                    pending.send(this,0,intent,null,null,null,options.toBundle())
+                    true
+                }.getOrDefault(false)
+            }
         }
 
         scope.launch{
@@ -1223,6 +1232,23 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         awakeUntil=now+45_000L
 
         when(rsVoiceSystemCommandV182(commandText)){
+            "OPEN"->{
+                requestRouteOpenV182(defaultDashboardRouteV182())
+                speak(
+                    when(language().code){
+                        "nl"->"Ik open RS KICKBOXING."
+                        "pt"->"Vou abrir o RS KICKBOXING."
+                        "es"->"Voy a abrir RS KICKBOXING."
+                        "fr"->"J’ouvre RS KICKBOXING."
+                        "de"->"Ich öffne RS KICKBOXING."
+                        "it"->"Apro RS KICKBOXING."
+                        "pl"->"Otwieram RS KICKBOXING."
+                        "tr"->"RS KICKBOXING açılıyor."
+                        else->"Opening RS KICKBOXING."
+                    }
+                )
+                return
+            }
             "MINIMIZE"->{
                 MainActivity.moveToBackgroundFromVoice()
                 speak(
