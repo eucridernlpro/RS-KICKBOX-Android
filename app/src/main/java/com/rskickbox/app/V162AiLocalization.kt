@@ -278,6 +278,12 @@ fun rsAiVoiceRuntimeTextV190(code:String,key:String,arg:String=""):String{
             "speech_unavailable"->"Spraakherkenning is niet beschikbaar op dit apparaat."
             "mic_required"->"Microfoontoegang is vereist."
             "voice_start_failed"->"Spraakinvoer kon niet worden gestart."
+            "voice_wake_listening"->"RS Voice Wake luistert."
+            "voice_wake_start_failed"->"RS Voice Wake kon niet worden gestart."
+            "voice_wake_mic_required"->"Microfoontoegang is vereist voor RS Voice Wake."
+            "voice_wake_stopped"->"RS Voice Wake gestopt."
+            "opening_ai_mic"->"RS AI-microfoon openen…"
+            "diagnostics_refreshed"->"AI-diagnostiek vernieuwd."
             else->key
         }
         "pt"->when(key){
@@ -296,6 +302,12 @@ fun rsAiVoiceRuntimeTextV190(code:String,key:String,arg:String=""):String{
             "speech_unavailable"->"O reconhecimento de voz não está disponível neste dispositivo."
             "mic_required"->"É necessária permissão do microfone."
             "voice_start_failed"->"Não foi possível iniciar a entrada de voz."
+            "voice_wake_listening"->"O RS Voice Wake está a ouvir."
+            "voice_wake_start_failed"->"Não foi possível iniciar o RS Voice Wake."
+            "voice_wake_mic_required"->"É necessária permissão do microfone para o RS Voice Wake."
+            "voice_wake_stopped"->"RS Voice Wake parado."
+            "opening_ai_mic"->"A abrir o microfone do RS AI…"
+            "diagnostics_refreshed"->"Diagnóstico de IA atualizado."
             else->key
         }
         "es"->when(key){
@@ -314,6 +326,12 @@ fun rsAiVoiceRuntimeTextV190(code:String,key:String,arg:String=""):String{
             "speech_unavailable"->"El reconocimiento de voz no está disponible en este dispositivo."
             "mic_required"->"Se requiere permiso del micrófono."
             "voice_start_failed"->"No se pudo iniciar la entrada de voz."
+            "voice_wake_listening"->"RS Voice Wake está escuchando."
+            "voice_wake_start_failed"->"No se pudo iniciar RS Voice Wake."
+            "voice_wake_mic_required"->"Se requiere permiso del micrófono para RS Voice Wake."
+            "voice_wake_stopped"->"RS Voice Wake detenido."
+            "opening_ai_mic"->"Abriendo el micrófono de RS AI…"
+            "diagnostics_refreshed"->"Diagnóstico de IA actualizado."
             else->key
         }
         "fr"->when(key){
@@ -332,6 +350,12 @@ fun rsAiVoiceRuntimeTextV190(code:String,key:String,arg:String=""):String{
             "speech_unavailable"->"La reconnaissance vocale n’est pas disponible sur cet appareil."
             "mic_required"->"L’autorisation du microphone est nécessaire."
             "voice_start_failed"->"Impossible de démarrer l’entrée vocale."
+            "voice_wake_listening"->"RS Voice Wake écoute."
+            "voice_wake_start_failed"->"Impossible de démarrer RS Voice Wake."
+            "voice_wake_mic_required"->"L’autorisation du microphone est nécessaire pour RS Voice Wake."
+            "voice_wake_stopped"->"RS Voice Wake arrêté."
+            "opening_ai_mic"->"Ouverture du micro RS AI…"
+            "diagnostics_refreshed"->"Diagnostic IA actualisé."
             else->key
         }
         "de"->when(key){
@@ -350,6 +374,12 @@ fun rsAiVoiceRuntimeTextV190(code:String,key:String,arg:String=""):String{
             "speech_unavailable"->"Spracherkennung ist auf diesem Gerät nicht verfügbar."
             "mic_required"->"Mikrofonberechtigung ist erforderlich."
             "voice_start_failed"->"Spracheingabe konnte nicht gestartet werden."
+            "voice_wake_listening"->"RS Voice Wake hört zu."
+            "voice_wake_start_failed"->"RS Voice Wake konnte nicht gestartet werden."
+            "voice_wake_mic_required"->"Für RS Voice Wake ist Mikrofonzugriff erforderlich."
+            "voice_wake_stopped"->"RS Voice Wake gestoppt."
+            "opening_ai_mic"->"RS-AI-Mikrofon wird geöffnet…"
+            "diagnostics_refreshed"->"AI-Diagnose aktualisiert."
             else->key
         }
         "it"->when(key){
@@ -368,6 +398,12 @@ fun rsAiVoiceRuntimeTextV190(code:String,key:String,arg:String=""):String{
             "speech_unavailable"->"Il riconoscimento vocale non è disponibile su questo dispositivo."
             "mic_required"->"È necessaria l’autorizzazione del microfono."
             "voice_start_failed"->"Impossibile avviare l’input vocale."
+            "voice_wake_listening"->"RS Voice Wake è in ascolto."
+            "voice_wake_start_failed"->"Impossibile avviare RS Voice Wake."
+            "voice_wake_mic_required"->"È necessaria l’autorizzazione del microfono per RS Voice Wake."
+            "voice_wake_stopped"->"RS Voice Wake arrestato."
+            "opening_ai_mic"->"Apertura del microfono RS AI…"
+            "diagnostics_refreshed"->"Diagnostica IA aggiornata."
             else->key
         }
         "pl"->when(key){
@@ -386,6 +422,12 @@ fun rsAiVoiceRuntimeTextV190(code:String,key:String,arg:String=""):String{
             "speech_unavailable"->"Rozpoznawanie mowy nie jest dostępne na tym urządzeniu."
             "mic_required"->"Wymagane jest uprawnienie do mikrofonu."
             "voice_start_failed"->"Nie udało się uruchomić wprowadzania głosowego."
+            "voice_wake_listening"->"RS Voice Wake nasłuchuje."
+            "voice_wake_start_failed"->"Nie udało się uruchomić RS Voice Wake."
+            "voice_wake_mic_required"->"RS Voice Wake wymaga dostępu do mikrofonu."
+            "voice_wake_stopped"->"RS Voice Wake zatrzymany."
+            "opening_ai_mic"->"Otwieranie mikrofonu RS AI…"
+            "diagnostics_refreshed"->"Diagnostyka AI odświeżona."
             else->key
         }
         "tr"->when(key){
@@ -404,6 +446,12 @@ fun rsAiVoiceRuntimeTextV190(code:String,key:String,arg:String=""):String{
             "speech_unavailable"->"Bu cihazda konuşma tanıma kullanılamıyor."
             "mic_required"->"Mikrofon izni gerekiyor."
             "voice_start_failed"->"Ses girişi başlatılamadı."
+            "voice_wake_listening"->"RS Voice Wake dinliyor."
+            "voice_wake_start_failed"->"RS Voice Wake başlatılamadı."
+            "voice_wake_mic_required"->"RS Voice Wake için mikrofon izni gerekiyor."
+            "voice_wake_stopped"->"RS Voice Wake durduruldu."
+            "opening_ai_mic"->"RS AI mikrofonu açılıyor…"
+            "diagnostics_refreshed"->"AI tanılaması yenilendi."
             else->key
         }
         else->when(key){
@@ -422,6 +470,12 @@ fun rsAiVoiceRuntimeTextV190(code:String,key:String,arg:String=""):String{
             "speech_unavailable"->"Speech recognition is not available on this device."
             "mic_required"->"Microphone permission required."
             "voice_start_failed"->"Voice input could not start."
+            "voice_wake_listening"->"RS Voice Wake is listening."
+            "voice_wake_start_failed"->"Could not start RS Voice Wake."
+            "voice_wake_mic_required"->"Microphone permission is required for RS Voice Wake."
+            "voice_wake_stopped"->"RS Voice Wake stopped."
+            "opening_ai_mic"->"Opening RS AI microphone…"
+            "diagnostics_refreshed"->"AI diagnostics refreshed."
             else->key
         }
     }
