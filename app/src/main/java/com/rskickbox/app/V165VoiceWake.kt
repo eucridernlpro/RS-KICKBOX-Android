@@ -511,7 +511,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         val avatar=store.s("ai_avatar_gender_v161","FEMALE")
         val wantsMale=avatar=="MALE"
         engine.setSpeechRate(if(wantsMale).92f else .96f)
-        engine.setPitch(if(wantsMale).86f else 1.07f)
+        engine.setPitch(if(wantsMale).82f else 1.14f)
 
         val overrideKey="ai_voice_override_v181_"+language().code+"_"+avatar.lowercase(Locale.ROOT)
         val overrideName=store.s(overrideKey,"")
@@ -571,12 +571,22 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             val n=v.name.lowercase(Locale.ROOT)
             if(wantsMale)maleHints.any{n.contains(it)} else femaleHints.any{n.contains(it)}
         }
-        val pool=if(hinted.isNotEmpty())hinted else candidates
+        val safe=candidates.filter{v->
+            val n=v.name.lowercase(Locale.ROOT)
+            if(wantsMale)femaleHints.none{n.contains(it)} else maleHints.none{n.contains(it)}
+        }
+        val pool=when{
+            hinted.isNotEmpty()->hinted
+            safe.isNotEmpty()->safe
+            else->emptyList()
+        }
         pool.maxByOrNull{score(it)}?.let{engine.voice=it}
     }
 
     private fun speak(text:String,thenListen:Boolean=true){
         if(text.isBlank())return
+        val speechAvatar=store.s("ai_avatar_gender_v161","FEMALE")
+        val speechLanguage=language()
         serviceSpeaking=true
         setWakeStatusV168("SPEAKING")
         suppressRecognizerToneV185()
@@ -602,8 +612,17 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
         fun speakDeviceFallback(){
             if(requestId!=serviceVoiceRequestId)return
+            if(
+                store.s("ai_avatar_gender_v161","FEMALE")!=speechAvatar ||
+                language().code!=speechLanguage.code
+            ){
+                serviceVoiceRequestId++
+                serviceSpeaking=false
+                if(thenListen)scope.launch{delay(250);startListening()}
+                return
+            }
             applyLanguage()
-            val utteranceId="rs-voice-wake-"+language().code+"-"+store.s("ai_avatar_gender_v161","FEMALE")+"-"+System.nanoTime()
+            val utteranceId="rs-voice-wake-"+speechLanguage.code+"-"+speechAvatar+"-"+System.nanoTime()
             serviceUtteranceId=utteranceId
             tts?.setOnUtteranceProgressListener(object:android.speech.tts.UtteranceProgressListener(){
                 override fun onStart(id:String?){}
@@ -632,10 +651,14 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 val clip=rsCloudVoiceClipV192(
                     context=this@RsVoiceWakeServiceV165,
                     text=text,
-                    lang=language(),
-                    avatar=store.s("ai_avatar_gender_v161","FEMALE")
+                    lang=speechLanguage,
+                    avatar=speechAvatar
                 )
-                if(requestId!=serviceVoiceRequestId)return@launch
+                if(
+                    requestId!=serviceVoiceRequestId ||
+                    store.s("ai_avatar_gender_v161","FEMALE")!=speechAvatar ||
+                    language().code!=speechLanguage.code
+                )return@launch
                 clip.onSuccess{voiceClip->
                     val player=rsCreateCloudVoicePlayerV192(
                         context=this@RsVoiceWakeServiceV165,
