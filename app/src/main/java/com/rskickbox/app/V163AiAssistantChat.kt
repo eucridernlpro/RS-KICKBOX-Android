@@ -1116,7 +1116,7 @@ fun RsAiAssistantChatV163(
 
         Box(
             Modifier.fillMaxWidth()
-                .fillMaxHeight(.34f)
+                .fillMaxHeight(.28f)
                 .align(Alignment.TopCenter)
                 .padding(start=10.dp,end=10.dp,top=76.dp)
         ){
@@ -1832,6 +1832,10 @@ private fun RsAiAvatarStageV163(
         }
     }
     val themeLayout=rsThemeLayoutV175(rsStoredThemeV175(store))
+    val hasRiggedPersona=remember(avatar){
+        val assetPath=if(avatar=="FEMALE")"models/rs_ai_sofia.glb" else "models/rs_ai_marcus.glb"
+        runCatching{context.assets.open(assetPath).use{};true}.getOrDefault(false)
+    }
     val transition=rememberInfiniteTransition(label="ai-stage")
     val lightSweep by transition.animateFloat(
         initialValue=.10f,
@@ -1990,15 +1994,15 @@ private fun RsAiAvatarStageV163(
                     enabled=false,
                     label={Text(
                         when(language.code){
-                            "nl"->if(compactStage)"REALTIME 3D" else "REALTIME 3D ASSISTENT"
-                            "pt"->if(compactStage)"3D EM TEMPO REAL" else "ASSISTENTE 3D EM TEMPO REAL"
-                            "es"->if(compactStage)"3D EN TIEMPO REAL" else "ASISTENTE 3D EN TIEMPO REAL"
-                            "fr"->if(compactStage)"3D TEMPS RÉEL" else "ASSISTANT 3D TEMPS RÉEL"
-                            "de"->if(compactStage)"ECHTZEIT 3D" else "ECHTZEIT-3D-ASSISTENT"
-                            "it"->if(compactStage)"3D IN TEMPO REALE" else "ASSISTENTE 3D IN TEMPO REALE"
-                            "pl"->if(compactStage)"3D NA ŻYWO" else "ASYSTENT 3D W CZASIE RZECZYWISTYM"
-                            "tr"->if(compactStage)"GERÇEK ZAMANLI 3D" else "GERÇEK ZAMANLI 3D ASİSTAN"
-                            else->if(compactStage)"REALTIME 3D" else "REALTIME 3D ASSISTANT"
+                            "nl"->if(hasRiggedPersona) if(compactStage)"REALTIME 3D" else "REALTIME 3D ASSISTENT" else "REALISTISCHE AI PERSONA"
+                            "pt"->if(hasRiggedPersona) if(compactStage)"3D EM TEMPO REAL" else "ASSISTENTE 3D EM TEMPO REAL" else "PERSONA AI REALISTA"
+                            "es"->if(hasRiggedPersona) if(compactStage)"3D EN TIEMPO REAL" else "ASISTENTE 3D EN TIEMPO REAL" else "PERSONA IA REALISTA"
+                            "fr"->if(hasRiggedPersona) if(compactStage)"3D TEMPS RÉEL" else "ASSISTANT 3D TEMPS RÉEL" else "PERSONA IA RÉALISTE"
+                            "de"->if(hasRiggedPersona) if(compactStage)"ECHTZEIT 3D" else "ECHTZEIT-3D-ASSISTENT" else "REALISTISCHE KI-PERSONA"
+                            "it"->if(hasRiggedPersona) if(compactStage)"3D IN TEMPO REALE" else "ASSISTENTE 3D IN TEMPO REALE" else "PERSONA IA REALISTICA"
+                            "pl"->if(hasRiggedPersona) if(compactStage)"3D NA ŻYWO" else "ASYSTENT 3D W CZASIE RZECZYWISTYM" else "REALISTYCZNA PERSONA AI"
+                            "tr"->if(hasRiggedPersona) if(compactStage)"GERÇEK ZAMANLI 3D" else "GERÇEK ZAMANLI 3D ASİSTAN" else "GERÇEKÇİ AI PERSONA"
+                            else->if(hasRiggedPersona) if(compactStage)"REALTIME 3D" else "REALTIME 3D ASSISTANT" else "REALISTIC AI PERSONA"
                         },
                         fontSize=7.sp,
                         fontWeight=FontWeight.Black
@@ -2032,16 +2036,30 @@ private fun RsAiAvatarStageV163(
                         "tr"->when{speaking->"KONUŞUYOR";thinking->"DÜŞÜNÜYOR";listening->"DİNLİYOR";else->"HAZIR"}
                         else->when{speaking->"SPEAKING";thinking->"THINKING";listening->"LISTENING";else->"READY"}
                     }
-                    val stageMode=when(language.code){
-                        "nl"->"REALTIME 3D"
-                        "pt"->"3D EM TEMPO REAL"
-                        "es"->"3D EN TIEMPO REAL"
-                        "fr"->"3D TEMPS RÉEL"
-                        "de"->"ECHTZEIT 3D"
-                        "it"->"3D IN TEMPO REALE"
-                        "pl"->"3D NA ŻYWO"
-                        "tr"->"GERÇEK ZAMANLI 3D"
-                        else->"REALTIME 3D"
+                    val stageMode=if(hasRiggedPersona){
+                        when(language.code){
+                            "nl"->"REALTIME 3D"
+                            "pt"->"3D EM TEMPO REAL"
+                            "es"->"3D EN TIEMPO REAL"
+                            "fr"->"3D TEMPS RÉEL"
+                            "de"->"ECHTZEIT 3D"
+                            "it"->"3D IN TEMPO REALE"
+                            "pl"->"3D NA ŻYWO"
+                            "tr"->"GERÇEK ZAMANLI 3D"
+                            else->"REALTIME 3D"
+                        }
+                    }else{
+                        when(language.code){
+                            "nl"->"REALISTISCHE PERSONA"
+                            "pt"->"PERSONA REALISTA"
+                            "es"->"PERSONA REALISTA"
+                            "fr"->"PERSONA RÉALISTE"
+                            "de"->"REALISTISCHE PERSONA"
+                            "it"->"PERSONA REALISTICA"
+                            "pl"->"REALISTYCZNA PERSONA"
+                            "tr"->"GERÇEKÇİ PERSONA"
+                            else->"REALISTIC PERSONA"
+                        }
                     }
                     Text(
                         assistantState+" · "+stageMode,
