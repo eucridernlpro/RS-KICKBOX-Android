@@ -361,6 +361,7 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
     var shuffleOn by remember{mutableStateOf(controller?.shuffleModeEnabled==true)}
     var repeatMode by remember{mutableIntStateOf(controller?.repeatMode?:Player.REPEAT_MODE_ALL)}
     var libraryOpen by remember{mutableStateOf(false)}
+    var musicGuideOpen by remember{mutableStateOf(false)}
     var libraryTab by remember{mutableStateOf("LIBRARY")}
     var spatialPreset by remember{mutableStateOf(store.s("music_visual_effect_v201","NEON"))}
     var speed by remember{mutableFloatStateOf(store.s("music_speed_v201","1.0").toFloatOrNull()?.coerceIn(.75f,1.5f)?:1f)}
@@ -546,6 +547,10 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
                         onClick={libraryOpen=true},
                         modifier=Modifier.weight(1f)
                     ){Text("☰ LIBRARY",fontSize=9.sp,fontWeight=FontWeight.Black)}
+                    OutlinedButton(
+                        onClick={musicGuideOpen=true},
+                        modifier=Modifier.weight(1f)
+                    ){Text("✧ AI GUIDE",fontSize=9.sp,fontWeight=FontWeight.Black)}
                 }
                 Row(
                     Modifier.fillMaxWidth(),
@@ -747,6 +752,75 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
                 }
             }
         }
+    }
+
+    if(musicGuideOpen){
+        AlertDialog(
+            onDismissRequest={musicGuideOpen=false},
+            confirmButton={
+                Button(onClick={musicGuideOpen=false}){Text("GOT IT")}
+            },
+            title={
+                Column{
+                    Text("RS MUSIC PRO · AI GUIDE",fontWeight=FontWeight.Black)
+                    Text(
+                        "Sofia / Marcus music control",
+                        color=c.muted,
+                        fontSize=10.sp
+                    )
+                }
+            },
+            text={
+                Column(
+                    Modifier.fillMaxWidth().heightIn(max=520.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement=Arrangement.spacedBy(10.dp)
+                ){
+                    Text("PLAYER",color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                    Text("Play / pause · previous / next · ±10 seconds · seek · volume · shuffle · repeat one/all · playback speed.",fontSize=10.sp)
+
+                    Text("LIBRARY",color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                    Text("Tap LIBRARY to open the right-side sliding panel. Browse All Music, Playlists, Favorites and Recent. Swipe left → right to close it.",fontSize=10.sp)
+
+                    Text("IMPORT & PLAYLISTS",color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                    Text("Import music directly from the player. Create named playlists inside the PLAYLISTS tab and open any playlist from the same panel.",fontSize=10.sp)
+
+                    Text("VISUAL EFFECTS",color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                    Text("Choose NEON, BASS, ARENA or STUDIO for the spatial 3D-style visualizer.",fontSize=10.sp)
+
+                    Text("VOICE COMMANDS",color=c.bright,fontWeight=FontWeight.Black,fontSize=11.sp)
+                    listOf(
+                        "Play music",
+                        "Pause music",
+                        "Stop music",
+                        "Next song",
+                        "Previous song",
+                        "What is playing?",
+                        "Volume up / Volume down",
+                        "Open music",
+                        "Import music",
+                        "Play [track name]",
+                        "Play [playlist name]"
+                    ).forEach{cmd->
+                        Surface(
+                            color=c.panel.copy(alpha=.65f),
+                            shape=RoundedCornerShape(12.dp),
+                            modifier=Modifier.fillMaxWidth()
+                        ){
+                            Text("“"+cmd+"”",modifier=Modifier.padding(9.dp),fontSize=10.sp)
+                        }
+                    }
+
+                    Text(
+                        "Music keeps playing while you navigate RS KICKBOXING or minimize the app. Android notification controls remain available.",
+                        color=c.muted,
+                        fontSize=9.sp
+                    )
+                }
+            },
+            containerColor=Color(0xFF0B0B0B),
+            titleContentColor=Color.White,
+            textContentColor=Color.White
+        )
     }
 
     if(libraryOpen){
