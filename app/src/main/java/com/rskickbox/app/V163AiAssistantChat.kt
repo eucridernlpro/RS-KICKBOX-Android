@@ -749,6 +749,8 @@ fun RsAiAssistantChatV163(
             var replyAvatarOverride:String?=null
             var replyMediaUri:String?=null
             var replyMediaKind:String?=null
+            var handledAsync=false
+            var handledSpeechExternally=false
             val reply=when(platformIntent){
                 is RsAiPlatformIntentV171.ChangeLanguage->{
                     val target=languages.firstOrNull{it.code==platformIntent.code}
@@ -849,21 +851,24 @@ fun RsAiAssistantChatV163(
                 is RsAiPlatformIntentV171.CloseApp->{
                     voiceConversationActive=false
                     runCatching{quietVoice.stop()}
+                    val handoff=when(aiLang){
+                        "nl"->"Ik sluit het RS-venster. Ik blijf op de achtergrond luisteren naar je volgende opdracht."
+                        "pt"->"Vou fechar a janela RS. Continuo a ouvir em segundo plano para o teu próximo comando."
+                        "es"->"Cerraré la ventana de RS. Seguiré escuchando en segundo plano para tu próximo comando."
+                        "fr"->"Je ferme la fenêtre RS. Je continue à écouter en arrière-plan pour ta prochaine commande."
+                        "de"->"Ich schließe das RS-Fenster. Ich höre im Hintergrund weiter auf deinen nächsten Befehl."
+                        "it"->"Chiudo la finestra RS. Continuerò ad ascoltare in background il prossimo comando."
+                        "pl"->"Zamknę okno RS. Nadal będę słuchać w tle kolejnego polecenia."
+                        "tr"->"RS penceresini kapatıyorum. Sonraki komutunu arka planda dinlemeye devam edeceğim."
+                        else->"I’ll close the RS window and keep listening in the background for your next command."
+                    }
+                    handledSpeechExternally=true
+                    RsVoiceWakeServiceV165.handoffSpeechAndListen(context,handoff)
                     scope.launch{
-                        kotlinx.coroutines.delay(650)
+                        kotlinx.coroutines.delay(520)
                         MainActivity.closeTaskFromVoice()
                     }
-                    when(aiLang){
-                        "nl"->"Ik sluit het RS-venster. Voice Wake kan actief blijven als je dat hebt ingeschakeld."
-                        "pt"->"Vou fechar a janela RS. O Voice Wake pode continuar ativo se estiver ligado."
-                        "es"->"Cerraré la ventana de RS. Voice Wake puede seguir activo si está habilitado."
-                        "fr"->"Je ferme la fenêtre RS. Voice Wake peut rester actif s’il est activé."
-                        "de"->"Ich schließe das RS-Fenster. Voice Wake kann aktiv bleiben, wenn es eingeschaltet ist."
-                        "it"->"Chiudo la finestra RS. Voice Wake può restare attivo se abilitato."
-                        "pl"->"Zamknę okno RS. Voice Wake może pozostać aktywny, jeśli jest włączony."
-                        "tr"->"RS penceresini kapatıyorum. Voice Wake açıksa etkin kalabilir."
-                        else->"I’ll close the RS window. Voice Wake can remain active if enabled."
-                    }
+                    handoff
                 }
                 is RsAiPlatformIntentV171.Logout->{
                     voiceConversationActive=false
@@ -960,6 +965,113 @@ fun RsAiAssistantChatV163(
                         }
                     }
                 }
+                is RsAiPlatformIntentV171.DirectCall->{
+                    handledAsync=true
+                    scope.launch{
+                        val contacts=rsChatContactsV125().getOrElse{emptyList()}
+                        val person=rsAiBestContactV194(contacts,platformIntent.person)
+                        val result=if(person==null){
+                            when(aiLang){
+                                "nl"->"Ik kon "+platformIntent.person+" niet vinden in je RS-contacten."
+                                "pt"->"Não encontrei "+platformIntent.person+" nos teus contactos RS."
+                                "es"->"No encontré a "+platformIntent.person+" en tus contactos RS."
+                                "fr"->"Je n’ai pas trouvé "+platformIntent.person+" dans tes contacts RS."
+                                "de"->"Ich konnte "+platformIntent.person+" in deinen RS-Kontakten nicht finden."
+                                else->"I couldn’t find "+platformIntent.person+" in your RS contacts."
+                            }
+                        }else{
+                            val needsMic=ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED
+                            val needsCamera=platformIntent.type=="VIDEO" &&
+                                ContextCompat.checkSelfPermission(context,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED
+                            if(needsMic||needsCamera){
+                                store.ps("chat_open_peer_id_v156",person.userId)
+                                onNavigate("coachchat")
+                                when(aiLang){
+                                    "nl"->"Ik heb "+person.displayName+" gevonden. Ik open de privéchat zodat je eenmalig de benodigde "+if(needsCamera)"microfoon- en cameratoegang" else "microfoontoegang"+" kunt toestaan."
+                                    "pt"->"Encontrei "+person.displayName+". Vou abrir o chat privado para autorizares uma vez as permissões necessárias."
+                                    "es"->"Encontré a "+person.displayName+". Abriré el chat privado para que autorices los permisos necesarios."
+                                    "fr"->"J’ai trouvé "+person.displayName+". J’ouvre le chat privé pour autoriser les permissions nécessaires."
+                                    else->"I found "+person.displayName+". I’m opening the private chat so you can grant the required permissions once."
+                                }
+                            }else{
+                                rsStartDirectCallV131(person.userId,platformIntent.type)
+                                    .fold(
+                                        onSuccess={
+                                            store.ps("chat_open_peer_id_v156",person.userId)
+                                            when(aiLang){
+                                                "nl"->if(platformIntent.type=="VIDEO")"Ik start een videogesprek met "+person.displayName+"." else "Ik bel "+person.displayName+"."
+                                                "pt"->if(platformIntent.type=="VIDEO")"Vou iniciar uma videochamada com "+person.displayName+"." else "Vou ligar para "+person.displayName+"."
+                                                "es"->if(platformIntent.type=="VIDEO")"Voy a iniciar una videollamada con "+person.displayName+"." else "Voy a llamar a "+person.displayName+"."
+                                                "fr"->if(platformIntent.type=="VIDEO")"Je lance un appel vidéo avec "+person.displayName+"." else "J’appelle "+person.displayName+"."
+                                                "de"->if(platformIntent.type=="VIDEO")"Ich starte einen Videoanruf mit "+person.displayName+"." else "Ich rufe "+person.displayName+" an."
+                                                else->if(platformIntent.type=="VIDEO")"Starting a video call with "+person.displayName+"." else "Calling "+person.displayName+"."
+                                            }
+                                        },
+                                        onFailure={it.message?:"The call could not be started."}
+                                    )
+                            }
+                        }
+                        deliverAssistant(result)
+                        if(autoSpeak)speak(result) else if(voiceConversationActive)resumeListeningSignal++
+                    }
+                    ""
+                }
+                is RsAiPlatformIntentV171.GroupVideoCall->{
+                    handledAsync=true
+                    scope.launch{
+                        val result=if(role!=RsRole.TRAINER){
+                            when(aiLang){
+                                "nl"->"Groepsvideo wordt momenteel door de trainer gehost. Ik kan je wel naar RS Chat brengen."
+                                "pt"->"A videochamada de grupo é atualmente alojada pelo treinador."
+                                "es"->"La videollamada grupal actualmente la organiza el entrenador."
+                                "fr"->"La vidéo de groupe est actuellement hébergée par l’entraîneur."
+                                else->"Group video rooms are currently hosted by the trainer."
+                            }
+                        }else{
+                            val contacts=rsChatContactsV125().getOrElse{emptyList()}
+                            val (people,missing)=rsAiResolveContactsV194(contacts,platformIntent.people)
+                            when{
+                                missing.isNotEmpty()->when(aiLang){
+                                    "nl"->"Ik kon deze RS-contacten niet vinden: "+missing.joinToString(", ")+"."
+                                    "pt"->"Não encontrei estes contactos RS: "+missing.joinToString(", ")+"."
+                                    "es"->"No encontré estos contactos RS: "+missing.joinToString(", ")+"."
+                                    "fr"->"Je n’ai pas trouvé ces contacts RS : "+missing.joinToString(", ")+"."
+                                    else->"I couldn’t find these RS contacts: "+missing.joinToString(", ")+"."
+                                }
+                                people.size<2->"I need at least two other RS contacts for a group video call."
+                                ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED ||
+                                ContextCompat.checkSelfPermission(context,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED->{
+                                    onNavigate("coachchat")
+                                    when(aiLang){
+                                        "nl"->"Ik heb de deelnemers gevonden. Ik open RS Chat zodat je eenmalig microfoon- en cameratoegang kunt toestaan."
+                                        "pt"->"Encontrei os participantes. Vou abrir o RS Chat para autorizares o microfone e a câmara uma vez."
+                                        "es"->"Encontré a los participantes. Abriré RS Chat para autorizar micrófono y cámara una vez."
+                                        else->"I found the participants. I’m opening RS Chat so you can grant microphone and camera permission once."
+                                    }
+                                }
+                                else->{
+                                    val title="RS Group Video · "+people.joinToString(" · "){it.displayName}
+                                    rsCreateVideoRoomV136(title,people.map{it.userId})
+                                        .fold(
+                                            onSuccess={
+                                                when(aiLang){
+                                                    "nl"->"Ik start de groepsvideo met "+people.joinToString(", "){it.displayName}+"."
+                                                    "pt"->"Vou iniciar a videochamada de grupo com "+people.joinToString(", "){it.displayName}+"."
+                                                    "es"->"Voy a iniciar la videollamada grupal con "+people.joinToString(", "){it.displayName}+"."
+                                                    "fr"->"Je lance la vidéo de groupe avec "+people.joinToString(", "){it.displayName}+"."
+                                                    else->"Starting the group video with "+people.joinToString(", "){it.displayName}+"."
+                                                }
+                                            },
+                                            onFailure={it.message?:"The group video could not be started."}
+                                        )
+                                }
+                            }
+                        }
+                        deliverAssistant(result)
+                        if(autoSpeak)speak(result) else if(voiceConversationActive)resumeListeningSignal++
+                    }
+                    ""
+                }
                 is RsAiPlatformIntentV171.CommandGuide->{
                     replyMediaUri=rsVisualUriWithBundledFallbackV113(context,store,"guide").takeIf{it.isNotBlank()}
                     replyMediaKind=replyMediaUri?.let{"GUIDE"}
@@ -976,12 +1088,16 @@ fun RsAiAssistantChatV163(
                 }
                 RsAiPlatformIntentV171.None->""
             }
-            deliverAssistant(reply,mediaUri=replyMediaUri,mediaKind=replyMediaKind)
+            if(!handledAsync){
+                deliverAssistant(reply,mediaUri=replyMediaUri,mediaKind=replyMediaKind)
+            }
             busy=false
             status=""
-            if(autoSpeak && reply.isNotBlank()){
+            if(!handledAsync && !handledSpeechExternally && autoSpeak && reply.isNotBlank()){
                 speak(reply,replyLanguageOverride,replyAvatarOverride)
-            }else if(voiceConversationActive)resumeListeningSignal++
+            }else if(!handledAsync && !handledSpeechExternally && voiceConversationActive){
+                resumeListeningSignal++
+            }
             return
         }
 
