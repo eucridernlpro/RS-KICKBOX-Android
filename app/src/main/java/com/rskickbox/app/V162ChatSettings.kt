@@ -8,7 +8,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import androidx.biometric.BiometricManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -514,17 +513,7 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                         }
                     )
                     RsAiDiagLineV191(c,"Wake state",wakeStatus+(if(wakeAge>=0)" · "+wakeAge+"s" else ""))
-                    val biometricState=remember{
-                        val authenticators=BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                            BiometricManager.Authenticators.DEVICE_CREDENTIAL
-                        when(BiometricManager.from(context).canAuthenticate(authenticators)){
-                            BiometricManager.BIOMETRIC_SUCCESS->"AVAILABLE"
-                            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED->"NOT ENROLLED"
-                            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE->"NO HARDWARE"
-                            else->"UNAVAILABLE"
-                        }
-                    }
-                    RsAiDiagLineV191(c,"Biometric / device credential",biometricState)
+                    RsAiDiagLineV191(c,"Wake security","BIOMETRIC / DEVICE CREDENTIAL ON DEMAND")
                     RsAiDiagLineV191(
                         c,
                         "Avatar render backend",
