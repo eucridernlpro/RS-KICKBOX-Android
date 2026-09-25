@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -22,15 +24,26 @@ class RsQuietVoiceControllerV171(
     private var running=false
     private var fallbackToDeviceLocale=false
     private var lastStartAt=0L
+    private var destroyed=false
+    private var creating=false
+    private val mainHandler=Handler(Looper.getMainLooper())
 
-    private fun ensureRecognizer(){
-        if(recognizer!=null)return
+    private fun ensureRecognizer():Boolean{
+        if(destroyed)return false
+        if(recognizer!=null)return true
+        if(creating)return false
+        if(Looper.myLooper()!=Looper.getMainLooper()){
+            mainHandler.post{ensureRecognizer()}
+            return false
+        }
         if(!SpeechRecognizer.isRecognitionAvailable(context)){
             onStatus("Speech recognition is not available on this device.")
-            return
+            return false
         }
-        recognizer=SpeechRecognizer.createSpeechRecognizer(context).apply{
-            setRecognitionListener(object:RecognitionListener{
+        creating=true
+        val created=runCatching{
+            SpeechRecognizer.createSpeechRecognizer(context.applicationContext).apply{
+                setRecognitionListener(object:RecognitionListener{
                 override fun onReadyForSpeech(params:Bundle?){
                     running=true
                     onStatus("")
@@ -90,8 +103,14 @@ class RsQuietVoiceControllerV171(
                 }
                 override fun onPartialResults(partialResults:Bundle?){}
                 override fun onEvent(eventType:Int,params:Bundle?){}
-            })
-        }
+                })
+            }
+        }.onFailure{
+            onStatus("Voice input could not start.")
+        }.getOrNull()
+        recognizer=created
+        creating=false
+        return created!=null
     }
 
     fun start(locale:Locale){
@@ -102,11 +121,19 @@ class RsQuietVoiceControllerV171(
             onStatus("Microphone permission required.")
             return
         }
+        if(destroyed)return
+        if(Looper.myLooper()!=Looper.getMainLooper()){
+            mainHandler.post{start(locale)}
+            return
+        }
         if(running)return
         val now=System.currentTimeMillis()
         if(now-lastStartAt<900L)return
         lastStartAt=now
-        ensureRecognizer()
+        if(!ensureRecognizer()){
+            onIdle()
+            return
+        }
         val recognitionLocale=if(fallbackToDeviceLocale)Locale.getDefault() else locale
         val intent=android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -136,22 +163,33 @@ class RsQuietVoiceControllerV171(
             .onFailure{
                 destroyRecognizer()
                 onStatus("Voice input could not start.")
+                onIdle()
             }
     }
 
     fun stop(){
+        if(Looper.myLooper()!=Looper.getMainLooper()){
+            mainHandler.post{stop()}
+            return
+        }
         running=false
         runCatching{recognizer?.cancel()}
     }
 
     fun destroy(){
-        destroyRecognizer()
+        destroyed=true
+        if(Looper.myLooper()!=Looper.getMainLooper()){
+            mainHandler.post{destroyRecognizer()}
+        }else destroyRecognizer()
     }
 
     private fun destroyRecognizer(){
         running=false
-        runCatching{recognizer?.destroy()}
+        creating=false
+        val old=recognizer
         recognizer=null
+        runCatching{old?.cancel()}
+        runCatching{old?.destroy()}
     }
 }
 
