@@ -78,7 +78,7 @@ fun RsAiProductionAvatarV191(
             )
         }else{
             val transition=rememberInfiniteTransition(label="rs-digital-human")
-            val breath by transition.animateFloat(
+            val breathState=transition.animateFloat(
                 initialValue=0f,
                 targetValue=1f,
                 animationSpec=infiniteRepeatable(
@@ -98,7 +98,7 @@ fun RsAiProductionAvatarV191(
                         val depth=if(motionEnabled)1f else 0f
                         translationX=(-sensorX*18f*depth).coerceIn(-20f,20f)
                         translationY=(sensorY*9f*depth).coerceIn(-10f,10f)
-                        val speechDrive=if(speaking)(speechAmplitude.coerceIn(.08f,1f)*.010f + breath*.006f) else breath*.003f
+                        val speechDrive=if(speaking)(speechAmplitude.coerceIn(.08f,1f)*.010f + breathState.value*.006f) else breathState.value*.003f
                         scaleX=1.04f+speechDrive
                         scaleY=1.04f+speechDrive
                     }
