@@ -27,6 +27,7 @@ private const val RS_WAKE_MODEL_URL_V188 =
 private const val RS_WAKE_MODEL_DIR_V188 = "vosk-model-small-en-us-0.15"
 private const val RS_WAKE_SAMPLE_RATE_V188 = 16000
 private const val RS_WAKE_MODEL_VERSION_V188 = "en-us-0.15"
+private const val RS_WAKE_MODEL_MAX_BYTES_V189 = 100L * 1024L * 1024L
 
 object RsOfflineWakeModelV188 {
     fun installed(context: Context): Boolean {
@@ -74,13 +75,19 @@ object RsOfflineWakeModelV188 {
                     while(true) {
                         val read = input.read(buffer)
                         if(read <= 0) break
-                        output.write(buffer, 0, read)
                         downloaded += read
-                        onProgress(((downloaded * 100L) / total).toInt().coerceIn(0, 100))
+                        require(downloaded <= RS_WAKE_MODEL_MAX_BYTES_V189) {
+                            "Silent wake model download exceeded the safety limit."
+                        }
+                        output.write(buffer, 0, read)
+                        onProgress(((downloaded * 100L) / total).toInt().coerceIn(0, 99))
                     }
                 }
             }
             connection.disconnect()
+            require(zipFile.length() in 1..RS_WAKE_MODEL_MAX_BYTES_V189) {
+                "Silent wake model archive is empty or unexpectedly large."
+            }
 
             ZipInputStream(BufferedInputStream(zipFile.inputStream())).use { zip ->
                 while(true) {
@@ -120,6 +127,11 @@ object RsOfflineWakeModelV188 {
             require(installed(context)) { "Silent wake model is incomplete." }
             onProgress(100)
             finalDir.absolutePath
+        }.onFailure {
+            val root = File(context.filesDir, "rs_voice_models")
+            File(root, "rs-wake-model.tmp.zip").delete()
+            File(root, RS_WAKE_MODEL_DIR_V188 + ".partial").deleteRecursively()
+            onProgress(0)
         }
     }
 }
