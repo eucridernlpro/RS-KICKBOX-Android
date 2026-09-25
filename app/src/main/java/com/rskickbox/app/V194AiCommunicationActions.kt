@@ -43,7 +43,12 @@ fun rsAiBestContactV194(
         if(score<=0)null else contact to score
     }.sortedByDescending{it.second}
 
-    val best=ranked.firstOrNull()?.first?:return null
+    val first=ranked.firstOrNull()?:return null
+    val second=ranked.getOrNull(1)
+    if(second!=null && second.second==first.second && second.first.userId!=first.first.userId){
+        return null
+    }
+    val best=first.first
     return RsAiResolvedContactV194(
         userId=best.userId,
         displayName=best.displayName.ifBlank{best.email.substringBefore("@")},
