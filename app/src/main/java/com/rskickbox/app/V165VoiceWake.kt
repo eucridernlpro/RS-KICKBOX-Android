@@ -2055,23 +2055,15 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 )
             }
             RsVoiceMusicCommandV165.UNKNOWN->{
-                scope.launch{
-                    val lang=language()
-                    val role=if(store.s("session_role","")=="trainer")RsRole.TRAINER else RsRole.STUDENT
-                    val currentRoute=store.s("session_last_route",defaultDashboardRouteV182())
-                    val currentTitle=rsRouteTitle(
-                        lang,currentRoute,currentRoute.replace('_',' ').replaceFirstChar{it.uppercase()}
-                    )
-                    val contextSummary=(
-                        "CURRENT RS ROLE: "+role.name+
-                        "\nCURRENT RS PAGE: "+currentRoute+" | "+currentTitle+
-                        "\n\nRS APP FEATURES:\n"+rsAiAppKnowledgeSummaryV175(lang,role).take(3000)
-                    )
-                    val local=rsAiLocalCoachAnswerV164(lang.code,commandText)
-                    val answer=rsOnlineAiCoachV164(commandText,lang,contextSummary)
-                        .getOrElse{local}
-                    speak(answer)
-                }
+                // Keep the foreground microphone service lightweight and stable.
+                // Commands execute here; normal conversation is handed to the
+                // full AI page instead of running cloud AI/TTS inside the service.
+                store.ps("ai_pending_spoken_v171",commandText.take(1800))
+                store.pb("ai_start_listening_v168",false)
+                store.pb("ai_direct_listen_v195",false)
+                store.pb("ai_immersive_v171",true)
+                setWakeStatusV168("HANDOFF_TO_AI")
+                requestRouteOpenV182("voice")
             }
         }
     }
