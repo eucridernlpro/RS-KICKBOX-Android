@@ -14,17 +14,22 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -294,6 +299,54 @@ private fun RsMusicVisualizerV175(c:RsPalette,playing:Boolean){
 }
 
 @Composable
+private fun RsMusicSpatialVisualizerV201(
+    c:RsPalette,
+    playing:Boolean,
+    preset:String
+){
+    val transition=rememberInfiniteTransition(label="rs-spatial-viz")
+    val rotation by transition.animateFloat(
+        initialValue=0f,
+        targetValue=360f,
+        animationSpec=infiniteRepeatable(
+            animation=tween(if(playing)4200 else 9000,easing=LinearEasing),
+            repeatMode=RepeatMode.Restart
+        ),
+        label="rs-spatial-rotation"
+    )
+    Canvas(
+        Modifier.fillMaxWidth().height(120.dp)
+            .graphicsLayer{rotationZ=if(playing)rotation else 0f}
+    ){
+        val center=androidx.compose.ui.geometry.Offset(size.width/2f,size.height/2f)
+        val base=kotlin.math.min(size.width,size.height)
+        val accent=when(preset){
+            "BASS"->c.gold
+            "ARENA"->Color(0xFF8A7CFF)
+            "NEON"->Color(0xFF58C9FF)
+            else->c.bright
+        }
+        repeat(5){i->
+            val pulse=if(playing)(1f+0.05f*kotlin.math.sin((rotation/57.3f)+i)) else 1f
+            drawCircle(
+                color=accent.copy(alpha=.28f-(i*.035f)),
+                radius=base*(.12f+i*.075f)*pulse,
+                center=center,
+                style=androidx.compose.ui.graphics.drawscope.Stroke(width=(2f+i))
+            )
+        }
+        repeat(12){i->
+            val a=(Math.PI*2*i/12.0)+(rotation*Math.PI/180.0)
+            val r=base*.34f
+            val x=center.x+(kotlin.math.cos(a)*r).toFloat()
+            val y=center.y+(kotlin.math.sin(a)*r).toFloat()
+            drawCircle(accent.copy(alpha=.55f),radius=3f+(i%3)*1.5f,center=androidx.compose.ui.geometry.Offset(x,y))
+        }
+    }
+}
+
+@Composable
+@Composable
 fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang){
     val context=LocalContext.current
     val controller=rememberRsMusicControllerV90()
@@ -307,6 +360,15 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
     var searchQuery by remember{mutableStateOf("")}
     var shuffleOn by remember{mutableStateOf(controller?.shuffleModeEnabled==true)}
     var repeatMode by remember{mutableIntStateOf(controller?.repeatMode?:Player.REPEAT_MODE_ALL)}
+    var libraryOpen by remember{mutableStateOf(false)}
+    var libraryTab by remember{mutableStateOf("LIBRARY")}
+    var spatialPreset by remember{mutableStateOf(store.s("music_visual_effect_v201","NEON"))}
+    var speed by remember{mutableFloatStateOf(store.s("music_speed_v201","1.0").toFloatOrNull()?.coerceIn(.75f,1.5f)?:1f)}
+    var favorites by remember{
+        mutableStateOf(
+            store.s("music_favorites_v201","").split("§").filter{it.isNotBlank()}.toSet()
+        )
+    }
 
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()){uris->
         if(uris.isNotEmpty()){
@@ -339,8 +401,9 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
     var position by remember{mutableLongStateOf(controller?.currentPosition?:0L)}
     var duration by remember{mutableLongStateOf(controller?.duration?.coerceAtLeast(0L)?:0L)}
 
-    LaunchedEffect(controller,volume){
+    LaunchedEffect(controller,volume,speed){
         runCatching{controller?.volume=volume}
+        runCatching{controller?.setPlaybackSpeed(speed)}
     }
 
 
@@ -398,6 +461,7 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
         }
     }
 
+    Box(Modifier.fillMaxSize()){
     RsScroll(
         c,
         if(role==RsRole.TRAINER)rsMusicT(lang,"trainer_title") else rsMusicT(lang,"student_title"),
@@ -460,8 +524,36 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
                         }
                     }
                 }
-                RsMusicVisualizerV175(c,playing)
-                Text("RS MUSIC",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp,letterSpacing=1.5.sp)
+                RsMusicSpatialVisualizerV201(c,playing,spatialPreset)
+                Text("RS MUSIC PRO",color=c.bright,fontWeight=FontWeight.Black,fontSize=20.sp,letterSpacing=1.5.sp)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(7.dp)
+                ){
+                    OutlinedButton(
+                        onClick={picker.launch(arrayOf("audio/*"))},
+                        modifier=Modifier.weight(1f)
+                    ){Text("＋ IMPORT",fontSize=9.sp,fontWeight=FontWeight.Black)}
+                    OutlinedButton(
+                        onClick={libraryOpen=true},
+                        modifier=Modifier.weight(1f)
+                    ){Text("☰ LIBRARY",fontSize=9.sp,fontWeight=FontWeight.Black)}
+                }
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(6.dp)
+                ){
+                    listOf("NEON","BASS","ARENA","STUDIO").forEach{preset->
+                        FilterChip(
+                            selected=spatialPreset==preset,
+                            onClick={
+                                spatialPreset=preset
+                                store.ps("music_visual_effect_v201",preset)
+                            },
+                            label={Text(preset,fontSize=8.sp)}
+                        )
+                    }
+                }
                 val liveTitle=controller?.currentMediaItem?.mediaMetadata?.title?.toString().orEmpty()
                 Text(
                     liveTitle.ifBlank{if(visibleTracks.isEmpty())"Choose or import a track" else visibleTracks.getOrNull(index.coerceIn(0,visibleTracks.lastIndex))?.name.orEmpty()},
@@ -482,6 +574,7 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
                     horizontalArrangement=Arrangement.SpaceEvenly,
                     verticalAlignment=Alignment.CenterVertically
                 ){
+                    FilledTonalButton(onClick={runCatching{controller?.seekBack()}}){Text("↶10")}
                     FilledTonalButton(onClick={runCatching{controller?.seekToPreviousMediaItem();controller?.play()}}){Text("⏮")}
                     Button(
                         onClick={
@@ -494,6 +587,7 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
                         contentPadding=PaddingValues(0.dp)
                     ){Text(if(playing)"⏸" else "▶",fontSize=24.sp)}
                     FilledTonalButton(onClick={runCatching{controller?.seekToNextMediaItem();controller?.play()}}){Text("⏭")}
+                    FilledTonalButton(onClick={runCatching{controller?.seekForward()}}){Text("10↷")}
                 }
                 Row(
                     Modifier.fillMaxWidth(),
@@ -521,6 +615,35 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
                         label={Text(if(repeatMode==Player.REPEAT_MODE_ONE)"🔂 One" else if(repeatMode==Player.REPEAT_MODE_ALL)"🔁 All" else "↪ Repeat",fontSize=9.sp)}
                     )
                 }
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.spacedBy(7.dp),
+                    verticalAlignment=Alignment.CenterVertically
+                ){
+                    val liveUri=controller?.currentMediaItem?.localConfiguration?.uri?.toString().orEmpty()
+                    FilterChip(
+                        selected=liveUri.isNotBlank() && liveUri in favorites,
+                        onClick={
+                            if(liveUri.isNotBlank()){
+                                favorites=if(liveUri in favorites)favorites-liveUri else favorites+liveUri
+                                store.ps("music_favorites_v201",favorites.joinToString("§"))
+                            }
+                        },
+                        label={Text(if(liveUri in favorites)"★ FAVORITE" else "☆ FAVORITE",fontSize=8.sp)}
+                    )
+                    Text("SPEED",color=c.muted,fontSize=8.sp,fontWeight=FontWeight.Black)
+                    Slider(
+                        value=speed,
+                        onValueChange={
+                            speed=it
+                            store.ps("music_speed_v201",it.toString())
+                        },
+                        valueRange=.75f..1.5f,
+                        steps=2,
+                        modifier=Modifier.weight(1f)
+                    )
+                    Text(String.format(java.util.Locale.US,"%.2fx",speed),color=c.bright,fontSize=8.sp)
+                }
                 OutlinedTextField(
                     value=searchQuery,
                     onValueChange={searchQuery=it.take(80)},
@@ -536,77 +659,22 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
             }
         }
 
-        RsPanel(c){
-            Text(rsMusicBgT90(lang,"background_player"),color=c.bright,fontWeight=FontWeight.Black)
-            Text(
-                rsMusicBgT90(lang,"background_desc"),
-                color=c.muted,
-                fontSize=10.sp
-            )
-            Button(onClick={picker.launch(arrayOf("audio/*"))},modifier=Modifier.fillMaxWidth()){
-                Text(rsMusicT(lang,"add_button"))
-            }
-            if(feedback.isNotBlank())Text(feedback,color=c.muted,fontSize=10.sp)
+        if(feedback.isNotBlank()){
+            RsPanel(c){Text(feedback,color=c.muted,fontSize=10.sp)}
         }
 
         RsPanel(c){
-            Text(rsMusicBgT90(lang,"playlists"),color=c.bright,fontWeight=FontWeight.Black)
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
-                OutlinedTextField(
-                    value=newPlaylistName,
-                    onValueChange={newPlaylistName=it.take(60)},
-                    label={Text(rsMusicBgT90(lang,"playlist_name"))},
-                    singleLine=true,
-                    modifier=Modifier.weight(1f)
-                )
-                Button(
-                    onClick={
-                        val clean=newPlaylistName.trim()
-                        if(clean.isNotBlank() && playlists.none{it.name.equals(clean,true)}){
-                            playlists=playlists+RsNamedPlaylistV108(clean,emptySet())
-                            rsSaveNamedPlaylistsV108(store,playlists)
-                            activePlaylist=clean
-                            store.ps("music_active_playlist_v108",clean)
-                            newPlaylistName=""
-                        }
-                    },
-                    enabled=newPlaylistName.trim().isNotBlank(),
-                    modifier=Modifier.align(Alignment.CenterVertically)
-                ){Text(rsMusicBgT90(lang,"create"))}
-            }
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(5.dp)){
-                FilterChip(
-                    selected=activePlaylist=="ALL",
-                    onClick={activePlaylist="ALL";store.ps("music_active_playlist_v108","ALL")},
-                    label={Text(rsMusicBgT90(lang,"all_music"),fontSize=9.sp)}
-                )
-                if(playlists.isNotEmpty()){
-                    Text(
-                        activePlaylist.takeIf{it!="ALL"}?:rsMusicBgT90(lang,"choose_playlist"),
-                        color=c.muted,fontSize=9.sp,
-                        modifier=Modifier.weight(1f).align(Alignment.CenterVertically)
-                    )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement=Arrangement.spacedBy(8.dp),
+                verticalAlignment=Alignment.CenterVertically
+            ){
+                Column(Modifier.weight(1f)){
+                    Text("LIBRARY & PLAYLISTS",color=c.bright,fontWeight=FontWeight.Black)
+                    Text("Import, search, favorites, recent music, queue and named playlists live in the sliding music library.",color=c.muted,fontSize=9.sp)
                 }
+                Button(onClick={libraryOpen=true}){Text("OPEN")}
             }
-            playlists.forEach{p->
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp),verticalAlignment=Alignment.CenterVertically){
-                    FilterChip(
-                        selected=activePlaylist==p.name,
-                        onClick={activePlaylist=p.name;store.ps("music_active_playlist_v108",p.name)},
-                        label={Text(p.name,maxLines=1,fontSize=9.sp)},
-                        modifier=Modifier.weight(1f)
-                    )
-                    TextButton(onClick={
-                        playlists=playlists.filterNot{it.name==p.name}
-                        rsSaveNamedPlaylistsV108(store,playlists)
-                        if(activePlaylist==p.name){activePlaylist="ALL";store.ps("music_active_playlist_v108","ALL")}
-                    }){Text(rsMusicBgT90(lang,"delete_playlist"),fontSize=9.sp)}
-                }
-            }
-            Text(
-                if(activePlaylist=="ALL")rsMusicBgT90(lang,"playlist_help_all") else rsMusicBgT90(lang,"playlist_help_named"),
-                color=c.muted,fontSize=9.sp
-            )
         }
 
         RsPanel(c){
@@ -671,6 +739,187 @@ fun RsPersistentMusicCenterV90(c:RsPalette,store:RsStore,role:RsRole,lang:RsLang
                 }
             }
         }
+    }
+
+    if(libraryOpen){
+        Box(
+            Modifier.fillMaxSize()
+                .background(Color.Black.copy(alpha=.58f))
+                .zIndex(20f)
+                .clickable{libraryOpen=false}
+        )
+    }
+    AnimatedVisibility(
+        visible=libraryOpen,
+        enter=slideInHorizontally(initialOffsetX={it})+fadeIn(),
+        exit=slideOutHorizontally(targetOffsetX={it})+fadeOut(),
+        modifier=Modifier.fillMaxHeight().fillMaxWidth(.92f).align(Alignment.CenterEnd).zIndex(21f)
+    ){
+        var dragX by remember{mutableFloatStateOf(0f)}
+        Surface(
+            color=Color.Black.copy(alpha=.98f),
+            shape=RoundedCornerShape(topStart=28.dp,bottomStart=28.dp),
+            border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.45f)),
+            modifier=Modifier.fillMaxSize()
+                .pointerInput(Unit){
+                    detectHorizontalDragGestures(
+                        onDragStart={dragX=0f},
+                        onHorizontalDrag={change,amount->dragX+=amount;change.consume()},
+                        onDragEnd={
+                            if(dragX>90f)libraryOpen=false
+                            dragX=0f
+                        },
+                        onDragCancel={dragX=0f}
+                    )
+                }
+        ){
+            Column(
+                Modifier.fillMaxSize().padding(14.dp),
+                verticalArrangement=Arrangement.spacedBy(10.dp)
+            ){
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment=Alignment.CenterVertically,
+                    horizontalArrangement=Arrangement.spacedBy(8.dp)
+                ){
+                    Text("RS MUSIC LIBRARY",color=c.bright,fontWeight=FontWeight.Black,fontSize=17.sp,modifier=Modifier.weight(1f))
+                    TextButton(onClick={libraryOpen=false}){Text("×",fontSize=24.sp,color=c.bright)}
+                }
+                Text("Swipe left → right to close",color=c.muted,fontSize=8.sp)
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                    listOf("LIBRARY","PLAYLISTS","FAVORITES","RECENT").forEach{tab->
+                        FilterChip(
+                            selected=libraryTab==tab,
+                            onClick={libraryTab=tab},
+                            label={Text(tab,fontSize=7.sp)}
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value=searchQuery,
+                    onValueChange={searchQuery=it.take(80)},
+                    placeholder={Text("Search music…")},
+                    singleLine=true,
+                    modifier=Modifier.fillMaxWidth()
+                )
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+                    Button(onClick={picker.launch(arrayOf("audio/*"))},modifier=Modifier.weight(1f)){
+                        Text("＋ IMPORT MUSIC",fontSize=9.sp)
+                    }
+                    OutlinedButton(
+                        onClick={libraryTab="PLAYLISTS"},
+                        modifier=Modifier.weight(1f)
+                    ){Text("＋ PLAYLIST",fontSize=9.sp)}
+                }
+
+                when(libraryTab){
+                    "PLAYLISTS"->{
+                        OutlinedTextField(
+                            value=newPlaylistName,
+                            onValueChange={newPlaylistName=it.take(60)},
+                            label={Text("New playlist name")},
+                            singleLine=true,
+                            modifier=Modifier.fillMaxWidth()
+                        )
+                        Button(
+                            onClick={
+                                val clean=newPlaylistName.trim()
+                                if(clean.isNotBlank() && playlists.none{it.name.equals(clean,true)}){
+                                    playlists=playlists+RsNamedPlaylistV108(clean,emptySet())
+                                    rsSaveNamedPlaylistsV108(store,playlists)
+                                    activePlaylist=clean
+                                    store.ps("music_active_playlist_v108",clean)
+                                    newPlaylistName=""
+                                }
+                            },
+                            enabled=newPlaylistName.trim().isNotBlank(),
+                            modifier=Modifier.fillMaxWidth()
+                        ){Text("CREATE PLAYLIST")}
+                        androidx.compose.foundation.lazy.LazyColumn(
+                            modifier=Modifier.fillMaxSize(),
+                            verticalArrangement=Arrangement.spacedBy(7.dp)
+                        ){
+                            item{
+                                RsPanel(c){
+                                    Text("ALL MUSIC",color=c.bright,fontWeight=FontWeight.Black)
+                                    Text(tracks.size.toString()+" tracks",color=c.muted,fontSize=9.sp)
+                                    TextButton(onClick={
+                                        activePlaylist="ALL"
+                                        store.ps("music_active_playlist_v108","ALL")
+                                        libraryOpen=false
+                                    }){Text("OPEN")}
+                                }
+                            }
+                            items(playlists.size){i->
+                                val p=playlists[i]
+                                RsPanel(c){
+                                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                                        Column(Modifier.weight(1f)){
+                                            Text(p.name,color=c.bright,fontWeight=FontWeight.Black)
+                                            Text(p.uris.size.toString()+" tracks",color=c.muted,fontSize=9.sp)
+                                        }
+                                        TextButton(onClick={
+                                            activePlaylist=p.name
+                                            store.ps("music_active_playlist_v108",p.name)
+                                            libraryOpen=false
+                                        }){Text("OPEN")}
+                                        TextButton(onClick={
+                                            playlists=playlists.filterNot{it.name==p.name}
+                                            rsSaveNamedPlaylistsV108(store,playlists)
+                                            if(activePlaylist==p.name){
+                                                activePlaylist="ALL"
+                                                store.ps("music_active_playlist_v108","ALL")
+                                            }
+                                        }){Text("DELETE",fontSize=8.sp)}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else->{
+                        val recentUris=store.s("rs_music_recent_history_v165","").split("§").filter{it.isNotBlank()}
+                        val drawerTracks=when(libraryTab){
+                            "FAVORITES"->tracks.filter{it.uri in favorites}
+                            "RECENT"->recentUris.mapNotNull{u->tracks.firstOrNull{it.uri==u}}
+                            else->tracks
+                        }.filter{searchQuery.isBlank()||it.name.contains(searchQuery,true)}
+                        androidx.compose.foundation.lazy.LazyColumn(
+                            modifier=Modifier.fillMaxSize(),
+                            verticalArrangement=Arrangement.spacedBy(6.dp)
+                        ){
+                            items(drawerTracks.size){i->
+                                val track=drawerTracks[i]
+                                Surface(
+                                    color=c.panel.copy(alpha=.65f),
+                                    shape=RoundedCornerShape(16.dp),
+                                    border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.18f)),
+                                    modifier=Modifier.fillMaxWidth()
+                                ){
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(10.dp),
+                                        verticalAlignment=Alignment.CenterVertically,
+                                        horizontalArrangement=Arrangement.spacedBy(8.dp)
+                                    ){
+                                        TextButton(onClick={
+                                            val realIndex=visibleTracks.indexOfFirst{it.uri==track.uri}.coerceAtLeast(0)
+                                            playTrack(realIndex)
+                                            libraryOpen=false
+                                        },modifier=Modifier.weight(1f)){
+                                            Text(track.name,maxLines=1,overflow=TextOverflow.Ellipsis)
+                                        }
+                                        TextButton(onClick={
+                                            favorites=if(track.uri in favorites)favorites-track.uri else favorites+track.uri
+                                            store.ps("music_favorites_v201",favorites.joinToString("§"))
+                                        }){Text(if(track.uri in favorites)"★" else "☆")}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     }
 }
 
