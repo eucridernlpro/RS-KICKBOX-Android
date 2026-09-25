@@ -902,7 +902,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                         delay(
                             when(error){
                                 SpeechRecognizer.ERROR_NO_MATCH,
-                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT->2200
+                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT->if(MainActivity.isForeground)650 else 2200
                                 SpeechRecognizer.ERROR_RECOGNIZER_BUSY->900
                                 else->1200
                             }
@@ -1049,6 +1049,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         )return
 
         if(
+            !MainActivity.isForeground &&
             System.currentTimeMillis()>awakeUntil &&
             store.b("rs_voice_wake_silent_engine_v188",true) &&
             !silentWakeSessionFailedV188
@@ -1356,7 +1357,12 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
         var commandText=text
         if(now>awakeUntil){
-            if(rsContainsWakePhraseV165(text)){
+            if(MainActivity.isForeground){
+                // Hands-free foreground mode: while the app is visible, supported
+                // commands do not require a wake phrase or top-mic tap.
+                awakeUntil=now+10L*60L*1000L
+                setWakeStatusV168("FOREGROUND_HANDSFREE")
+            }else if(rsContainsWakePhraseV165(text)){
                 awakeUntil=now+45_000L
                 setWakeStatusV168("HEARD_WAKE")
                 commandText=rsStripWakePhraseV165(text)
@@ -1364,7 +1370,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 store.pb("ai_start_listening_v168",true)
                 recognizer?.cancel()
                 if(commandText.isBlank()){
-                    if(!MainActivity.isForeground)requestRouteOpenV182(defaultDashboardRouteV182())
+                    requestRouteOpenV182(defaultDashboardRouteV182())
                     speak(rsVoiceGreetingV165(language().code),thenListen=true)
                     return
                 }
@@ -1374,7 +1380,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             }
         }
 
-        awakeUntil=now+45_000L
+        awakeUntil=if(MainActivity.isForeground)now+10L*60L*1000L else now+45_000L
 
         rsVoicePageCommandV196(commandText)?.let{pageCommand->
             RsVoicePageBusV196.send(pageCommand)
