@@ -746,7 +746,11 @@ private fun LoginV21(
 ) {
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
-    var email by remember { mutableStateOf(store.s("last_login_email","")) }
+    val rememberedLoginEmail=store.s("last_login_email","").trim()
+    val biometricLoginAvailable=remember(rememberedLoginEmail){
+        rememberedLoginEmail.isNotBlank() && MainActivity.biometricLoginAvailable()
+    }
+    var email by remember { mutableStateOf(rememberedLoginEmail) }
     var pass by remember { mutableStateOf("") }
     var confirmPass by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
@@ -768,6 +772,9 @@ private fun LoginV21(
     fun finishCloudLogin(session:RsCloudSessionV63){
         store.ps("session_student_email",session.email)
         store.ps("last_login_email",session.email)
+        if(MainActivity.biometricLoginAvailable()){
+            store.pb("biometric_login_enabled_v198",true)
+        }
         store.ps("session_student_name",session.displayName)
         store.ps("session_plan",session.plan)
         val roleName=if(session.role==RsRole.TRAINER)"trainer" else "student"
@@ -809,6 +816,78 @@ private fun LoginV21(
                     clearLoginFields(clearEmail=false)
                 }
             busy=false
+        }
+    }
+
+    fun signInBiometric(){
+        if(busy || !biometricLoginAvailable)return
+        busy=true
+        statusIsError=false
+        status=when(lang.code){
+            "nl"->"Wachten op vingerafdruk…"
+            "pt"->"A aguardar impressão digital…"
+            "es"->"Esperando huella…"
+            "fr"->"En attente de l’empreinte…"
+            "de"->"Warte auf Fingerabdruck…"
+            "it"->"In attesa dell’impronta…"
+            "pl"->"Oczekiwanie na odcisk palca…"
+            "tr"->"Parmak izi bekleniyor…"
+            else->"Waiting for fingerprint…"
+        }
+        val launched=MainActivity.requestPersistentBiometricLogin(
+            onSuccess={
+                scope.launch{
+                    rsCloudCurrentSessionV67()
+                        .onSuccess{session->
+                            if(session!=null){
+                                finishCloudLogin(session)
+                            }else{
+                                busy=false
+                                statusIsError=true
+                                status=when(lang.code){
+                                    "nl"->"Je beveiligde sessie is verlopen. Log één keer in met je wachtwoord; vingerafdruk blijft daarna beschikbaar."
+                                    "pt"->"A sessão segura expirou. Entra uma vez com a palavra-passe; a impressão digital continuará disponível."
+                                    "es"->"La sesión segura ha caducado. Inicia sesión una vez con tu contraseña; la huella seguirá disponible."
+                                    "fr"->"La session sécurisée a expiré. Connecte-toi une fois avec ton mot de passe ; l’empreinte restera disponible."
+                                    "de"->"Die sichere Sitzung ist abgelaufen. Melde dich einmal mit dem Passwort an; Fingerabdruck bleibt danach verfügbar."
+                                    "it"->"La sessione sicura è scaduta. Accedi una volta con la password; l’impronta resterà disponibile."
+                                    "pl"->"Bezpieczna sesja wygasła. Zaloguj się raz hasłem; odcisk palca pozostanie dostępny."
+                                    "tr"->"Güvenli oturumun süresi doldu. Bir kez şifreyle giriş yap; parmak izi seçeneği kullanılmaya devam eder."
+                                    else->"Your secure session expired. Sign in with your password once; fingerprint will remain available afterward."
+                                }
+                            }
+                        }
+                        .onFailure{
+                            busy=false
+                            statusIsError=true
+                            status=when(lang.code){
+                                "nl"->"Biometrisch inloggen kon je beveiligde RS-sessie niet herstellen. Gebruik je wachtwoord één keer."
+                                "pt"->"O login biométrico não conseguiu restaurar a sessão RS. Usa a palavra-passe uma vez."
+                                "es"->"El inicio biométrico no pudo restaurar la sesión RS. Usa tu contraseña una vez."
+                                "fr"->"La connexion biométrique n’a pas pu restaurer la session RS. Utilise ton mot de passe une fois."
+                                "de"->"Die biometrische Anmeldung konnte die RS-Sitzung nicht wiederherstellen. Verwende einmal dein Passwort."
+                                else->"Biometric login could not restore your RS session. Use your password once."
+                            }
+                        }
+                }
+            },
+            onError={message->
+                busy=false
+                statusIsError=true
+                status=message
+            }
+        )
+        if(!launched){
+            busy=false
+            statusIsError=true
+            status=when(lang.code){
+                "nl"->"Biometrisch inloggen is momenteel niet beschikbaar."
+                "pt"->"O login biométrico não está disponível neste momento."
+                "es"->"El inicio biométrico no está disponible ahora."
+                "fr"->"La connexion biométrique n’est pas disponible pour le moment."
+                "de"->"Biometrische Anmeldung ist derzeit nicht verfügbar."
+                else->"Biometric login is not available right now."
+            }
         }
     }
 
@@ -1115,6 +1194,43 @@ private fun LoginV21(
                         },
                         fontSize=12.sp,
                         maxLines=1
+                    )
+                }
+
+                if(!forgotMode && !recoveryMode && pendingInviteToken.isBlank() && biometricLoginAvailable){
+                    OutlinedButton(
+                        onClick={signInBiometric()},
+                        enabled=!busy,
+                        modifier=Modifier.fillMaxWidth(),
+                        border=androidx.compose.foundation.BorderStroke(1.dp,c.bright.copy(alpha=.70f))
+                    ){
+                        Text(
+                            when(lang.code){
+                                "nl"->"☝ INLOGGEN MET VINGERAFDRUK"
+                                "pt"->"☝ ENTRAR COM IMPRESSÃO DIGITAL"
+                                "es"->"☝ ENTRAR CON HUELLA"
+                                "fr"->"☝ CONNEXION PAR EMPREINTE"
+                                "de"->"☝ MIT FINGERABDRUCK ANMELDEN"
+                                "it"->"☝ ACCEDI CON IMPRONTA"
+                                "pl"->"☝ ZALOGUJ ODCISKIEM PALCA"
+                                "tr"->"☝ PARMAK İZİYLE GİRİŞ"
+                                else->"☝ SIGN IN WITH FINGERPRINT"
+                            },
+                            fontSize=11.sp,
+                            fontWeight=FontWeight.Black
+                        )
+                    }
+                    Text(
+                        when(lang.code){
+                            "nl"->"Beschikbaar voor het onthouden account: "+rememberedLoginEmail
+                            "pt"->"Disponível para a conta guardada: "+rememberedLoginEmail
+                            "es"->"Disponible para la cuenta guardada: "+rememberedLoginEmail
+                            "fr"->"Disponible pour le compte mémorisé : "+rememberedLoginEmail
+                            "de"->"Verfügbar für das gespeicherte Konto: "+rememberedLoginEmail
+                            else->"Available for remembered account: "+rememberedLoginEmail
+                        },
+                        color=c.muted,
+                        fontSize=9.sp
                     )
                 }
 
