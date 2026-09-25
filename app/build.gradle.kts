@@ -26,8 +26,8 @@ android {
         applicationId = "com.rskickbox.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 176
-        versionName = "0.175.0"
+        versionCode = 177
+        versionName = "0.176.0"
         buildConfigField("String", "SUPABASE_URL", "\""+rsSupabaseUrl.replace("\\","\\\\").replace("\"","\\\"")+"\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\""+rsSupabasePublishableKey.replace("\\","\\\\").replace("\"","\\\"")+"\"")
     }
@@ -106,4 +106,4 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
 
-// RS v0.175 AI persona preview: photorealistic fallback, voice gender lock, chat overlay repair
+// RS v0.176 AI control preview: top-only controls, command guide, swipe exit, wake foreground handoff
