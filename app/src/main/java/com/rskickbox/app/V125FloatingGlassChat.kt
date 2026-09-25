@@ -239,7 +239,12 @@ fun RsFloatingGlassChatHubV125(
     onNavigate:(String)->Unit={},
     onBack:()->Unit
 ){
-    var tab by remember(initialRoute){mutableStateOf(rsInitialChatTabV125(initialRoute))}
+    var tab by remember(initialRoute,role){
+        mutableStateOf(
+            if(initialRoute=="coachchat" && role==RsRole.TRAINER)RsChatHubTabV125.ALL
+            else rsInitialChatTabV125(initialRoute)
+        )
+    }
     var contacts by remember{mutableStateOf<List<RsChatContactV125>>(emptyList())}
     var presenceError by remember{mutableStateOf(false)}
     var privateStudentId by remember{mutableStateOf<String?>(null)}
@@ -647,8 +652,34 @@ fun RsFloatingGlassChatHubV125(
                         }
                     }
                 }
-                RsChatHubTabV125.PRIVATE->key("private-thread",role,privateStudentId){
-                    RsCoachChatV44(c,store,lang,role,privateStudentId)
+                RsChatHubTabV125.PRIVATE->{
+                    if(role==RsRole.TRAINER && privateStudentId.isNullOrBlank()){
+                        Column(
+                            Modifier.fillMaxSize(),
+                            verticalArrangement=Arrangement.spacedBy(8.dp)
+                        ){
+                            RsFloatingGlassPanelV125(c){
+                                Text("SELECT A PRIVATE CONTACT",color=c.gold,fontSize=10.sp,fontWeight=FontWeight.Black)
+                                Text("Choose who you want to message or call before opening the private thread.",color=c.muted,fontSize=9.sp)
+                            }
+                            androidx.compose.foundation.lazy.LazyColumn(
+                                modifier=Modifier.fillMaxSize(),
+                                verticalArrangement=Arrangement.spacedBy(7.dp),
+                                contentPadding=PaddingValues(bottom=12.dp)
+                            ){
+                                items(filteredContacts.size){index->
+                                    val contact=filteredContacts[index]
+                                    RsContactPresenceV125(c,contact){
+                                        privateStudentId=contact.userId
+                                    }
+                                }
+                            }
+                        }
+                    }else{
+                        key("private-thread",role,privateStudentId){
+                            RsCoachChatV44(c,store,lang,role,privateStudentId)
+                        }
+                    }
                 }
                 RsChatHubTabV125.GROUPS->RsGroupsV50(c,store,lang,role)
                 RsChatHubTabV125.COMMUNITY->RsCommunityChatV163(c,store,lang,role)
