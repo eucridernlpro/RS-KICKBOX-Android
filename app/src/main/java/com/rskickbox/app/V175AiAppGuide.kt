@@ -25,10 +25,14 @@ private fun rsAiGuideSpecialStepsV175(route:String,role:RsRole):List<String>?=wh
         "Swipe left to right to open the RS Chat menu; swipe right to left to close the menu or leave chat when it is closed."
     )
     "music","music_admin"->listOf(
-        "Open RS Music from the top dashboard section.",
-        "Import audio from your device and keep it in the RS library.",
-        "Use search, playlists, shuffle, repeat, seek, volume and background playback.",
-        "You can also ask Sofia or Marcus to play, pause, stop, skip or open RS Music."
+        "Open RS Music Pro from the top dashboard section.",
+        "Use IMPORT directly from the main player to add audio from your device.",
+        "Open LIBRARY for the sliding music panel with Library, Playlists, Favorites and Recent sections.",
+        "Create and manage named playlists inside the sliding library instead of using a separate basic playlist form.",
+        "Use search, favorites, shuffle, repeat-one/repeat-all, seek, ±10 second jumps, playback speed, volume and persistent background playback.",
+        "Choose a visual effect preset such as Neon, Bass, Arena or Studio for the spatial 3D-style music visualizer.",
+        "Swipe the music library from left to right to close it.",
+        "You can also ask Sofia or Marcus to play, pause, stop, skip, open RS Music Pro or import music."
     )
     "student_guide","guide"->listOf(
         "Open App Guide from the first dashboard position.",
