@@ -155,9 +155,21 @@ class MainActivity : FragmentActivity() {
                 }
             }
         )
+        val promptLang=RsStore(this).s("lang","en")
+        val promptCopy=when(promptLang){
+            "nl"->"RS KICKBOXING ontgrendelen" to "Bevestig je identiteit om de RS-spraakopdracht voort te zetten"
+            "pt"->"Desbloquear RS KICKBOXING" to "Confirma a tua identidade para continuar o pedido de voz RS"
+            "es"->"Desbloquear RS KICKBOXING" to "Confirma tu identidad para continuar la solicitud de voz RS"
+            "fr"->"Déverrouiller RS KICKBOXING" to "Confirme ton identité pour continuer la demande vocale RS"
+            "de"->"RS KICKBOXING entsperren" to "Bestätige deine Identität, um die RS-Sprachanfrage fortzusetzen"
+            "it"->"Sblocca RS KICKBOXING" to "Conferma la tua identità per continuare la richiesta vocale RS"
+            "pl"->"Odblokuj RS KICKBOXING" to "Potwierdź tożsamość, aby kontynuować polecenie głosowe RS"
+            "tr"->"RS KICKBOXING kilidini aç" to "RS sesli isteğine devam etmek için kimliğini doğrula"
+            else->"Unlock RS KICKBOXING" to "Confirm your identity to continue the RS voice request"
+        }
         val info=BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Unlock RS KICKBOXING")
-            .setSubtitle("Confirm your identity to continue the RS voice request")
+            .setTitle(promptCopy.first)
+            .setSubtitle(promptCopy.second)
             .setAllowedAuthenticators(
                 BiometricManager.Authenticators.BIOMETRIC_STRONG or
                     BiometricManager.Authenticators.DEVICE_CREDENTIAL
