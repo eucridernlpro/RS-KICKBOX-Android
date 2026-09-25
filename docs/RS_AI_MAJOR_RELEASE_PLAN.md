@@ -86,8 +86,8 @@ Everything in PRO plus:
 
 ## Future premium integrations
 ### Wake word
-Preferred: Picovoice Porcupine with custom RS wake phrases.
-Reason: dedicated on-device wake-word detection avoids repeated Android SpeechRecognizer restart tones and improves background reliability.
+Production direction: Vosk Android with a local/offline RS wake grammar.
+Reason: dedicated on-device wake recognition avoids repeated Android SpeechRecognizer restart tones, removes the Picovoice trial/company-email dependency, and keeps sleeping-state wake processing local. Android SpeechRecognizer is activated only after the wake phrase or used as a fallback.
 
 ### Natural realtime voice
 Existing OpenAI backend can later be extended to an OpenAI Realtime voice session while preserving Android TTS as fallback.
