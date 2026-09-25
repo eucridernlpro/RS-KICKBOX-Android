@@ -47,6 +47,26 @@ class MainActivity : FragmentActivity() {
                 true
             }.getOrDefault(false)
         }
+
+        fun biometricLoginAvailable():Boolean{
+            val activity=activeActivity?.get()?:return false
+            val authenticators=
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            return BiometricManager.from(activity).canAuthenticate(authenticators)==
+                BiometricManager.BIOMETRIC_SUCCESS
+        }
+
+        fun requestPersistentBiometricLogin(
+            onSuccess:()->Unit,
+            onError:(String)->Unit
+        ):Boolean{
+            val activity=activeActivity?.get()?:return false
+            activity.runOnUiThread{
+                activity.requestPersistentBiometricLoginInternal(onSuccess,onError)
+            }
+            return true
+        }
     }
 
     override fun onStart(){
@@ -120,6 +140,61 @@ class MainActivity : FragmentActivity() {
                 BiometricManager.Authenticators.DEVICE_CREDENTIAL
         return BiometricManager.from(this).canAuthenticate(authenticators)==
             BiometricManager.BIOMETRIC_SUCCESS
+    }
+
+    private fun requestPersistentBiometricLoginInternal(
+        onSuccess:()->Unit,
+        onError:(String)->Unit
+    ){
+        val authenticators=
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        if(BiometricManager.from(this).canAuthenticate(authenticators)!=BiometricManager.BIOMETRIC_SUCCESS){
+            onError("Biometric login is not available on this device.")
+            return
+        }
+        val executor=ContextCompat.getMainExecutor(this)
+        val prompt=BiometricPrompt(
+            this,
+            executor,
+            object:BiometricPrompt.AuthenticationCallback(){
+                override fun onAuthenticationSucceeded(result:BiometricPrompt.AuthenticationResult){
+                    super.onAuthenticationSucceeded(result)
+                    onSuccess()
+                }
+                override fun onAuthenticationError(errorCode:Int,errString:CharSequence){
+                    super.onAuthenticationError(errorCode,errString)
+                    if(
+                        errorCode!=BiometricPrompt.ERROR_USER_CANCELED &&
+                        errorCode!=BiometricPrompt.ERROR_NEGATIVE_BUTTON &&
+                        errorCode!=BiometricPrompt.ERROR_CANCELED
+                    ){
+                        onError(errString.toString().ifBlank{"Biometric login failed."})
+                    }
+                }
+                override fun onAuthenticationFailed(){
+                    super.onAuthenticationFailed()
+                }
+            }
+        )
+        val lang=RsStore(this).s("lang","en")
+        val copy=when(lang){
+            "nl"->"Inloggen met vingerafdruk" to "Gebruik je vingerafdruk of apparaatbeveiliging om RS KICKBOXING te openen"
+            "pt"->"Entrar com impressão digital" to "Usa a impressão digital ou o bloqueio do dispositivo para abrir o RS KICKBOXING"
+            "es"->"Entrar con huella" to "Usa tu huella o el desbloqueo del dispositivo para abrir RS KICKBOXING"
+            "fr"->"Connexion biométrique" to "Utilise ton empreinte ou le déverrouillage de l’appareil pour ouvrir RS KICKBOXING"
+            "de"->"Mit Fingerabdruck anmelden" to "Verwende Fingerabdruck oder Gerätesperre, um RS KICKBOXING zu öffnen"
+            "it"->"Accedi con impronta" to "Usa l’impronta o lo sblocco del dispositivo per aprire RS KICKBOXING"
+            "pl"->"Zaloguj odciskiem palca" to "Użyj odcisku palca lub blokady urządzenia, aby otworzyć RS KICKBOXING"
+            "tr"->"Parmak iziyle giriş" to "RS KICKBOXING’i açmak için parmak izi veya cihaz kilidini kullan"
+            else->"Sign in with fingerprint" to "Use your fingerprint or device unlock to open RS KICKBOXING"
+        }
+        val info=BiometricPrompt.PromptInfo.Builder()
+            .setTitle(copy.first)
+            .setSubtitle(copy.second)
+            .setAllowedAuthenticators(authenticators)
+            .build()
+        prompt.authenticate(info)
     }
 
     private fun requestWakeBiometric(sourceIntent:Intent?,savedInstanceState:Bundle?){
