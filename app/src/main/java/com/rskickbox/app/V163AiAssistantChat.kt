@@ -826,8 +826,19 @@ fun RsAiAssistantChatV163(
                     else rsAiActionV184(aiLang,"sofia_active")
                 }
                 is RsAiPlatformIntentV171.UploadMusic->{
-                    musicPicker.launch(arrayOf("audio/*"))
-                    rsAiActionV184(aiLang,"music_picker")
+                    store.ps("music_open_library_v201","IMPORT")
+                    scope.launch{
+                        kotlinx.coroutines.delay(220)
+                        onNavigate(if(role==RsRole.TRAINER)"music_admin" else "music")
+                    }
+                    when(aiLang){
+                        "nl"->"Ik open RS Music Pro zodat je muziek direct vanuit de speler kunt importeren."
+                        "pt"->"Vou abrir o RS Music Pro para importares música diretamente no leitor."
+                        "es"->"Abriré RS Music Pro para importar música directamente desde el reproductor."
+                        "fr"->"J’ouvre RS Music Pro pour importer la musique directement depuis le lecteur."
+                        "de"->"Ich öffne RS Music Pro, damit du Musik direkt im Player importieren kannst."
+                        else->"Opening RS Music Pro so you can import music directly from the player."
+                    }
                 }
                 is RsAiPlatformIntentV171.PlayMusic->{
                     val named=rsFindMusicTrackV171(store,body)
