@@ -47,6 +47,26 @@ fun RsChatSlideMenuV144(
     canClearChat:Boolean
 ){
     val layout=rsThemeLayoutV175(rsStoredThemeV175(store))
+    val voiceScrollState=rememberScrollState()
+    LaunchedEffect(visible,voiceScrollState){
+        if(!visible)return@LaunchedEffect
+        RsVoicePageBusV196.commands.collect{command->
+            when(command){
+                RsVoicePageCommandV196.SCROLL_DOWN->{
+                    val step=(voiceScrollState.viewportSize*.72f).toInt().coerceAtLeast(260)
+                    voiceScrollState.animateScrollTo(
+                        (voiceScrollState.value+step).coerceAtMost(voiceScrollState.maxValue)
+                    )
+                }
+                RsVoicePageCommandV196.SCROLL_UP->{
+                    val step=(voiceScrollState.viewportSize*.72f).toInt().coerceAtLeast(260)
+                    voiceScrollState.animateScrollTo((voiceScrollState.value-step).coerceAtLeast(0))
+                }
+                RsVoicePageCommandV196.TOP->voiceScrollState.animateScrollTo(0)
+                RsVoicePageCommandV196.BOTTOM->voiceScrollState.animateScrollTo(voiceScrollState.maxValue)
+            }
+        }
+    }
     val drawerWidth=when(layout.mode){
         "TECH_COMPACT"->286.dp
         "FIGHT_STRIP"->300.dp
@@ -85,7 +105,7 @@ fun RsChatSlideMenuV144(
                     .statusBarsPadding()
                     .navigationBarsPadding()
                     .padding(14.dp)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(voiceScrollState)
                     .pointerInput(Unit){
                         detectHorizontalDragGestures(
                             onDragStart={drawerDrag=0f},
