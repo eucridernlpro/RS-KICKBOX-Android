@@ -946,12 +946,12 @@ fun RsAiAssistantChatV163(
                         val next=styles[(styles.indexOf(current).takeIf{it>=0}?:0).let{(it+1)%styles.size}]
                         store.ps(key,next)
                         when(aiLang){
-                            "nl"->"Ik houd "+if(avatar=="FEMALE")"Sofia vrouwelijk" else "Marcus mannelijk"+" en verander alleen de stemstijl naar "+next+"."
-                            "pt"->"Mantenho "+if(avatar=="FEMALE")"a Sofia com voz feminina" else "o Marcus com voz masculina"+" e mudo apenas o estilo para "+next+"."
-                            "es"->"Mantengo "+if(avatar=="FEMALE")"a Sofia con voz femenina" else "a Marcus con voz masculina"+" y cambio solo el estilo a "+next+"."
-                            "fr"->"Je garde "+if(avatar=="FEMALE")"Sofia avec une voix féminine" else "Marcus avec une voix masculine"+" et je change seulement le style vers "+next+"."
-                            "de"->"Ich behalte "+if(avatar=="FEMALE")"Sofia mit weiblicher Stimme" else "Marcus mit männlicher Stimme"+" und ändere nur den Stil zu "+next+"."
-                            else->"I’ll keep "+if(avatar=="FEMALE")"Sofia female" else "Marcus male"+" and change only the voice style to "+next+"."
+                            "nl"->"Ik houd "+(if(avatar=="FEMALE")"Sofia vrouwelijk" else "Marcus mannelijk")+" en verander alleen de stemstijl naar "+next+"."
+                            "pt"->"Mantenho "+(if(avatar=="FEMALE")"a Sofia com voz feminina" else "o Marcus com voz masculina")+" e mudo apenas o estilo para "+next+"."
+                            "es"->"Mantengo "+(if(avatar=="FEMALE")"a Sofia con voz femenina" else "a Marcus con voz masculina")+" y cambio solo el estilo a "+next+"."
+                            "fr"->"Je garde "+(if(avatar=="FEMALE")"Sofia avec une voix féminine" else "Marcus avec une voix masculine")+" et je change seulement le style vers "+next+"."
+                            "de"->"Ich behalte "+(if(avatar=="FEMALE")"Sofia mit weiblicher Stimme" else "Marcus mit männlicher Stimme")+" und ändere nur den Stil zu "+next+"."
+                            else->"I’ll keep "+(if(avatar=="FEMALE")"Sofia female" else "Marcus male")+" and change only the voice style to "+next+"."
                         }
                     }else{
                         val current=store.s(voiceOverrideKey,"")
@@ -1013,7 +1013,7 @@ fun RsAiAssistantChatV163(
                                 store.ps("chat_open_peer_id_v156",person.userId)
                                 onNavigate("coachchat")
                                 when(aiLang){
-                                    "nl"->"Ik heb "+person.displayName+" gevonden. Ik open de privéchat zodat je eenmalig de benodigde "+if(needsCamera)"microfoon- en cameratoegang" else "microfoontoegang"+" kunt toestaan."
+                                    "nl"->"Ik heb "+person.displayName+" gevonden. Ik open de privéchat zodat je eenmalig de benodigde "+(if(needsCamera)"microfoon- en cameratoegang" else "microfoontoegang")+" kunt toestaan."
                                     "pt"->"Encontrei "+person.displayName+". Vou abrir o chat privado para autorizares uma vez as permissões necessárias."
                                     "es"->"Encontré a "+person.displayName+". Abriré el chat privado para que autorices los permisos necesarios."
                                     "fr"->"J’ai trouvé "+person.displayName+". J’ouvre le chat privé pour autoriser les permissions nécessaires."
