@@ -166,8 +166,11 @@ sealed class RsAiPlatformIntentV171{
     data object NextMusic:RsAiPlatformIntentV171()
     data object PreviousMusic:RsAiPlatformIntentV171()
     data object MinimizeApp:RsAiPlatformIntentV171()
+    data object CloseAi:RsAiPlatformIntentV171()
     data object CloseApp:RsAiPlatformIntentV171()
     data object Logout:RsAiPlatformIntentV171()
+    data object ChangeVoiceStyle:RsAiPlatformIntentV171()
+    data object CommandGuide:RsAiPlatformIntentV171()
     data object Help:RsAiPlatformIntentV171()
     data object None:RsAiPlatformIntentV171()
 }
@@ -202,6 +205,12 @@ fun rsAiPlatformIntentV171(raw:String,lang:RsLang?=null):RsAiPlatformIntentV171{
     ))return RsAiPlatformIntentV171.MinimizeApp
     if(rsContainsAnyV171(
         s,
+        "close ai","exit ai","leave ai","go out of ai","back from ai","close assistant","exit assistant",
+        "sluit ai","verlaat ai","sair da ia","fechar ia","salir de ia","cerrar ia","quitter l'ia","fermer l'ia",
+        "ki verlassen","ki schließen","esci dall'ia","chiudi ia","wyjdź z ai","zamknij ai","ai'dan çık","ai kapat"
+    ))return RsAiPlatformIntentV171.CloseAi
+    if(rsContainsAnyV171(
+        s,
         "close app","close rs","rs close app","sluit app","sluit rs","fecha a app","fecha rs",
         "cierra la app","cierra rs","ferme l'app","ferme rs","app schließen","rs schließen",
         "chiudi app","chiudi rs","zamknij aplikację","zamknij rs","uygulamayı kapat","rs kapat"
@@ -211,6 +220,22 @@ fun rsAiPlatformIntentV171(raw:String,lang:RsLang?=null):RsAiPlatformIntentV171{
         "log out","logout","sign out","rs log out","uitloggen","sair da conta","terminar sessão",
         "cerrar sesión","déconnexion","abmelden","esci dall'account","wyloguj","çıkış yap"
     ))return RsAiPlatformIntentV171.Logout
+
+    if(rsContainsAnyV171(
+        s,
+        "another voice","different voice","change voice style","other voice style","next voice",
+        "andere stem","andere stemstijl","outra voz","outra voz feminina","outra voz masculina",
+        "otra voz","otra voz femenina","otra voz masculina","autre voix","autre style de voix",
+        "andere stimme","altra voce","inny głos","başka ses"
+    ))return RsAiPlatformIntentV171.ChangeVoiceStyle
+
+    if(rsContainsAnyV171(
+        s,
+        "show commands","show me commands","voice commands","what commands can i use","command list",
+        "show what you can do","visual preview of commands","show ai controls","how can i control rs",
+        "toon commando's","spraakcommando's","mostrar comandos","comandos de voz","mostrar comandos de voz",
+        "affiche les commandes","sprachbefehle","mostra comandi","pokaż komendy","sesli komutları göster"
+    ))return RsAiPlatformIntentV171.CommandGuide
 
     if(rsContainsAnyV171(s,"marcus","male trainer","man trainer","male voice","homem","hombre","homme","mann")){
         return RsAiPlatformIntentV171.ChangeAvatar("MALE","Marcus")
