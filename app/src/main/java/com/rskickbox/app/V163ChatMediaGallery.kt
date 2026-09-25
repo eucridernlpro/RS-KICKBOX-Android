@@ -39,7 +39,55 @@ data class RsRecentChatMediaV163(
     val modifiedAt:Long
 )
 
+data class RsSavedChatMessageV196(
+    val id:String,
+    val sender:String,
+    val body:String,
+    val createdAt:Long,
+    val savedAt:Long
+)
+
 private const val RS_CHAT_GALLERY_KEY_V163="rs_chat_gallery_v163"
+private const val RS_CHAT_MESSAGE_GALLERY_KEY_V196="rs_chat_message_gallery_v196"
+
+fun rsSaveChatMessageToGalleryV196(
+    store:RsStore,
+    message:RsCloudCoachMessageV72,
+    sender:String
+):Result<Unit> = runCatching{
+    val raw=store.s(RS_CHAT_MESSAGE_GALLERY_KEY_V196,"")
+    val a=if(raw.isBlank())JSONArray() else runCatching{JSONArray(raw)}.getOrDefault(JSONArray())
+    val next=JSONArray()
+    next.put(JSONObject().apply{
+        put("id",message.id)
+        put("sender",sender)
+        put("body",message.body)
+        put("createdAt",message.createdAtMillis())
+        put("savedAt",System.currentTimeMillis())
+    })
+    for(i in 0 until minOf(a.length(),199))next.put(a.getJSONObject(i))
+    store.ps(RS_CHAT_MESSAGE_GALLERY_KEY_V196,next.toString())
+}
+
+private fun rsLoadSavedChatMessagesV196(store:RsStore):List<RsSavedChatMessageV196>{
+    val raw=store.s(RS_CHAT_MESSAGE_GALLERY_KEY_V196,"")
+    if(raw.isBlank())return emptyList()
+    return runCatching{
+        val a=JSONArray(raw)
+        buildList{
+            for(i in 0 until a.length()){
+                val o=a.getJSONObject(i)
+                add(RsSavedChatMessageV196(
+                    id=o.optString("id"),
+                    sender=o.optString("sender"),
+                    body=o.optString("body"),
+                    createdAt=o.optLong("createdAt"),
+                    savedAt=o.optLong("savedAt")
+                ))
+            }
+        }
+    }.getOrDefault(emptyList())
+}
 
 private fun rsLoadChatGalleryV163(store:RsStore):List<RsSavedChatMediaV163>{
     val raw=store.s(RS_CHAT_GALLERY_KEY_V163,"")
@@ -182,6 +230,7 @@ fun RsChatMediaGalleryV163(c:RsPalette,store:RsStore,lang:RsLang){
     var revision by remember{mutableIntStateOf(0)}
     var status by remember{mutableStateOf("")}
     val items=remember(revision){rsLoadChatGalleryV163(store)}
+    val savedMessages=remember(revision){rsLoadSavedChatMessagesV196(store)}
     val recent=remember(revision){
         rsCleanupChatMediaCacheV163(context)
         rsRecentChatMediaV163(context)
@@ -197,6 +246,30 @@ fun RsChatMediaGalleryV163(c:RsPalette,store:RsStore,lang:RsLang){
             color=c.muted,fontSize=9.sp,lineHeight=13.sp
         )
         if(status.isNotBlank())Text(status,color=c.muted,fontSize=9.sp)
+
+        Text("SAVED MESSAGES",color=c.gold,fontWeight=FontWeight.Black,fontSize=9.sp,letterSpacing=.7.sp)
+        if(savedMessages.isEmpty()){
+            Text("No saved text messages yet. Ask RS AI to save a message after it reads it to you.",color=c.muted,fontSize=9.sp)
+        }else{
+            savedMessages.take(50).forEach{message->
+                Surface(
+                    color=Color.Black.copy(alpha=.66f),
+                    shape=RoundedCornerShape(18.dp),
+                    border=BorderStroke(1.dp,c.gold.copy(alpha=.18f)),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Column(Modifier.padding(10.dp),verticalArrangement=Arrangement.spacedBy(4.dp)){
+                        Text(message.sender,color=c.bright,fontWeight=FontWeight.Black,fontSize=10.sp)
+                        Text(
+                            java.text.SimpleDateFormat("dd MMM · HH:mm",java.util.Locale.getDefault())
+                                .format(java.util.Date(message.createdAt)),
+                            color=c.muted,fontSize=8.sp
+                        )
+                        Text(message.body,color=c.text,fontSize=11.sp,lineHeight=15.sp)
+                    }
+                }
+            }
+        }
 
         Text("RECENT · AUTO-DELETE AFTER "+retentionDays+" DAY"+if(retentionDays==1)"" else "S",color=c.gold,fontWeight=FontWeight.Black,fontSize=9.sp,letterSpacing=.7.sp)
         if(recent.isEmpty()){
