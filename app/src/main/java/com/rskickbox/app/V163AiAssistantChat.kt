@@ -353,7 +353,7 @@ fun RsAiAssistantChatV163(
         engine.language=effective
         val wantsMale=avatarProfile=="MALE"
         engine.setSpeechRate(if(wantsMale).92f else .95f)
-        engine.setPitch(if(wantsMale).88f else 1.06f)
+        engine.setPitch(if(wantsMale).82f else 1.14f)
 
         fun voiceScore(v:android.speech.tts.Voice):Int{
             val name=v.name.lowercase(Locale.ROOT)
@@ -410,17 +410,21 @@ fun RsAiAssistantChatV163(
             effective.country.isNotBlank()
         }
         val candidates=if(exactLocaleCandidates.isNotEmpty())exactLocaleCandidates else languageCandidates
+        val maleHints=listOf("male","mascul","masc","man","hombre","homme","mann","uomo","homem","erkek","m1","m2")
+        val femaleHints=listOf("female","femin","fem","woman","mujer","femme","frau","donna","mulher","kadin","kadın","f1","f2")
         val hintedCandidates=candidates.filter{candidate->
             val n=candidate.name.lowercase(Locale.ROOT)
-            if(wantsMale){
-                listOf("male","mascul","masc","man","hombre","homme","mann","uomo","homem","erkek")
-                    .any{n.contains(it)}
-            }else{
-                listOf("female","femin","fem","woman","mujer","femme","frau","donna","mulher","kadin","kadın")
-                    .any{n.contains(it)}
-            }
+            if(wantsMale)maleHints.any{n.contains(it)} else femaleHints.any{n.contains(it)}
         }
-        val pool=if(hintedCandidates.isNotEmpty())hintedCandidates else candidates
+        val safeCandidates=candidates.filter{candidate->
+            val n=candidate.name.lowercase(Locale.ROOT)
+            if(wantsMale)femaleHints.none{n.contains(it)} else maleHints.none{n.contains(it)}
+        }
+        val pool=when{
+            hintedCandidates.isNotEmpty()->hintedCandidates
+            safeCandidates.isNotEmpty()->safeCandidates
+            else->emptyList()
+        }
         val offlineBest=pool
             .filterNot{it.isNetworkConnectionRequired}
             .maxByOrNull{voiceScore(it)}
@@ -1045,8 +1049,13 @@ fun RsAiAssistantChatV163(
             renderMode=avatarRenderMode,
             language=selectedLang,
             onAvatarChange={next->
+                cloudVoiceRequestId++
+                runCatching{cloudVoicePlayer?.stop()}
+                runCatching{cloudVoicePlayer?.release()}
+                cloudVoicePlayer=null
                 runCatching{tts?.stop()}
                 activeUtteranceId=""
+                speechAmplitude=0f
                 runCatching{quietVoice.stop()}
                 speaking=false
                 voiceConversationActive=false
@@ -1065,8 +1074,13 @@ fun RsAiAssistantChatV163(
                 }
             },
             onLanguageChange={nextLang->
+                cloudVoiceRequestId++
+                runCatching{cloudVoicePlayer?.stop()}
+                runCatching{cloudVoicePlayer?.release()}
+                cloudVoicePlayer=null
                 runCatching{tts?.stop()}
                 activeUtteranceId=""
+                speechAmplitude=0f
                 runCatching{quietVoice.stop()}
                 speaking=false
                 voiceConversationActive=false
@@ -1102,9 +1116,9 @@ fun RsAiAssistantChatV163(
 
         Box(
             Modifier.fillMaxWidth()
-                .fillMaxHeight(.44f)
+                .fillMaxHeight(.34f)
                 .align(Alignment.TopCenter)
-                .padding(start=10.dp,end=10.dp,top=72.dp)
+                .padding(start=10.dp,end=10.dp,top=76.dp)
         ){
             LazyColumn(
                 state=aiListState,
@@ -1154,7 +1168,7 @@ fun RsAiAssistantChatV163(
                             ),
                             modifier=if(message.mine)Modifier.fillMaxWidth(.72f) else Modifier.fillMaxWidth(.80f)
                         ){
-                            Column(Modifier.padding(9.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
+                            Column(Modifier.padding(horizontal=10.dp,vertical=10.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
                                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                                     Text(
                                         if(message.mine)when(aiLang){
@@ -1877,6 +1891,7 @@ private fun RsAiAvatarStageV163(
                     )
             )
             RsAiProductionAvatarV191(
+                store=store,
                 avatar=avatar,
                 speaking=speaking,
                 speechAmplitude=speechAmplitude,
