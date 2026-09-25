@@ -1720,7 +1720,7 @@ private fun ShellV21(
             if(route!="music" && route!="music_admin" && route!="voice"){
                 RsMiniMusicPlayerV90(c,lang){onRoute(if(role==RsRole.TRAINER)"music_admin" else "music")}
             }
-            if(route!=home && route !in setOf("voice","coachchat","groups","community","support","notifications","content")){
+            if(route!=home && route !in setOf("voice","coachchat","groups","community","support","notifications","content","music","music_admin")){
                 RsPageAssistBarV177(
                     c=c,
                     store=store,
