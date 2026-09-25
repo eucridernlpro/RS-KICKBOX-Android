@@ -233,7 +233,7 @@ class RsCallMonitorServiceV134:Service(){
                     }
                     rsMyVideoRoomsV136().onSuccess{rooms->
                         val invite=rooms.firstOrNull{
-                            it.myRole=="STUDENT" && it.myStatus=="INVITED" && it.roomStatus=="OPEN"
+                            it.myRole!="HOST" && it.myStatus=="INVITED" && it.roomStatus=="OPEN"
                         }
                         if(invite!=null && invite.roomId!=lastNotifiedRoomId){
                             lastNotifiedRoomId=invite.roomId
