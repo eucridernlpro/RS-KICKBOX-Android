@@ -858,6 +858,23 @@ fun RsAiAssistantChatV163(
                     runCatching{musicController?.seekToPreviousMediaItem();musicController?.play()}
                     rsAiActionV184(aiLang,"previous_track")
                 }
+                is RsAiPlatformIntentV171.StopListening->{
+                    voiceConversationActive=false
+                    runCatching{quietVoice.stop()}
+                    store.pb("rs_ai_listening_enabled_v200",false)
+                    store.pb("rs_voice_wake_enabled_v165",false)
+                    store.pb("rs_voice_wake_resume_after_ai_v195",false)
+                    store.pb("rs_voice_wake_paused_for_ai_v197",false)
+                    runCatching{RsVoiceWakeServiceV165.stop(context)}
+                    when(aiLang){
+                        "nl"->"Ik stop met luisteren. Zet MASTER AI LISTENING handmatig weer aan in AI-instellingen wanneer je mij opnieuw wilt gebruiken."
+                        "pt"->"Vou parar de ouvir. Ativa novamente MASTER AI LISTENING manualmente nas definições de IA quando quiseres usar-me."
+                        "es"->"Dejaré de escuchar. Activa MASTER AI LISTENING manualmente en los ajustes de IA cuando quieras usarme."
+                        "fr"->"J’arrête d’écouter. Réactive MASTER AI LISTENING manuellement dans les réglages IA quand tu veux me réutiliser."
+                        "de"->"Ich höre jetzt nicht mehr zu. Aktiviere MASTER AI LISTENING später manuell in den KI-Einstellungen."
+                        else->"I’ll stop listening. Turn MASTER AI LISTENING back on manually in AI Settings when you want to use me again."
+                    }
+                }
                 is RsAiPlatformIntentV171.MinimizeApp->{
                     voiceConversationActive=false
                     runCatching{quietVoice.stop()}
