@@ -163,6 +163,7 @@ fun RsAiAssistantChatV163(
     var pickedKind by remember{mutableStateOf<String?>(null)}
     var busy by remember{mutableStateOf(false)}
     var speaking by remember{mutableStateOf(false)}
+    var activeSpeechText by remember{mutableStateOf("")}
     var attachMenu by remember{mutableStateOf(false)}
     var optionsMenu by remember{mutableStateOf(false)}
     var voiceProfileMenu by remember{mutableStateOf(false)}
@@ -317,6 +318,7 @@ fun RsAiAssistantChatV163(
                     scope.launch{
                         speaking=false
                         speechAmplitude=0f
+                        activeSpeechText=""
                         activeUtteranceId=""
                         if(voiceConversationActive)resumeListeningSignal++
                     }
@@ -328,6 +330,7 @@ fun RsAiAssistantChatV163(
                     scope.launch{
                         speaking=false
                         speechAmplitude=0f
+                        activeSpeechText=""
                         activeUtteranceId=""
                         if(voiceConversationActive)resumeListeningSignal++
                     }
@@ -445,6 +448,7 @@ fun RsAiAssistantChatV163(
     LaunchedEffect(aiLang,avatar,ttsReady){
         voiceSubtitle=""
         activeUtteranceId=""
+        activeSpeechText=""
         speechAmplitude=0f
         cloudVoiceRequestId++
         runCatching{cloudVoicePlayer?.stop()}
@@ -463,12 +467,14 @@ fun RsAiAssistantChatV163(
         avatarOverride:String?=null
     ){
         if(text.isBlank())return
+        activeSpeechText=text
         val utteranceLanguage=languageOverride?:selectedLang
         val utteranceAvatar=avatarOverride?:avatar
 
         fun speakDeviceFallback(){
             if(!ttsReady){
                 activeUtteranceId=""
+                activeSpeechText=""
                 speaking=false
                 speechAmplitude=0f
                 if(voiceConversationActive)resumeListeningSignal++
@@ -522,6 +528,7 @@ fun RsAiAssistantChatV163(
                             if(requestId==cloudVoiceRequestId){
                                 cloudVoicePlayer=null
                                 speaking=false
+                                activeSpeechText=""
                                 speechAmplitude=0f
                                 if(voiceConversationActive)resumeListeningSignal++
                             }
@@ -1145,6 +1152,7 @@ fun RsAiAssistantChatV163(
                 cloudVoicePlayer=null
                 runCatching{tts?.stop()}
                 activeUtteranceId=""
+                activeSpeechText=""
                 speechAmplitude=0f
                 runCatching{quietVoice.stop()}
                 speaking=false
@@ -1170,6 +1178,7 @@ fun RsAiAssistantChatV163(
                 cloudVoicePlayer=null
                 runCatching{tts?.stop()}
                 activeUtteranceId=""
+                activeSpeechText=""
                 speechAmplitude=0f
                 runCatching{quietVoice.stop()}
                 speaking=false
@@ -1989,6 +1998,7 @@ private fun RsAiAvatarStageV163(
                 avatar=avatar,
                 speaking=speaking,
                 speechAmplitude=speechAmplitude,
+                speechText=activeSpeechText,
                 motionEnabled=avatarMotion,
                 listening=listening,
                 thinking=thinking,
