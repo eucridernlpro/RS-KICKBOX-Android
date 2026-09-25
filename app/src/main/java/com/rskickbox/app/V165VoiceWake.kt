@@ -1598,6 +1598,21 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         }
 
         when(val assistantIntent=rsAiPlatformIntentV171(commandText,language())){
+            is RsAiPlatformIntentV171.UploadMusic->{
+                store.ps("music_open_library_v201","IMPORT")
+                requestRouteOpenV182(if(store.s("session_role","")=="trainer")"music_admin" else "music")
+                speak(
+                    when(language().code){
+                        "nl"->"Ik open RS Music Pro. Je kunt daar direct muziek importeren."
+                        "pt"->"Vou abrir o RS Music Pro. Podes importar música diretamente no leitor."
+                        "es"->"Abriré RS Music Pro. Puedes importar música directamente en el reproductor."
+                        "fr"->"J’ouvre RS Music Pro. Tu peux importer la musique directement dans le lecteur."
+                        "de"->"Ich öffne RS Music Pro. Dort kannst du Musik direkt importieren."
+                        else->"Opening RS Music Pro. You can import music directly in the player."
+                    }
+                )
+                return
+            }
             is RsAiPlatformIntentV171.ChangeAvatar->{
                 serviceVoiceRequestId++
                 runCatching{serviceCloudVoicePlayer?.stop()}
