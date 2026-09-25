@@ -399,7 +399,8 @@ fun RsStudentGuideV81(
         Text(filtered.size.toString()+" "+rsStudentGuideUiV81(lang,"sections"),color=c.muted,fontSize=10.sp)
 
         filtered.forEach{item->
-            val open=expanded==item.route
+            val guideKey=item.category+"|"+item.route+"|"+item.title
+            val open=expanded==guideKey
             val localized=rsStudentGuideLocalizedV105(lang,item)
             RsPanel(c){
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
@@ -414,7 +415,7 @@ fun RsStudentGuideV81(
                 Text(localized.purpose,color=c.text,maxLines=if(open)Int.MAX_VALUE else 3,overflow=TextOverflow.Ellipsis)
 
                 OutlinedButton(
-                    onClick={expanded=if(open)null else item.route},
+                    onClick={expanded=if(open)null else guideKey},
                     modifier=Modifier.fillMaxWidth()
                 ){Text(if(open)rsStudentGuideUiV81(lang,"hide") else rsStudentGuideUiV81(lang,"show"))}
 
