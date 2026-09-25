@@ -663,6 +663,18 @@ fun RsAiAssistantChatV163(
     }
 
     fun startVoice(){
+        if(!store.b("rs_ai_listening_enabled_v200",true)){
+            voiceConversationActive=false
+            status=when(aiLang){
+                "nl"->"AI luisteren staat uit. Zet MASTER AI LISTENING handmatig aan in AI-instellingen."
+                "pt"->"A escuta da IA está desligada. Ativa MASTER AI LISTENING manualmente nas definições."
+                "es"->"La escucha de IA está desactivada. Activa MASTER AI LISTENING manualmente en ajustes."
+                "fr"->"L’écoute IA est désactivée. Active MASTER AI LISTENING manuellement dans les réglages."
+                "de"->"KI-Zuhören ist ausgeschaltet. Aktiviere MASTER AI LISTENING manuell in den Einstellungen."
+                else->"AI listening is off. Turn MASTER AI LISTENING on manually in AI Settings."
+            }
+            return
+        }
         if(speaking)runCatching{tts?.stop()}
         speaking=false
         voiceConversationActive=true
