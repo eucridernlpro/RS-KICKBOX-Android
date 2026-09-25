@@ -457,13 +457,32 @@ fun RsKickboxV21App(
     }
 
     val lifecycleOwner=LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner){
+    DisposableEffect(lifecycleOwner,role,introDone){
         val observer=LifecycleEventObserver{_,event->
-            if(event==Lifecycle.Event.ON_RESUME && introDone && role!=null && RsSupabaseV60.configured){
+            if(event==Lifecycle.Event.ON_RESUME && introDone && role!=null){
                 markSessionActivityV166()
+                // Foreground hands-free is the default: when RS is visible and the
+                // microphone permission exists, keep the single Voice Wake service
+                // listening for natural commands without requiring the top mic.
+                val micGranted=androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.RECORD_AUDIO
+                )==android.content.pm.PackageManager.PERMISSION_GRANTED
+                if(store.b("rs_voice_handsfree_foreground_v199",true) && micGranted){
+                    store.pb("rs_voice_wake_paused_for_ai_v197",false)
+                    runCatching{RsVoiceWakeServiceV165.start(context)}
+                }
                 // Resume must be lightweight and must never rewrite visual files while
                 // Compose/VideoView/Media3 surfaces are being restored.
-                appScope.launch{runCatching{rsTouchPresenceV125()}}
+                if(RsSupabaseV60.configured){
+                    appScope.launch{runCatching{rsTouchPresenceV125()}}
+                }
+            }else if(event==Lifecycle.Event.ON_STOP && role!=null){
+                // If background wake is not enabled, release the foreground-only
+                // listener when RS leaves the screen. If enabled, keep it alive.
+                if(!store.b("rs_voice_wake_enabled_v165",false)){
+                    runCatching{RsVoiceWakeServiceV165.stop(context)}
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
