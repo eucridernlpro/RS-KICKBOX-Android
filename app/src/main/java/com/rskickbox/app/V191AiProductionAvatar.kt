@@ -3,6 +3,10 @@ package com.rskickbox.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import io.github.sceneview.SceneView
 import io.github.sceneview.math.Position
@@ -22,6 +26,7 @@ import io.github.sceneview.rememberModelLoader
  */
 @Composable
 fun RsAiProductionAvatarV191(
+    store:RsStore,
     avatar:String,
     speaking:Boolean,
     speechAmplitude:Float,
@@ -46,17 +51,37 @@ fun RsAiProductionAvatarV191(
     }
 
     if(!hasRiggedAsset){
-        RsAiReal3DModelV183(
-            avatar=avatar,
-            speaking=speaking,
-            speechAmplitude=speechAmplitude,
-            motionEnabled=motionEnabled,
-            listening=listening,
-            thinking=thinking,
-            sensorX=sensorX,
-            sensorY=sensorY,
-            modifier=modifier
-        )
+        val visualSlot=if(avatar=="FEMALE")"ai_trainer_female" else "ai_trainer_male"
+        val visual=remember(visualSlot){
+            rsVisualUriWithBundledFallbackV113(context,store,visualSlot)
+        }
+        if(visual.isNotBlank()){
+            RsUriPreviewV21(
+                visual,
+                modifier
+                    .clip(RoundedCornerShape(28.dp))
+                    .graphicsLayer{
+                        val depth=if(motionEnabled)1f else 0f
+                        translationX=(-sensorX*20f*depth).coerceIn(-22f,22f)
+                        translationY=(sensorY*10f*depth).coerceIn(-12f,12f)
+                        scaleX=1.035f+(if(speaking) speechAmplitude*.012f else 0f)
+                        scaleY=scaleX
+                    },
+                store.s("visual_v21_pos_"+visualSlot,"CENTER")
+            )
+        }else{
+            RsAiReal3DModelV183(
+                avatar=avatar,
+                speaking=speaking,
+                speechAmplitude=speechAmplitude,
+                motionEnabled=motionEnabled,
+                listening=listening,
+                thinking=thinking,
+                sensorX=sensorX,
+                sensorY=sensorY,
+                modifier=modifier
+            )
+        }
         return
     }
 
