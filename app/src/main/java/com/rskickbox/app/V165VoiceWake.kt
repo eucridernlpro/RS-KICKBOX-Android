@@ -2132,6 +2132,30 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int{
+        if(intent?.action=="DIRECT_AI_ONCE"){
+            pausedForForegroundAiV197=false
+            store.pb("rs_voice_wake_paused_for_ai_v197",false)
+            awakeUntil=System.currentTimeMillis()+45_000L
+            serviceVoiceRequestId++
+            runCatching{serviceCloudVoicePlayer?.stop()}
+            runCatching{serviceCloudVoicePlayer?.release()}
+            serviceCloudVoicePlayer=null
+            runCatching{tts?.stop()}
+            serviceSpeaking=false
+            serviceUtteranceId=""
+            runCatching{offlineWakeEngineV188?.stop()}
+            offlineWakeEngineV188=null
+            runCatching{recognizer?.cancel()}
+            setWakeStatusV168("DIRECT_AI_PREPARING")
+            scope.launch{
+                delay(260)
+                if(!serviceSpeaking){
+                    setWakeStatusV168("DIRECT_AI_LISTENING")
+                    startListening()
+                }
+            }
+            return START_STICKY
+        }
         if(intent?.action=="PAUSE_FOR_FOREGROUND_AI"){
             pausedForForegroundAiV197=true
             store.pb("rs_voice_wake_paused_for_ai_v197",true)
@@ -2208,6 +2232,12 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             }
             val i=Intent(context,RsVoiceWakeServiceV165::class.java)
             ContextCompat.startForegroundService(context,i)
+        }
+        fun directListenOnce(context:Context){
+            val intent=Intent(context,RsVoiceWakeServiceV165::class.java).apply{
+                action="DIRECT_AI_ONCE"
+            }
+            ContextCompat.startForegroundService(context,intent)
         }
         fun handoffSpeechAndListen(context:Context,message:String){
             val store=RsStore(context)
