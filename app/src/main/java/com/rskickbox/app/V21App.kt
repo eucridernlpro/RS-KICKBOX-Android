@@ -1556,7 +1556,7 @@ private fun ShellV21(
                             // recognizer; resume it when the AI page is disposed.
                             if(store.b("rs_voice_wake_enabled_v165",false)){
                                 store.pb("rs_voice_wake_resume_after_ai_v195",true)
-                                runCatching{RsVoiceWakeServiceV165.stop(context)}
+                                runCatching{RsVoiceWakeServiceV165.pauseForForegroundAi(context)}
                             }
                             store.pb("ai_start_listening_v168",false)
                             store.pb("ai_direct_listen_v195",true)
