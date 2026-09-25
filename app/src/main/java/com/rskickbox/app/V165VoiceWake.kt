@@ -324,6 +324,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     @Volatile private var serviceUtteranceId=""
     private var serviceCloudVoicePlayer:MediaPlayer?=null
     private var serviceVoiceRequestId:Long=0L
+    private var pendingHandoffSpeechV194:String=""
     private var toneRestoreJob:Job?=null
     private var systemToneMutedByRs=false
     private var offlineWakeEngineV188:RsOfflineWakeEngineV188?=null
@@ -414,7 +415,17 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     override fun onInit(status:Int){
-        if(status==TextToSpeech.SUCCESS)applyLanguage()
+        if(status==TextToSpeech.SUCCESS){
+            applyLanguage()
+            val pending=pendingHandoffSpeechV194
+            if(pending.isNotBlank()){
+                pendingHandoffSpeechV194=""
+                scope.launch{
+                    delay(120)
+                    speak(pending,thenListen=true)
+                }
+            }
+        }
     }
 
     private fun language():RsLang{
@@ -1781,6 +1792,20 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             stopSelf()
             return START_NOT_STICKY
         }
+        if(intent?.action=="SPEAK_HANDOFF"){
+            val message=intent.getStringExtra("message").orEmpty().trim()
+            if(message.isNotBlank()){
+                pendingHandoffSpeechV194=message
+                store.pb("rs_voice_wake_enabled_v165",true)
+                scope.launch{
+                    delay(180)
+                    if(pendingHandoffSpeechV194==message && tts!=null){
+                        pendingHandoffSpeechV194=""
+                        speak(message,thenListen=true)
+                    }
+                }
+            }
+        }
         return START_STICKY
     }
 
@@ -1806,6 +1831,15 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             }
             val i=Intent(context,RsVoiceWakeServiceV165::class.java)
             ContextCompat.startForegroundService(context,i)
+        }
+        fun handoffSpeechAndListen(context:Context,message:String){
+            val store=RsStore(context)
+            store.pb("rs_voice_wake_enabled_v165",true)
+            val intent=Intent(context,RsVoiceWakeServiceV165::class.java).apply{
+                action="SPEAK_HANDOFF"
+                putExtra("message",message.take(1200))
+            }
+            ContextCompat.startForegroundService(context,intent)
         }
         fun stop(context:Context){
             context.stopService(Intent(context,RsVoiceWakeServiceV165::class.java))
