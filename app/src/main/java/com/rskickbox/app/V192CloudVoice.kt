@@ -15,7 +15,8 @@ import java.io.File
 data class RsCloudVoiceClipV192(
     val localUri:String,
     val model:String,
-    val voice:String
+    val voice:String,
+    val style:String
 )
 
 fun rsUsePremiumCloudVoiceV192(store:RsStore,role:RsRole):Boolean{
@@ -30,7 +31,8 @@ suspend fun rsCloudVoiceClipV192(
     context:Context,
     text:String,
     lang:RsLang,
-    avatar:String
+    avatar:String,
+    voiceStyle:String="natural"
 ):Result<RsCloudVoiceClipV192> = runCatching{
     val client=rsSupabaseClientV60() ?: error("RS cloud backend is not configured.")
     val response=client.functions.invoke(
@@ -39,6 +41,7 @@ suspend fun rsCloudVoiceClipV192(
             put("text",text.take(2200))
             put("language_code",lang.code)
             put("avatar",if(avatar=="MALE")"MALE" else "FEMALE")
+            put("voice_style",voiceStyle.lowercase().take(20))
         }
     )
     val raw=response.bodyAsText()
@@ -63,7 +66,8 @@ suspend fun rsCloudVoiceClipV192(
     RsCloudVoiceClipV192(
         localUri=Uri.fromFile(file).toString(),
         model=payload.optString("model"),
-        voice=payload.optString("voice")
+        voice=payload.optString("voice"),
+        style=payload.optString("style",voiceStyle)
     )
 }
 
