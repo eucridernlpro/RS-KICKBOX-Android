@@ -12,7 +12,7 @@ function bytesToBase64(bytes:Uint8Array):string{
   return btoa(binary)
 }
 
-function languageInstruction(code:string,avatar:string):string{
+function languageInstruction(code:string,avatar:string,style:string):string{
   const identity=avatar==="MALE"
     ? "Use a calm adult male coaching voice."
     : "Use a warm adult female coaching voice."
@@ -27,8 +27,18 @@ function languageInstruction(code:string,avatar:string):string{
     code==="tr" ? "Speak natural Turkish (tr-TR)." :
     "Speak natural international English."
   )
+  const delivery=(
+    style==="calm" ? " Use a calm, steady and reassuring delivery." :
+    style==="energetic" ? " Use an energetic but controlled coaching delivery." :
+    style==="deep" ? " Use a lower, grounded and composed delivery without changing gender identity." :
+    style==="soft" ? " Use a softer, warmer and more intimate conversational delivery." :
+    style==="direct" ? " Use a concise, focused and confident coaching delivery." :
+    " Use a natural, premium conversational delivery."
+  )
   return identity+" "+language+
-    " Sound confident, friendly, premium and conversational, like a professional kickboxing coach. "+
+    delivery+
+    " Sound confident, friendly and professional, like a real kickboxing coach. "+
+    "Keep the same assistant identity and gender. Do not imitate the opposite gender. "+
     "Do not exaggerate emotion or use a theatrical announcer style."
 }
 
@@ -60,6 +70,10 @@ Deno.serve(async(req)=>{
   const text=String(body.text||"").trim().slice(0,2200)
   const languageCode=String(body.language_code||"en").trim().toLowerCase().slice(0,8)
   const avatar=String(body.avatar||"FEMALE").toUpperCase()==="MALE" ? "MALE" : "FEMALE"
+  const requestedStyle=String(body.voice_style||"natural").trim().toLowerCase()
+  const style=["natural","calm","energetic","deep","soft","direct"].includes(requestedStyle)
+    ? requestedStyle
+    : "natural"
   if(!text)return json({error:"Speech text required"},400)
 
   const voice=avatar==="MALE" ? "cedar" : "marin"
@@ -73,7 +87,7 @@ Deno.serve(async(req)=>{
       model:TTS_MODEL,
       voice,
       input:text,
-      instructions:languageInstruction(languageCode,avatar),
+      instructions:languageInstruction(languageCode,avatar,style),
       response_format:"mp3"
     })
   }).catch(()=>null)
@@ -93,6 +107,7 @@ Deno.serve(async(req)=>{
     mime_type:"audio/mpeg",
     model:TTS_MODEL,
     voice,
+    style,
     plan
   })
 })
