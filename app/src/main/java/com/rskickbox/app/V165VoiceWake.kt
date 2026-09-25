@@ -502,9 +502,14 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             },ContextCompat.getMainExecutor(this))
         }
 
+        val directPending=store.b("rs_direct_ai_request_pending_v202",false)
         if(trustedSessionActive() || recoverableLockedIdentityV186()){
             if(pausedForForegroundAiV197){
                 setWakeStatusV168("PAUSED_FOR_FOREGROUND_AI")
+            }else if(directPending){
+                // onStartCommand(DIRECT_AI_ONCE) owns the first recognizer start.
+                // This prevents a cold-start double SpeechRecognizer launch.
+                setWakeStatusV168("DIRECT_AI_STARTING")
             }else{
                 setWakeStatusV168(if(trustedSessionActive())"STARTING" else "LOCKED_LISTENING")
                 startListening()
@@ -539,6 +544,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         }
         if(wakeLock?.isHeld==true)wakeLock?.release()
         wakeLock=null
+        store.pb("rs_direct_ai_request_pending_v202",false)
         scope.cancel()
         super.onDestroy()
     }
@@ -2185,26 +2191,49 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int{
         if(intent?.action=="DIRECT_AI_ONCE"){
+            store.pb("rs_direct_ai_request_pending_v202",false)
             pausedForForegroundAiV197=false
             store.pb("rs_voice_wake_paused_for_ai_v197",false)
-            awakeUntil=System.currentTimeMillis()+45_000L
-            serviceVoiceRequestId++
-            runCatching{serviceCloudVoicePlayer?.stop()}
-            runCatching{serviceCloudVoicePlayer?.release()}
-            serviceCloudVoicePlayer=null
-            runCatching{tts?.stop()}
-            serviceSpeaking=false
-            serviceUtteranceId=""
+            awakeUntil=System.currentTimeMillis()+10L*60L*1000L
+
+            val wasSpeaking=serviceSpeaking
+            if(wasSpeaking){
+                serviceVoiceRequestId++
+                runCatching{serviceCloudVoicePlayer?.stop()}
+                runCatching{serviceCloudVoicePlayer?.release()}
+                serviceCloudVoicePlayer=null
+                runCatching{tts?.stop()}
+                serviceSpeaking=false
+                serviceUtteranceId=""
+            }
+
             runCatching{offlineWakeEngineV188?.stop()}
             offlineWakeEngineV188=null
-            runCatching{recognizer?.cancel()}
-            setWakeStatusV168("DIRECT_AI_PREPARING")
-            scope.launch{
-                delay(260)
-                if(!serviceSpeaking){
-                    setWakeStatusV168("DIRECT_AI_LISTENING")
-                    startListening()
+
+            val status=store.s("rs_voice_wake_status_v168","")
+            val recognizerLooksBroken=
+                recognizer==null ||
+                status.startsWith("ERROR_") ||
+                status in setOf("START_FAILED","NO_SPEECH","NO_MATCH","LANGUAGE_FALLBACK")
+
+            if(recognizerLooksBroken || wasSpeaking){
+                // Rebuild only when there is no healthy listener to preserve.
+                // Ignore the old instance entirely instead of cancel -> immediate restart.
+                val old=recognizer
+                recognizer=null
+                runCatching{old?.destroy()}
+                setWakeStatusV168("DIRECT_AI_RECOVERING")
+                scope.launch{
+                    delay(700)
+                    if(!serviceSpeaking && store.b("rs_ai_listening_enabled_v200",true)){
+                        setWakeStatusV168("DIRECT_AI_LISTENING")
+                        startListening()
+                    }
                 }
+            }else{
+                // Healthy listener already owns the microphone. The mic button only
+                // extends the hands-free command window; no AudioRecord restart.
+                setWakeStatusV168("DIRECT_AI_LISTENING")
             }
             return START_STICKY
         }
@@ -2237,6 +2266,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             return START_STICKY
         }
         if(intent?.action=="STOP"){
+            store.pb("rs_direct_ai_request_pending_v202",false)
             store.pb("rs_voice_wake_enabled_v165",false)
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -2289,6 +2319,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         fun directListenOnce(context:Context){
             val store=RsStore(context)
             if(!store.b("rs_ai_listening_enabled_v200",true))return
+            store.pb("rs_direct_ai_request_pending_v202",true)
             val intent=Intent(context,RsVoiceWakeServiceV165::class.java).apply{
                 action="DIRECT_AI_ONCE"
             }
