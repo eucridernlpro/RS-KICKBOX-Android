@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.biometric.BiometricManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -78,16 +79,16 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
             voiceWake=true
             store.pb("rs_voice_wake_enabled_v165",true)
             runCatching{RsVoiceWakeServiceV165.start(context)}
-                .onSuccess{voiceWakeStatus="RS Voice Wake is listening."}
+                .onSuccess{voiceWakeStatus=rsAiVoiceRuntimeTextV190(lang.code,"voice_wake_listening")}
                 .onFailure{
                     voiceWake=false
                     store.pb("rs_voice_wake_enabled_v165",false)
-                    voiceWakeStatus=it.message?:"Could not start RS Voice Wake."
+                    voiceWakeStatus=it.message?:rsAiVoiceRuntimeTextV190(lang.code,"voice_wake_start_failed")
                 }
         }else{
             voiceWake=false
             store.pb("rs_voice_wake_enabled_v165",false)
-            voiceWakeStatus="Microphone permission is required for RS Voice Wake."
+            voiceWakeStatus=rsAiVoiceRuntimeTextV190(lang.code,"voice_wake_mic_required")
         }
     }
 
@@ -325,18 +326,18 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                                     voiceWake=true
                                     store.pb("rs_voice_wake_enabled_v165",true)
                                     runCatching{RsVoiceWakeServiceV165.start(context)}
-                                        .onSuccess{voiceWakeStatus="RS Voice Wake is listening."}
+                                        .onSuccess{voiceWakeStatus=rsAiVoiceRuntimeTextV190(lang.code,"voice_wake_listening")}
                                         .onFailure{
                                             voiceWake=false
                                             store.pb("rs_voice_wake_enabled_v165",false)
-                                            voiceWakeStatus=it.message?:"Could not start RS Voice Wake."
+                                            voiceWakeStatus=it.message?:rsAiVoiceRuntimeTextV190(lang.code,"voice_wake_start_failed")
                                         }
                                 }else micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                             }else{
                                 voiceWake=false
                                 store.pb("rs_voice_wake_enabled_v165",false)
                                 RsVoiceWakeServiceV165.stop(context)
-                                voiceWakeStatus="RS Voice Wake stopped."
+                                voiceWakeStatus=rsAiVoiceRuntimeTextV190(lang.code,"voice_wake_stopped")
                             }
                         }
                     )
@@ -371,7 +372,7 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                             OutlinedButton(
                                 onClick={
                                     store.pb("ai_start_listening_v168",true)
-                                    voiceWakeStatus="Opening RS AI microphone…"
+                                    voiceWakeStatus=rsAiVoiceRuntimeTextV190(lang.code,"opening_ai_mic")
                                     onOpenAi()
                                 },
                                 modifier=Modifier.weight(1f)
@@ -493,10 +494,15 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                         c,
                         "Premium cloud voice",
                         when{
-                            !RsSupabaseV60.configured->"BACKEND OFFLINE · DEVICE TTS"
-                            rsUsePremiumCloudVoiceV192(store,role)->"ENABLED · DEVICE TTS FALLBACK"
+                            !RsSupabaseV60.configured->"NOT CONFIGURED · DEVICE TTS"
+                            rsUsePremiumCloudVoiceV192(store,role)->"CONFIGURED · CLOUD ELIGIBLE"
                             else->"BASIC · DEVICE TTS"
                         }
+                    )
+                    RsAiDiagLineV191(
+                        c,
+                        "AI backend config",
+                        if(RsSupabaseV60.configured)"SUPABASE CONFIGURED" else "SUPABASE NOT CONFIGURED"
                     )
                     RsAiDiagLineV191(
                         c,
@@ -508,12 +514,28 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                         }
                     )
                     RsAiDiagLineV191(c,"Wake state",wakeStatus+(if(wakeAge>=0)" · "+wakeAge+"s" else ""))
+                    val biometricState=remember{
+                        val authenticators=BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                            BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                        when(BiometricManager.from(context).canAuthenticate(authenticators)){
+                            BiometricManager.BIOMETRIC_SUCCESS->"AVAILABLE"
+                            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED->"NOT ENROLLED"
+                            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE->"NO HARDWARE"
+                            else->"UNAVAILABLE"
+                        }
+                    }
+                    RsAiDiagLineV191(c,"Biometric / device credential",biometricState)
+                    RsAiDiagLineV191(
+                        c,
+                        "Avatar render backend",
+                        if(sofiaRigged || marcusRigged)"RIGGED GLB + PROCEDURAL FALLBACK" else "REAL-TIME PROCEDURAL 3D"
+                    )
                     RsAiDiagLineV191(c,"Sofia rigged GLB",if(sofiaRigged)"READY" else "PROCEDURAL FALLBACK")
                     RsAiDiagLineV191(c,"Marcus rigged GLB",if(marcusRigged)"READY" else "PROCEDURAL FALLBACK")
                     OutlinedButton(
                         onClick={
                             listenerRevision++
-                            voiceWakeStatus="Diagnostics refreshed."
+                            voiceWakeStatus=rsAiVoiceRuntimeTextV190(lang.code,"diagnostics_refreshed")
                         },
                         modifier=Modifier.fillMaxWidth()
                     ){Text("REFRESH AI DIAGNOSTICS",fontSize=8.sp)}
