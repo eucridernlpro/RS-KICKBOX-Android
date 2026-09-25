@@ -26,8 +26,8 @@ android {
         applicationId = "com.rskickbox.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 177
-        versionName = "0.176.0"
+        versionCode = 178
+        versionName = "0.177.0"
         buildConfigField("String", "SUPABASE_URL", "\""+rsSupabaseUrl.replace("\\","\\\\").replace("\"","\\\"")+"\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\""+rsSupabasePublishableKey.replace("\\","\\\\").replace("\"","\\\"")+"\"")
     }
@@ -106,4 +106,4 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
 
-// RS v0.176 AI control preview: top-only controls, command guide, swipe exit, wake foreground handoff
+// RS v0.177 digital-human preview: locked Sofia/Marcus identities, viseme runtime, persona-safe multilingual voice styles
