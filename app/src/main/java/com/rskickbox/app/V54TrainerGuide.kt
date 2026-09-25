@@ -552,14 +552,15 @@ fun RsTrainerGuideV54(
         Text(filtered.size.toString()+" "+rsGuideUiV54(lang,"sections"),color=c.muted,fontSize=10.sp)
 
         filtered.forEach{item->
-            val open=expanded==item.route
+            val guideKey=item.category+"|"+item.route+"|"+item.title
+            val open=expanded==guideKey
             RsPanel(c){
                 Text(rsGuideCategoryLabelV54(lang,item.category),color=c.muted,fontSize=9.sp,fontWeight=FontWeight.Bold)
                 Text(item.title,color=c.bright,fontSize=19.sp,fontWeight=FontWeight.Black)
                 Text(item.purpose,color=c.text,maxLines=if(open)Int.MAX_VALUE else 3,overflow=TextOverflow.Ellipsis)
 
                 OutlinedButton(
-                    onClick={expanded=if(open)null else item.route},
+                    onClick={expanded=if(open)null else guideKey},
                     modifier=Modifier.fillMaxWidth()
                 ){Text(if(open)rsGuideUiV54(lang,"hide") else rsGuideUiV54(lang,"show"))}
 
