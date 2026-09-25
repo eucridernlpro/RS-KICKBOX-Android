@@ -325,6 +325,8 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private var serviceCloudVoicePlayer:MediaPlayer?=null
     private var serviceVoiceRequestId:Long=0L
     private var pendingHandoffSpeechV194:String=""
+    private var pendingVoiceMessageV196:RsCloudCoachMessageV72?=null
+    private var pendingVoiceMessageSenderV196:String=""
     private var toneRestoreJob:Job?=null
     private var systemToneMutedByRs=false
     private var offlineWakeEngineV188:RsOfflineWakeEngineV188?=null
@@ -332,6 +334,127 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private var silentWakePreparingV188=false
     private var silentWakeSessionFailedV188=false
     private val store by lazy{RsStore(this)}
+
+    private fun readCurrentPageV196(continueReading:Boolean=false){
+        val route=store.s("ai_current_route_v177",store.s("session_last_route","")).ifBlank{
+            if(store.s("session_role","")=="trainer")"trainer" else "home"
+        }
+        val role=if(store.s("session_role","")=="trainer")RsRole.TRAINER else RsRole.STUDENT
+        val lang=language()
+        val guide=rsAiAppGuideForRouteV177(route,lang,role)
+        if(guide==null){
+            val title=rsRouteTitle(lang,route,route.replace('_',' ').replaceFirstChar{it.uppercase()})
+            speak(
+                when(lang.code){
+                    "nl"->"Je bent op "+title+". Ik kan deze pagina omhoog of omlaag scrollen. Zeg scroll omlaag of scroll omhoog."
+                    "pt"->"Estás em "+title+". Posso deslocar esta página para baixo ou para cima."
+                    "es"->"Estás en "+title+". Puedo desplazar esta página hacia abajo o hacia arriba."
+                    "fr"->"Tu es sur "+title+". Je peux faire défiler cette page vers le bas ou vers le haut."
+                    else->"You are on "+title+". I can scroll this page down or up."
+                }
+            )
+            return
+        }
+        val key="voice_page_read_chunk_v196_"+route
+        val previous=store.s(key,"0").toIntOrNull()?:0
+        val chunk=if(continueReading)(previous+1).coerceAtMost(2) else 0
+        store.ps(key,chunk.toString())
+        val groups=guide.steps.chunked(kotlin.math.max(1,kotlin.math.ceil(guide.steps.size/3.0).toInt()))
+        val selected=groups.getOrNull(chunk).orEmpty()
+        val text=buildString{
+            if(chunk==0){
+                append(guide.title).append(". ")
+                append(guide.purpose).append(" ")
+            }
+            selected.forEachIndexed{i,step->append((i+1)).append(". ").append(step).append(" ")}
+            if(chunk<groups.lastIndex){
+                append(
+                    when(lang.code){
+                        "nl"->"Zeg verder lezen voor het volgende deel."
+                        "pt"->"Diz continuar a ler para a próxima parte."
+                        "es"->"Di seguir leyendo para la siguiente parte."
+                        "fr"->"Dis continuer la lecture pour la partie suivante."
+                        else->"Say continue reading for the next part."
+                    }
+                )
+            }else{
+                append(guide.tip)
+            }
+        }
+        speak(text)
+    }
+
+    private fun readMessagesFromV196(personName:String){
+        scope.launch{
+            val contacts=rsChatContactsV125().getOrElse{
+                speak("I could not load your chat contacts.")
+                return@launch
+            }
+            val resolved=rsAiBestContactV194(contacts,personName)
+            if(resolved==null){
+                speak(
+                    when(language().code){
+                        "nl"->"Ik kon "+personName+" niet eenduidig vinden in je chatcontacten."
+                        "pt"->"Não consegui encontrar "+personName+" de forma inequívoca nos contactos."
+                        "es"->"No pude encontrar a "+personName+" de forma inequívoca en tus contactos."
+                        else->"I could not uniquely find "+personName+" in your chat contacts."
+                    }
+                )
+                return@launch
+            }
+            val contact=contacts.firstOrNull{it.userId==resolved.userId}
+            val studentId=if(contact?.role=="student")resolved.userId else rsCloudMyStudentIdV72().getOrElse{
+                speak("I could not open that private message thread.")
+                return@launch
+            }
+            val messages=rsCloudCoachMessagesV72(studentId).getOrElse{
+                speak("I could not load the private messages.")
+                return@launch
+            }
+            val incoming=messages.filter{message->
+                when{
+                    message.senderId.isNotBlank()->message.senderId==resolved.userId
+                    contact?.role in setOf("trainer","admin")->message.senderRole in setOf("trainer","admin")
+                    else->message.studentId==resolved.userId && message.senderRole=="student"
+                }
+            }.sortedByDescending{it.createdAtMillis()}.take(3)
+            if(incoming.isEmpty()){
+                speak(
+                    when(language().code){
+                        "nl"->"Ik heb geen recente ontvangen berichten van "+resolved.displayName+" gevonden."
+                        "pt"->"Não encontrei mensagens recentes recebidas de "+resolved.displayName+"."
+                        "es"->"No encontré mensajes recientes recibidos de "+resolved.displayName+"."
+                        else->"I found no recent received messages from "+resolved.displayName+"."
+                    }
+                )
+                return@launch
+            }
+            pendingVoiceMessageV196=incoming.first()
+            pendingVoiceMessageSenderV196=resolved.displayName
+            val formatter=java.text.SimpleDateFormat("HH:mm",java.util.Locale.getDefault())
+            val spoken=incoming.reversed().joinToString(" "){message->
+                val time=formatter.format(java.util.Date(message.createdAtMillis()))
+                val body=message.body.ifBlank{
+                    when(message.mediaKind){
+                        "IMAGE"->"image"
+                        "VIDEO"->"video"
+                        "AUDIO"->"voice message"
+                        else->"media attachment"
+                    }
+                }
+                time+". "+body.take(450)+"."
+            }
+            speak(
+                when(language().code){
+                    "nl"->"De laatste ontvangen berichten van "+resolved.displayName+" zijn: "+spoken+" Je kunt zeggen: verwijder dat bericht, of bewaar dat bericht in de galerij."
+                    "pt"->"As últimas mensagens recebidas de "+resolved.displayName+" são: "+spoken+" Podes dizer apagar essa mensagem ou guardar essa mensagem na galeria."
+                    "es"->"Los últimos mensajes recibidos de "+resolved.displayName+" son: "+spoken+" Puedes decir borrar ese mensaje o guardar ese mensaje en la galería."
+                    "fr"->"Les derniers messages reçus de "+resolved.displayName+" sont : "+spoken+" Tu peux dire supprimer ce message ou enregistrer ce message dans la galerie."
+                    else->"The latest received messages from "+resolved.displayName+" are: "+spoken+" You can say delete that message, or save that message to the gallery."
+                }
+            )
+        }
+    }
 
     private fun setWakeStatusV168(status:String){
         // Keep diagnostics in local state without constantly re-posting the
@@ -1245,6 +1368,94 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         }
 
         awakeUntil=now+45_000L
+
+        rsVoicePageCommandV196(commandText)?.let{pageCommand->
+            RsVoicePageBusV196.send(pageCommand)
+            speak(
+                when(language().code){
+                    "nl"->if(pageCommand==RsVoicePageCommandV196.SCROLL_UP)"Ik scroll omhoog." else "Ik scroll omlaag."
+                    "pt"->if(pageCommand==RsVoicePageCommandV196.SCROLL_UP)"Vou subir a página." else "Vou descer a página."
+                    "es"->if(pageCommand==RsVoicePageCommandV196.SCROLL_UP)"Desplazo la página hacia arriba." else "Desplazo la página hacia abajo."
+                    "fr"->if(pageCommand==RsVoicePageCommandV196.SCROLL_UP)"Je fais défiler vers le haut." else "Je fais défiler vers le bas."
+                    else->if(pageCommand==RsVoicePageCommandV196.SCROLL_UP)"Scrolling up." else "Scrolling down."
+                }
+            )
+            return
+        }
+
+        val lowerCommand=commandText.lowercase(Locale.ROOT)
+        if(rsVoiceReadPageRequestedV196(commandText)){
+            readCurrentPageV196(false)
+            return
+        }
+        if(listOf("continue reading","read next part","continue page","verder lezen","lees verder","continuar a ler","seguir leyendo","continue la lecture").any{lowerCommand.contains(it)}){
+            readCurrentPageV196(true)
+            return
+        }
+
+        rsVoiceMessageReadRequestV196(commandText)?.let{person->
+            readMessagesFromV196(person)
+            return
+        }
+
+        if(rsVoiceDeleteLastMessageRequestedV196(commandText)){
+            val message=pendingVoiceMessageV196
+            if(message==null){
+                speak("There is no recently read message selected.")
+            }else{
+                scope.launch{
+                    rsHideCoachMessageV156(message.id)
+                        .onSuccess{
+                            pendingVoiceMessageV196=null
+                            speak(
+                                when(language().code){
+                                    "nl"->"Het bericht is voor jou verwijderd."
+                                    "pt"->"A mensagem foi eliminada para ti."
+                                    "es"->"El mensaje se eliminó para ti."
+                                    "fr"->"Le message a été supprimé pour toi."
+                                    else->"The message was deleted for you."
+                                }
+                            )
+                        }
+                        .onFailure{speak("I could not delete that message.")}
+                }
+            }
+            return
+        }
+
+        if(rsVoiceSaveLastMessageRequestedV196(commandText)){
+            val message=pendingVoiceMessageV196
+            if(message==null){
+                speak("There is no recently read message selected.")
+            }else{
+                val sender=pendingVoiceMessageSenderV196.ifBlank{"Chat"}
+                scope.launch{
+                    val savedText=rsSaveChatMessageToGalleryV196(store,message,sender)
+                    if(!message.mediaPath.isNullOrBlank()&&!message.mediaKind.isNullOrBlank()){
+                        rsChatMediaLocalUriV92(this@RsVoiceWakeServiceV165,message.mediaPath)
+                            .onSuccess{local->
+                                rsSaveChatMediaToGalleryV163(
+                                    this@RsVoiceWakeServiceV165,store,local,message.mediaKind,message.mediaName
+                                )
+                            }
+                    }
+                    savedText
+                        .onSuccess{
+                            speak(
+                                when(language().code){
+                                    "nl"->"Het bericht is opgeslagen in de berichten-sectie van RS Chat Gallery."
+                                    "pt"->"A mensagem foi guardada na secção de mensagens da RS Chat Gallery."
+                                    "es"->"El mensaje se guardó en la sección de mensajes de RS Chat Gallery."
+                                    "fr"->"Le message a été enregistrée dans la section messages de RS Chat Gallery."
+                                    else->"The message was saved in the Messages section of RS Chat Gallery."
+                                }
+                            )
+                        }
+                        .onFailure{speak("I could not save that message.")}
+                }
+            }
+            return
+        }
 
         when(rsVoiceSystemCommandV182(commandText)){
             "OPEN"->{
