@@ -39,7 +39,7 @@ private fun rsAiGuideSpecialStepsV175(route:String,role:RsRole):List<String>?=wh
     )
     "voice"->listOf(
         "Open RS AI Voice Commands in App Guide.",
-        "Say commands naturally, for example: Open music, Open homework, Go to dashboard, Open settings, Change to Sofia, Change to Marcus, Another voice, Minimize app, Close app, Close AI, or Show commands.",
+        "Say commands naturally, for example: Open music, Open homework, Go to dashboard, Open settings, Change to Sofia, Change to Marcus, Another voice, Call Marcio, Video call Simone, Group video with Simone and Marcio, Minimize app, Close app, Close AI, or Show commands.",
         "RS AI turns supported commands directly into navigation or app actions instead of only replying with text.",
         "Swipe right to left on the AI page to leave AI and return to the correct dashboard.",
         "When Sofia is selected, voice-style changes stay female; when Marcus is selected, voice-style changes stay male. The selected language is preserved.",
