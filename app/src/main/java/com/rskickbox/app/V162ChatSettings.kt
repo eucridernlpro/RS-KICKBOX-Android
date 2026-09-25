@@ -30,6 +30,7 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
     var avatarMotion by remember{mutableStateOf(store.b("ai_avatar_motion_v163",true))}
     var swipeMenu by remember{mutableStateOf(store.b("chat_swipe_menu_v163",true))}
     val context=LocalContext.current
+    var aiListeningEnabled by remember{mutableStateOf(store.b("rs_ai_listening_enabled_v200",true))}
     var voiceWake by remember{mutableStateOf(store.b("rs_voice_wake_enabled_v165",false))}
     var voiceWakeStatus by remember{mutableStateOf("")}
     var listenerRevision by remember{mutableIntStateOf(0)}
@@ -75,6 +76,8 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
         ActivityResultContracts.RequestPermission()
     ){granted->
         if(granted){
+            aiListeningEnabled=true
+            store.pb("rs_ai_listening_enabled_v200",true)
             voiceWake=true
             store.pb("rs_voice_wake_enabled_v165",true)
             runCatching{RsVoiceWakeServiceV165.start(context)}
@@ -262,6 +265,72 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                     Switch(avatarMotion,{avatarMotion=it;store.pb("ai_avatar_motion_v163",it)})
                 }
                 HorizontalDivider(color=Color(0xFF58C9FF).copy(alpha=.14f))
+                Surface(
+                    color=if(aiListeningEnabled)Color(0xFF062A1B).copy(alpha=.58f) else Color(0xFF3A1111).copy(alpha=.62f),
+                    shape=RoundedCornerShape(18.dp),
+                    border=BorderStroke(
+                        1.dp,
+                        if(aiListeningEnabled)Color(0xFF36D27F).copy(alpha=.46f) else Color(0xFFFF8A80).copy(alpha=.44f)
+                    ),
+                    modifier=Modifier.fillMaxWidth()
+                ){
+                    Row(
+                        Modifier.fillMaxWidth().padding(11.dp),
+                        verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+                    ){
+                        Column(Modifier.weight(1f)){
+                            Text(
+                                "MASTER AI LISTENING",
+                                color=if(aiListeningEnabled)Color(0xFF36D27F) else Color(0xFFFF8A80),
+                                fontWeight=FontWeight.Black,
+                                fontSize=10.sp
+                            )
+                            Text(
+                                if(aiListeningEnabled)
+                                    "Sofia / Marcus can listen hands-free while RS is open."
+                                else
+                                    "Listening is OFF. Voice commands and the top mic stay disabled until you turn this on manually.",
+                                color=c.muted,
+                                fontSize=8.sp,
+                                lineHeight=11.sp
+                            )
+                        }
+                        Switch(
+                            checked=aiListeningEnabled,
+                            onCheckedChange={enabled->
+                                if(enabled){
+                                    val granted=ContextCompat.checkSelfPermission(
+                                        context,Manifest.permission.RECORD_AUDIO
+                                    )==PackageManager.PERMISSION_GRANTED
+                                    if(granted){
+                                        aiListeningEnabled=true
+                                        store.pb("rs_ai_listening_enabled_v200",true)
+                                        runCatching{RsVoiceWakeServiceV165.start(context)}
+                                        voiceWakeStatus="AI listening enabled manually."
+                                    }else{
+                                        micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
+                                }else{
+                                    aiListeningEnabled=false
+                                    voiceWake=false
+                                    store.pb("rs_ai_listening_enabled_v200",false)
+                                    store.pb("rs_voice_wake_enabled_v165",false)
+                                    store.pb("rs_voice_wake_resume_after_ai_v195",false)
+                                    store.pb("rs_voice_wake_paused_for_ai_v197",false)
+                                    runCatching{RsVoiceWakeServiceV165.stop(context)}
+                                    voiceWakeStatus="AI listening switched off. Turn it on manually here to reactivate."
+                                }
+                            }
+                        )
+                    }
+                }
+                Text(
+                    "Voice command: “Stop listening”. This turns the master switch OFF. Voice cannot turn listening back on; reactivation is manual from this setting.",
+                    color=c.muted,
+                    fontSize=8.sp,
+                    lineHeight=11.sp
+                )
+
                 val silentWakeEnabled=store.b("rs_voice_wake_silent_engine_v188",true)
                 val silentWakeReady=RsOfflineWakeModelV188.installed(context)
                 val silentWakeProgress=store.s("rs_silent_wake_download_progress_v188","0")
@@ -318,6 +387,8 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                         checked=voiceWake,
                         onCheckedChange={enabled->
                             if(enabled){
+                                aiListeningEnabled=true
+                                store.pb("rs_ai_listening_enabled_v200",true)
                                 val granted=ContextCompat.checkSelfPermission(
                                     context,Manifest.permission.RECORD_AUDIO
                                 )==PackageManager.PERMISSION_GRANTED
@@ -370,9 +441,13 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
                             OutlinedButton(
                                 onClick={
-                                    store.pb("ai_start_listening_v168",true)
-                                    voiceWakeStatus=rsAiVoiceRuntimeTextV190(lang.code,"opening_ai_mic")
-                                    onOpenAi()
+                                    if(aiListeningEnabled){
+                                        store.pb("ai_start_listening_v168",true)
+                                        voiceWakeStatus=rsAiVoiceRuntimeTextV190(lang.code,"opening_ai_mic")
+                                        onOpenAi()
+                                    }else{
+                                        voiceWakeStatus="AI listening is OFF. Turn MASTER AI LISTENING on first."
+                                    }
                                 },
                                 modifier=Modifier.weight(1f)
                             ){Text("Test RS AI Mic",fontSize=8.sp)}
