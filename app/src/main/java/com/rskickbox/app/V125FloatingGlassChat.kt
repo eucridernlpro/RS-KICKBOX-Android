@@ -474,10 +474,20 @@ fun RsFloatingGlassChatHubV125(
                         )
                         OutlinedButton(
                             onClick={
-                                store.pb("ai_start_listening_v168",true)
                                 store.pb("ai_immersive_v171",true)
-                                aiImmersive=true
-                                tab=RsChatHubTabV125.AI
+                                if(store.b("rs_ai_listening_enabled_v200",true)){
+                                    store.pb("ai_start_listening_v168",false)
+                                    store.pb("ai_direct_listen_v195",false)
+                                    runCatching{RsVoiceWakeServiceV165.directListenOnce(context)}
+                                    aiImmersive=true
+                                    tab=RsChatHubTabV125.AI
+                                }else{
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "AI listening is off. Turn it on manually in RS Chat → Settings.",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                }
                             },
                             modifier=Modifier.size(38.dp),
                             shape=RoundedCornerShape(themeLayout.buttonRadius.dp),
