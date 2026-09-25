@@ -1037,6 +1037,10 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     }
 
     private fun startListening(){
+        if(!store.b("rs_ai_listening_enabled_v200",true)){
+            setWakeStatusV168("LISTENING_DISABLED")
+            return
+        }
         if(pausedForForegroundAiV197)return
         if(serviceSpeaking)return
         if(!trustedSessionActive() && !recoverableLockedIdentityV186()){
@@ -1381,6 +1385,41 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         }
 
         awakeUntil=if(MainActivity.isForeground)now+10L*60L*1000L else now+45_000L
+
+        when(rsAiPlatformIntentV171(commandText,language())){
+            is RsAiPlatformIntentV171.StopListening->{
+                store.pb("rs_ai_listening_enabled_v200",false)
+                store.pb("rs_voice_wake_enabled_v165",false)
+                store.pb("rs_voice_wake_resume_after_ai_v195",false)
+                store.pb("rs_voice_wake_paused_for_ai_v197",false)
+                awakeUntil=0L
+                val confirmation=when(language().code){
+                    "nl"->"Ik stop met luisteren. Zet AI luisteren handmatig weer aan in AI-instellingen wanneer je mij opnieuw wilt gebruiken."
+                    "pt"->"Vou parar de ouvir. Ativa novamente o modo de escuta manualmente nas definições de IA quando quiseres usar-me."
+                    "es"->"Dejaré de escuchar. Activa de nuevo la escucha manualmente en los ajustes de IA cuando quieras usarme."
+                    "fr"->"J’arrête d’écouter. Réactive manuellement l’écoute dans les réglages IA quand tu veux me réutiliser."
+                    "de"->"Ich höre jetzt nicht mehr zu. Aktiviere das Zuhören später manuell in den KI-Einstellungen."
+                    "it"->"Smetto di ascoltare. Riattiva manualmente l’ascolto nelle impostazioni IA quando vorrai usarmi."
+                    "pl"->"Przestaję słuchać. Włącz nasłuchiwanie ponownie ręcznie w ustawieniach AI."
+                    "tr"->"Dinlemeyi durduruyorum. Tekrar kullanmak istediğinde AI ayarlarından elle aç."
+                    else->"I’ll stop listening. Turn AI listening back on manually in AI Settings when you want to use me again."
+                }
+                speak(confirmation,thenListen=false)
+                scope.launch{
+                    delay(2400)
+                    runCatching{recognizer?.cancel()}
+                    runCatching{recognizer?.destroy()}
+                    recognizer=null
+                    runCatching{offlineWakeEngineV188?.stop()}
+                    offlineWakeEngineV188=null
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                }
+                setWakeStatusV168("LISTENING_DISABLED")
+                return
+            }
+            else->{}
+        }
 
         rsVoicePageCommandV196(commandText)?.let{pageCommand->
             RsVoicePageBusV196.send(pageCommand)
@@ -2219,6 +2258,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     companion object{
         fun start(context:Context){
             val store=RsStore(context)
+            if(!store.b("rs_ai_listening_enabled_v200",true))return
             val authMs=store.s("session_password_auth_ms","0").toLongOrNull()?:0L
             val age=System.currentTimeMillis()-authMs
             val role=store.s("session_role","")
@@ -2240,6 +2280,8 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             ContextCompat.startForegroundService(context,i)
         }
         fun directListenOnce(context:Context){
+            val store=RsStore(context)
+            if(!store.b("rs_ai_listening_enabled_v200",true))return
             val intent=Intent(context,RsVoiceWakeServiceV165::class.java).apply{
                 action="DIRECT_AI_ONCE"
             }
