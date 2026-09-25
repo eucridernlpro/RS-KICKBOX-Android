@@ -19,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -723,7 +725,7 @@ fun RsAiAssistantChatV163(
                     onSuccess={rsAiActionV184(aiLang,"playing",namedTrackRequest.name)},
                     onFailure={rsAiActionV184(aiLang,"play_failed")}
                 )
-            deliverAssistant(reply)
+            deliverAssistant(reply,mediaUri=replyMediaUri,mediaKind=replyMediaKind)
             busy=false
             status=""
             if(autoSpeak)speak(reply) else if(voiceConversationActive)resumeListeningSignal++
@@ -734,6 +736,8 @@ fun RsAiAssistantChatV163(
         if(platformIntent !is RsAiPlatformIntentV171.None){
             var replyLanguageOverride:RsLang?=null
             var replyAvatarOverride:String?=null
+            var replyMediaUri:String?=null
+            var replyMediaKind:String?=null
             val reply=when(platformIntent){
                 is RsAiPlatformIntentV171.ChangeLanguage->{
                     val target=languages.firstOrNull{it.code==platformIntent.code}
@@ -811,6 +815,26 @@ fun RsAiAssistantChatV163(
                         else->"I’ll move RS to the background and stay available."
                     }
                 }
+                is RsAiPlatformIntentV171.CloseAi->{
+                    voiceConversationActive=false
+                    runCatching{quietVoice.stop()}
+                    val target=if(role==RsRole.TRAINER)"trainer" else "home"
+                    scope.launch{
+                        kotlinx.coroutines.delay(420)
+                        onNavigate(target)
+                    }
+                    when(aiLang){
+                        "nl"->"AI sluiten."
+                        "pt"->"A fechar a IA."
+                        "es"->"Cerrando la IA."
+                        "fr"->"Fermeture de l’IA."
+                        "de"->"KI wird geschlossen."
+                        "it"->"Chiusura dell’IA."
+                        "pl"->"Zamykam AI."
+                        "tr"->"AI kapatılıyor."
+                        else->"Closing AI."
+                    }
+                }
                 is RsAiPlatformIntentV171.CloseApp->{
                     voiceConversationActive=false
                     runCatching{quietVoice.stop()}
@@ -871,6 +895,53 @@ fun RsAiAssistantChatV163(
                     }
                     val title=rsRouteTitle(selectedLang,resolvedRoute,platformIntent.label)
                     rsAiActionV184(aiLang,"opening",title)
+                }
+                is RsAiPlatformIntentV171.ChangeVoiceStyle->{
+                    val current=store.s(voiceOverrideKey,"")
+                    val options=selectableVoices
+                    if(options.isEmpty()){
+                        when(aiLang){
+                            "nl"->"Er is op dit toestel geen andere veilige stem van hetzelfde geslacht beschikbaar."
+                            "pt"->"Não existe outra voz segura do mesmo género disponível neste dispositivo."
+                            "es"->"No hay otra voz segura del mismo género disponible en este dispositivo."
+                            "fr"->"Aucune autre voix sûre du même genre n’est disponible sur cet appareil."
+                            "de"->"Auf diesem Gerät ist keine andere sichere Stimme desselben Geschlechts verfügbar."
+                            "it"->"Non è disponibile un’altra voce sicura dello stesso genere su questo dispositivo."
+                            "pl"->"Na tym urządzeniu nie ma innego bezpiecznego głosu tej samej płci."
+                            "tr"->"Bu cihazda aynı cinsiyette başka güvenli bir ses yok."
+                            else->"No other safe same-gender voice is available on this device."
+                        }
+                    }else{
+                        val currentIndex=options.indexOfFirst{it.name==current}
+                        val next=options[(currentIndex+1).mod(options.size)]
+                        store.ps(voiceOverrideKey,next.name)
+                        runCatching{tts?.stop()}
+                        activeUtteranceId=""
+                        speaking=false
+                        applyVoiceProfile(selectedLang,avatar)
+                        when(aiLang){
+                            "nl"->"Ik heb een andere "+if(avatar=="FEMALE")"vrouwelijke" else "mannelijke"+" stem gekozen in dezelfde taal."
+                            "pt"->"Escolhi outra voz "+if(avatar=="FEMALE")"feminina" else "masculina"+" no mesmo idioma."
+                            "es"->"He elegido otra voz "+if(avatar=="FEMALE")"femenina" else "masculina"+" en el mismo idioma."
+                            "fr"->"J’ai choisi une autre voix "+if(avatar=="FEMALE")"féminine" else "masculine"+" dans la même langue."
+                            "de"->"Ich habe eine andere "+if(avatar=="FEMALE")"weibliche" else "männliche"+" Stimme in derselben Sprache gewählt."
+                            "it"->"Ho scelto un’altra voce "+if(avatar=="FEMALE")"femminile" else "maschile"+" nella stessa lingua."
+                            "pl"->"Wybrałam/em inny głos tej samej płci w tym samym języku."
+                            "tr"->"Aynı dilde aynı cinsiyetten başka bir ses seçtim."
+                            else->"I selected another "+if(avatar=="FEMALE")"female" else "male"+" voice in the same language."
+                        }
+                    }
+                }
+                is RsAiPlatformIntentV171.CommandGuide->{
+                    replyMediaUri=rsVisualUriWithBundledFallbackV113(context,store,"guide").takeIf{it.isNotBlank()}
+                    replyMediaKind=replyMediaUri?.let{"GUIDE"}
+                    when(aiLang){
+                        "nl"->"RS AI-spraakcommando’s:\n• “Open muziek”\n• “Open huiswerk”\n• “Ga naar dashboard”\n• “Open instellingen”\n• “Verander naar Marcus / Sofia”\n• “Andere stem”\n• “Pauzeer / speel / volgende muziek”\n• “Minimaliseer app”\n• “Sluit app”\n• “Sluit AI”\n• “Toon commando’s”\nJe kunt deze opdrachten gewoon hardop zeggen."
+                        "pt"->"Comandos de voz RS AI:\n• “Abrir música”\n• “Abrir trabalhos”\n• “Ir para o painel”\n• “Abrir definições”\n• “Mudar para Marcus / Sofia”\n• “Outra voz”\n• “Pausar / tocar / próxima música”\n• “Minimizar app”\n• “Fechar app”\n• “Fechar IA”\n• “Mostrar comandos”\nPodes dizer estes comandos em voz alta naturalmente."
+                        "es"->"Comandos de voz RS AI:\n• Abrir música\n• Abrir tareas\n• Ir al panel\n• Abrir ajustes\n• Cambiar a Marcus / Sofia\n• Otra voz\n• Pausar / reproducir / siguiente canción\n• Minimizar app\n• Cerrar app\n• Cerrar IA\n• Mostrar comandos"
+                        "fr"->"Commandes vocales RS AI :\n• Ouvrir musique\n• Ouvrir devoirs\n• Aller au tableau de bord\n• Ouvrir réglages\n• Passer à Marcus / Sofia\n• Autre voix\n• Pause / lecture / morceau suivant\n• Minimiser l’app\n• Fermer l’app\n• Fermer l’IA\n• Afficher les commandes"
+                        else->"RS AI voice commands:\n• “Open music”\n• “Open homework”\n• “Go to dashboard”\n• “Open settings”\n• “Change to Marcus / Sofia”\n• “Another voice”\n• “Pause / play / next music”\n• “Minimize app”\n• “Close app”\n• “Close AI”\n• “Show commands”\nYou can say these naturally out loud."
+                    }
                 }
                 is RsAiPlatformIntentV171.Help->{
                     rsAiActionV184(aiLang,"help")
@@ -1021,8 +1092,26 @@ fun RsAiAssistantChatV163(
         return
     }
 
+    val aiExitRoute=if(role==RsRole.TRAINER)"trainer" else "home"
     Box(
-        Modifier.fillMaxSize().background(
+        Modifier.fillMaxSize()
+            .pointerInput(role){
+                var dragX=0f
+                detectHorizontalDragGestures(
+                    onDragStart={dragX=0f},
+                    onHorizontalDrag={_,amount->dragX+=amount},
+                    onDragEnd={
+                        if(dragX < -120f){
+                            voiceConversationActive=false
+                            runCatching{quietVoice.stop()}
+                            onNavigate(aiExitRoute)
+                        }
+                        dragX=0f
+                    },
+                    onDragCancel={dragX=0f}
+                )
+            }
+            .background(
             Brush.verticalGradient(
                 listOf(
                     Color(0xFF02060A),
@@ -1118,7 +1207,7 @@ fun RsAiAssistantChatV163(
             Modifier.fillMaxWidth()
                 .fillMaxHeight(.28f)
                 .align(Alignment.TopCenter)
-                .padding(start=10.dp,end=10.dp,top=76.dp)
+                .padding(start=10.dp,end=10.dp,top=118.dp)
         ){
             LazyColumn(
                 state=aiListState,
@@ -1989,6 +2078,16 @@ private fun RsAiAvatarStageV163(
                         }
                     }
                 }
+                FilterChip(
+                    selected=avatar=="FEMALE",
+                    onClick={onAvatarChange("FEMALE")},
+                    label={Text("Sofia",fontSize=7.sp)}
+                )
+                FilterChip(
+                    selected=avatar=="MALE",
+                    onClick={onAvatarChange("MALE")},
+                    label={Text("Marcus",fontSize=7.sp)}
+                )
                 AssistChip(
                     onClick={},
                     enabled=false,
@@ -2070,18 +2169,6 @@ private fun RsAiAvatarStageV163(
                             else->Color(0xFF36D27F)
                         },
                         fontSize=8.sp,fontWeight=FontWeight.Black
-                    )
-                }
-                Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){
-                    FilterChip(
-                        selected=avatar=="FEMALE",
-                        onClick={onAvatarChange("FEMALE")},
-                        label={Text("Sofia",fontSize=8.sp)}
-                    )
-                    FilterChip(
-                        selected=avatar=="MALE",
-                        onClick={onAvatarChange("MALE")},
-                        label={Text("Marcus",fontSize=8.sp)}
                     )
                 }
             }
