@@ -203,7 +203,34 @@ private fun RsGeneric(c:RsPalette,route:String,lang:RsLang){RsScroll(c,route.rep
 private fun RsLanguageButton(current:RsLang,onSelect:(RsLang)->Unit){var open by remember{mutableStateOf(false)};Box{OutlinedButton(onClick={open=true},contentPadding=PaddingValues(horizontal=12.dp,vertical=4.dp)){Text("🌐 ${current.name}",fontSize=11.sp)};DropdownMenu(expanded=open,onDismissRequest={open=false}){rsLangs.forEach{language->DropdownMenuItem(text={Text(language.name)},onClick={onSelect(language);open=false})}}}}
 
 @Composable
-fun RsScroll(c:RsPalette,title:String,sub:String,content:@Composable ColumnScope.()->Unit){Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=1.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){Text(title,color=c.bright,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);Text(sub,color=c.muted);content();Spacer(Modifier.height(20.dp))}}
+fun RsScroll(c:RsPalette,title:String,sub:String,content:@Composable ColumnScope.()->Unit){
+    val scrollState=rememberScrollState()
+    LaunchedEffect(scrollState){
+        RsVoicePageBusV196.commands.collect{command->
+            when(command){
+                RsVoicePageCommandV196.SCROLL_DOWN->{
+                    val step=(scrollState.viewportSize*.72f).toInt().coerceAtLeast(260)
+                    scrollState.animateScrollTo((scrollState.value+step).coerceAtMost(scrollState.maxValue))
+                }
+                RsVoicePageCommandV196.SCROLL_UP->{
+                    val step=(scrollState.viewportSize*.72f).toInt().coerceAtLeast(260)
+                    scrollState.animateScrollTo((scrollState.value-step).coerceAtLeast(0))
+                }
+                RsVoicePageCommandV196.TOP->scrollState.animateScrollTo(0)
+                RsVoicePageCommandV196.BOTTOM->scrollState.animateScrollTo(scrollState.maxValue)
+            }
+        }
+    }
+    Column(
+        Modifier.fillMaxSize().verticalScroll(scrollState).padding(horizontal=1.dp),
+        verticalArrangement=Arrangement.spacedBy(8.dp)
+    ){
+        Text(title,color=c.bright,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black)
+        Text(sub,color=c.muted)
+        content()
+        Spacer(Modifier.height(20.dp))
+    }
+}
 
 @Composable
 fun RsPanel(c:RsPalette,content:@Composable ColumnScope.()->Unit){Card(modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,c.bright.copy(alpha=.28f)),colors=CardDefaults.cardColors(containerColor=c.panel.copy(alpha=.88f))){Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp),content=content)}}
