@@ -186,6 +186,9 @@ fun RsAiAssistantChatV163(
     var immersiveGreetingPending by remember{
         mutableStateOf(store.b("ai_start_listening_v168",false))
     }
+    var directListenPending by remember{
+        mutableStateOf(store.b("ai_direct_listen_v195",false))
+    }
 
     LaunchedEffect(messages,aiHistoryKey){
         val pruned=rsPruneAiChatV176(messages)
@@ -634,7 +637,17 @@ fun RsAiAssistantChatV163(
         )
     }
     DisposableEffect(quietVoice){
-        onDispose{quietVoice.destroy()}
+        onDispose{
+            quietVoice.destroy()
+            store.pb("ai_direct_listen_v195",false)
+            if(
+                store.b("rs_voice_wake_resume_after_ai_v195",false) &&
+                store.b("rs_voice_wake_enabled_v165",false)
+            ){
+                store.pb("rs_voice_wake_resume_after_ai_v195",false)
+                runCatching{RsVoiceWakeServiceV165.start(context)}
+            }
+        }
     }
 
     val microphonePermissionLauncher=rememberLauncherForActivityResult(
@@ -660,6 +673,17 @@ fun RsAiAssistantChatV163(
             quietVoice.start(selectedLang.locale)
         }else{
             microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    LaunchedEffect(directListenPending){
+        if(directListenPending){
+            store.pb("ai_direct_listen_v195",false)
+            directListenPending=false
+            // Give the background wake service time to release AudioRecord and
+            // SpeechRecognizer resources before foreground recognition starts.
+            kotlinx.coroutines.delay(650)
+            startVoice()
         }
     }
 
