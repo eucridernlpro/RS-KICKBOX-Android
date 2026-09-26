@@ -1056,34 +1056,19 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                     store.pb("ai_start_listening_v168",true)
 
                     val command=rsStripWakePhraseV165(heard)
-                    val requested=if(command.isBlank())null
-                    else rsVoiceRouteV167(command)?:rsVoiceDynamicRouteV184(command,language())
-
-                    if(requested!=null){
-                        val resolved=roleAwareRouteV182(requested)
-                        requestRouteOpenV182(resolved)
-                        val title=rsRouteTitle(
-                            language(),
-                            resolved,
-                            resolved.replace('_',' ').replaceFirstChar{it.uppercase()}
-                        )
-                        speak(
-                            when(language().code){
-                                "nl"->"Ik open "+title+"."
-                                "pt"->"Vou abrir "+title+"."
-                                "es"->"Voy a abrir "+title+"."
-                                "fr"->"J’ouvre "+title+"."
-                                "de"->"Ich öffne "+title+"."
-                                "it"->"Apro "+title+"."
-                                "pl"->"Otwieram "+title+"."
-                                "tr"->title+" açılıyor."
-                                else->"Opening "+title+"."
-                            },
-                            thenListen=true
-                        )
-                    }else{
+                    if(command.isBlank()){
                         if(!MainActivity.isForeground)requestRouteOpenV182(defaultDashboardRouteV182())
                         speak(rsVoiceGreetingV165(language().code),thenListen=true)
+                    }else{
+                        // Every wake+command phrase must enter the full command engine.
+                        // Route-only handling here caused music, scroll, chat and settings
+                        // actions to be ignored after a successful wake phrase.
+                        awaitingCommandAfterWakeV207=false
+                        foregroundRecognizerRetriesV205=0
+                        scope.launch{
+                            delay(60)
+                            handleTranscript(command)
+                        }
                     }
                 }
             },
