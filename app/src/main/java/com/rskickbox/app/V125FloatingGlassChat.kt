@@ -479,8 +479,8 @@ fun RsFloatingGlassChatHubV125(
                                     store.pb("ai_start_listening_v168",false)
                                     store.pb("ai_direct_listen_v195",false)
                                     runCatching{RsVoiceWakeServiceV165.directListenOnce(context)}
-                                    aiImmersive=true
-                                    tab=RsChatHubTabV125.AI
+                                    // Stay in the current chat/page. The microphone
+                                    // is a fallback input control, not a navigation button.
                                 }else{
                                     android.widget.Toast.makeText(
                                         context,
