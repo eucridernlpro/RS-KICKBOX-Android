@@ -20,176 +20,42 @@ class RsQuietVoiceControllerV171(
     private val onIdle:()->Unit={},
     private val onLanguageDetected:(String)->Unit={}
 ){
-    private var recognizer:SpeechRecognizer?=null
-    private var running=false
-    private var fallbackToDeviceLocale=false
-    private var lastStartAt=0L
+    /*
+     * Compatibility adapter only.
+     *
+     * The production microphone owner is RsVoiceWakeServiceV165. Older AI
+     * screens still compile against this controller, but this class must never
+     * create its own SpeechRecognizer because two owners can race for AudioRecord
+     * and reproduce the historical AI/chat/music mic crashes.
+     */
     private var destroyed=false
-    private var creating=false
-    private val mainHandler=Handler(Looper.getMainLooper())
-
-    private fun ensureRecognizer():Boolean{
-        if(destroyed)return false
-        if(recognizer!=null)return true
-        if(creating)return false
-        if(Looper.myLooper()!=Looper.getMainLooper()){
-            mainHandler.post{ensureRecognizer()}
-            return false
-        }
-        if(!SpeechRecognizer.isRecognitionAvailable(context)){
-            onStatus("Speech recognition is not available on this device.")
-            return false
-        }
-        creating=true
-        val created=runCatching{
-            SpeechRecognizer.createSpeechRecognizer(context.applicationContext).apply{
-                setRecognitionListener(object:RecognitionListener{
-                override fun onReadyForSpeech(params:Bundle?){
-                    running=true
-                    onStatus("")
-                }
-                override fun onBeginningOfSpeech(){onStatus("")}
-                override fun onRmsChanged(rmsdB:Float){}
-                override fun onBufferReceived(buffer:ByteArray?){}
-                override fun onEndOfSpeech(){onStatus("")}
-                override fun onLanguageDetection(results:Bundle){
-                    if(Build.VERSION.SDK_INT<34)return
-                    val confidence=results.getInt("language_detection_confidence_level",0)
-                    if(confidence<2)return
-                    val tag=results.getString("detected_language").orEmpty()
-                    val code=Locale.forLanguageTag(tag).language.lowercase(Locale.ROOT)
-                    if(code in setOf("en","nl","pt","es","fr","de","it","pl","tr")){
-                        onLanguageDetected(code)
-                    }
-                }
-                override fun onError(error:Int){
-                    running=false
-                    when(error){
-                        SpeechRecognizer.ERROR_NO_MATCH,
-                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT->{
-                            onStatus("")
-                            onIdle()
-                        }
-                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS->onStatus("Microphone permission required.")
-                        SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED,
-                        SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE->{
-                            fallbackToDeviceLocale=true
-                            destroyRecognizer()
-                            onStatus("")
-                            onIdle()
-                        }
-                        SpeechRecognizer.ERROR_RECOGNIZER_BUSY->{
-                            destroyRecognizer()
-                            onStatus("")
-                            onIdle()
-                        }
-                        SpeechRecognizer.ERROR_NETWORK,
-                        SpeechRecognizer.ERROR_NETWORK_TIMEOUT->{
-                            onStatus("")
-                            onIdle()
-                        }
-                        else->{ onStatus(""); onIdle() }
-                    }
-                }
-                override fun onResults(results:Bundle?){
-                    running=false
-                    val text=results
-                        ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                        ?.firstOrNull()
-                        .orEmpty()
-                        .trim()
-                    onStatus("")
-                    if(text.isNotBlank())onResult(text) else onIdle()
-                }
-                override fun onPartialResults(partialResults:Bundle?){}
-                override fun onEvent(eventType:Int,params:Bundle?){}
-                })
-            }
-        }.onFailure{
-            onStatus("Voice input could not start.")
-        }.getOrNull()
-        recognizer=created
-        creating=false
-        return created!=null
-    }
 
     fun start(locale:Locale){
-        if(
-            ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)
-            !=PackageManager.PERMISSION_GRANTED
-        ){
-            onStatus("Microphone permission required.")
-            return
-        }
         if(destroyed)return
-        if(Looper.myLooper()!=Looper.getMainLooper()){
-            mainHandler.post{start(locale)}
-            return
+        val store=RsStore(context)
+        val requestedCode=locale.language.lowercase(Locale.ROOT)
+        if(requestedCode in setOf("en","nl","pt","es","fr","de","it","pl","tr")){
+            store.ps("ai_voice_language_v161",requestedCode)
+            store.ps("lang_last_spoken_v182",requestedCode)
+            onLanguageDetected(requestedCode)
         }
-        if(running)return
-        val now=System.currentTimeMillis()
-        if(now-lastStartAt<900L)return
-        lastStartAt=now
-        if(!ensureRecognizer()){
-            onIdle()
-            return
-        }
-        val recognitionLocale=if(fallbackToDeviceLocale)Locale.getDefault() else locale
-        val intent=android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE,recognitionLocale.toLanguageTag())
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3)
-            if(Build.VERSION.SDK_INT>=34){
-                val allowed=arrayListOf(
-                    "en-US","nl-NL","pt-PT","es-ES","fr-FR","de-DE","it-IT","pl-PL","tr-TR"
-                )
-                putExtra("android.speech.extra.ENABLE_LANGUAGE_DETECTION",true)
-                putStringArrayListExtra(
-                    "android.speech.extra.LANGUAGE_DETECTION_ALLOWED_LANGUAGES",
-                    allowed
-                )
-                putExtra("android.speech.extra.ENABLE_LANGUAGE_SWITCH","balanced")
-                putStringArrayListExtra(
-                    "android.speech.extra.LANGUAGE_SWITCH_ALLOWED_LANGUAGES",
-                    allowed
-                )
-            }
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,500L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,1800L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,1200L)
-        }
-        runCatching{recognizer?.startListening(intent)}
+        onStatus("")
+        store.ps("rs_ai_last_checkpoint_v205","LEGACY_MIC_ROUTED_TO_SHARED_SERVICE")
+        store.ps("rs_ai_last_checkpoint_ms_v205",System.currentTimeMillis().toString())
+        runCatching{RsVoiceWakeServiceV165.directListenOnce(context)}
             .onFailure{
-                destroyRecognizer()
                 onStatus("Voice input could not start.")
                 onIdle()
             }
     }
 
     fun stop(){
-        if(Looper.myLooper()!=Looper.getMainLooper()){
-            mainHandler.post{stop()}
-            return
-        }
-        running=false
-        runCatching{recognizer?.cancel()}
+        // Do not stop the shared wake service from a legacy screen lifecycle.
+        // MASTER AI LISTENING and RsVoiceWakeServiceV165 own service shutdown.
     }
 
     fun destroy(){
         destroyed=true
-        if(Looper.myLooper()!=Looper.getMainLooper()){
-            mainHandler.post{destroyRecognizer()}
-        }else destroyRecognizer()
-    }
-
-    private fun destroyRecognizer(){
-        running=false
-        creating=false
-        val old=recognizer
-        recognizer=null
-        runCatching{old?.cancel()}
-        runCatching{old?.destroy()}
     }
 }
 
