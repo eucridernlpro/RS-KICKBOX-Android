@@ -65,6 +65,9 @@ android {
         compose = true
         buildConfig = true
     }
+    androidResources {
+        noCompress += listOf("glb","gltf","bin")
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
