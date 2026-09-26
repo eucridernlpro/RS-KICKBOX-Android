@@ -131,11 +131,17 @@ fun RsAiSafeShellV203(
     }
 
     LaunchedEffect(Unit){
-        val pending=store.s("ai_pending_spoken_v171","").trim()
-        if(pending.isNotBlank()){
-            store.ps("ai_pending_spoken_v171","")
-            kotlinx.coroutines.delay(250)
-            send(pending)
+        // Pending speech may arrive after the AI route is already visible
+        // (top-mic / Voice Wake handoff). Keep a lightweight watcher instead
+        // of checking only once at composition time.
+        while(kotlinx.coroutines.currentCoroutineContext().isActive){
+            val pending=store.s("ai_pending_spoken_v171","").trim()
+            if(pending.isNotBlank() && !busy){
+                store.ps("ai_pending_spoken_v171","")
+                kotlinx.coroutines.delay(120)
+                send(pending)
+            }
+            kotlinx.coroutines.delay(220)
         }
     }
 
