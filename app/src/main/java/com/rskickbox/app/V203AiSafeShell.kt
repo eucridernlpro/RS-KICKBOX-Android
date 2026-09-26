@@ -100,6 +100,8 @@ fun RsAiSafeShellV203(
     var busy by remember{mutableStateOf(false)}
     var status by remember{mutableStateOf("")}
     var messages by remember{mutableStateOf<List<RsSafeAiMessageV203>>(emptyList())}
+    var autoSpeak by remember{mutableStateOf(store.b("ai_safe_autospeak_v206",true))}
+    var sceneStage by remember{mutableStateOf(RsAiSceneStageV206.REFERENCE)}
     val scroll=rememberScrollState()
 
     fun send(text:String){
@@ -123,6 +125,11 @@ fun RsAiSafeShellV203(
                 rsOnlineAiCoachV164(body,aiLang,contextSummary).getOrElse{local}
             }.getOrElse{local}
             messages=messages+RsSafeAiMessageV203(false,answer)
+            if(autoSpeak && store.b("rs_ai_listening_enabled_v200",true)){
+                store.ps("ai_avatar_gender_v161",avatar)
+                store.ps("ai_voice_language_v161",aiLang.code)
+                runCatching{RsVoiceWakeServiceV165.handoffSpeechAndListen(context,answer)}
+            }
             store.ps("rs_ai_last_checkpoint_v205","AI_REQUEST_DONE")
             store.ps("rs_ai_last_checkpoint_ms_v205",System.currentTimeMillis().toString())
             busy=false
@@ -215,39 +222,35 @@ fun RsAiSafeShellV203(
                         horizontalArrangement=Arrangement.spacedBy(12.dp),
                         verticalAlignment=Alignment.CenterVertically
                     ){
-                        Column(
-                            Modifier.weight(.42f),
-                            horizontalAlignment=Alignment.CenterHorizontally,
-                            verticalArrangement=Arrangement.Center
-                        ){
+                        Box(Modifier.weight(.42f).fillMaxHeight()){
+                            RsAiSceneAvatarV206(
+                                store=store,
+                                avatar=avatar,
+                                speaking=false,
+                                listening=store.s("rs_voice_wake_status_v168","").contains("LISTEN"),
+                                thinking=busy,
+                                motionEnabled=true,
+                                modifier=Modifier.fillMaxSize(),
+                                onStage={sceneStage=it}
+                            )
                             Surface(
-                                shape=RoundedCornerShape(60.dp),
-                                color=Color.Black.copy(alpha=.42f),
-                                border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.36f))
+                                color=Color.Black.copy(alpha=.58f),
+                                shape=RoundedCornerShape(12.dp),
+                                modifier=Modifier.align(Alignment.BottomCenter).padding(7.dp)
                             ){
                                 Text(
-                                    if(avatar=="MALE")"M" else "S",
-                                    color=c.gold,
-                                    fontSize=44.sp,
+                                    when(sceneStage){
+                                        RsAiSceneStageV206.LIVE_3D->"LIVE 3D"
+                                        RsAiSceneStageV206.LOADING_3D->"LOADING 3D"
+                                        RsAiSceneStageV206.CIRCUIT_BREAKER->"3D SAFE FALLBACK"
+                                        else->"CINEMATIC FALLBACK"
+                                    },
+                                    color=if(sceneStage==RsAiSceneStageV206.LIVE_3D)Color(0xFF55D58A) else c.bright,
+                                    fontSize=6.sp,
                                     fontWeight=FontWeight.Black,
-                                    modifier=Modifier.padding(horizontal=24.dp,vertical=14.dp)
+                                    modifier=Modifier.padding(horizontal=7.dp,vertical=4.dp)
                                 )
                             }
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                if(avatar=="MALE")"MARCUS" else "SOFIA",
-                                color=Color.White,
-                                fontSize=22.sp,
-                                fontWeight=FontWeight.Black,
-                                letterSpacing=1.8.sp
-                            )
-                            Text(
-                                "RS AI ASSISTANT",
-                                color=c.bright,
-                                fontSize=7.sp,
-                                fontWeight=FontWeight.Black,
-                                letterSpacing=1.1.sp
-                            )
                         }
 
                         Surface(
@@ -379,9 +382,32 @@ fun RsAiSafeShellV203(
                     modifier=Modifier.weight(1f)
                 )
                 AssistChip(
-                    onClick={},
-                    enabled=false,
-                    label={Text("VOICE STAGED",fontSize=7.sp)}
+                    onClick={
+                        if(store.b("rs_ai_listening_enabled_v200",true)){
+                            store.ps("ai_avatar_gender_v161",avatar)
+                            store.ps("ai_voice_language_v161",aiLang.code)
+                            runCatching{RsVoiceWakeServiceV165.directListenOnce(context)}
+                            status=when(aiLang.code){
+                                "nl"->"Ik luister."
+                                "pt"->"Estou a ouvir."
+                                "es"->"Estoy escuchando."
+                                "fr"->"J’écoute."
+                                "de"->"Ich höre zu."
+                                else->"Listening."
+                            }
+                        }else{
+                            status="AI listening is off. Enable MASTER AI LISTENING in settings."
+                        }
+                    },
+                    label={Text("🎙",fontSize=10.sp)}
+                )
+                FilterChip(
+                    selected=autoSpeak,
+                    onClick={
+                        autoSpeak=!autoSpeak
+                        store.pb("ai_safe_autospeak_v206",autoSpeak)
+                    },
+                    label={Text(if(autoSpeak)"VOICE ON" else "VOICE OFF",fontSize=6.sp)}
                 )
                 FilledIconButton(
                     onClick={send(draft)},
