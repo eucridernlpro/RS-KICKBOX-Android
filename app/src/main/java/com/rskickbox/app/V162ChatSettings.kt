@@ -607,6 +607,35 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                     RsAiDiagLineV191(c,"Lip-sync runtime","VISEME ENGINE READY · FACIAL MORPHS AWAIT GLB")
                     RsAiDiagLineV191(c,"Sofia identity",if(sofiaRigged)"RIGGED GLB READY" else "LOCKED RS CINEMATIC FALLBACK")
                     RsAiDiagLineV191(c,"Marcus identity",if(marcusRigged)"RIGGED GLB READY" else "LOCKED RS CINEMATIC FALLBACK")
+                    RsAiDiagLineV191(c,"SceneView Sofia",rsAiSceneDiagnosticsV206(context,store,"FEMALE"))
+                    RsAiDiagLineV191(c,"SceneView Marcus",rsAiSceneDiagnosticsV206(context,store,"MALE"))
+                    val sceneDisabled=store.b("rs_sceneview_disabled_v206",false)
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement=Arrangement.spacedBy(7.dp)
+                    ){
+                        OutlinedButton(
+                            onClick={
+                                store.pb("rs_sceneview_disabled_v206",!sceneDisabled)
+                                listenerRevision++
+                            },
+                            modifier=Modifier.weight(1f)
+                        ){
+                            Text(if(sceneDisabled)"ENABLE 3D RUNTIME" else "DISABLE 3D RUNTIME",fontSize=7.sp)
+                        }
+                        OutlinedButton(
+                            onClick={
+                                listOf("female","male").forEach{key->
+                                    store.ps("rs_scene_state_v206_"+key,"RESET")
+                                    store.ps("rs_scene_state_v206_"+key+"_ms","0")
+                                }
+                                store.pb("rs_sceneview_disabled_v206",false)
+                                store.ps("rs_scene_last_error_v206","")
+                                listenerRevision++
+                            },
+                            modifier=Modifier.weight(1f)
+                        ){Text("RESET 3D SAFETY",fontSize=7.sp)}
+                    }
                     OutlinedButton(
                         onClick={
                             listenerRevision++
