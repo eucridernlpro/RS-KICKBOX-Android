@@ -33,6 +33,10 @@ fun RsAiSafeShellV203(
 ){
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
+    SideEffect{
+        store.ps("rs_ai_last_checkpoint_v205","TEXT_SHELL_COMPOSED")
+        store.ps("rs_ai_last_checkpoint_ms_v205",System.currentTimeMillis().toString())
+    }
     var avatar by remember{mutableStateOf(store.s("ai_avatar_gender_v161","FEMALE"))}
     var aiLangCode by remember{mutableStateOf(store.s("ai_voice_language_v161",lang.code))}
     val aiLang=rsLangs.firstOrNull{it.code==aiLangCode}?:lang
@@ -50,6 +54,8 @@ fun RsAiSafeShellV203(
         busy=true
         status=""
         scope.launch{
+            store.ps("rs_ai_last_checkpoint_v205","AI_REQUEST_START")
+            store.ps("rs_ai_last_checkpoint_ms_v205",System.currentTimeMillis().toString())
             val route=store.s("session_last_route",if(role==RsRole.TRAINER)"trainer" else "home")
             val contextSummary=(
                 "CURRENT RS ROLE: "+role.name+
@@ -61,6 +67,8 @@ fun RsAiSafeShellV203(
                 rsOnlineAiCoachV164(body,aiLang,contextSummary).getOrElse{local}
             }.getOrElse{local}
             messages=messages+RsSafeAiMessageV203(false,answer)
+            store.ps("rs_ai_last_checkpoint_v205","AI_REQUEST_DONE")
+            store.ps("rs_ai_last_checkpoint_ms_v205",System.currentTimeMillis().toString())
             busy=false
             status=""
         }
