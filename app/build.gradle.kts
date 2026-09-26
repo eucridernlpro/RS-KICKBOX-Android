@@ -26,8 +26,8 @@ android {
         applicationId = "com.rskickbox.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 193
-        versionName = "0.192.0"
+        versionCode = 194
+        versionName = "0.193.0"
         buildConfigField("String", "SUPABASE_URL", "\""+rsSupabaseUrl.replace("\\","\\\\").replace("\"","\\\"")+"\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\""+rsSupabasePublishableKey.replace("\\","\\\\").replace("\"","\\\"")+"\"")
     }
@@ -109,4 +109,4 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
 
-// RS v0.192 mic hardening + persistent fingerprint login: cold-start wake pause, crash-safe recognizer, remembered biometric entry
+// RS v0.193 mic hardening + persistent fingerprint login: cold-start wake pause, crash-safe recognizer, remembered biometric entry
