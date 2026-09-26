@@ -599,6 +599,11 @@ fun RsChatSettingsV162(c:RsPalette,store:RsStore,lang:RsLang,role:RsRole?=null,o
                         "Avatar render backend",
                         if(sofiaRigged || marcusRigged)"SCENEVIEW RIGGED GLB" else "LOCKED CINEMATIC DIGITAL HUMAN"
                     )
+                    RsAiDiagLineV191(
+                        c,
+                        "Last AI checkpoint",
+                        store.s("rs_ai_last_checkpoint_v205","NONE")
+                    )
                     RsAiDiagLineV191(c,"Lip-sync runtime","VISEME ENGINE READY · FACIAL MORPHS AWAIT GLB")
                     RsAiDiagLineV191(c,"Sofia identity",if(sofiaRigged)"RIGGED GLB READY" else "LOCKED RS CINEMATIC FALLBACK")
                     RsAiDiagLineV191(c,"Marcus identity",if(marcusRigged)"RIGGED GLB READY" else "LOCKED RS CINEMATIC FALLBACK")
