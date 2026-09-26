@@ -1,10 +1,5 @@
 package com.rskickbox.app
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,13 +12,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
 
 private data class RsSafeAiMessageV203(
@@ -49,33 +41,6 @@ fun RsAiSafeShellV203(
     var status by remember{mutableStateOf("")}
     var messages by remember{mutableStateOf<List<RsSafeAiMessageV203>>(emptyList())}
     val scroll=rememberScrollState()
-
-    val micPermissionLauncher=rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ){granted->
-        if(granted){
-            if(store.b("rs_ai_listening_enabled_v200",true)){
-                runCatching{RsVoiceWakeServiceV165.directListenOnce(context)}
-                status=when(aiLang.code){
-                    "nl"->"Ik luister."
-                    "pt"->"Estou a ouvir."
-                    "es"->"Estoy escuchando."
-                    "fr"->"J’écoute."
-                    "de"->"Ich höre zu."
-                    else->"Listening."
-                }
-            }
-        }else{
-            status=when(aiLang.code){
-                "nl"->"Microfoontoegang is nodig."
-                "pt"->"É necessário acesso ao microfone."
-                "es"->"Se necesita acceso al micrófono."
-                "fr"->"L’accès au microphone est requis."
-                "de"->"Mikrofonzugriff ist erforderlich."
-                else->"Microphone permission is required."
-            }
-        }
-    }
 
     fun send(text:String){
         val body=text.trim()
@@ -155,17 +120,35 @@ fun RsAiSafeShellV203(
                 shape=RoundedCornerShape(22.dp),
                 color=Color.Black,
                 border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
-                modifier=Modifier.fillMaxWidth().height(260.dp)
+                modifier=Modifier.fillMaxWidth().height(150.dp)
             ){
-                Image(
-                    painter=painterResource(
-                        if(avatar=="MALE")R.drawable.rs_ai_marcus_default
-                        else R.drawable.rs_ai_sofia_default
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.radialGradient(
+                            listOf(
+                                if(avatar=="MALE")Color(0xFF17314A) else Color(0xFF3A1D2E),
+                                Color(0xFF0B1117),
+                                Color.Black
+                            )
+                        )
                     ),
-                    contentDescription=if(avatar=="MALE")"Marcus" else "Sofia",
-                    contentScale=ContentScale.Crop,
-                    modifier=Modifier.fillMaxSize()
-                )
+                    contentAlignment=Alignment.Center
+                ){
+                    Column(horizontalAlignment=Alignment.CenterHorizontally){
+                        Text(
+                            if(avatar=="MALE")"MARCUS" else "SOFIA",
+                            color=Color.White,
+                            fontSize=26.sp,
+                            fontWeight=FontWeight.Black
+                        )
+                        Text(
+                            "RS AI · TEXT SAFE LAYER",
+                            color=c.bright,
+                            fontSize=9.sp,
+                            fontWeight=FontWeight.Black
+                        )
+                    }
+                }
             }
 
             Row(
@@ -200,7 +183,7 @@ fun RsAiSafeShellV203(
                                 "pt"->"Fala com a Sofia ou o Marcus. Este modo estável mantém temporariamente a camada avançada 3D/TTS desligada enquanto isolamos o crash."
                                 "es"->"Habla con Sofia o Marcus. Este modo estable mantiene temporalmente desactivada la capa 3D/TTS avanzada mientras aislamos el fallo."
                                 "fr"->"Parle avec Sofia ou Marcus. Ce mode stable désactive temporairement la couche 3D/TTS avancée pendant que nous isolons le crash."
-                                else->"Talk with Sofia or Marcus. This stable mode temporarily keeps the advanced 3D/TTS layer disabled while we isolate the crash."
+                                else->"Talk with Sofia or Marcus by text. Voice, image rendering, sensors and 3D stay disabled in this isolation layer."
                             },
                             color=c.muted,
                             fontSize=10.sp
@@ -241,20 +224,11 @@ fun RsAiSafeShellV203(
                     maxLines=3,
                     modifier=Modifier.weight(1f)
                 )
-                FilledTonalIconButton(
-                    onClick={
-                        if(!store.b("rs_ai_listening_enabled_v200",true)){
-                            status="AI listening is off. Turn MASTER AI LISTENING on manually in Settings."
-                        }else if(
-                            ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)==
-                            PackageManager.PERMISSION_GRANTED
-                        ){
-                            runCatching{RsVoiceWakeServiceV165.directListenOnce(context)}
-                            status="Listening."
-                        }else micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    },
-                    modifier=Modifier.size(44.dp)
-                ){Text("🎙")}
+                AssistChip(
+                    onClick={},
+                    enabled=false,
+                    label={Text("VOICE OFF",fontSize=7.sp)}
+                )
                 FilledIconButton(
                     onClick={send(draft)},
                     enabled=draft.isNotBlank()&&!busy,
