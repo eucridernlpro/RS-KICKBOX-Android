@@ -102,6 +102,7 @@ fun RsAiSafeShellV203(
     var messages by remember{mutableStateOf<List<RsSafeAiMessageV203>>(emptyList())}
     var autoSpeak by remember{mutableStateOf(store.b("ai_safe_autospeak_v206",true))}
     var sceneStage by remember{mutableStateOf(RsAiSceneStageV206.REFERENCE)}
+    var voiceRuntimeStatus by remember{mutableStateOf(store.s("rs_voice_wake_status_v168","OFF"))}
     val scroll=rememberScrollState()
 
     fun send(text:String){
@@ -134,6 +135,14 @@ fun RsAiSafeShellV203(
             store.ps("rs_ai_last_checkpoint_ms_v205",System.currentTimeMillis().toString())
             busy=false
             status=""
+        }
+    }
+
+    LaunchedEffect(Unit){
+        while(true){
+            val next=store.s("rs_voice_wake_status_v168","OFF")
+            if(next!=voiceRuntimeStatus)voiceRuntimeStatus=next
+            kotlinx.coroutines.delay(220)
         }
     }
 
@@ -204,7 +213,7 @@ fun RsAiSafeShellV203(
                 c=c,
                 avatar=avatar,
                 stage=sceneStage,
-                listening=store.s("rs_voice_wake_status_v168","").contains("LISTEN"),
+                listening=voiceRuntimeStatus.contains("LISTEN") || voiceRuntimeStatus=="AWAITING_COMMAND",
                 thinking=busy,
                 modifier=Modifier.fillMaxWidth().height(280.dp)
             ){
@@ -217,8 +226,8 @@ fun RsAiSafeShellV203(
                             RsAiSceneAvatarV206(
                                 store=store,
                                 avatar=avatar,
-                                speaking=false,
-                                listening=store.s("rs_voice_wake_status_v168","").contains("LISTEN"),
+                                speaking=voiceRuntimeStatus.startsWith("SPEAKING"),
+                                listening=voiceRuntimeStatus.contains("LISTEN") || voiceRuntimeStatus=="AWAITING_COMMAND",
                                 thinking=busy,
                                 motionEnabled=true,
                                 modifier=Modifier.fillMaxSize(),
@@ -297,6 +306,40 @@ fun RsAiSafeShellV203(
                         }
                     }
                 }
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement=Arrangement.spacedBy(6.dp),
+                verticalAlignment=Alignment.CenterVertically
+            ){
+                AssistChip(
+                    onClick={},
+                    enabled=false,
+                    label={Text(
+                        when{
+                            voiceRuntimeStatus.startsWith("SPEAKING")->"VOICE · SPEAKING"
+                            voiceRuntimeStatus=="AWAITING_COMMAND"->"VOICE · WAITING COMMAND"
+                            voiceRuntimeStatus.contains("LISTEN")->"VOICE · LISTENING"
+                            voiceRuntimeStatus.contains("SILENT_WAKE")->"VOICE · SILENT WAKE"
+                            else->"VOICE · "+voiceRuntimeStatus.take(20)
+                        },
+                        fontSize=6.sp
+                    )}
+                )
+                AssistChip(
+                    onClick={},
+                    enabled=false,
+                    label={Text(
+                        when(sceneStage){
+                            RsAiSceneStageV206.LIVE_3D->"3D · LIVE"
+                            RsAiSceneStageV206.LOADING_3D->"3D · LOADING"
+                            RsAiSceneStageV206.CIRCUIT_BREAKER->"3D · SAFE"
+                            else->"3D · REFERENCE"
+                        },
+                        fontSize=6.sp
+                    )}
+                )
+            }
 
             Row(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
