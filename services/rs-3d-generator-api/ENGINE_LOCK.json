@@ -1,0 +1,17 @@
+{
+  "charactergen": {
+    "repository": "https://github.com/zjp-shadow/CharacterGen.git",
+    "revision": "f329a835dbd5003060a5653eafd83d4d8868b043",
+    "license": "Apache-2.0"
+  },
+  "triposr": {
+    "repository": "https://github.com/VAST-AI-Research/TripoSR.git",
+    "revision": "107cefdc244c39106fa830359024f6a2f1c78871",
+    "license": "MIT"
+  },
+  "unirig": {
+    "repository": "https://github.com/VAST-AI-Research/UniRig.git",
+    "revision": "6793c6640ff01c8fb389f3993434124bb43d2933",
+    "license": "MIT"
+  }
+}
