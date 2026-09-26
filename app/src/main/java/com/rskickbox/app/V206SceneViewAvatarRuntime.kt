@@ -1,6 +1,7 @@
 package com.rskickbox.app
 
 import android.content.Context
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -90,44 +93,53 @@ private fun RsAiCinematicReferenceV206(
 ){
     val accent=if(avatar=="MALE")Color(0xFF58C9FF) else Color(0xFFD9A7C7)
     Box(
-        modifier.clip(RoundedCornerShape(22.dp)).background(
-            Brush.radialGradient(
-                listOf(accent.copy(alpha=.22f),Color(0xFF0D141A),Color.Black)
+        modifier.clip(RoundedCornerShape(22.dp)).background(Color.Black)
+    ){
+        Image(
+            painter=painterResource(
+                if(avatar=="MALE")R.drawable.rs_ai_marcus_default
+                else R.drawable.rs_ai_sofia_default
+            ),
+            contentDescription=if(avatar=="MALE")"Marcus RS AI" else "Sofia RS AI",
+            contentScale=ContentScale.Crop,
+            modifier=Modifier.fillMaxSize()
+        )
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color.Black.copy(alpha=.05f),
+                        Color.Transparent,
+                        Color.Black.copy(alpha=.42f)
+                    )
+                )
             )
         )
-    ){
-        androidx.compose.foundation.layout.Column(
-            Modifier.fillMaxSize(),
-            horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,
-            verticalArrangement=androidx.compose.foundation.layout.Arrangement.Center
+        androidx.compose.material3.Surface(
+            color=Color.Black.copy(alpha=.62f),
+            shape=RoundedCornerShape(14.dp),
+            border=androidx.compose.foundation.BorderStroke(1.dp,accent.copy(alpha=.44f)),
+            modifier=Modifier.align(androidx.compose.ui.Alignment.BottomCenter).padding(8.dp)
         ){
-            androidx.compose.material3.Surface(
-                color=Color.Black.copy(alpha=.42f),
-                shape=RoundedCornerShape(70.dp),
-                border=androidx.compose.foundation.BorderStroke(1.dp,accent.copy(alpha=.46f))
+            androidx.compose.foundation.layout.Column(
+                Modifier.padding(horizontal=10.dp,vertical=6.dp),
+                horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally
             ){
                 androidx.compose.material3.Text(
-                    if(avatar=="MALE")"M" else "S",
-                    color=Color(0xFFD9B75F),
-                    fontSize=52.sp,
+                    if(avatar=="MALE")"MARCUS" else "SOFIA",
+                    color=Color.White,
+                    fontSize=12.sp,
                     fontWeight=androidx.compose.ui.text.font.FontWeight.Black,
-                    modifier=Modifier.padding(horizontal=28.dp,vertical=15.dp)
+                    letterSpacing=1.4.sp
+                )
+                androidx.compose.material3.Text(
+                    "RS DIGITAL HUMAN · CINEMATIC REFERENCE",
+                    color=accent,
+                    fontSize=5.sp,
+                    fontWeight=androidx.compose.ui.text.font.FontWeight.Black,
+                    letterSpacing=.7.sp
                 )
             }
-            androidx.compose.foundation.layout.Spacer(Modifier.height(10.dp))
-            androidx.compose.material3.Text(
-                if(avatar=="MALE")"MARCUS" else "SOFIA",
-                color=Color.White,
-                fontSize=18.sp,
-                fontWeight=androidx.compose.ui.text.font.FontWeight.Black,
-                letterSpacing=1.6.sp
-            )
-            androidx.compose.material3.Text(
-                "SCENEVIEW 3D READY · GLB REQUIRED",
-                color=accent,
-                fontSize=7.sp,
-                fontWeight=androidx.compose.ui.text.font.FontWeight.Black
-            )
         }
     }
 }
