@@ -297,7 +297,6 @@ fun RsAiSafeShellV203(
                         }
                     }
                 }
-            }
 
             Row(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -319,15 +318,13 @@ fun RsAiSafeShellV203(
                 horizontalArrangement=Arrangement.spacedBy(5.dp)
             ){
                 listOf(
-                    "Open music" to "♫ MUSIC",
-                    "Open homework" to "◇ HOMEWORK",
-                    "Show commands" to "◉ COMMANDS",
-                    "Go to dashboard" to "▦ DASHBOARD"
-                ).forEach{(command,label)->
+                    Triple(if(role==RsRole.TRAINER)"music_admin" else "music","♫ MUSIC","music"),
+                    Triple(if(role==RsRole.TRAINER)"homework_admin" else "homework","◇ HOMEWORK","homework"),
+                    Triple(if(role==RsRole.TRAINER)"guide" else "student_guide","◉ COMMANDS","guide"),
+                    Triple(if(role==RsRole.TRAINER)"trainer" else "home","▦ DASHBOARD","dashboard")
+                ).forEach{(route,label,_)->
                     AssistChip(
-                        onClick={
-                            store.ps("ai_pending_spoken_v171",command)
-                        },
+                        onClick={onNavigate(route)},
                         label={Text(label,fontSize=7.sp)}
                     )
                 }
