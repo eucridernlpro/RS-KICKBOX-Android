@@ -336,6 +336,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private var silentWakeSessionFailedV188=false
     @Volatile private var pausedForForegroundAiV197=false
     private var foregroundRecognizerRetriesV205=0
+    @Volatile private var awaitingCommandAfterWakeV207=false
     private val store by lazy{RsStore(this)}
 
     private fun readCurrentPageV196(continueReading:Boolean=false){
@@ -553,6 +554,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         if(wakeLock?.isHeld==true)wakeLock?.release()
         wakeLock=null
         store.pb("rs_direct_ai_request_pending_v202",false)
+        awaitingCommandAfterWakeV207=false
         scope.cancel()
         super.onDestroy()
     }
@@ -774,13 +776,19 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             if(requestId!=serviceVoiceRequestId)return
             serviceSpeaking=false
             if(thenListen)scope.launch{
-                // Keep the assistant always available without repeated Android
-                // SpeechRecognizer start tones: finish the command, then return
-                // to silent wake-word monitoring.
-                awakeUntil=0L
                 foregroundRecognizerRetriesV205=0
-                delay(350)
-                startListening()
+                if(awaitingCommandAfterWakeV207){
+                    // Wake acknowledgement -> keep one direct command window alive.
+                    awakeUntil=System.currentTimeMillis()+45_000L
+                    setWakeStatusV168("AWAITING_COMMAND")
+                    delay(420)
+                    startListening()
+                }else{
+                    // Completed an action/answer -> return to silent wake monitoring.
+                    awakeUntil=0L
+                    delay(350)
+                    startListening()
+                }
             }
         }
 
@@ -934,9 +942,15 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
 
                         if(quietTimeout){
                             foregroundRecognizerRetriesV205++
+                            if(awaitingCommandAfterWakeV207 && foregroundRecognizerRetriesV205==1){
+                                // One quiet retry is allowed after the wake phrase.
+                                // Tone suppression stays active; no repeated loop.
+                                delay(500)
+                                startListening()
+                                return@launch
+                            }
                             if(foregroundRecognizerRetriesV205>=1){
-                                // Do not create a beep/restart loop. Return to the
-                                // silent Vosk wake engine after one command window.
+                                awaitingCommandAfterWakeV207=false
                                 awakeUntil=0L
                                 foregroundRecognizerRetriesV205=0
                                 delay(250)
@@ -968,6 +982,8 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                     if(System.currentTimeMillis()>awakeUntil && rsContainsWakePhraseV165(partial)){
                         recognizer?.cancel()
                         awakeUntil=System.currentTimeMillis()+45_000L
+                        awaitingCommandAfterWakeV207=true
+                        foregroundRecognizerRetriesV205=0
                         setWakeStatusV168("HEARD_WAKE")
                         val command=rsStripWakePhraseV165(partial)
                         store.pb("ai_immersive_v171",true)
@@ -1033,6 +1049,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 scope.launch{
                     if(serviceSpeaking)return@launch
                     awakeUntil=System.currentTimeMillis()+45_000L
+                    awaitingCommandAfterWakeV207=true
                     foregroundRecognizerRetriesV205=0
                     setWakeStatusV168("HEARD_WAKE")
                     store.pb("ai_immersive_v171",true)
@@ -1413,15 +1430,19 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 setWakeStatusV168("FOREGROUND_HANDSFREE")
             }else if(rsContainsWakePhraseV165(text)){
                 awakeUntil=now+45_000L
+                awaitingCommandAfterWakeV207=true
                 setWakeStatusV168("HEARD_WAKE")
                 commandText=rsStripWakePhraseV165(text)
                 store.pb("ai_immersive_v171",true)
                 store.pb("ai_start_listening_v168",true)
                 recognizer?.cancel()
                 if(commandText.isBlank()){
-                    requestRouteOpenV182(defaultDashboardRouteV182())
+                    // Do not navigate away. Wake phrase means: stay where the user
+                    // is, acknowledge, then listen for exactly one natural command.
                     speak(rsVoiceGreetingV165(language().code),thenListen=true)
                     return
+                }else{
+                    awaitingCommandAfterWakeV207=false
                 }
             }else{
                 startListening()
@@ -1430,6 +1451,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         }
 
         awakeUntil=if(MainActivity.isForeground)now+10L*60L*1000L else now+45_000L
+        if(commandText.isNotBlank())awaitingCommandAfterWakeV207=false
 
         when(rsAiPlatformIntentV171(commandText,language())){
             is RsAiPlatformIntentV171.StopListening->{
@@ -1438,6 +1460,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 store.pb("rs_voice_wake_resume_after_ai_v195",false)
                 store.pb("rs_voice_wake_paused_for_ai_v197",false)
                 awakeUntil=0L
+                awaitingCommandAfterWakeV207=false
                 val confirmation=when(language().code){
                     "nl"->"Ik stop met luisteren. Zet AI luisteren handmatig weer aan in AI-instellingen wanneer je mij opnieuw wilt gebruiken."
                     "pt"->"Vou parar de ouvir. Ativa novamente o modo de escuta manualmente nas definições de IA quando quiseres usar-me."
