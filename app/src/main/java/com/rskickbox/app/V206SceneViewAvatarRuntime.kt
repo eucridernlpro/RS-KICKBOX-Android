@@ -161,7 +161,8 @@ fun RsAiSceneAvatarV206(
     val health=remember(assetPath){rsAiGlbHealthV206(context,assetPath)}
     val manuallyDisabled=store.b("rs_sceneview_disabled_v206",false)
     val circuitOpen=remember(avatar){rsAiSceneCircuitOpenV206(store,avatar)}
-    val allow3d=health.usable && !manuallyDisabled && !circuitOpen
+    var runtimeFailed by remember(avatar){mutableStateOf(false)}
+    val allow3d=health.usable && !manuallyDisabled && !circuitOpen && !runtimeFailed
 
     if(!allow3d){
         val stage=if(circuitOpen)RsAiSceneStageV206.CIRCUIT_BREAKER else RsAiSceneStageV206.REFERENCE
@@ -242,8 +243,12 @@ fun RsAiSceneAvatarV206(
                     isShadowReceiver=true
                     onFrameError={error->
                         store.ps("rs_scene_last_error_v206",error.javaClass.simpleName+":"+error.message.orEmpty().take(180))
+                        store.ps("rs_scene_health_v206_"+avatar.lowercase(),"FRAME_ERROR")
                         store.pb("rs_sceneview_disabled_v206",true)
                         rsAiSceneMarkV206(store,avatar,"FRAME_ERROR")
+                        // Trigger Compose immediately so a bad native frame cannot
+                        // leave the user trapped on a broken 3D surface.
+                        runtimeFailed=true
                     }
                 }
             )
