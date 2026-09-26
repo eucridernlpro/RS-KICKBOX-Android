@@ -23,6 +23,61 @@ private data class RsSafeAiMessageV203(
     val text:String
 )
 
+
+private data class RsAiHoloCopyV206(
+    val heading:String,
+    val features:List<String>,
+    val footer:String
+)
+
+private fun rsAiHoloCopyV206(code:String):RsAiHoloCopyV206=when(code){
+    "nl"->RsAiHoloCopyV206(
+        "WAT IK VOOR JE KAN DOEN",
+        listOf("Natuurlijk praten","Training begeleiden","Muziek bedienen","Door de app navigeren","Helpen met instellingen"),
+        "MEER DAN TECHNOLOGIE · JOUW EVOLUTIE"
+    )
+    "pt"->RsAiHoloCopyV206(
+        "O QUE POSSO FAZER POR TI",
+        listOf("Conversa natural","Orienta treinos","Controla música","Navega no app","Ajuda nas definições"),
+        "MAIS QUE TECNOLOGIA · A TUA EVOLUÇÃO"
+    )
+    "es"->RsAiHoloCopyV206(
+        "LO QUE PUEDO HACER POR TI",
+        listOf("Conversación natural","Guía entrenamientos","Controla música","Navega por la app","Ayuda con ajustes"),
+        "MÁS QUE TECNOLOGÍA · TU EVOLUCIÓN"
+    )
+    "fr"->RsAiHoloCopyV206(
+        "CE QUE JE PEUX FAIRE",
+        listOf("Conversation naturelle","Guide les entraînements","Contrôle la musique","Navigue dans l’app","Aide aux réglages"),
+        "PLUS QUE LA TECHNOLOGIE · TON ÉVOLUTION"
+    )
+    "de"->RsAiHoloCopyV206(
+        "WAS ICH FÜR DICH TUN KANN",
+        listOf("Natürlich sprechen","Training begleiten","Musik steuern","In der App navigieren","Bei Einstellungen helfen"),
+        "MEHR ALS TECHNOLOGIE · DEINE ENTWICKLUNG"
+    )
+    "it"->RsAiHoloCopyV206(
+        "COSA POSSO FARE PER TE",
+        listOf("Conversazione naturale","Guida gli allenamenti","Controlla la musica","Naviga nell’app","Aiuta nelle impostazioni"),
+        "PIÙ DELLA TECNOLOGIA · LA TUA EVOLUZIONE"
+    )
+    "pl"->RsAiHoloCopyV206(
+        "W CZYM MOGĘ POMÓC",
+        listOf("Naturalna rozmowa","Prowadzi treningi","Steruje muzyką","Nawiguje po aplikacji","Pomaga w ustawieniach"),
+        "WIĘCEJ NIŻ TECHNOLOGIA · TWÓJ ROZWÓJ"
+    )
+    "tr"->RsAiHoloCopyV206(
+        "SENİN İÇİN NELER YAPABİLİRİM",
+        listOf("Doğal konuşma","Antrenmanı yönlendirir","Müziği kontrol eder","Uygulamada gezinir","Ayarlara yardımcı olur"),
+        "TEKNOLOJİDEN DAHA FAZLASI · GELİŞİMİN"
+    )
+    else->RsAiHoloCopyV206(
+        "WHAT I CAN DO FOR YOU",
+        listOf("Natural conversation","Guide training","Control music","Navigate the app","Help with settings"),
+        "MORE THAN TECHNOLOGY · YOUR EVOLUTION"
+    )
+}
+
 @Composable
 fun RsAiSafeShellV203(
     c:RsPalette,
@@ -40,6 +95,7 @@ fun RsAiSafeShellV203(
     var avatar by remember{mutableStateOf(store.s("ai_avatar_gender_v161","FEMALE"))}
     var aiLangCode by remember{mutableStateOf(store.s("ai_voice_language_v161",lang.code))}
     val aiLang=rsLangs.firstOrNull{it.code==aiLangCode}?:lang
+    val holo=remember(aiLangCode){rsAiHoloCopyV206(aiLangCode)}
     var draft by remember{mutableStateOf("")}
     var busy by remember{mutableStateOf(false)}
     var status by remember{mutableStateOf("")}
@@ -116,45 +172,129 @@ fun RsAiSafeShellV203(
                     label={Text("MARCUS",fontSize=8.sp)}
                 )
                 Spacer(Modifier.weight(1f))
-                Text(
-                    "AI SAFE MODE",
-                    color=Color(0xFF55D58A),
-                    fontSize=8.sp,
-                    fontWeight=FontWeight.Black
-                )
+                Surface(
+                    color=Color(0xFF071B16),
+                    shape=RoundedCornerShape(20.dp),
+                    border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFF55D58A).copy(alpha=.45f))
+                ){
+                    Text(
+                        "STABLE AI CORE",
+                        color=Color(0xFF55D58A),
+                        fontSize=7.sp,
+                        fontWeight=FontWeight.Black,
+                        modifier=Modifier.padding(horizontal=9.dp,vertical=5.dp)
+                    )
+                }
             }
 
             Surface(
-                shape=RoundedCornerShape(22.dp),
+                shape=RoundedCornerShape(24.dp),
                 color=Color.Black,
-                border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.42f)),
-                modifier=Modifier.fillMaxWidth().height(150.dp)
+                border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.48f)),
+                modifier=Modifier.fillMaxWidth().height(205.dp)
             ){
                 Box(
                     Modifier.fillMaxSize().background(
-                        Brush.radialGradient(
+                        Brush.horizontalGradient(
                             listOf(
-                                if(avatar=="MALE")Color(0xFF17314A) else Color(0xFF3A1D2E),
-                                Color(0xFF0B1117),
+                                if(avatar=="MALE")Color(0xFF122434) else Color(0xFF2B1724),
+                                Color(0xFF081117),
                                 Color.Black
                             )
                         )
-                    ),
-                    contentAlignment=Alignment.Center
+                    )
                 ){
-                    Column(horizontalAlignment=Alignment.CenterHorizontally){
-                        Text(
-                            if(avatar=="MALE")"MARCUS" else "SOFIA",
-                            color=Color.White,
-                            fontSize=26.sp,
-                            fontWeight=FontWeight.Black
-                        )
-                        Text(
-                            "RS AI · TEXT SAFE LAYER",
-                            color=c.bright,
-                            fontSize=9.sp,
-                            fontWeight=FontWeight.Black
-                        )
+                    Row(
+                        Modifier.fillMaxSize().padding(14.dp),
+                        horizontalArrangement=Arrangement.spacedBy(12.dp),
+                        verticalAlignment=Alignment.CenterVertically
+                    ){
+                        Column(
+                            Modifier.weight(.42f),
+                            horizontalAlignment=Alignment.CenterHorizontally,
+                            verticalArrangement=Arrangement.Center
+                        ){
+                            Surface(
+                                shape=RoundedCornerShape(60.dp),
+                                color=Color.Black.copy(alpha=.42f),
+                                border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.36f))
+                            ){
+                                Text(
+                                    if(avatar=="MALE")"M" else "S",
+                                    color=c.gold,
+                                    fontSize=44.sp,
+                                    fontWeight=FontWeight.Black,
+                                    modifier=Modifier.padding(horizontal=24.dp,vertical=14.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                if(avatar=="MALE")"MARCUS" else "SOFIA",
+                                color=Color.White,
+                                fontSize=22.sp,
+                                fontWeight=FontWeight.Black,
+                                letterSpacing=1.8.sp
+                            )
+                            Text(
+                                "RS AI ASSISTANT",
+                                color=c.bright,
+                                fontSize=7.sp,
+                                fontWeight=FontWeight.Black,
+                                letterSpacing=1.1.sp
+                            )
+                        }
+
+                        Surface(
+                            color=Color(0xFF06151E).copy(alpha=.82f),
+                            shape=RoundedCornerShape(18.dp),
+                            border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFF58C9FF).copy(alpha=.42f)),
+                            modifier=Modifier.weight(.58f).fillMaxHeight()
+                        ){
+                            Column(
+                                Modifier.fillMaxSize().padding(10.dp),
+                                verticalArrangement=Arrangement.spacedBy(5.dp)
+                            ){
+                                Text(
+                                    holo.heading,
+                                    color=Color(0xFF8EDCFF),
+                                    fontSize=8.sp,
+                                    fontWeight=FontWeight.Black,
+                                    letterSpacing=.8.sp
+                                )
+                                holo.features.forEachIndexed{i,item->
+                                    Row(
+                                        verticalAlignment=Alignment.CenterVertically,
+                                        horizontalArrangement=Arrangement.spacedBy(6.dp)
+                                    ){
+                                        Text(
+                                            when(i){
+                                                0->"◉"
+                                                1->"◇"
+                                                2->"♫"
+                                                3->"▦"
+                                                else->"⚙"
+                                            },
+                                            color=if(i%2==0)Color(0xFF58C9FF) else c.gold,
+                                            fontSize=9.sp
+                                        )
+                                        Text(
+                                            item,
+                                            color=Color.White.copy(alpha=.94f),
+                                            fontSize=8.sp,
+                                            lineHeight=10.sp
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.weight(1f))
+                                Text(
+                                    holo.footer,
+                                    color=c.gold,
+                                    fontSize=6.sp,
+                                    fontWeight=FontWeight.Black,
+                                    letterSpacing=.7.sp
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -187,11 +327,11 @@ fun RsAiSafeShellV203(
                     if(messages.isEmpty()){
                         Text(
                             when(aiLang.code){
-                                "nl"->"Praat met Sofia of Marcus. Deze stabiele modus houdt de geavanceerde 3D/TTS-laag tijdelijk uitgeschakeld terwijl we de crash isoleren."
-                                "pt"->"Fala com a Sofia ou o Marcus. Este modo estável mantém temporariamente a camada avançada 3D/TTS desligada enquanto isolamos o crash."
-                                "es"->"Habla con Sofia o Marcus. Este modo estable mantiene temporalmente desactivada la capa 3D/TTS avanzada mientras aislamos el fallo."
-                                "fr"->"Parle avec Sofia ou Marcus. Ce mode stable désactive temporairement la couche 3D/TTS avancée pendant que nous isolons le crash."
-                                else->"Talk with Sofia or Marcus by text. Voice, image rendering, sensors and 3D stay disabled in this isolation layer."
+                                "nl"->"Praat met "+if(avatar=="MALE")"Marcus" else "Sofia"+". De stabiele AI-kern is actief terwijl de geavanceerde realtime lagen gecontroleerd terugkeren."
+                                "pt"->"Fala com "+if(avatar=="MALE")"o Marcus" else "a Sofia"+". O núcleo estável de IA está ativo enquanto as camadas avançadas regressam de forma controlada."
+                                "es"->"Habla con "+if(avatar=="MALE")"Marcus" else "Sofia"+". El núcleo estable de IA está activo mientras recuperamos las capas avanzadas de forma controlada."
+                                "fr"->"Parle avec "+if(avatar=="MALE")"Marcus" else "Sofia"+". Le noyau IA stable est actif pendant que les couches avancées reviennent de manière contrôlée."
+                                else->"Talk with "+if(avatar=="MALE")"Marcus" else "Sofia"+". The stable AI core is active while advanced realtime layers are restored in a controlled sequence."
                             },
                             color=c.muted,
                             fontSize=10.sp
@@ -235,7 +375,7 @@ fun RsAiSafeShellV203(
                 AssistChip(
                     onClick={},
                     enabled=false,
-                    label={Text("VOICE OFF",fontSize=7.sp)}
+                    label={Text("VOICE STAGED",fontSize=7.sp)}
                 )
                 FilledIconButton(
                     onClick={send(draft)},
