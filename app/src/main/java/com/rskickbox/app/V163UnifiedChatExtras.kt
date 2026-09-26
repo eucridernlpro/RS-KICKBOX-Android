@@ -40,7 +40,7 @@ fun RsAiRoyalChatV163(
     role:RsRole,
     onNavigate:(String)->Unit={}
 ){
-    RsAiSafeShellV203(c,store,lang,role,onNavigate)
+    RsAiMinimalDiagnosticV204(c,store,role,onNavigate)
 }
 
 @Composable
