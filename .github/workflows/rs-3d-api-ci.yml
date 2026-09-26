@@ -1,0 +1,35 @@
+name: RS 3D Generator API CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/rs-3d-generator-api/**'
+      - 'tools/validate_rs_ai_glb.py'
+      - '.github/workflows/rs-3d-api-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/rs-3d-generator-api/**'
+      - 'tools/validate_rs_ai_glb.py'
+      - '.github/workflows/rs-3d-api-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  api-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install API test dependencies
+        working-directory: services/rs-3d-generator-api
+        run: pip install -r requirements-dev.txt
+      - name: Compile Python
+        run: |
+          python -m py_compile             services/rs-3d-generator-api/main.py             services/rs-3d-generator-api/adapters/unirig_adapter.py             services/rs-3d-generator-api/blender/finish_avatar.py             tools/validate_rs_ai_glb.py
+      - name: Run API smoke tests
+        working-directory: services/rs-3d-generator-api
+        run: pytest -q
