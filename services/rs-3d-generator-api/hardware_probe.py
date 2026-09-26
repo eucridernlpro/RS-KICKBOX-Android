@@ -40,16 +40,24 @@ def main():
         info["cuda_runtime"]=cmd([smi])[:500]
 
     vram=max([g["vram_mb"] for g in info["gpu"]],default=0)
+    # Only classify against hardware requirements stated by the upstream projects.
+    # TripoSR documents ~6 GB VRAM for its default single-image path.
+    # UniRig documents >=8 GB VRAM for generation.
+    # CharacterGen does not publish a simple VRAM minimum in its README, so we
+    # intentionally leave its compatibility as "probe_required" rather than guess.
+    info["engine_readiness"]={
+        "triposr": "candidate" if vram>=6000 else "insufficient_vram",
+        "unirig": "candidate" if vram>=8000 else "insufficient_vram",
+        "charactergen": "probe_required" if info["nvidia"] else "no_nvidia_gpu",
+    }
     if not info["nvidia"]:
         profile="cpu_only_not_recommended"
-    elif vram>=24000:
-        profile="full_charactergen_unirig"
-    elif vram>=12000:
-        profile="balanced_triposr_unirig_charactergen_experimental"
+    elif vram>=8000:
+        profile="triposr_plus_unirig_then_probe_charactergen"
     elif vram>=6000:
-        profile="triposr_first_low_vram"
+        profile="triposr_first_rigging_needs_more_vram"
     else:
-        profile="insufficient_vram_for_recommended_local_generation"
+        profile="insufficient_vram_for_recommended_local_pipeline"
     info["recommended_profile"]=profile
 
     print(json.dumps(info,indent=2))
