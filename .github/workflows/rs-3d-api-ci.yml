@@ -21,15 +21,25 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install API test dependencies
         working-directory: services/rs-3d-generator-api
         run: pip install -r requirements-dev.txt
-      - name: Compile Python
+
+      - name: Compile all RS 3D Python entrypoints
         run: |
-          python -m py_compile             services/rs-3d-generator-api/main.py             services/rs-3d-generator-api/adapters/unirig_adapter.py             services/rs-3d-generator-api/blender/finish_avatar.py             tools/validate_rs_ai_glb.py
+          python -m py_compile             services/rs-3d-generator-api/main.py             services/rs-3d-generator-api/install_backends.py             services/rs-3d-generator-api/hardware_probe.py             services/rs-3d-generator-api/adapters/unirig_adapter.py             services/rs-3d-generator-api/templates/rs_charactergen_infer.py             services/rs-3d-generator-api/blender/finish_avatar.py             tools/validate_rs_ai_glb.py
+
+      - name: Check installer and hardware probe
+        run: |
+          python services/rs-3d-generator-api/install_backends.py --help >/dev/null
+          python services/rs-3d-generator-api/hardware_probe.py > /tmp/rs3d-hardware.json
+          python -m json.tool /tmp/rs3d-hardware.json >/dev/null
+
       - name: Run API smoke tests
         working-directory: services/rs-3d-generator-api
         run: pytest -q
