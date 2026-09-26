@@ -191,7 +191,7 @@ fun RsAiSafeShellV203(
                     border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFF55D58A).copy(alpha=.45f))
                 ){
                     Text(
-                        "STABLE AI CORE",
+                        "RS AI · PREMIUM CORE",
                         color=Color(0xFF55D58A),
                         fontSize=7.sp,
                         fontWeight=FontWeight.Black,
@@ -200,28 +200,19 @@ fun RsAiSafeShellV203(
                 }
             }
 
-            Surface(
-                shape=RoundedCornerShape(24.dp),
-                color=Color.Black,
-                border=androidx.compose.foundation.BorderStroke(1.dp,c.gold.copy(alpha=.48f)),
-                modifier=Modifier.fillMaxWidth().height(205.dp)
+            RsAiPremiumRoomV207(
+                c=c,
+                avatar=avatar,
+                stage=sceneStage,
+                listening=store.s("rs_voice_wake_status_v168","").contains("LISTEN"),
+                thinking=busy,
+                modifier=Modifier.fillMaxWidth().height(280.dp)
             ){
-                Box(
-                    Modifier.fillMaxSize().background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                if(avatar=="MALE")Color(0xFF122434) else Color(0xFF2B1724),
-                                Color(0xFF081117),
-                                Color.Black
-                            )
-                        )
-                    )
+                Row(
+                    Modifier.fillMaxSize().padding(start=12.dp,end=12.dp,top=42.dp,bottom=12.dp),
+                    horizontalArrangement=Arrangement.spacedBy(10.dp),
+                    verticalAlignment=Alignment.CenterVertically
                 ){
-                    Row(
-                        Modifier.fillMaxSize().padding(14.dp),
-                        horizontalArrangement=Arrangement.spacedBy(12.dp),
-                        verticalAlignment=Alignment.CenterVertically
-                    ){
                         Box(Modifier.weight(.42f).fillMaxHeight()){
                             RsAiSceneAvatarV206(
                                 store=store,
@@ -320,6 +311,24 @@ fun RsAiSafeShellV203(
                             store.ps("ai_voice_language_v161",l.code)
                         },
                         label={Text(l.code.uppercase(),fontSize=7.sp)}
+                    )
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement=Arrangement.spacedBy(5.dp)
+            ){
+                listOf(
+                    "Open music" to "♫ MUSIC",
+                    "Open homework" to "◇ HOMEWORK",
+                    "Show commands" to "◉ COMMANDS",
+                    "Go to dashboard" to "▦ DASHBOARD"
+                ).forEach{(command,label)->
+                    AssistChip(
+                        onClick={
+                            store.ps("ai_pending_spoken_v171",command)
+                        },
+                        label={Text(label,fontSize=7.sp)}
                     )
                 }
             }
