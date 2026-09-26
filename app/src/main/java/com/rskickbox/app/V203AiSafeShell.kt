@@ -134,7 +134,7 @@ fun RsAiSafeShellV203(
         // Pending speech may arrive after the AI route is already visible
         // (top-mic / Voice Wake handoff). Keep a lightweight watcher instead
         // of checking only once at composition time.
-        while(kotlinx.coroutines.currentCoroutineContext().isActive){
+        while(true){
             val pending=store.s("ai_pending_spoken_v171","").trim()
             if(pending.isNotBlank() && !busy){
                 store.ps("ai_pending_spoken_v171","")
