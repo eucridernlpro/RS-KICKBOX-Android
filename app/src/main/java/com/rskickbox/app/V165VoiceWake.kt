@@ -2254,32 +2254,45 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 serviceUtteranceId=""
             }
 
+            val offlineWakeWasActive=offlineWakeEngineV188!=null
             runCatching{offlineWakeEngineV188?.stop()}
             offlineWakeEngineV188=null
 
             val status=store.s("rs_voice_wake_status_v168","")
+            val wasSilentWake=status.startsWith("SILENT_WAKE") || status=="HEARD_WAKE"
             val recognizerLooksBroken=
                 recognizer==null ||
+                offlineWakeWasActive ||
+                wasSilentWake ||
                 status.startsWith("ERROR_") ||
-                status in setOf("START_FAILED","NO_SPEECH","NO_MATCH","LANGUAGE_FALLBACK")
+                status in setOf("START_FAILED","NO_SPEECH","NO_MATCH","LANGUAGE_FALLBACK","LOCKED_LISTENING")
 
             if(recognizerLooksBroken || wasSpeaking){
-                // Rebuild only when there is no healthy listener to preserve.
-                // Ignore the old instance entirely instead of cancel -> immediate restart.
+                // A SpeechRecognizer object can still exist while Vosk owns the mic.
+                // A direct top/chat/Music Pro mic press must therefore rebuild the
+                // Android recognizer whenever we are coming from silent wake mode.
                 val old=recognizer
                 recognizer=null
                 runCatching{old?.destroy()}
+                store.ps("rs_ai_last_checkpoint_v205","DIRECT_MIC_RECOVER")
+                store.ps("rs_ai_last_checkpoint_ms_v205",System.currentTimeMillis().toString())
                 setWakeStatusV168("DIRECT_AI_RECOVERING")
                 scope.launch{
-                    delay(700)
-                    if(!serviceSpeaking && store.b("rs_ai_listening_enabled_v200",true)){
+                    delay(550)
+                    if(
+                        !serviceSpeaking &&
+                        !pausedForForegroundAiV197 &&
+                        store.b("rs_ai_listening_enabled_v200",true)
+                    ){
                         setWakeStatusV168("DIRECT_AI_LISTENING")
                         startListening()
                     }
                 }
             }else{
-                // Healthy listener already owns the microphone. The mic button only
-                // extends the hands-free command window; no AudioRecord restart.
+                // Healthy Android recognizer already owns the microphone. Keep it
+                // alive and only extend the foreground hands-free window.
+                store.ps("rs_ai_last_checkpoint_v205","DIRECT_MIC_REUSE")
+                store.ps("rs_ai_last_checkpoint_ms_v205",System.currentTimeMillis().toString())
                 setWakeStatusV168("DIRECT_AI_LISTENING")
             }
             return START_STICKY
