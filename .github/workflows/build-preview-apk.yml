@@ -70,6 +70,12 @@ jobs:
         run: |
           keytool -list -v             -keystore "$HOME/.android/debug.keystore"             -storepass android             -alias androiddebugkey | grep -E "SHA256:|SHA1:" || true
 
+      - name: Validate production AI avatar GLBs when present
+        run: |
+          python3 tools/validate_rs_ai_glb.py --allow-missing \
+            app/src/main/assets/models/rs_ai_sofia.glb \
+            app/src/main/assets/models/rs_ai_marcus.glb
+
       - name: Build installable debug APK
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
