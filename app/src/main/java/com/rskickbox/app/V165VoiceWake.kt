@@ -329,11 +329,13 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private var pendingVoiceMessageSenderV196:String=""
     private var toneRestoreJob:Job?=null
     private var systemToneMutedByRs=false
+    private var notificationToneMutedByRs=false
     private var offlineWakeEngineV188:RsOfflineWakeEngineV188?=null
     private var offlineWakePrepareJobV188:Job?=null
     private var silentWakePreparingV188=false
     private var silentWakeSessionFailedV188=false
     @Volatile private var pausedForForegroundAiV197=false
+    private var foregroundRecognizerRetriesV205=0
     private val store by lazy{RsStore(this)}
 
     private fun readCurrentPageV196(continueReading:Boolean=false){
@@ -537,10 +539,16 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         offlineWakePrepareJobV188=null
         runCatching{offlineWakeEngineV188?.stop()}
         offlineWakeEngineV188=null
-        if(systemToneMutedByRs){
+        if(systemToneMutedByRs || notificationToneMutedByRs){
             val audio=getSystemService(AudioManager::class.java)
-            runCatching{audio.adjustStreamVolume(AudioManager.STREAM_SYSTEM,AudioManager.ADJUST_UNMUTE,0)}
-            systemToneMutedByRs=false
+            if(systemToneMutedByRs){
+                runCatching{audio.adjustStreamVolume(AudioManager.STREAM_SYSTEM,AudioManager.ADJUST_UNMUTE,0)}
+                systemToneMutedByRs=false
+            }
+            if(notificationToneMutedByRs){
+                runCatching{audio.adjustStreamVolume(AudioManager.STREAM_NOTIFICATION,AudioManager.ADJUST_UNMUTE,0)}
+                notificationToneMutedByRs=false
+            }
         }
         if(wakeLock?.isHeld==true)wakeLock?.release()
         wakeLock=null
@@ -571,17 +579,26 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
     private fun suppressRecognizerToneV185(){
         if(!store.b("rs_voice_wake_silent_tones_v185",true))return
         val audio=getSystemService(AudioManager::class.java)
-        val alreadyMuted=runCatching{audio.isStreamMute(AudioManager.STREAM_SYSTEM)}.getOrDefault(false)
-        if(!alreadyMuted && !systemToneMutedByRs){
+        val systemAlreadyMuted=runCatching{audio.isStreamMute(AudioManager.STREAM_SYSTEM)}.getOrDefault(false)
+        val notificationAlreadyMuted=runCatching{audio.isStreamMute(AudioManager.STREAM_NOTIFICATION)}.getOrDefault(false)
+        if(!systemAlreadyMuted && !systemToneMutedByRs){
             runCatching{audio.adjustStreamVolume(AudioManager.STREAM_SYSTEM,AudioManager.ADJUST_MUTE,0)}
             systemToneMutedByRs=true
         }
+        if(!notificationAlreadyMuted && !notificationToneMutedByRs){
+            runCatching{audio.adjustStreamVolume(AudioManager.STREAM_NOTIFICATION,AudioManager.ADJUST_MUTE,0)}
+            notificationToneMutedByRs=true
+        }
         toneRestoreJob?.cancel()
         toneRestoreJob=scope.launch{
-            delay(850)
+            delay(1100)
             if(systemToneMutedByRs){
                 runCatching{audio.adjustStreamVolume(AudioManager.STREAM_SYSTEM,AudioManager.ADJUST_UNMUTE,0)}
                 systemToneMutedByRs=false
+            }
+            if(notificationToneMutedByRs){
+                runCatching{audio.adjustStreamVolume(AudioManager.STREAM_NOTIFICATION,AudioManager.ADJUST_UNMUTE,0)}
+                notificationToneMutedByRs=false
             }
         }
     }
@@ -757,7 +774,12 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
             if(requestId!=serviceVoiceRequestId)return
             serviceSpeaking=false
             if(thenListen)scope.launch{
-                delay(650)
+                // Keep the assistant always available without repeated Android
+                // SpeechRecognizer start tones: finish the command, then return
+                // to silent wake-word monitoring.
+                awakeUntil=0L
+                foregroundRecognizerRetriesV205=0
+                delay(350)
                 startListening()
             }
         }
@@ -905,10 +927,26 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                             runCatching{recognizer?.destroy()}
                             recognizer=null
                         }
+
+                        val quietTimeout=
+                            error==SpeechRecognizer.ERROR_NO_MATCH ||
+                            error==SpeechRecognizer.ERROR_SPEECH_TIMEOUT
+
+                        if(quietTimeout){
+                            foregroundRecognizerRetriesV205++
+                            if(foregroundRecognizerRetriesV205>=1){
+                                // Do not create a beep/restart loop. Return to the
+                                // silent Vosk wake engine after one command window.
+                                awakeUntil=0L
+                                foregroundRecognizerRetriesV205=0
+                                delay(250)
+                                startListening()
+                                return@launch
+                            }
+                        }
+
                         delay(
                             when(error){
-                                SpeechRecognizer.ERROR_NO_MATCH,
-                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT->if(MainActivity.isForeground)650 else 2200
                                 SpeechRecognizer.ERROR_RECOGNIZER_BUSY->900
                                 else->1200
                             }
@@ -918,6 +956,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 }
                 override fun onResults(results:android.os.Bundle?){
                     if(serviceSpeaking)return
+                    foregroundRecognizerRetriesV205=0
                     val list=results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).orEmpty()
                     val text=list.firstOrNull().orEmpty()
                     handleTranscript(text)
@@ -994,6 +1033,7 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
                 scope.launch{
                     if(serviceSpeaking)return@launch
                     awakeUntil=System.currentTimeMillis()+45_000L
+                    foregroundRecognizerRetriesV205=0
                     setWakeStatusV168("HEARD_WAKE")
                     store.pb("ai_immersive_v171",true)
                     store.pb("ai_start_listening_v168",true)
@@ -1059,7 +1099,6 @@ class RsVoiceWakeServiceV165:Service(),TextToSpeech.OnInitListener{
         )return
 
         if(
-            !MainActivity.isForeground &&
             System.currentTimeMillis()>awakeUntil &&
             store.b("rs_voice_wake_silent_engine_v188",true) &&
             !silentWakeSessionFailedV188
