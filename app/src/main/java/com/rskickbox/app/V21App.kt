@@ -1697,8 +1697,9 @@ private fun ShellV21(
                             store.pb("rs_voice_wake_resume_after_ai_v195",false)
                             store.pb("ai_immersive_v171",true)
                             if(store.b("rs_ai_listening_enabled_v200",true)){
+                                // Fallback mic listens on the current page. Do not
+                                // navigate into AI just because the user taps mic.
                                 runCatching{RsVoiceWakeServiceV165.directListenOnce(context)}
-                                onRoute("voice")
                             }else{
                                 android.widget.Toast.makeText(
                                     context,
