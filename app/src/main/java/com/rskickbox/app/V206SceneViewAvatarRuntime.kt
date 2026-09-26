@@ -72,7 +72,7 @@ private fun rsAiSceneCircuitOpenV206(store:RsStore,avatar:String):Boolean{
     val age=System.currentTimeMillis()-started
     // If the previous process died shortly after marking SceneView as STARTING,
     // assume a native/runtime failure and keep this avatar in safe fallback mode.
-    return state=="STARTING" && age in 0L..15L*60L*1000L
+    return state=="STARTING_RENDER" && age in 0L..15L*60L*1000L
 }
 
 private fun rsAiSceneMarkV206(store:RsStore,avatar:String,state:String){
@@ -183,11 +183,11 @@ fun RsAiSceneAvatarV206(
     LaunchedEffect(avatar,modelInstance){
         if(modelInstance==null){
             onStage(RsAiSceneStageV206.LOADING_3D)
-            rsAiSceneMarkV206(store,avatar,"STARTING")
+            rsAiSceneMarkV206(store,avatar,"LOADING_MODEL")
             return@LaunchedEffect
         }
         onStage(RsAiSceneStageV206.LOADING_3D)
-        rsAiSceneMarkV206(store,avatar,"STARTING")
+        rsAiSceneMarkV206(store,avatar,"STARTING_RENDER")
         delay(1400)
         rsAiSceneMarkV206(store,avatar,"READY")
         onStage(RsAiSceneStageV206.LIVE_3D)
@@ -197,7 +197,8 @@ fun RsAiSceneAvatarV206(
         onDispose{
             // A normal Compose disposal is not a crash. Mark it explicitly so
             // the next entry is allowed to try SceneView again.
-            if(store.s("rs_scene_state_v206_"+avatar.lowercase(),"")=="READY"){
+            val state=store.s("rs_scene_state_v206_"+avatar.lowercase(),"")
+            if(state in setOf("LOADING_MODEL","STARTING_RENDER","READY")){
                 rsAiSceneMarkV206(store,avatar,"CLOSED_CLEAN")
             }
         }
