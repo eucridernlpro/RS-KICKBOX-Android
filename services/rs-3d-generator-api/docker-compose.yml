@@ -1,0 +1,14 @@
+services:
+  rs3d-api:
+    build: .
+    ports:
+      - "8787:8787"
+    env_file:
+      - .env
+    volumes:
+      - rs3d-work:/data/work
+      - /opt/rs3d:/opt/rs3d
+    restart: unless-stopped
+
+volumes:
+  rs3d-work:
