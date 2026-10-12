@@ -833,10 +833,36 @@ private fun LoginV21(
         scope.launch{
             rsCloudLoginV63(attemptEmail,attemptPass)
                 .onSuccess{finishCloudLogin(it)}
-                .onFailure{
+                .onFailure{failure->
                     statusIsError=true
-                    status=rsLoginT94(lang,"login_failed")
-                    clearLoginFields(clearEmail=false)
+                    // Keep backend authentication failures distinguishable from profile/RLS
+                    // failures; otherwise valid credentials appear to be rejected.
+                    val detail=failure.message.orEmpty()
+                    status=when{
+                        detail.contains("incorrect",ignoreCase=true) ||
+                        detail.contains("Invalid login credentials",ignoreCase=true) ->
+                            "Email or password is incorrect."
+                        detail.contains("not confirmed",ignoreCase=true) ->
+                            "Confirm your email address before signing in."
+                        detail.contains("not configured",ignoreCase=true) ->
+                            "RS KICKBOX server configuration is missing from this app build."
+                        detail.contains("rs_profiles",ignoreCase=true) ||
+                        detail.contains("JSON object",ignoreCase=true) ||
+                        detail.contains("Row not found",ignoreCase=true) ||
+                        detail.contains("406",ignoreCase=true) ->
+                            "Your password may be accepted, but your RS KICKBOX member profile could not be loaded. Contact the club administrator."
+                        detail.contains("permission denied",ignoreCase=true) ||
+                        detail.contains("42501",ignoreCase=true) ||
+                        detail.contains("403",ignoreCase=true) ->
+                            "Your account signed in, but profile access was denied. Contact the club administrator."
+                        detail.contains("network",ignoreCase=true) ||
+                        detail.contains("timeout",ignoreCase=true) ||
+                        detail.contains("Unable to resolve host",ignoreCase=true) ->
+                            "Cannot reach RS KICKBOX servers. Check your connection and try again."
+                        else->rsLoginT94(lang,"login_failed")+
+                            " If your password is correct, ask the administrator to check your member profile."
+                    }
+                    // Do not discard the password on a transient backend or profile failure.
                 }
             busy=false
         }
